@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}Hours Desk - Street Banker{% endblock %}
+
+{% macro money(v) %}${{ "{:,.2f}".format(v or 0) }}{% endmacro %}
+{% macro hrs(v) %}{{ "{:g}".format(v or 0) }}h{% endmacro %}
+
+{% block content %}
+<div class="mx-auto max-w-[1100px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Hours</div>
+    <h1 class="sb-h1 mt-1">Hours Desk</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Your time, priced and accounted for. Log sessions against a client, invoice them, publish what you charge, take bookings, and approve the hours your collaborators submit. Every number here is added up from rows you entered — nothing is projected.</p>
+  </div>
+
+  <!-- Headline: agreed money only, in both directions -->
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-4">
+      <div class="sb-label text-gray-300 sm:text-xs sm:tracking-[0.25em]">Owed to you</div>
+      <div class="mt-1 text-2xl font-black tabular-nums text-sb-ink">{{ money(summary.owed_to_you) }}</div>
+      <div class="mt-1 text-xs leading-snug text-gray-300 font-medium">{{ money(summary.unbilled_value) }} not yet invoiced · {{ money(summary.outstanding_invoiced) }} invoiced and unpaid</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300 sm:text-xs sm:tracking-[0.25em]">You owe</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ money(summary.you_owe) }}</div>
+      <div class="mt-1 text-xs leading-snug text-gray-300 font-medium">Approved collaborator hours only. Pending hours aren't counted — you haven't agreed to them.</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300 sm:text-xs sm:tracking-[0.25em]">Net</div>
+      <div class="mt-1 text-2xl font-black tabular-nums {{ 'text-green-400' if summary.net >= 0 else 'text-red-400' }}">{{ money(summary.net) }}</div>
+      <div class="mt-1 text-xs leading-snug text-gray-300 font-medium">{{ hrs(summary.logged_hours) }} logged across {{ totals.entries }} {{ 'entry' if totals.entries == 1 else 'entries' }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300 sm:text-xs sm:tracking-[0.25em]">Needs you</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ summary.awaiting_you + summary.booking_requests }}</div>
+      <div class="mt-1 text-xs leading-snug text-gray-300 font-medium">{{ summary.awaiting_you }} timesheet{{ '' if summary.awaiting_you == 1 else 's' }} to review · {{ summary.booking_requests }} booking request{{ '' if summary.booking_requests == 1 else 's' }}</div>
+    </div>
+  </div>
+
+  {% if not summary.has_data %}
+  <div class="rounded-2xl border border-dashed border-white/15 bg-sb-surface-1 p-5 text-sm text-gray-300">
+    Nothing logged yet, so every figure above is zero rather than a sample. Start with the rate card — once it knows what you charge, logging a session is two fields.
+  </div>
+  {% endif %}
+
+  <!-- ============================ 1. SESSION LOG =========================== -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h2 class="sb-label text-gray-300">1 · Session log</h2>
+        <p class="mt-1 text-xs text-gray-300">Hours you worked, against a client and project. Unbilled lines are what you're owed and haven't asked for.</p>
+      </div>
+      <div class="text-right text-xs text-gray-300 font-medium">
+        <span class="font-black sb-num text-sb-ink">{{ hrs(totals.unbilled_hours) }}</span> unbilled ·
+        <span class="font-black sb-num text-sb-ink">{{ money(totals.unbilled_value) }}</span>
+        {% if totals.effective_rate %}<br>blended rate {{ money(totals.effective_rate) }}/h{% endif %}
+      </div>
+    </div>
+
+    <form method="post" action="{{ url_for('hours_log') }}" class="mt-4 grid gap-2 sm:grid-cols-6">
+      <input type="date" name="day" value="{{ today }}" required class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white focus:border-sb-gold focus:outline-none sm:col-span-2">
+      <input name="client" placeholder="Client" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none sm:col-span-2">
+      <input name="project" placeholder="Project" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none sm:col-span-2">
+      <input list="hours-services" name="service" placeholder="What you did" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none sm:col-span-2">
+      <datalist id="hours-services">{% for r in rates %}<option value="{{ r.service }}">{% endfor %}</datalist>
+      <input name="hours" type="number" step="0.25" min="0" placeholder="Hours" required class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+      <div class="flex items-center gap-1 rounded-lg border border-white/15 bg-black/40 px-3">
+        <span class="text-sm font-bold text-gray-300">$</span>
+        <input name="rate" type="number" step="0.01" min="0" placeholder="rate/h" class="w-full bg-transparent py-2.5 text-sm text-white placeholder-gray-300 focus:outline-none">
+      </div>
+      <input name="note" placeholder="Note (optional)" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none sm:col-span-5">
+      <button class="sb-btn sb-btn-primary">Log</button>
+    </form>
+
+    {% if entries %}
+    <div class="mt-4 overflow-x-auto">
+      <table class="w-full min-w-[720px] text-left text-xs">
+        <thead class="sb-label text-gray-300">
+          <tr><th class="pb-2">Day</th><th class="pb-2">Client / project</th><th class="pb-2">What</th>
+              <th class="pb-2 text-right">Hours</th><th class="pb-2 text-right">Rate</th>
+              <th class="pb-2 text-right">Value</th><th class="pb-2">Status</th><th></th></tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+        {% for e in entries %}
+          <tr class="align-top">
+            <td class="py-2 sb-num text-gray-300">{{ e.day }}</td>
+            <td class="py-2">
+              <div class="font-semibold text-gray-200">{{ e.client or "—" }}</div>
+              <div class="text-xs text-gray-300 font-medium">{{ e.project or "" }}</div>
+            </td>
+            <td class="py-2 text-gray-300">{{ e.service or "—" }}
+              {% if e.note %}<div class="text-xs text-gray-300 font-medium">{{ e.note }}</div>{% endif %}
+              {% for f in e.flags %}<div class="text-xs font-bold text-amber-400">⚠ {{ f }}</div>{% endfor %}
+            </td>
+            <td class="py-2 text-right sb-num">{{ "{:g}".format(e.hours) }}</td>
+            <td class="py-2 text-right sb-num text-gray-300">{{ money(e.rate) }}</td>
+            <td class="py-2 text-right font-black sb-num text-sb-ink">{{ money(e.value) }}</td>
+            <td class="py-2">
+              {% if e.billed %}<span class="rounded bg-white/10 px-1.5 py-0.5 text-xs font-bold uppercase text-gray-300">Invoiced</span>
+              {% else %}<span class="rounded bg-sb-gold/20 px-1.5 py-0.5 text-xs font-bold uppercase text-sb-gold-bright">Unbilled</span>{% endif %}
+            </td>
+            <td class="py-2 text-right">
+              {% if not e.billed %}
+              <form method="post" action="{{ url_for('hours_entry_delete', entry_id=e.id) }}">
+                <button class="-m-2 p-2 text-xs text-gray-300 hover:text-red-400 font-medium">Remove</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Invoice: one client + project at a time, because that's one invoice -->
+    {% if groups %}
+    <div class="mt-5 rounded-xl border border-sb-gold/25 bg-sb-surface-2 p-4">
+      <h3 class="sb-label text-gray-300">Ready to invoice</h3>
+      <div class="mt-3 space-y-2">
+      {% for g in groups %}
+        <form method="post" action="{{ url_for('hours_invoice') }}" class="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2">
+          {% for i in g.ids %}<input type="hidden" name="entry_id" value="{{ i }}">{% endfor %}
+          <input type="hidden" name="client" value="{{ g.client }}">
+          <input type="hidden" name="project" value="{{ g.project }}">
+          <div class="order-first w-full min-w-0 sm:order-none sm:w-auto sm:flex-1">
+            <div class="truncate text-sm font-semibold text-gray-200">{{ g.client or "No client" }}{% if g.project %} · {{ g.project }}{% endif %}</div>
+            <div class="text-xs text-gray-300 font-medium">{{ g.count }} {{ 'entry' if g.count == 1 else 'entries' }} · {{ hrs(g.hours) }}{% if g.first_day %} · {{ g.first_day }}{% if g.last_day != g.first_day %} → {{ g.last_day }}{% endif %}{% endif %}</div>
+          </div>
+          <div class="text-right font-black sb-num text-sb-ink">{{ money(g.value) }}</div>
+          <input name="number" value="{{ next_number }}" class="w-28 rounded border border-white/15 bg-black/40 px-2 py-2 text-xs sb-num text-white focus:border-sb-gold focus:outline-none sm:py-1 font-medium">
+          <button {% if not g.client %}disabled title="Add a client to the entries first — an invoice needs someone to send it to."{% endif %}
+                  class="sb-btn sb-btn-primary sb-btn-sm sm:py-1.5">Generate invoice</button>
+        </form>
+      {% endfor %}
+      </div>
+      <p class="mt-2 text-xs text-gray-300 font-medium">Totals come from the logged rows themselves, so an invoice can never disagree with the log it was built from. Invoiced lines lock.</p>
+    </div>
+    {% endif %}
+
+    {% if invoices %}
+    <div class="mt-4">
+      <h3 class="sb-label text-gray-300">Invoices — {{ money(invoice_totals.outstanding) }} outstanding, {{ money(invoice_totals.paid) }} paid</h3>
+      <div class="mt-2 space-y-1.5">
+      {% for inv in invoices %}
+        <div class="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-sb-surface-1 px-3 py-2 text-xs">
+          <span class="font-mono font-bold tabular-nums text-gray-200">{{ inv.number }}</span>
+          <span class="min-w-0 flex-1 truncate text-gray-300">{{ inv.client or "—" }}{% if inv.project %} · {{ inv.project }}{% endif %}</span>
+          <span class="sb-num text-gray-300">{{ hrs(inv.hours) }}</span>
+          <span class="font-black sb-num text-sb-ink">{{ money(inv.total) }}</span>
+          {% if inv.status == 'paid' %}
+            <span class="rounded bg-green-500/15 px-1.5 py-0.5 text-xs font-bold uppercase text-green-400">Paid</span>
+          {% else %}
+            <form method="post" action="{{ url_for('hours_invoice_paid', invoice_id=inv.id) }}">
+              <button class="rounded border border-green-500/40 px-2 py-1 text-xs font-bold text-green-400 hover:bg-green-500/10">Mark paid</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- ======================= 2. RATE CARD + BOOKING ======================== -->
+  <section class="grid gap-3 lg:grid-cols-2">
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">2 · Rate card</h2>
+      <p class="mt-1 text-xs text-gray-300">What you charge. Tick <b>bookable</b> and it becomes something people can request time for.</p>
+
+      {% if not rates %}
+      <form method="post" action="{{ url_for('hours_rate') }}" class="mt-3">
+        <input type="hidden" name="starter" value="1">
+        <button class="sb-btn sb-btn-secondary sb-btn-sm w-full">Start me off with four common lines</button>
+        <p class="mt-1.5 text-xs text-gray-300 font-medium">Mixing, studio time, vocal feature, beat session — all editable, none of it a commitment.</p>
+      </form>
+      {% endif %}
+
+      {% if rates %}
+      <div class="mt-3 space-y-1.5">
+      {% for r in rates %}
+        <div class="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-sb-surface-1 px-3 py-2 text-xs">
+          <span class="min-w-0 flex-1 truncate font-semibold text-gray-200">{{ r.service }}</span>
+          {% if r.min_hours %}<span class="text-xs text-gray-300 font-medium">{{ "{:g}".format(r.min_hours) }}h min</span>{% endif %}
+          {% if r.bookable %}<span class="rounded bg-sb-gold/20 px-1.5 py-0.5 text-xs font-bold uppercase text-sb-gold-bright">Bookable</span>
+          {% else %}<span class="rounded bg-white/5 px-1.5 py-0.5 text-xs font-bold uppercase text-gray-300">Private</span>{% endif %}
+          <span class="font-black sb-num text-sb-ink">{{ money(r.rate) }}/h</span>
+          <form method="post" action="{{ url_for('hours_rate_delete', rate_id=r.id) }}">
+            <button class="-m-1 p-2 text-sm leading-none text-gray-300 hover:text-red-400" aria-label="Delete rate">×</button>
+          </form>
+        </div>
+      {% endfor %}
+      </div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('hours_rate') }}" class="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+        <input name="service" placeholder="Service" required class="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+        <div class="flex items-center gap-1 rounded-lg border border-white/15 bg-black/40 px-2">
+          <span class="text-sm font-bold text-gray-300">$</span>
+          <input name="rate" type="number" step="0.01" min="0" placeholder="rate" required class="w-20 bg-transparent py-2 text-sm text-white placeholder-gray-300 focus:outline-none">
+        </div>
+        <input name="min_hours" type="number" step="0.25" min="0" placeholder="min h" class="w-20 rounded-lg border border-white/15 bg-black/40 px-2 py-2 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+        <label class="-my-2 flex items-center gap-2 py-2 text-xs text-gray-300 sm:col-span-2 sm:my-0 sm:gap-1.5 sm:py-0 font-medium"><input type="checkbox" name="bookable" class="h-5 w-5 accent-sb-gold sm:h-3.5 sm:w-3.5">Bookable publicly</label>
+        <button class="sb-btn sb-btn-primary">Save</button>
+      </form>
+    </div>
+
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+      <div class="flex items-end justify-between gap-2">
+        <h2 class="sb-label text-gray-300">Bookings</h2>
+        <div class="text-right text-xs text-gray-300 font-medium">
+          {{ booking_totals.confirmed_count }} confirmed · <span class="font-black sb-num text-sb-ink">{{ money(booking_totals.confirmed_value) }}</span>
+          {% if booking_totals.requested_count %}<br>{{ booking_totals.requested_count }} requested ({{ money(booking_totals.requested_value) }}) — not agreed yet{% endif %}
+        </div>
+      </div>
+
+      {% if bookable %}
+      <form method="post" action="{{ url_for('hours_booking') }}" class="mt-3 grid gap-2 sm:grid-cols-2">
+        <select name="service" required class="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-gray-200 focus:border-sb-gold focus:outline-none sm:col-span-2">
+          {% for r in bookable %}<option value="{{ r.service }}">{{ r.service }} — {{ money(r.rate) }}/h{% if r.min_hours %} ({{ "{:g}".format(r.min_hours) }}h min){% endif %}</option>{% endfor %}
+        </select>
+        <input name="who" placeholder="Who's booking" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+        <input name="contact" placeholder="Email or phone" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+        <input type="date" name="day" value="{{ today }}" required class="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white focus:border-sb-gold focus:outline-none">
+        <div class="flex gap-2">
+          <input name="start_hour" type="number" step="0.5" min="0" max="23.5" value="13" placeholder="start" class="w-full rounded-lg border border-white/15 bg-black/40 px-2 py-2 text-sm text-white focus:border-sb-gold focus:outline-none">
+          <input name="hours" type="number" step="0.25" min="0.25" value="2" placeholder="hours" class="w-full rounded-lg border border-white/15 bg-black/40 px-2 py-2 text-sm text-white focus:border-sb-gold focus:outline-none">
+        </div>
+        <button class="sb-btn sb-btn-primary sm:col-span-2">Add booking</button>
+        <p class="text-xs text-gray-300 sm:col-span-2 font-medium">The price comes from your rate card, not from this form — a booking form that lets the booker name the price isn't a rate card.</p>
+      </form>
+      {% else %}
+      <p class="mt-3 rounded-lg border border-dashed border-white/15 p-3 text-xs text-gray-300">Nothing is bookable yet. Tick <b>bookable</b> on a rate card line and it'll show up here.</p>
+      {% endif %}
+
+      {% if bookings %}
+      <div class="mt-4 space-y-1.5">
+      {% for b in bookings %}
+        <div class="flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-sb-surface-1 px-3 py-2 text-xs">
+          <span class="sb-num text-gray-300">{{ b.day }}</span>
+          <span class="order-first w-full min-w-0 sm:order-none sm:w-auto sm:flex-1 sm:truncate"><b class="text-gray-200">{{ b.service }}</b>{% if b.who %} <span class="text-gray-300">· {{ b.who }}</span>{% endif %}</span>
+          <span class="sb-num text-gray-300">{{ hrs(b.hours) }}</span>
+          <span class="font-black sb-num text-sb-ink">{{ money(b.hours * b.rate) }}</span>
+          {% if b.status == 'requested' %}
+            <form method="post" action="{{ url_for('hours_booking_status', booking_id=b.id, status='confirmed') }}"><button class="rounded border border-green-500/40 px-3 py-2 text-xs font-bold text-green-400 hover:bg-green-500/10 sm:px-2 sm:py-0.5 sm:text-xs">Confirm</button></form>
+            <form method="post" action="{{ url_for('hours_booking_status', booking_id=b.id, status='declined') }}"><button class="sb-btn sb-btn-secondary sb-btn-sm sm:px-2 sm:py-0.5 sm:text-xs">Decline</button></form>
+          {% else %}
+            <span class="rounded px-1.5 py-0.5 text-xs font-bold uppercase {{ {'confirmed':'bg-green-500/15 text-green-400','declined':'bg-white/5 text-gray-300','done':'bg-white/10 text-gray-300'}[b.status] }}">{{ b.status }}</span>
+          {% endif %}
+        </div>
+      {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- ====================== 3. COLLABORATOR HOURS ========================= -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h2 class="sb-label text-gray-300">3 · Collaborator hours</h2>
+        <p class="mt-1 text-xs text-gray-300">Hours other people worked for you. Approved hours become money you owe; a rejection keeps its reason.</p>
+      </div>
+      <div class="text-right text-xs text-gray-300 font-medium">
+        {% if sub_totals.pending_count %}<span class="font-black text-amber-400">{{ sub_totals.pending_count }}</span> pending ({{ money(sub_totals.pending_value) }})<br>{% endif %}
+        <span class="font-black sb-num text-sb-ink">{{ money(sub_totals.approved_value) }}</span> approved · {{ hrs(sub_totals.approved_hours) }}
+      </div>
+    </div>
+
+    <form method="post" action="{{ url_for('hours_submission') }}" class="mt-4 grid gap-2 sm:grid-cols-6">
+      <input name="who" placeholder="Who" required class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none sm:col-span-2">
+      <input name="role" placeholder="Role (engineer, video…)" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none sm:col-span-2">
+      <input type="date" name="day" value="{{ today }}" required class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white focus:border-sb-gold focus:outline-none sm:col-span-2">
+      <input name="hours" type="number" step="0.25" min="0" placeholder="Hours" required class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+      <div class="flex items-center gap-1 rounded-lg border border-white/15 bg-black/40 px-3">
+        <span class="text-sm font-bold text-gray-300">$</span>
+        <input name="rate" type="number" step="0.01" min="0" placeholder="rate/h" class="w-full bg-transparent py-2.5 text-sm text-white placeholder-gray-300 focus:outline-none">
+      </div>
+      <input name="note" placeholder="What they did" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none sm:col-span-3">
+      <button class="sb-btn sb-btn-primary">Add</button>
+    </form>
+
+    {% if submissions %}
+    <div class="mt-4 space-y-1.5">
+    {% for s in submissions %}
+      <div class="rounded-lg border {{ 'border-amber-500/30 bg-sb-on-gold' if s.status == 'pending' else 'border-white/10 bg-sb-surface-1' }} px-3 py-2">
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <span class="sb-num text-gray-300">{{ s.day }}</span>
+          <span class="order-first w-full min-w-0 sm:order-none sm:w-auto sm:flex-1 sm:truncate"><b class="text-gray-200">{{ s.who }}</b>{% if s.role %} <span class="text-gray-300">({{ s.role }})</span>{% endif %}{% if s.note %} <span class="text-gray-300">— {{ s.note }}</span>{% endif %}</span>
+          <span class="sb-num text-gray-300">{{ hrs(s.hours) }} @ {{ money(s.rate) }}</span>
+          <span class="font-black sb-num text-sb-ink">{{ money(s.hours * s.rate) }}</span>
+          {% if s.status == 'pending' %}
+            <form method="post" action="{{ url_for('hours_submission_decide', sub_id=s.id, decision='approve') }}"><button class="rounded border border-green-500/40 px-3 py-2 text-xs font-bold text-green-400 hover:bg-green-500/10 sm:px-2 sm:py-0.5 sm:text-xs">Approve</button></form>
+            <form method="post" action="{{ url_for('hours_submission_decide', sub_id=s.id, decision='reject') }}" class="flex gap-1">
+              <input name="reason" placeholder="reason" class="w-24 rounded border border-white/15 bg-black/40 px-1.5 py-0.5 text-xs text-white placeholder-gray-300 focus:outline-none font-medium">
+              <button class="sb-btn sb-btn-secondary sb-btn-sm sm:px-2 sm:py-0.5 sm:text-xs">Reject</button>
+            </form>
+          {% else %}
+            <span class="rounded px-1.5 py-0.5 text-xs font-bold uppercase {{ 'bg-green-500/15 text-green-400' if s.status == 'approved' else 'bg-red-500/10 text-red-400' }}">{{ s.status }}</span>
+          {% endif %}
+        </div>
+        {% if s.status == 'rejected' and s.reason %}<div class="mt-1 text-xs text-gray-300 font-medium">Rejected: {{ s.reason }}</div>{% endif %}
+      </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- =========================== 4. DAY PLAN ============================== -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h2 class="sb-label text-gray-300">4 · Day plan</h2>
+        <p class="mt-1 text-xs text-gray-300">The day hour by hour. Confirmed bookings are folded in, so the plan can't double-book a session someone already paid for.</p>
+      </div>
+      <form method="get" class="flex items-center gap-2">
+        <input type="date" name="day" value="{{ plan_day }}" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white focus:border-sb-gold focus:outline-none">
+        <button class="sb-btn sb-btn-secondary sb-btn-sm">Show</button>
+      </form>
+    </div>
+
+    <div class="mt-2 flex flex-wrap gap-3 text-xs text-gray-300 font-medium">
+      <span><b class="sb-num text-gray-200">{{ hrs(plan.planned_hours) }}</b> planned</span>
+      <span><b class="sb-num text-gray-200">{{ hrs(plan.free_hours) }}</b> free</span>
+      {% if plan.clash_items %}<span class="font-bold text-red-400">⚠ {{ plan.clash_items }} block{{ '' if plan.clash_items == 1 else 's' }} overlapping</span>{% endif %}
+    </div>
+
+    <form method="post" action="{{ url_for('hours_block') }}" class="mt-3 grid gap-2 sm:grid-cols-6">
+      <input type="hidden" name="day" value="{{ plan_day }}">
+      <input name="label" placeholder="What's happening" required class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none sm:col-span-3">
+      <input name="start_hour" type="number" step="0.5" min="0" max="23.5" value="9" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white focus:border-sb-gold focus:outline-none">
+      <input name="hours" type="number" step="0.25" min="0.25" value="2" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white focus:border-sb-gold focus:outline-none">
+      <button class="sb-btn sb-btn-primary">Block it</button>
+    </form>
+
+    <div class="mt-4 divide-y divide-white/5 rounded-xl border border-white/10">
+    {% for row in plan.rows %}
+      <div class="flex items-stretch gap-3 px-3 py-1.5">
+        <div class="w-12 shrink-0 pt-0.5 font-mono text-xs tabular-nums text-gray-300 font-medium">{{ row.label }}</div>
+        <div class="min-w-0 flex-1 space-y-1">
+        {% for it in row.blocks %}
+          {% if it.starts_here %}
+          <div class="flex flex-wrap items-center gap-2 rounded-md border px-2 py-1 text-xs
+                      {{ 'border-red-500/50 bg-red-500/10' if it.clash
+                         else ('border-sb-gold/40 bg-sb-surface-2' if it.source == 'booking'
+                               else 'border-white/10 bg-sb-surface-1') }}">
+            <span class="font-mono text-xs tabular-nums text-gray-300 font-medium">{{ it.span }}</span>
+            <span class="min-w-0 flex-1 truncate {{ 'text-gray-300 line-through' if it.done else 'text-gray-200' }}">{{ it.label }}</span>
+            {% if it.source == 'booking' %}
+              <span class="rounded bg-sb-gold/20 px-1.5 py-0.5 text-xs font-bold uppercase text-sb-gold-bright">Booked</span>
+            {% else %}
+              <form method="post" action="{{ url_for('hours_block_action', block_id=it.id, action='done') }}"><input type="hidden" name="day" value="{{ plan_day }}"><button class="-m-1 p-2 text-xs leading-none text-gray-300 hover:text-green-400 font-medium">{{ 'Undo' if it.done else 'Done' }}</button></form>
+              <form method="post" action="{{ url_for('hours_block_action', block_id=it.id, action='delete') }}"><input type="hidden" name="day" value="{{ plan_day }}"><button class="-m-1 p-2 text-sm leading-none text-gray-300 hover:text-red-400" aria-label="Delete rate">×</button></form>
+            {% endif %}
+            {% if it.clash %}<span class="text-xs font-bold uppercase text-red-400">Clash</span>{% endif %}
+          </div>
+          {% else %}
+          {# A block spanning into this hour: a bar, not a repeated label. #}
+          <div class="h-1 rounded {{ 'bg-red-500/25' if it.clash else ('bg-sb-gold/20' if it.source == 'booking' else 'bg-white/10') }}"></div>
+          {% endif %}
+        {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+    </div>
+  </section>
+
+  <p class="pb-4 text-xs leading-relaxed text-gray-300 font-medium">
+    Everything on this desk is arithmetic over rows you entered. <b>Owed to you</b> is unbilled work plus invoices that went out and haven't come back; <b>you owe</b> is approved collaborator hours only. Pending timesheets and unconfirmed bookings are deliberately left out of both — they aren't agreed money in either direction, and counting them would flatter the number. There is no forecast here, no "value of your time" estimate, and no sample data.
+  </p>
+</div>
+{% endblock %}

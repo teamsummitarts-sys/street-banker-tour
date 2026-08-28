@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ p.title }} — Sync Pack | Street Banker</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+</head>
+<body class="min-h-screen bg-sb-ground text-gray-100 antialiased">
+  <main class="mx-auto flex min-h-screen w-full max-w-xl flex-col px-6 pb-10 pt-10">
+
+    <div class="text-xs font-bold uppercase tracking-[0.4em] text-sb-gold">Private Sync Pack</div>
+    <h1 class="mt-2 text-3xl font-black leading-tight">{{ p.title }}</h1>
+    {% if p.artist_name %}<div class="mt-1 text-base font-semibold text-gray-200">{{ p.artist_name }}</div>{% endif %}
+
+    <!-- Track facts -->
+    <div class="mt-5 flex flex-wrap gap-2 text-xs font-bold">
+      {% if p.bpm %}<span class="rounded-md border border-white/15 px-2.5 py-1 text-gray-200">{{ p.bpm }} BPM</span>{% endif %}
+      {% if p.song_key %}<span class="rounded-md border border-white/15 px-2.5 py-1 text-gray-200">{{ p.song_key }}</span>{% endif %}
+      {% for m in p.moods.split(',') if m.strip() %}<span class="rounded-md border border-sb-gold/40 px-2.5 py-1 text-sb-gold-bright">{{ m.strip() }}</span>{% endfor %}
+    </div>
+
+    <!-- Clearance status -->
+    <div class="mt-5 rounded-2xl border border-white/10 bg-black/40 p-4">
+      <div class="sb-label text-gray-300">Clearance</div>
+      <div class="mt-2 flex flex-wrap gap-2">
+        {% for label, status in [('Master', p.master_status), ('Publishing', p.publishing_status)] %}
+        <span class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold {{ 'border-green-500/30 bg-green-500/10 text-green-400' if status == 'cleared' else ('border-amber-500/30 bg-amber-500/10 text-amber-400' if status == 'pending' else 'border-white/10 text-gray-300') }}">
+          <span class="h-1.5 w-1.5 rounded-full {{ 'bg-green-500' if status == 'cleared' else ('bg-amber-500' if status == 'pending' else 'bg-gray-600') }}"></span>
+          {{ label }}: {{ status }}
+        </span>
+        {% endfor %}
+        {% if p.master_status == 'cleared' and p.publishing_status == 'cleared' %}
+        <span class="rounded-lg bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-3 py-1.5 text-xs font-black uppercase text-sb-on-gold">One-Stop</span>
+        {% endif %}
+      </div>
+      {% if p.ownership_note %}<p class="mt-2 text-xs text-gray-300">{{ p.ownership_note }}</p>{% endif %}
+    </div>
+
+    <!-- Audio -->
+    <div class="mt-5 space-y-3">
+      {% for label, url in [('Main', p.main_url), ('Instrumental', p.instrumental_url), ('Clean', p.clean_url)] %}
+      {% if url %}
+      <div class="rounded-2xl border border-white/10 bg-black/40 p-4">
+        <div class="sb-label text-gray-300">{{ label }}</div>
+        <audio controls preload="none" class="mt-2 w-full">
+          <source src="{{ url }}">
+        </audio>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <!-- License request -->
+    <div class="mt-6 rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-5">
+      <div class="text-sm font-bold">Interested in licensing this track?</div>
+      <p class="mt-1 text-xs text-gray-300">Send a request — stems, WAVs, and quotes on approval.{% if p.contact_email %} Direct: <a href="mailto:{{ p.contact_email }}" class="font-semibold text-sb-gold-bright hover:underline">{{ p.contact_email }}</a>{% endif %}</p>
+      <form id="request-form" class="mt-3 space-y-2">
+        <input name="email" type="email" required placeholder="your@company.com" class="w-full rounded-lg border border-white/15 bg-black/50 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-white/40 focus:outline-none">
+        <textarea name="message" rows="2" placeholder="Project, usage, territory, timeline..." class="w-full resize-none rounded-lg border border-white/15 bg-black/50 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-white/40 focus:outline-none"></textarea>
+        <button class="w-full rounded-lg bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-4 py-2.5 text-sm font-black uppercase tracking-wide text-sb-on-gold">Request License</button>
+      </form>
+      <div id="request-done" class="mt-2 hidden rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2.5 text-center text-sm font-semibold text-green-400"></div>
+    </div>
+
+    <footer class="mt-auto pt-10 text-center">
+      <span class="sb-label text-gray-300">Cleared &amp; served by <span class="text-sb-gold-bright">Street Banker</span></span>
+    </footer>
+  </main>
+
+  <script>
+    document.getElementById("request-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.currentTarget;
+      const res = await fetch(window.location.pathname + "/request", { method: "POST", body: new FormData(form) });
+      const data = await res.json();
+      const done = document.getElementById("request-done");
+      if (data.ok) { form.classList.add("hidden"); done.textContent = data.message; done.classList.remove("hidden"); }
+      else { done.textContent = data.error || "Something went wrong."; done.className = "mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-center text-sm font-semibold text-red-400"; }
+    });
+  </script>
+</body>
+</html>

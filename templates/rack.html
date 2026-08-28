@@ -1,0 +1,2617 @@
+{% extends "base.html" %}
+
+{% block title %}The Rack - Street Banker{% endblock %}
+
+{% block content %}
+<style>
+
+  /* ================================================================
+     THE RACK — one amp, one charcoal faceplate, tubes on top.
+     Plain CSS (the Tailwind build is frozen). Tokens: var(--sb-*) for
+     every interface colour; --rk-* below are MATERIAL only (brass,
+     bolts, glass, anode, knob cap, heat). They are declared on .amp and
+     re-declared on the four roots that sit outside it (the fixed dock,
+     the library modal, the page head, the flow strip) so .sw and friends
+     resolve everywhere.
+     Type: engraved panel labels 11–12px IBM Plex Mono caps; anything a
+     person reads (prose, status, dialogs) is 12px or larger Archivo.
+     ================================================================ */
+
+  /* ---- 1. private props + token rule ------------------------------ */
+  .amp, #rk-dock, .rk-lib-back, .rk-page-head, .flow {
+    /* heat — the filament/stage-gel pair; no --sb-* twin on purpose */
+    --rk-heat-core: #FFB45E;
+    --rk-heat-deep: #FF7A2E;
+    /* frame geometry */
+    --rk-ear: 34px;
+    --rk-bolt: 13px;
+    --rk-seam: #060504;            /* the 1px dark seam between every plate */
+    /* brushed charcoal faceplate (.face material) */
+    --rk-face-hi: #1C1814; --rk-face-mid: #120F0C; --rk-face-lo: #0C0A08;
+    /* rack ears */
+    --rk-ear-hi: #191512; --rk-ear-lo: #0E0C09;
+    /* nameplate strip + brass */
+    --rk-plate-hi: #241F19; --rk-plate-mid: #15110D; --rk-plate-lo: #0D0B08;
+    --rk-brass-hi: #E8CE8B; --rk-brass-lo: #93712F;
+    --rk-brass-ink: #3A2B0E; --rk-brass-ink-2: #57431A;
+    --rk-screw-hi: #F5E3AE; --rk-screw-mid: #A9812F; --rk-screw-lo: #6B5320;
+    /* bolts */
+    --rk-bolt-hi: #8F826B; --rk-bolt-mid: #4A4133; --rk-bolt-lo: #1E1A12;
+    --rk-bolt-slot: rgba(15,12,8,.85);
+    /* knob cap (the artifact .kcap) */
+    --rk-kcap-hi: #F3E1AC; --rk-kcap-mid: #7E6226; --rk-kcap-lo: #4E3B14;
+    --rk-kcap-ring: #14110C; --rk-kcap-ptr: #241A06;
+    /* tube glass internals */
+    --rk-anode-a: #3B3B40; --rk-anode-b: #34343A; --rk-anode-hi: #4A4A52; --rk-anode-lo: #26262C;
+    --rk-tbase-hi: #211D18; --rk-tbase-lo: #0D0B08;
+    --rk-socket-hi: #2E2820; --rk-socket-lo: #14100B;
+    --rk-hmeter: #241F18;
+    /* deck chassis */
+    --rk-deck-vent: #0A0806; --rk-deck-a: #141110; --rk-deck-b: #1D1915;
+    --rk-deck-c: #14100C; --rk-deck-d: #0C0A07;
+    /* latching switch body (the artifact .tg) */
+    --rk-sw-hi: #1E1A15; --rk-sw-lo: #12100C;
+    /* inset wells: screens, LCDs, ladders, lanes */
+    --rk-well: #0A0806; --rk-well-2: #0E0C09; --rk-well-3: #100D0A;
+    --rk-screen: #050403; --rk-scope: #070605;        /* screen bezel + the scope's own ground */
+    /* switch hover, LED jewels, fader thumb/track, VU arc, chroma dim bar */
+    --rk-sw-hover-hi: #262119; --rk-sw-hover-lo: #17140F;
+    --rk-led-gold-hi: #FFE9A8; --rk-led-grn-hi: #D9FFC9; --rk-led-grn-lo: #2E5C1D;
+    --rk-thumb-a: #3C3833; --rk-thumb-b: #322E29; --rk-track-hi: #060505;
+    --rk-vu-arc: #5A4E3A; --rk-chroma-dim: #5A5040;
+  }
+  /* Rule: if a colour has a --sb-* twin it MUST be var(--sb-*). Only the
+     props above may be literal. The JS paints its own instrument colours
+     (#e8c667 lit / #e07a3c cut / #9a8f78 zero on knob values and arcs,
+     the cab/hook/chroma/loudness SVG fills) — those are exempt and left
+     alone except where a selector below re-maps them onto tokens. */
+
+  /* ---- 2. the amp: rails, ears, bolts ----------------------------- */
+  .amp {
+    position: relative; isolation: isolate;          /* z-indices stay inside the amp */
+    max-width: 980px; margin: 20px auto 84px;         /* 84px clears the fixed power strip */
+    border-radius: 12px;
+    /* clip, not hidden: an overflow:hidden ancestor becomes the scroll container
+       for position:sticky, and the drop-audio card below must stick to the
+       viewport. overflow:clip clips the same and leaves sticky alone; the
+       hidden line before it is the fallback for engines without clip. */
+    overflow: hidden; overflow: clip;
+    border: 1px solid var(--rk-seam);
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,.85), 0 2px 0 rgba(255,255,255,.04) inset;
+    color: var(--sb-ink); font-family: var(--sb-display);
+  }
+  .amp-row { display: grid; grid-template-columns: var(--rk-ear) minmax(0, 1fr) var(--rk-ear); }
+  .amp-row > :nth-child(2) { min-width: 0; }
+  /* The ears are two grid cells that stretch the full amp height, so the
+     rails are continuous however tall the unit stack grows. */
+  .ear {
+    position: relative; z-index: 0;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0 2px, transparent 2px 4px),
+      linear-gradient(90deg, var(--rk-ear-hi), var(--rk-ear-lo));
+  }
+  .ear.r {
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0 2px, transparent 2px 4px),
+      linear-gradient(270deg, var(--rk-ear-hi), var(--rk-ear-lo));
+  }
+  .bolt {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    width: var(--rk-bolt); height: var(--rk-bolt); border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, var(--rk-bolt-hi), var(--rk-bolt-mid) 55%, var(--rk-bolt-lo));
+    box-shadow: 0 1px 2px rgba(0,0,0,.8), 0 0 0 2px rgba(0,0,0,.35);
+  }
+  .bolt::after {
+    content: ""; position: absolute; left: 2px; right: 2px; top: 50%; height: 1.6px;
+    background: var(--rk-bolt-slot); transform: translateY(-50%) rotate(24deg); border-radius: 1px;
+  }
+  .bolt.b1 { top: 14px; }
+  .bolt.b2 { bottom: 14px; }
+  /* BOLTS REPEAT PER UNIT — mechanism: the ears only carry the two rail-end
+     bolts (.b1 beside the nameplate, .b2 beside the rig row). Every flush
+     unit (section.ru) and the deck paints its OWN bolt pair with
+     ::before (left ear) / ::after (right ear): absolutely positioned at
+     top:15px, pulled sideways by half an ear plus half a bolt so they sit
+     centred on the rail. Because the pair belongs to the unit it moves
+     with the unit, whatever its height, and needs no row bookkeeping. The
+     unit is z-index:1 and the ears z-index:0 so the right-hand pair paints
+     over .ear.r (which comes later in the DOM). The slot is a 24deg stripe
+     layered over the same radial as .bolt. #sb-rig skips its pair because
+     the rail's .b2 already sits beside it. */
+  .ru::before, .ru::after, .deck::before, .deck::after {
+    content: ""; position: absolute; top: 15px; z-index: 2; pointer-events: none;
+    width: var(--rk-bolt); height: var(--rk-bolt); border-radius: 50%;
+    background:
+      linear-gradient(24deg, transparent 0 calc(50% - .8px), var(--rk-bolt-slot) calc(50% - .8px) calc(50% + .8px), transparent calc(50% + .8px)),
+      radial-gradient(circle at 34% 30%, var(--rk-bolt-hi), var(--rk-bolt-mid) 55%, var(--rk-bolt-lo));
+    box-shadow: 0 1px 2px rgba(0,0,0,.8), 0 0 0 2px rgba(0,0,0,.35);
+  }
+  .ru::before, .deck::before { left: calc((var(--rk-ear) + var(--rk-bolt)) / -2); }
+  .ru::after,  .deck::after  { right: calc((var(--rk-ear) + var(--rk-bolt)) / -2); }
+  #sb-rig::before, #sb-rig::after { display: none; }
+
+  /* ---- 3. nameplate strip + brass --------------------------------- */
+  .plate-strip {
+    position: relative; display: flex; justify-content: center;
+    padding: 18px 26px; border-bottom: 1px solid var(--rk-seam);
+    background: linear-gradient(180deg, var(--rk-plate-hi), var(--rk-plate-mid) 60%, var(--rk-plate-lo));
+  }
+  .brass {
+    position: relative; padding: 14px 44px; border-radius: 8px; text-align: center;
+    background:
+      linear-gradient(115deg, rgba(255,255,255,.32) 0%, rgba(255,255,255,0) 22%, rgba(0,0,0,.18) 46%, rgba(255,255,255,.14) 68%, rgba(0,0,0,.22) 100%),
+      linear-gradient(180deg, var(--rk-brass-hi), var(--sb-gold) 45%, var(--rk-brass-lo) 100%);
+    box-shadow: 0 2px 6px rgba(0,0,0,.7), inset 0 0 0 1px rgba(90,66,20,.65), inset 0 0 0 3px rgba(255,238,190,.28);
+  }
+  .brass .ln1 {
+    display: block; font-family: var(--sb-display); font-weight: 800; font-stretch: 112%;
+    font-size: clamp(17px, 2.6vw, 25px); line-height: 1.1; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--rk-brass-ink); text-shadow: 0 1px 0 rgba(255,240,200,.5);
+  }
+  .brass .ln2 {
+    display: block; margin-top: 3px; font-family: var(--sb-mono); font-size: 11px; letter-spacing: .34em;
+    text-transform: uppercase; color: var(--rk-brass-ink-2);
+  }
+  .brass .screw {
+    position: absolute; top: 50%; width: 9px; height: 9px; border-radius: 50%; transform: translateY(-50%);
+    background: radial-gradient(circle at 35% 30%, var(--rk-screw-hi), var(--rk-screw-mid) 60%, var(--rk-screw-lo));
+    box-shadow: inset 0 -1px 1px rgba(0,0,0,.5);
+  }
+  .brass .screw::after {
+    content: ""; position: absolute; left: 1.5px; right: 1.5px; top: 50%; height: 1.2px;
+    background: rgba(58,43,14,.8); transform: translateY(-50%) rotate(-30deg);
+  }
+  .brass .screw.sl { left: 12px; }
+  .brass .screw.sr { right: 12px; }
+
+  /* ---- 4. the top deck: six tubes --------------------------------- */
+  .deck {
+    position: relative; z-index: 1;
+    padding: 40px 30px 0; border-bottom: 1px solid var(--rk-seam);
+    background:
+      /* rear vent slots */
+      repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,.42) 3px 5px) 0 0/100% 34px no-repeat,
+      linear-gradient(180deg, var(--rk-deck-vent) 0, var(--rk-deck-vent) 34px, transparent 34px),
+      /* brushed chassis */
+      repeating-linear-gradient(90deg, rgba(255,255,255,.022) 0 1px, transparent 1px 3px),
+      linear-gradient(180deg, var(--rk-deck-a) 34px, var(--rk-deck-b) 52%, var(--rk-deck-c) 86%, var(--rk-deck-d));
+  }
+  .tubes {
+    display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; align-items: end;
+    max-width: 820px; margin: 0 auto;
+  }
+  /* .vlv IS the artifact .tube. --heat (0..1) arrives from the rack script's
+     paintValves() via style.setProperty on #rk-vlv-KEY; the markup seeds
+     --heat at 0 so the glass is cold before the first frame. (Never write the
+     script's file name or the seed attribute in a comment here: the page
+     counts both.) */
+  .vlv {
+    --heat: 0;
+    position: relative; display: flex; flex-direction: column; align-items: center; padding-bottom: 0;
+  }
+  /* pooled light on the chassis under the glass */
+  .vlv::before {
+    content: ""; position: absolute; top: 104px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 34px; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(255,150,70,calc(var(--heat)*.34)), transparent 72%);
+    filter: blur(6px);
+  }
+  /* the power button wraps the whole glass stack + legend: neutralise every
+     scrap of .sw chrome here so only the tube shows */
+  .vlv .vlv-pwr, .vlv .vlv-pwr:hover {
+    display: flex; flex-direction: column; align-items: center;
+    width: auto; min-height: 0; min-width: 0; margin: 0; padding: 0; gap: 0;
+    background: none; border: 0; border-radius: 12px; box-shadow: none; filter: none; transform: none;
+    color: inherit; font: inherit; letter-spacing: normal; text-transform: none; cursor: pointer;
+  }
+  .vlv .vlv-pwr:focus-visible { box-shadow: var(--sb-focus); border-radius: 12px; }
+  .glass {
+    position: relative; width: 62px; height: 118px; border-radius: 31px 31px 9px 9px; overflow: hidden;
+    background:
+      linear-gradient(105deg, rgba(255,255,255,.13) 4%, rgba(255,255,255,.02) 30%, rgba(255,255,255,0) 52%, rgba(255,255,255,.07) 78%, rgba(255,255,255,.015) 96%),
+      linear-gradient(180deg, rgba(120,130,140,.05), rgba(20,16,12,.25) 70%);
+    border: 1px solid rgba(255,255,255,.13);
+    box-shadow:
+      inset 0 0 14px rgba(0,0,0,.55),
+      inset -6px 0 12px -8px rgba(255,255,255,.18),
+      0 0 26px rgba(255,140,60, calc(var(--heat)*.42)),
+      0 0 60px rgba(255,120,40, calc(var(--heat)*.20));
+    animation: breathe 4.2s ease-in-out infinite;
+  }
+  .vlv:nth-child(2) .glass { animation-delay: -1.3s; }
+  .vlv:nth-child(3) .glass { animation-delay: -2.6s; }
+  .vlv:nth-child(4) .glass { animation-delay: -.7s; }
+  .vlv:nth-child(5) .glass { animation-delay: -3.4s; }
+  .vlv:nth-child(6) .glass { animation-delay: -2s; }
+  @keyframes breathe { 50% { filter: brightness(calc(1 + var(--heat)*.09)); } }
+  /* getter flash — the mirrored dome */
+  .getter {
+    position: absolute; top: 3px; left: 8px; right: 8px; height: 24px; border-radius: 23px 23px 40% 40%; opacity: .9;
+    background: radial-gradient(ellipse at 50% 20%, rgba(175,188,200,.5), rgba(90,100,115,.35) 45%, rgba(25,28,36,.65) 78%, transparent);
+  }
+  /* filament glow behind the plate */
+  .fil {
+    position: absolute; left: 50%; top: 56%; transform: translate(-50%,-50%);
+    width: 40px; height: 74px; border-radius: 50%;
+    background: radial-gradient(closest-side, var(--rk-heat-core), var(--rk-heat-deep) 45%, transparent 78%);
+    opacity: calc(var(--heat)); filter: blur(3px);
+  }
+  /* anode plate with slits */
+  .anode {
+    position: absolute; left: 50%; top: 32px; transform: translateX(-50%);
+    width: 30px; height: 64px; border-radius: 5px 5px 3px 3px;
+    background:
+      linear-gradient(90deg, var(--rk-anode-a) 0 8px, transparent 8px 11px, var(--rk-anode-b) 11px 19px, transparent 19px 22px, var(--rk-anode-a) 22px 30px),
+      linear-gradient(180deg, var(--rk-anode-hi), var(--rk-anode-lo));
+    box-shadow: inset 0 2px 3px rgba(255,255,255,.14), inset 0 -3px 4px rgba(0,0,0,.5);
+  }
+  .mica {
+    position: absolute; left: 50%; top: 26px; transform: translateX(-50%);
+    width: 44px; height: 4px; border-radius: 2px;
+    background: linear-gradient(180deg, rgba(216,205,180,.55), rgba(140,130,110,.35));
+    box-shadow: 0 1px 2px rgba(0,0,0,.5);
+  }
+  .mica.low { top: auto; bottom: 16px; width: 40px; opacity: .7; }
+  /* the slits show the filament through */
+  .slits {
+    position: absolute; left: 50%; top: 34px; transform: translateX(-50%);
+    width: 30px; height: 60px; border-radius: 5px; filter: blur(1.1px);
+    background: linear-gradient(90deg, transparent 0 8.5px, rgba(255,190,110,calc(var(--heat)*.95)) 8.5px 11.5px, transparent 11.5px 19px, rgba(255,180,95,calc(var(--heat)*.85)) 19px 22px, transparent 22px 30px);
+  }
+  .hotspot {
+    position: absolute; left: 50%; top: 42px; transform: translateX(-50%);
+    width: 17px; height: 17px; border-radius: 50%; filter: blur(2px);
+    background: radial-gradient(circle, rgba(255,230,170,calc(var(--heat)*.9)), rgba(255,150,60,calc(var(--heat)*.5)) 55%, transparent 75%);
+  }
+  .warmbase {
+    position: absolute; left: 6px; right: 6px; bottom: 2px; height: 36px; border-radius: 0 0 8px 8px; filter: blur(2px);
+    background: radial-gradient(ellipse at 50% 100%, rgba(255,140,60,calc(var(--heat)*.5)), transparent 72%);
+  }
+  /* base + socket */
+  .tbase {
+    width: 46px; height: 13px; border-radius: 3px 3px 5px 5px; margin-top: -1px;
+    background: linear-gradient(180deg, var(--rk-tbase-hi), var(--rk-tbase-lo)); border: 1px solid var(--rk-seam);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .socket {
+    width: 58px; height: 8px; border-radius: 50%; margin-top: -3px;
+    background: radial-gradient(ellipse at 50% 40%, var(--rk-socket-hi), var(--rk-socket-lo) 70%);
+    box-shadow: 0 1px 0 rgba(255,255,255,.04), inset 0 1px 2px rgba(0,0,0,.7);
+  }
+  /* engraved legend on the deck lip (.vnum / .vname / .vrole — the photo-era
+     .vlv-num/.vlv-name/.vlv-blurb names are gone with the old markup) */
+  .tlabel { margin-top: 10px; text-align: center; }
+  .tlabel .vnum {
+    display: block; font-family: var(--sb-mono); font-size: 11px; font-weight: 500; letter-spacing: .18em; color: var(--sb-gold);
+  }
+  .tlabel .vname {
+    display: block; margin-top: 2px; font-family: var(--sb-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--sb-ink-2); white-space: nowrap;
+  }
+  .tubes .vlv { min-width: 0; }
+  .tubes .vlv-pwr { white-space: normal; }        /* .sw is nowrap; a legend must wrap */
+  .tlabel { max-width: 100%; }
+  .tlabel .vrole {
+    display: block; margin-top: 3px; max-width: 104px; font-family: var(--sb-display); font-size: 11px;
+    line-height: 1.3; color: var(--sb-ink-3);
+  }
+  .vlv-pwr[aria-pressed="true"] .vnum  { color: var(--sb-gold-bright); }
+  .vlv-pwr[aria-pressed="true"] .vname { color: var(--sb-ink); }
+  /* heat meter tick under the legend — it IS the affordance */
+  .hmeter { width: 44px; height: 3px; border-radius: 2px; background: var(--rk-hmeter); margin: 7px auto 6px; overflow: hidden; }
+  .hmeter i {
+    display: block; height: 100%; width: calc(var(--heat)*100%); border-radius: 2px;
+    background: linear-gradient(90deg, var(--sb-gold-deep), var(--rk-heat-core));
+  }
+  /* the amount fader — the live control that is not in the artifact but
+     must survive (the rack script binds .fader inside every #rk-vlv-KEY) */
+  .vlv-amt { display: block; width: 54px; margin: 0 auto 18px; }
+  .vlv-amt .fader { display: block; width: 100%; height: 16px; }
+  /* an off valve reads as cold glass */
+  .vlv.off .glass  { filter: saturate(.3) brightness(.7); animation: none; }
+  .vlv.off .tlabel { opacity: .55; }
+  .vlv.off .hmeter, .vlv.off .vlv-amt { opacity: .4; }
+  /* the deck's own legend row + explain card (reuse the unit anatomy) */
+  .deck > .ru-head { padding: 8px 0 12px; margin-top: -2px; box-shadow: none; }
+  .deck > .ru-explain { margin: 0 0 16px; }
+
+  /* ---- 5. the chassis: the flush unit stack ----------------------- */
+  /* #rk-empty lives inside .chassis (the test pins that order) but its inset:0
+     box is measured from .amp-body, so the wash covers nameplate, deck and
+     units alike and the card is in view the moment the page opens. */
+  .amp-body { position: relative; }
+  .chassis { position: static; display: block; }
+  .chassis > .ru:first-child { border-top: 0; }       /* the deck already drew that seam */
+
+  /* ---- 6. unit anatomy: one charcoal faceplate ------------------- */
+  .ru {
+    position: relative; z-index: 1; color: var(--sb-ink);
+    border-top: 1px solid var(--rk-seam);
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.014) 0 1px, transparent 1px 4px),
+      linear-gradient(180deg, var(--rk-face-hi), var(--rk-face-mid) 80%, var(--rk-face-lo));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+  }
+  .ru-head {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+    min-height: 44px; padding: 10px 18px 8px;
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,.28);
+  }
+  .ru-tag {
+    display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 3px;
+    border: 1px solid var(--sb-gold-deep); background: rgba(0,0,0,.3); color: var(--sb-gold);
+    font-family: var(--sb-mono); font-size: 11px; font-weight: 600; letter-spacing: .14em; white-space: nowrap;
+  }
+  .ru-title {
+    margin: 0; font-family: var(--sb-display); font-weight: 700; font-size: 13px; line-height: 1.2;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--sb-ink);
+  }
+  .ru-sub {
+    font-family: var(--sb-mono); font-size: 11px; font-weight: 500; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--sb-ink-2);
+  }
+  .ru-ctl { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  .ru-ctl .sw { min-height: 26px; padding: 0 9px; }
+  .ru-ctl .rk-pwr { min-width: 46px; }
+  .ru-ctl .rk-lvl { margin: 0; width: 40px; height: 5px; }
+  .ru-body { padding: 12px 18px 18px; }
+  .ru-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 22px; }
+  .ru-row + .ru-row { margin-top: 12px; }
+  .ru-col { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: 0; }
+  /* SB-09 (two half-units on one plate) is laid out by §3C §6 (#sb09 grid + seam); nothing here. */
+  /* SB-01's pool of light sits behind its knob row; overflow:hidden keeps the
+     JS-driven box-shadow of #tube-glow inside the flush unit */
+  #sb01 > .ru-body { position: relative; isolation: isolate; overflow: hidden; }
+  #sb01 .ru-row { position: relative; z-index: 1; }
+  #tube-glow { position: absolute; inset: 0; pointer-events: none; border-radius: 0; }
+  /* the engraved group legend — test-pinned as <span class="lg">X</span> (exact attribute).
+     Inline by default (inside .ru-ctl, .ru-row, an LCD caption); a block above a control
+     group when it is the first child of a .ru-col. The second .lg in a .ru-row is pushed
+     to the right rail (SB-10 "Four-lane bay … Mute · Solo · Level"). */
+  .lg {
+    display: inline-block; font-family: var(--sb-mono); font-size: 11px; font-weight: 500; line-height: 1.2;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--sb-ink-3); white-space: nowrap;
+  }
+  .ru-col > .lg { display: block; }
+  .ru-row > .lg + .lg { margin-left: auto; }
+  .rk-lcd-cap .lg { display: inline; color: inherit; letter-spacing: inherit; }
+  /* native selects (#rk-cnv-lufs, #rk-studiomode, the library). Every checkbox in the
+     rack is visually hidden inside a label switch (§8) — no native checkbox is drawn. */
+  .amp select, .rk-lib select {
+    appearance: auto; border-radius: 6px; border: 1px solid var(--sb-line-strong);
+    background: var(--rk-well-2); color: var(--sb-ink); padding: 5px 8px;
+    font-family: var(--sb-mono); font-size: 12px; font-weight: 500;
+  }
+  select, input[type=email] { color-scheme: dark; }
+
+  /* ---- 7. the EXPLAIN card --------------------------------------- */
+  .ru-explain {
+    display: flex; flex-wrap: wrap; align-items: stretch; gap: 12px 16px;
+    margin: 0 18px 16px; padding: 12px 14px 12px 8px; border-radius: 6px;
+    border: 1px dashed rgba(201,162,74,.55); background: rgba(0,0,0,.32);
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.4);
+  }
+  .ru-explain[hidden] { display: none; }
+  .ru-ex-tag {
+    flex: none; align-self: center; writing-mode: vertical-rl; transform: rotate(180deg);
+    padding: 4px 0 4px 6px; font-family: var(--sb-mono); font-size: 11px; font-weight: 600;
+    letter-spacing: .3em; text-transform: uppercase; color: var(--sb-gold);
+    border-left: 1px dashed rgba(201,162,74,.4);
+  }
+  .ru-ex-art { flex: 0 0 150px; display: flex; align-items: center; color: var(--sb-gold); }
+  .ru-ex-art svg {
+    display: block; width: 100%; height: auto; fill: none; stroke: currentColor;
+    stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .ru-ex-prose {
+    flex: 1 1 260px; min-width: 0; font-family: var(--sb-display); font-size: 12.5px; line-height: 1.55;
+    color: var(--sb-ink); letter-spacing: 0; text-transform: none;
+  }
+  .ru-ex-prose p { margin: 0; }
+  .ru-ex-prose p + p { margin-top: 8px; }
+  .ru-ex-prose b, .ru-ex-prose strong { color: var(--sb-gold-bright); font-weight: 600; }
+  .ru-ex-prose kbd {
+    font-family: var(--sb-mono); font-size: 11px; padding: 0 4px; border-radius: 3px;
+    border: 1px solid var(--sb-line-strong); color: var(--sb-gold-bright);
+  }
+  .ru-ex-prose .note, .ru-ex-prose .ldn-v { font-size: 12.5px; color: var(--sb-ink); }
+
+  /* ---- 8. switches: .sw (latching), lit gold, LEDs, level --------- */
+  .sw {
+    position: relative;                                  /* contains its visually hidden input, if any */
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 28px; padding: 0 10px; border-radius: 5px; line-height: 1; vertical-align: middle;
+    border: 1px solid var(--sb-line-strong); color: var(--sb-ink-2); white-space: nowrap; cursor: pointer;
+    background: linear-gradient(180deg, var(--rk-sw-hi), var(--rk-sw-lo));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.5);
+    font-family: var(--sb-mono); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  .sw:hover { background: linear-gradient(180deg, var(--rk-sw-hover-hi), var(--rk-sw-hover-lo)); color: var(--sb-ink); }
+  .sw:active { transform: translateY(1px); }
+  /* one look for "latched" (.sw-lit, JS-toggled) and "primary" (.sw-gold) */
+  .sw-lit, .sw-gold, .sw-lit:hover, .sw-gold:hover {
+    color: var(--sb-on-gold); border-color: var(--sb-gold-deep); font-weight: 600;
+    background: linear-gradient(180deg, var(--sb-gold-bright), var(--sb-gold));
+  }
+  .sw-lit { box-shadow: inset 0 1px 0 rgba(255,246,214,.45), 0 0 10px rgba(232,185,80,.28); }
+  .sw-gold:hover, .sw-lit:hover { filter: brightness(1.06); }
+  .sw[disabled], .sw:disabled, .sw[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+  .sw[disabled]:hover, .sw:disabled:hover { background: linear-gradient(180deg, var(--rk-sw-hi), var(--rk-sw-lo)); color: var(--sb-ink-2); transform: none; filter: none; }
+  .sw-gold[disabled]:hover, .sw-gold:disabled:hover, .sw-lit[disabled]:hover, .sw-lit:disabled:hover { background: linear-gradient(180deg, var(--sb-gold-bright), var(--sb-gold)); color: var(--sb-on-gold); }
+  .sw .hidden { display: none; }
+  /* A label.sw wrapping a visually hidden input IS the switch: #rk-loop (Loop) and
+     #rk-cnv-dither (TPDF dither) are checkboxes that light the label when checked;
+     #rk-file / #rk-stems-file / #rk-rig-import / #rk-ref-file are file pickers whose
+     label rings when the hidden input has keyboard focus. The input is input.sr-only
+     (Tailwind) — the rule below also hides a checkbox that forgot the class. The JS
+     reads .checked / .files by id and never looks at the label. (#rk-cab-on uses the
+     sibling form `input + span.sw` — §3C §6.) */
+  .sw > input[type=checkbox] { position: absolute; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
+  .sw:has(> input[type=checkbox]:checked) {
+    color: var(--sb-on-gold); border-color: var(--sb-gold-deep); font-weight: 600;
+    background: linear-gradient(180deg, var(--sb-gold-bright), var(--sb-gold));
+    box-shadow: inset 0 1px 0 rgba(255,246,214,.45), 0 0 10px rgba(232,185,80,.28);
+  }
+  .sw:has(> input[type=checkbox]:checked):hover { filter: brightness(1.06); }
+  .sw:has(> input:focus-visible) { box-shadow: var(--sb-focus); }
+  .sw:has(> input:disabled) { opacity: .45; cursor: not-allowed; }
+  /* ON/OFF and A/B are plain .sw; JS writes ON/OFF text + .sw-lit */
+  .rk-pwr, .rk-cmp { min-width: 40px; }
+  .rk-cmp.sw-lit { box-shadow: inset 0 1px 0 rgba(255,246,214,.45), 0 0 12px rgba(232,185,80,.4); }
+  /* A/B jewel LEDs: a dot + its letter; JS toggles .on */
+  .rk-ledwrap { display: inline-flex; align-items: center; gap: 8px; }
+  .rk-ledwrap b {
+    position: relative; padding-left: 10px; line-height: 1;
+    font-family: var(--sb-mono); font-size: 11px; font-weight: 700; color: var(--sb-ink-3);
+  }
+  .rk-ledwrap b::before {
+    content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 6px; height: 6px; border-radius: 50%; background: var(--sb-line); box-shadow: inset 0 0 1px #000;
+  }
+  .rk-ledwrap b.on.rk-la { color: var(--sb-gold-bright); }
+  .rk-ledwrap b.on.rk-la::before {
+    background: radial-gradient(circle at 40% 35%, var(--rk-led-gold-hi), var(--sb-gold-bright) 60%, var(--sb-gold-deep));
+    box-shadow: 0 0 6px rgba(232,185,80,.85);
+  }
+  .rk-ledwrap b.on.rk-lb { color: var(--sb-good); }
+  .rk-ledwrap b.on.rk-lb::before {
+    background: radial-gradient(circle at 40% 35%, var(--rk-led-grn-hi), var(--sb-good) 60%, var(--rk-led-grn-lo));
+    box-shadow: 0 0 6px rgba(121,180,115,.8);
+  }
+  /* per-module level: <span class="rk-lvl" data-mod><i></i></span>; JS drives i.style.right + .is-hot */
+  .rk-lvl {
+    position: relative; display: block; width: 34px; height: 4px; margin: 1px auto 0;
+    border-radius: 2px; overflow: hidden; background: var(--rk-well);
+    box-shadow: inset 0 0 0 1px rgba(201,162,74,.22);
+  }
+  .rk-lvl i {
+    position: absolute; inset: 0 100% 0 0; display: block;
+    background: linear-gradient(90deg, var(--sb-good), var(--sb-gold) 72%, var(--sb-crit));
+    transition: right .06s linear;
+  }
+  .rk-lvl.is-hot i { background: var(--sb-crit); }
+  /* jewel lamps (#scope-lamp, #rk-roughsplit-lamp, #rk-tk-lamp, #rk-ldn-lamp, stem/hook lanes) */
+  .lamp { display: inline-block; flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--sb-line); box-shadow: inset 0 0 2px #000; }
+  .lamp.on { background: radial-gradient(circle at 40% 35%, var(--rk-led-gold-hi), var(--sb-gold-bright) 60%, var(--sb-gold-deep)); box-shadow: 0 0 8px rgba(232,185,80,.8); }
+  .lamp.grn { background: radial-gradient(circle at 40% 35%, var(--rk-led-grn-hi), var(--sb-good) 60%, var(--rk-led-grn-lo)); box-shadow: 0 0 8px rgba(121,180,115,.7); }
+
+  /* ---- 9. the knob (JS-built; restyled to read like the gold cap) -- */
+  /* mount → column (div.flex.flex-col.items-center) → [.k-value, .rk-knob > svg, .k-label]
+     Visual order cap → label → value comes from CSS order, not JS. */
+  [data-kn], #kn-q { display: flex; justify-content: center; }
+  #rk-eq { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 4px 6px; }
+  [data-kn] > div, #rk-eq > div, #kn-q > div { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  /* the order lives on the knob COLUMN only — .k-label/.k-value are also plain captions
+     elsewhere (SB-13 "Cents", the tempo/cents readouts) and must not be reordered there */
+  [data-kn] > div > .rk-knob, #rk-eq > div > .rk-knob, #kn-q > div > .rk-knob { order: 1; }
+  [data-kn] > div > .k-label, #rk-eq > div > .k-label, #kn-q > div > .k-label { order: 2; }
+  [data-kn] > div > .k-value, #rk-eq > div > .k-value, #kn-q > div > .k-value { order: 3; }
+  .rk-knob { display: block; }
+  .rk-knob svg { display: block; }
+  /* EQ-12: one small latching switch under each band. Tap = bypass (LED dark,
+     column dims), hold = listen (LED green, gold halo). It is a JS-built button. */
+  #rk-eq > div > .eq-band-sw { order: 4; }
+  .eq-band-sw {
+    position: relative; width: 22px; height: 12px; margin-top: 2px; padding: 0; border-radius: 6px;
+    border: 1px solid var(--sb-line-strong); background: linear-gradient(180deg, #1E1A15, #12100C); cursor: pointer;
+  }
+  .eq-band-sw::after {
+    content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; border-radius: 50%;
+    transform: translate(-50%, -50%); background: var(--sb-gold); box-shadow: 0 0 5px rgba(232,185,80,.8);
+  }
+  .eq-band-sw[aria-pressed="true"]::after { background: var(--sb-line-strong); box-shadow: none; }
+  .eq-band-sw.is-listen { border-color: var(--sb-gold-bright); box-shadow: 0 0 0 1px var(--sb-gold-line), 0 0 10px rgba(232,185,80,.5); }
+  .eq-band-sw.is-listen::after { background: var(--sb-good); box-shadow: 0 0 6px rgba(121,180,115,.9); }
+  #rk-eq > div.is-bypassed > .rk-knob, #rk-eq > div.is-bypassed > .k-value { opacity: .38; }
+  /* DYN-1 key: Internal + one switch per loaded stem, built by the script */
+  .rk-key-lg { margin-right: -4px; }
+  .rk-key-note { flex: 1 0 100%; order: 9; font-family: var(--sb-mono); font-size: 11px; color: var(--sb-ink-3); }
+  .rk-key-note:empty { display: none; }
+  /* the patch bay: jacks between IN and OUT; drag, arrows, or tap-tap */
+  .rk-bay { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .rk-jack-end {
+    font-family: var(--sb-mono); font-size: 11px; font-weight: 600; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--sb-ink-3);
+  }
+  .rk-patch-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; list-style: none; margin: 0; padding: 0; }
+  .rk-patch-row li { display: flex; align-items: center; }
+  .rk-patch-row li + li::before {
+    content: ""; width: 10px; height: 2px; margin-right: 6px; border-radius: 1px;
+    background: var(--sb-gold-line);   /* the cable between jacks */
+  }
+  .rk-jack { cursor: grab; position: relative; padding-left: 22px; }
+  .rk-jack::before {
+    content: ""; position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+    width: 8px; height: 8px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #3A342A, #0B0A08 70%);
+    box-shadow: 0 0 0 1.5px var(--sb-gold-deep);   /* the jack hole */
+  }
+  .rk-jack.is-dragging { opacity: .45; cursor: grabbing; }
+  .rk-jack.is-over { border-color: var(--sb-gold-bright); box-shadow: 0 0 0 1px var(--sb-gold-line); }
+  .rk-jack.is-armed { border-color: var(--sb-gold-bright); color: var(--sb-gold-bright);
+    box-shadow: 0 0 0 1px var(--sb-gold-line), 0 0 10px rgba(232,185,80,.4); }
+  /* the manual drawer: a drawer front with pulls; the body is the manual */
+  .rk-man-front {
+    display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 18px;
+    border: 0; border-top: 1px solid var(--rk-seam); cursor: pointer; text-align: left;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,.014) 0 1px, transparent 1px 4px),
+                linear-gradient(180deg, #1C1814, #120F0C 80%, #0C0A08);
+  }
+  .rk-man-front:hover .rk-man-label { color: var(--sb-ink); }
+  .rk-man-pull {
+    flex: 1; height: 6px; border-radius: 3px; max-width: 180px;
+    background: linear-gradient(180deg, #060504, #1E1A15 45%, #060504);
+    box-shadow: inset 0 1px 2px #000, 0 1px 0 rgba(255,255,255,.05);
+  }
+  .rk-man-label { font-family: var(--sb-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--sb-ink-2); }
+  .rk-man-front[aria-expanded="true"] .rk-man-label { color: var(--sb-gold); }
+  .rk-man-body { padding: 18px 22px 24px; border-top: 1px solid var(--rk-seam); }
+  .rk-man-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 18px; }
+  @media (max-width: 720px) { .rk-man-cols { grid-template-columns: 1fr; } }
+  .rk-man-head {
+    font-family: var(--sb-mono); font-size: 12px; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--sb-gold); margin: 0 0 8px;
+  }
+  .rk-man-path { font-family: var(--sb-mono); font-size: 12px; color: var(--sb-ink); margin: 0 0 8px; }
+  .rk-man-note { font-family: var(--sb-display); font-size: 12.5px; line-height: 1.6; color: var(--sb-ink-2); margin: 0; max-width: 52ch; }
+  .rk-man-keys { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; }
+  .rk-man-keys dt { font-family: var(--sb-mono); font-size: 12px; color: var(--sb-ink); white-space: nowrap; }
+  .rk-man-keys dd { font-family: var(--sb-display); font-size: 12.5px; line-height: 1.55; color: var(--sb-ink-2); margin: 0; }
+  .rk-man-units { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
+  @media (max-width: 900px) { .rk-man-units { grid-template-columns: 1fr; } }
+  .rk-man-page { border-left: 2px solid var(--sb-gold-line); padding-left: 12px; }
+  .rk-man-page .rk-man-head { color: var(--sb-ink); margin-bottom: 4px; }
+  .rk-man-page .ru-ex-prose { font-size: 12.5px; }
+  .rk-man-page .ru-ex-prose p { margin: 0 0 .6em; }
+  /* the bounce modal: render once, measure that render, hand over the file */
+  .rk-bnc-back {
+    position: fixed; inset: 0; z-index: 70; display: flex; align-items: center;
+    justify-content: center; padding: 16px; background: rgba(4,4,3,.74);
+  }
+  .rk-bnc-back[hidden] { display: none; }
+  .rk-bnc {
+    width: min(620px, 100%); max-height: min(86vh, 760px); overflow-y: auto;
+    background: var(--sb-surface-1); border-radius: 10px;
+    border: 1px solid var(--sb-gold-line);
+    box-shadow: 0 24px 60px -16px rgba(0,0,0,.9);
+    padding: 16px 20px 20px;
+  }
+  .rk-bnc-top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  .rk-bnc-title {
+    font-family: var(--sb-display); font-size: 15px; font-weight: 800;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--sb-gold-bright);
+  }
+  .rk-bnc-src { margin: 0; font-family: var(--sb-mono); font-size: 11px; color: var(--sb-ink-3); }
+  .rk-bnc-x { margin-left: auto; }
+  .rk-bnc-status { margin: 6px 0 0; font-family: var(--sb-mono); font-size: 12px; color: var(--sb-ink-2); }
+  .rk-bnc-status:empty { display: none; }
+  .rk-bnc-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0 10px; }
+  @media (max-width: 520px) { .rk-bnc-nums { grid-template-columns: 1fr; } }
+  .rk-bnc-head {
+    font-family: var(--sb-mono); font-size: 12px; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--sb-gold); margin: 16px 0 8px;
+  }
+  .rk-bnc-note { margin: 0 0 4px; font-family: var(--sb-display); font-size: 12.5px; line-height: 1.55; color: var(--sb-ink-2); max-width: 58ch; }
+  .rk-bnc-targets { display: flex; flex-direction: column; gap: 3px; }
+  .rk-bnc-row {
+    display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline;
+    padding: 6px 9px; border-radius: 5px; background: rgba(255,255,255,.03);
+    border: 1px solid transparent;
+  }
+  .rk-bnc-row .bn-name { font-family: var(--sb-mono); font-size: 12px; color: var(--sb-ink); }
+  .rk-bnc-row .bn-t { font-family: var(--sb-mono); font-size: 11px; color: var(--sb-ink-3); }
+  .rk-bnc-row .bn-d { font-family: var(--sb-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .rk-bnc-row.is-ok .bn-d { color: var(--sb-good); }
+  .rk-bnc-row.is-over .bn-d { color: var(--sb-gold-bright); }
+  .rk-bnc-row.is-under .bn-d { color: var(--sb-ink-2); }
+  .rk-bnc-row.is-clip { border-color: rgba(224,92,74,.5); }
+  .rk-bnc-row.is-clip .bn-d { color: var(--sb-crit); }
+  .rk-bnc-file { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .rk-bnc-plan { margin: 0 0 12px; font-family: var(--sb-mono); font-size: 11.5px; color: var(--sb-ink-2); }
+  .rk-bnc-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .rk-bnc-done { font-family: var(--sb-mono); font-size: 11.5px; color: var(--sb-good); }
+  @media (pointer: coarse) { .eq-band-sw::before { content: ""; position: absolute; inset: -16px -9px; } }  /* 44px hit area on touch */
+  .k-label {
+    font-family: var(--sb-mono); font-size: 11px; font-weight: 500; line-height: 1.2; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--sb-ink-2); white-space: nowrap;
+  }
+  /* value keeps its JS inline colour (gold / orange cut / grey zero) — only the type is ours */
+  .k-value {
+    font-family: var(--sb-mono); font-size: 11px; font-weight: 500; line-height: 1.2; letter-spacing: .04em;
+    font-variant-numeric: tabular-nums; color: var(--sb-gold); white-space: nowrap; min-height: 1.2em;
+  }
+  #rk-eq .k-label { letter-spacing: .06em; }
+  /* cap: recolour the SVG gradient stops + rim + pointer; size stays attribute-driven (data-ksize) */
+  .rk-knob stop:nth-of-type(1) { stop-color: var(--rk-kcap-hi); }
+  .rk-knob stop:nth-of-type(2) { stop-color: var(--sb-gold); }
+  .rk-knob stop:nth-of-type(3) { stop-color: var(--rk-kcap-mid); }
+  .rk-knob stop:nth-of-type(4) { stop-color: var(--rk-kcap-lo); }
+  .rk-knob circle[fill^="url"] { filter: drop-shadow(0 2px 3px rgba(0,0,0,.7)); }
+  .rk-knob circle[stroke="#1c1302"] { stroke: var(--rk-kcap-ring); stroke-width: 3; }      /* rim */
+  .rk-knob circle[stroke="rgba(255,255,255,0.14)"] { stroke: rgba(255,255,255,.05); }  /* highlight */
+  .rk-knob circle[stroke="#332e22"] { stroke: rgba(255,255,255,.06); }                 /* tick ring */
+  .rk-knob path[stroke="#221e16"] { stroke: var(--rk-well-2); }                         /* track */
+  .rk-knob circle[fill="#1c1302"] { fill: var(--rk-kcap-ptr); }                         /* centre dot */
+  .rk-knob line.k-ptr { stroke: var(--rk-kcap-ptr); stroke-width: 3; }                  /* pointer */
+  /* arc + glow: JS paints #e8c667 (gold) or #e07a3c (cut) per frame. Never set a
+     bare stroke on .k-arc/.k-glow — it would erase the cut colour. Re-map each
+     case onto its token instead: */
+  .rk-knob .k-arc[stroke="#e8c667"], .rk-knob .k-glow[stroke="#e8c667"] { stroke: var(--sb-gold-bright); }
+  .rk-knob .k-arc[stroke="#e07a3c"], .rk-knob .k-glow[stroke="#e07a3c"] { stroke: var(--sb-warn); }
+  /* the Q knob's gold ring (D11) is §3A 0.8's rule on the knob's tick ring — not the rim — so
+     it is not restated here */
+  /* A focused knob has to be findable on a dark chassis, and the ring has
+     to sit outside the SVG rather than on it - the knob is round, so a
+     square outline reads as a mistake. */
+  .rk-knob { border-radius: 50%; outline: none; }
+  .rk-knob:focus-visible {
+    box-shadow: 0 0 0 2px var(--sb-ground), 0 0 0 4px var(--sb-gold-bright), 0 0 12px 2px rgba(232,185,80,.45);
+  }
+  /* Keyboard focus only. A click should not leave a ring behind. */
+  .rk-knob:focus:not(:focus-visible) { box-shadow: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .rk-knob:focus-visible { box-shadow: 0 0 0 2px var(--sb-ground), 0 0 0 4px var(--sb-gold-bright); }
+  }
+
+  /* ---- 10. meters: LED ladders + the VU -------------------------- */
+  /* .rk-seg wraps a fill div (#rk-gr, #rk-peak, #rk-peak2, #rk-roughsplit-fill,
+     #rk-tk-fill, #rk-ldn-fill or .rk-seg-fill); JS sets the fill's width%.
+     The ::after mask cuts the fill into 5px LEDs with 3px gaps. */
+  .rk-seg {
+    position: relative; display: block; height: 10px; min-width: 60px; border-radius: 3px; overflow: hidden;
+    border: 1px solid var(--rk-seam); background: var(--rk-well);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.7), 0 1px 0 rgba(255,255,255,.04);
+  }
+  .rk-seg > div, .rk-seg-fill { display: block; height: 100%; width: 0; transition: width 80ms linear; }
+  .rk-seg::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(90deg, transparent 0 5px, var(--rk-well) 5px 8px);
+  }
+  #rk-gr { background: linear-gradient(90deg, var(--sb-gold-bright), var(--sb-gold) 45%, var(--sb-crit)); }
+  #rk-peak, #rk-peak2 { background: linear-gradient(90deg, var(--sb-good), var(--sb-gold-bright) 60%, var(--sb-crit)); }
+  #rk-roughsplit-fill, #rk-tk-fill, #rk-ldn-fill, .rk-seg-fill {
+    background: linear-gradient(90deg, var(--sb-gold-deep), var(--sb-gold), var(--sb-gold-bright));
+  }
+  /* readouts beside the ladders */
+  #rk-grdb2, #rk-peakdb {
+    font-family: var(--sb-mono); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+    color: var(--sb-gold-bright); white-space: nowrap;
+  }
+  /* the VU: markup is pinned (viewBox 200×112, five tick <text>s, needle rotate(-52)).
+     CSS only re-skins presentation attributes by value. */
+  #rk-vu { display: block; width: clamp(160px, 24vw, 200px); height: auto; flex: none; }
+  #rk-vu rect[stroke="#332d20"] { fill: var(--rk-well); stroke: var(--sb-line); }        /* bezel */
+  /* font sizes are SVG user units (viewBox 200 wide): 12 units = 12px at the 200px cap,
+     ≈9.6px at the 160px floor — the meter face is an instrument, not read text */
+  #rk-vu text { font-family: var(--sb-mono); font-weight: 600; font-size: 12px; }
+  #rk-vu text[letter-spacing] { font-size: 11px; font-weight: 500; }                   /* GAIN REDUCTION */
+  #rk-vu text#rk-grdb { font-size: 12px; font-weight: 600; }
+  #rk-vu path[stroke="#4a4234"] { stroke: var(--rk-vu-arc); }                                    /* arc */
+  #rk-vu path[stroke="#a3402e"] { stroke: var(--sb-crit); }                             /* red zone */
+  #rk-vu circle[fill="#2a251c"] { fill: var(--rk-well-3); }                              /* pivot */
+  #scope-lamp { margin: 0 auto; }
+
+  /* ---- 11. LCD readouts ------------------------------------------ */
+  .rk-lcd {
+    display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+    min-width: 118px; padding: 8px 12px 7px; border-radius: 6px; text-align: center;
+    border: 1px solid var(--rk-seam); background: linear-gradient(180deg, var(--rk-well), var(--rk-well-2));
+    box-shadow: inset 0 2px 6px rgba(0,0,0,.7), inset 0 0 0 1px rgba(201,162,74,.14), 0 1px 0 rgba(255,255,255,.04);
+  }
+  .rk-lcd-v {
+    display: block; font-family: var(--sb-mono); font-size: 22px; font-weight: 600; line-height: 1;
+    letter-spacing: .02em; font-variant-numeric: tabular-nums; color: var(--sb-gold-bright);
+    text-shadow: 0 0 10px rgba(232,185,80,.3);
+  }
+  .rk-lcd-cap {
+    display: block; margin-top: 5px; font-family: var(--sb-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--sb-ink-2); white-space: nowrap;
+  }
+  .rk-lcd-v.is-dim, .rk-lcd .rk-lcd-v:empty { color: var(--sb-ink-3); }
+  /* a typed-in LCD (#rk-tk-target, the TARGET BPM window) */
+  .rk-lcd input[type=number] {
+    appearance: textfield; -moz-appearance: textfield; width: 6ch; margin: 0; padding: 0; border: 0;
+    background: transparent; text-align: center; color: var(--sb-gold-bright);
+    font-family: var(--sb-mono); font-size: 22px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .rk-lcd input[type=number]::-webkit-inner-spin-button, .rk-lcd input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .rk-lcd input[type=number]::placeholder { color: var(--sb-ink-3); }
+  .val { font-family: var(--sb-mono); font-variant-numeric: tabular-nums; letter-spacing: .02em; }   /* JS puts it on .ldn-t/.ldn-d */
+
+  /* ---- 12. segment switch + the picker caps ---------------------- */
+  /* Selector caps: discrete hardware choices instead of web dropdowns.
+     The radio stays in the DOM for keyboard and screen readers; the
+     label is the visible cap and carries the lit state. (input:checked +
+     label adjacency is load-bearing — the rack script reads nextElementSibling.) */
+  .pick { position: relative; display: flex; flex-wrap: wrap; gap: 5px; }
+  .pick input, .rk-segsw > input[type=radio] { position: absolute; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
+  .pick label {
+    display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    min-width: 46px; min-height: 28px; padding: 5px 8px 4px; border-radius: 5px; cursor: pointer;
+    border: 1px solid var(--sb-line-strong); color: var(--sb-ink-2);
+    background: linear-gradient(180deg, var(--rk-sw-hi), var(--rk-sw-lo));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.5);
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  .pick label:hover { background: linear-gradient(180deg, var(--rk-sw-hover-hi), var(--rk-sw-hover-lo)); color: var(--sb-ink); }
+  .pick .cap {
+    font-family: var(--sb-mono); font-size: 11px; font-weight: 600; line-height: 1; letter-spacing: .1em;
+    text-transform: uppercase; white-space: nowrap; color: inherit;
+  }
+  .pick .gl { fill: none; stroke: currentColor; stroke-width: 1.2; }
+  .pick .gl-f { fill: currentColor; stroke: none; }
+  .pick input:checked + label {
+    color: var(--sb-on-gold); border-color: var(--sb-gold-deep);
+    background: linear-gradient(180deg, var(--sb-gold-bright), var(--sb-gold));
+    box-shadow: inset 0 1px 0 rgba(255,246,214,.45), 0 0 10px rgba(232,185,80,.25);
+  }
+  .pick input:checked + label:hover { filter: brightness(1.06); }
+  .pick input:checked + label .cap { color: inherit; }
+  .pick input:checked + label .gl { stroke: currentColor; }
+  .pick input:checked + label .gl-f { fill: currentColor; }
+  .pick input:focus-visible + label { outline: 2px solid var(--sb-gold-bright); outline-offset: 2px; }
+  /* .rk-segsw joins its children into one pill: button.sw children (.rk-center),
+     input+label.sw pairs (the template radiogroups: cab/mic/axis, source, container,
+     depth, channels, what-to-measure — the pictogram/cap styling is §3C §6's), or, on
+     a div.pick.rk-segsw, JS-built input+label>span.cap pairs (#rk-cnv-rate, #rk-cnv-br
+     — their labels have NO .sw, so .pick above is what styles them). The container
+     carries the radius and overflow:hidden, so the first/last child needs no corners. */
+  .rk-segsw {
+    position: relative; display: inline-flex; flex-wrap: wrap; align-items: stretch; gap: 0; padding: 0;
+    border-radius: 6px; border: 1px solid var(--sb-line-strong); overflow: hidden;
+    background: var(--rk-well-2); box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 1px 2px rgba(0,0,0,.5);
+  }
+  .rk-segsw > .sw, .rk-segsw > label { border: 0; border-radius: 0; box-shadow: none; min-height: 28px; }
+  .rk-segsw > .sw + .sw, .rk-segsw > label ~ label { border-left: 1px solid var(--sb-line-strong); }
+  .rk-segsw > .sw-lit, .rk-segsw > input:checked + label { border-left-color: var(--sb-gold-deep); }
+  .rk-segsw > .sw-lit + .sw, .rk-segsw > input:checked + label + input + label { border-left-color: var(--sb-gold-deep); }
+  .rk-segsw .rk-explain-note { flex-basis: 100%; padding: 4px 10px 6px; }
+  .rk-center { min-width: 0; }
+
+  /* ---- 13. the screen + zone bar --------------------------------- */
+  .rk-screen {
+    position: relative; display: block; width: 100%; padding: 8px; border-radius: 8px;
+    border: 1px solid var(--rk-seam); background: var(--rk-screen);
+    box-shadow: inset 0 0 0 1px rgba(201,162,74,.26), inset 0 0 0 4px var(--rk-screen), inset 0 0 0 5px rgba(201,162,74,.14), 0 1px 0 rgba(255,255,255,.04);
+  }
+  .rk-screen > canvas, .rk-screen > svg { display: block; width: 100%; height: auto; border-radius: 4px; }
+  #rk-scope { display: block; width: 100%; height: 280px; border-radius: 4px; background: var(--rk-scope); cursor: pointer; }
+  /* the zone trim bar (JS flips its inline display between none and flex) */
+  #rk-zone {
+    flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; padding: 8px 12px;
+    border-radius: 6px; border: 1px solid var(--sb-gold-line); background: var(--rk-well-2);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+  }
+  #rk-zone > span:first-child { font-family: var(--sb-mono); font-size: 11px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--sb-ink-2); }
+  #rk-zone-name { font-family: var(--sb-display); font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--sb-ink); }
+  #rk-zone-bands { font-family: var(--sb-mono); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--sb-gold-bright); }
+  #rk-zone .sw { min-height: 28px; }
+
+  /* ---- 14. stems: lanes, lamps, rails, faders -------------------- */
+  /* Channel strips: the deck and hook rows as recessed hardware lanes -
+     lamp, engraved legend, graphite fader. All lane DOM is JS-built. */
+  .lane {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
+    padding: 7px 10px; border-radius: 6px; border: 1px solid var(--rk-seam);
+    background: linear-gradient(180deg, var(--rk-well-3), var(--rk-well));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.03), inset 0 -1px 2px rgba(0,0,0,.5);
+  }
+  .lane + .lane { margin-top: 6px; }
+  .lane.dim { opacity: .55; }
+  .lane .ln {
+    font-family: var(--sb-mono); font-size: 11px; font-weight: 600; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--sb-ink);
+  }
+  .lane .ld { font-family: var(--sb-mono); font-size: 11px; color: var(--sb-ink-3); font-variant-numeric: tabular-nums; }
+  .lane .sw { min-height: 28px; min-width: 28px; padding: 0 8px; font-size: 11px; }   /* JS writes text-[10px]/text-sm utilities; the tie goes to this sheet */
+  .lane .sw.text-\[\#e8c667\] { color: var(--sb-gold); }                           /* the JS-built WAV button stays gold (escaped Tailwind class) */
+  .lane .fader { width: 112px; }
+  #rk-stems, #rk-hooks { display: block; }
+  /* A loaded lane: the name yields the long slot to the stem's own waveform. */
+  .lane .ln.truncate { flex: 0 1 auto; max-width: 30%; }
+  .lane-wave {
+    flex: 1 1 140px; min-width: 80px; height: 22px; border-radius: 3px;
+    background: var(--rk-well); box-shadow: inset 0 1px 2px #000;
+  }
+  /* Dormant lane rail: the empty fader slot on an unloaded channel. */
+  .rail {
+    height: 5px; flex: 1; min-width: 60px; border-radius: 3px;
+    background: repeating-linear-gradient(90deg, var(--rk-ear-hi) 0 6px, var(--rk-well) 6px 12px);
+    box-shadow: inset 0 1px 2px #000;
+  }
+  /* the fader: native range, graphite thumb with a gold stripe */
+  .fader { -webkit-appearance: none; appearance: none; height: 20px; margin: 0; padding: 0; background: transparent; cursor: pointer; }
+  .fader::-webkit-slider-runnable-track {
+    height: 5px; border-radius: 3px; background: linear-gradient(180deg, var(--rk-track-hi), var(--rk-well-2));
+    box-shadow: inset 0 1px 2px #000, 0 1px 0 rgba(255,255,255,.05);
+  }
+  .fader::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 10px; height: 18px; margin-top: -6.5px; border-radius: 2px;
+    background: linear-gradient(to right, var(--rk-thumb-a) 0 40%, var(--sb-gold) 40% 60%, var(--rk-thumb-b) 60% 100%);
+    box-shadow: 0 1px 3px rgba(0,0,0,.7), inset 0 0 0 1px rgba(0,0,0,.6);
+  }
+  .fader::-moz-range-track {
+    height: 5px; border-radius: 3px; background: linear-gradient(180deg, var(--rk-track-hi), var(--rk-well-2));
+    box-shadow: inset 0 1px 2px #000;
+  }
+  .fader::-moz-range-thumb {
+    width: 10px; height: 18px; border: none; border-radius: 2px;
+    background: linear-gradient(to right, var(--rk-thumb-a) 0 40%, var(--sb-gold) 40% 60%, var(--rk-thumb-b) 60% 100%);
+    box-shadow: 0 1px 3px rgba(0,0,0,.7), inset 0 0 0 1px rgba(0,0,0,.6);
+  }
+  .fader:disabled { opacity: .4; cursor: not-allowed; }
+  /* split progress + status under the separation controls */
+  #rk-roughsplit-wrap, #rk-tk-wrap, #rk-ldn-wrap { margin-top: 8px; }
+  #rk-roughsplit-wrap .rk-seg, #rk-tk-wrap .rk-seg, #rk-ldn-wrap .rk-seg { height: 8px; }
+
+  /* ---- 15. hook rows + the hook map ------------------------------ */
+  #rk-hookmap { display: block; width: 100%; height: auto; border-radius: 4px; }
+  #rk-hookmap text { font-family: var(--sb-mono); font-weight: 600; fill: var(--sb-ink-2); }   /* the hook rects are §3C §6's */
+  #rk-hooks { margin-top: 10px; }
+  #rk-hooks .lane .sw { padding: 0 10px; }
+  #rk-hookmap-cap {
+    display: block; font-family: var(--sb-mono); font-size: 11px; font-weight: 500; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--sb-ink-2);
+  }
+  /* #rk-hook-note is a .note (§25); #rk-cabview / #rk-cabview-cap are §3C §6's (it owns the SB-08 grid) */
+
+  /* ---- 16. loudness graph ----------------------------------------- */
+  /* The target chips (.ldn-row/.ldn-name/.ldn-t/.ldn-d/.ldn-v, JS-built into #rk-ldn-targets)
+     and the #rk-ldn-targets grid are §3D 1.2's; #rk-ldn-src is an LCD value there. */
+  #rk-ldn-graph { display: block; width: 100%; height: auto; border-radius: 4px; }
+  #rk-ldn-graph text { fill: var(--sb-ink-2); font-family: var(--sb-mono); font-size: 9px; }   /* user units; ≈12px at the 820px row */
+  #rk-ldn-graph text[fill="#8a6d1f"] { fill: var(--sb-gold); }                           /* the "I −x.x" integrated label */
+
+  /* ---- 17. the format bench (SB-12) ------------------------------ */
+  /* #rk-cnv-plan / #rk-cnv-peak are LCD values (.rk-lcd-v, sized by §3D 1.2); #rk-cnv-lufsnote is a .note (§25) */
+  #rk-cnv-status { font-family: var(--sb-mono); font-size: 12px; color: var(--sb-gold-bright); }
+  /* JS rewrites #rk-cnv-where's className every run — style it by id only */
+  #rk-cnv-where { margin-top: 6px; font-family: var(--sb-display); font-size: 12px; line-height: 1.45; color: var(--sb-gold-bright); }
+  #rk-cnv-where.text-\[\#8a8069\] { color: var(--sb-ink-2); }
+  #rk-cnv-lufs, #rk-studiomode { min-width: 160px; }
+  #rk-cnv-brwrap.hidden { display: none; }
+
+  /* ---- 18. tempo & key (SB-13) ----------------------------------- */
+  /* #rk-tk-semis is §3D 1.2's mini-LCD window */
+  #rk-tk-tempoval, #rk-tk-centsval {
+    display: inline-block; min-width: 4ch; text-align: right; font-family: var(--sb-mono);
+    font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--sb-gold-bright);
+  }
+  #rk-tk-tempo, #rk-tk-cents { flex: 1 1 120px; min-width: 0; }
+  /* #rk-tk-plan is an LCD value (.rk-lcd-v, sized by §3D 1.2) */
+  #rk-tk-alts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  #rk-tk-alts .sw { min-height: 26px; font-size: 11px; padding: 5px 9px; }   /* JS writes px-2 py-1 text-[9px]; the id wins */
+  /* chroma: the JS colours were tuned for the old silver panel — re-map by value */
+  #rk-tk-chroma { display: block; width: 100%; height: auto; border-radius: 4px; }
+  #rk-tk-chroma text { fill: var(--sb-ink-2); font-family: var(--sb-mono); font-weight: 600; }
+  #rk-tk-chroma text[fill="#2e2920"] { fill: var(--sb-gold-bright); }          /* the lit root's label */
+  #rk-tk-chroma rect[fill="#a37c2a"] { fill: var(--sb-gold); }                 /* lit bar */
+  #rk-tk-chroma rect[fill="#7b7669"] { fill: var(--rk-chroma-dim); }                        /* measured bar */
+  #rk-tk-chroma rect[fill="#8f8a7e"] { fill: var(--sb-line-strong); }          /* unmeasured bar */
+  #rk-tk-chroma path { stroke: var(--sb-line-strong); }                        /* baseline */
+
+  /* ---- 19. the rig row (presets, export/import) ------------------- */
+  /* the rig unit is header-only (§3D 5.1): the controls live in .ru-ctl, so the head keeps
+     its normal padding and just loses the inset seam line it would draw above a body */
+  #sb-rig .ru-head { box-shadow: none; padding-bottom: 12px; }
+  .rk-preset { min-width: 0; }
+
+  /* ---- 20. the power strip (#rk-dock) ----------------------------- */
+  #rk-dock {
+    position: fixed; inset-inline: 0; bottom: 0; z-index: 40;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+    padding: 8px max(12px, calc((100% - 1100px) / 2));
+    border-top: 1px solid var(--rk-seam); color: var(--sb-ink);
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.014) 0 1px, transparent 1px 4px),
+      linear-gradient(180deg, var(--rk-face-hi), var(--rk-face-mid) 80%, var(--rk-face-lo));
+    box-shadow: 0 -10px 28px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .pw-led {
+    flex: none; width: 9px; height: 9px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, var(--rk-led-grn-hi), var(--sb-good) 60%, var(--rk-led-grn-lo));
+    box-shadow: 0 0 8px rgba(121,180,115,.75), 0 0 0 2px rgba(0,0,0,.45);
+  }
+  #rk-time {
+    flex: none; min-width: 7ch; text-align: center; font-family: var(--sb-mono); font-size: 12px; font-weight: 600;
+    letter-spacing: .04em; font-variant-numeric: tabular-nums; color: var(--sb-gold-bright);
+  }
+  #rk-wave {
+    display: block; flex: 1 1 160px; min-width: 0; height: 36px; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--rk-seam); background: var(--rk-well); box-shadow: inset 0 1px 3px rgba(0,0,0,.7);
+  }
+  #rk-dock .rk-seg { width: 112px; flex: none; }
+  #rk-dock .sw { min-height: 30px; }
+  /* Chain cost. Hidden on narrow screens where the dock has no room —
+     done with a media query rather than Tailwind's hidden/lg: pair,
+     because the compiled stylesheet is frozen and new bracket classes
+     would not exist in it. */
+  .rk-cost {
+    display: none; flex: none; align-items: center; padding: 0 8px; min-height: 28px;
+    border-radius: 6px; border: 1px solid var(--sb-gold-line); background: rgba(255,255,255,.03);
+    white-space: nowrap; font-family: var(--sb-mono); font-size: 11px; font-weight: 500; line-height: 1;
+    letter-spacing: .04em; font-variant-numeric: tabular-nums; color: var(--sb-ink-2);
+  }
+  @media (min-width: 1024px) { .rk-cost { display: inline-flex; } }
+  .rk-cost.is-heavy { color: var(--sb-gold-bright); border-color: var(--sb-gold); }
+  /* Undo, redo and the history list. The popover opens UPWARD because it
+     lives in a dock pinned to the bottom of the window. */
+  .rk-hist-wrap { position: relative; display: flex; gap: 4px; flex: none; }
+  .rk-hist-pop {
+    position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 50;
+    width: min(300px, calc(100vw - 32px)); max-height: 46vh; overflow-y: auto; padding: 10px;
+    background: var(--sb-surface-1); border: 1px solid var(--sb-gold-line); border-radius: 10px;
+    box-shadow: 0 18px 40px -12px rgba(0,0,0,.85);
+  }
+  .rk-hist-pop[hidden] { display: none; }
+  .rk-hist-head { margin: 0 0 8px; font-family: var(--sb-display); font-size: 12px; line-height: 1.5; color: var(--sb-ink-2); }
+  .rk-hist-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .rk-hist-item {
+    width: 100%; text-align: left; padding: 7px 9px; border-radius: 6px; cursor: pointer;
+    border: 1px solid transparent; background: rgba(255,255,255,.03);
+    font-family: var(--sb-display); font-size: 12px; color: var(--sb-ink);
+  }
+  .rk-hist-item:hover, .rk-hist-item:focus-visible { border-color: var(--sb-gold-line); color: var(--sb-gold-bright); }
+  .rk-hist-none { padding: 6px 2px; font-family: var(--sb-display); font-size: 12px; color: var(--sb-ink-2); }
+
+  /* ---- 21. the rack library modal -------------------------------- */
+  /* "Save my rack" keeps ONE rack — the one that loads with the page. This
+     keeps many, named, so a vocal chain and a drum bus can both live here. */
+  .rk-lib-back {
+    position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+    padding: 16px; background: rgba(4,4,3,.74);
+  }
+  .rk-lib-back[hidden] { display: none; }
+  .rk-lib {
+    width: min(520px, 100%); max-height: min(80vh, 640px); display: flex; flex-direction: column;
+    background: var(--sb-surface-1); border-radius: 10px; border: 1px solid var(--sb-gold-line);
+    box-shadow: 0 24px 60px -16px rgba(0,0,0,.9); color: var(--sb-ink); font-family: var(--sb-display);
+  }
+  .rk-lib-top { display: flex; align-items: baseline; gap: 8px; padding: 14px 16px 10px; }
+  .rk-lib-title { margin: 0; font-family: var(--sb-display); font-size: 14px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--sb-gold-bright); }
+  .rk-lib-count { margin: 0; font-family: var(--sb-mono); font-size: 12px; color: var(--sb-ink-2); }
+  .rk-lib-x { margin-left: auto; }
+  .rk-lib-new { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 10px; }
+  .rk-lib-in {
+    flex: 1 1 150px; min-width: 0; padding: 7px 9px; border-radius: 6px;
+    border: 1px solid var(--sb-gold-line); background: rgba(255,255,255,.04);
+    color: var(--sb-ink); font-family: var(--sb-display); font-size: 13px;
+  }
+  .rk-lib-in::placeholder { color: var(--sb-ink-3); }
+  .rk-lib-msg { min-height: 14px; margin: 0; padding: 0 16px 8px; font-size: 12px; color: var(--sb-ink-2); }
+  .rk-lib-list { list-style: none; margin: 0; padding: 0 16px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+  .rk-lib-row {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px;
+    border: 1px solid transparent; background: rgba(255,255,255,.03);
+  }
+  .rk-lib-row:hover, .rk-lib-row:focus-within { border-color: var(--sb-gold-line); }
+  .rk-lib-name { flex: 1; min-width: 0; }
+  .rk-lib-nm { display: block; font-size: 13px; font-weight: 600; color: var(--sb-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rk-lib-meta { display: block; font-family: var(--sb-mono); font-size: 12px; color: var(--sb-ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rk-lib-none { padding: 4px 2px 10px; font-size: 12px; color: var(--sb-ink-2); }
+  .rk-lib .sw { min-height: 28px; }
+
+  /* ---- 22. the drop scrim ---------------------------------------- */
+  /* No audio loaded yet. This is guidance, not a gate: the scrim ignores
+     the mouse so every knob underneath stays live — a rack can be dialled
+     in blind and saved to the library before there is anything to play.
+     Only the card inside it takes clicks. (Order and literals below are
+     test-pinned; keep them.) */
+  .rk-empty {
+    position: absolute; inset: 0; z-index: 20; display: flex;
+    align-items: flex-start; justify-content: center; pointer-events: none;
+    /* The chassis is the whole unit stack now, so the scrim is a light,
+       even wash over all of it rather than a vignette that blacks out the
+       middle; the card sticks near the top of the viewport so it is in
+       view wherever you have scrolled to while nothing is loaded. */
+    background: rgba(4,4,3,.34);
+    transition: background .18s ease;
+  }
+  .rk-empty[hidden] { display: none; }
+  .rk-empty-card {
+    pointer-events: auto; position: sticky; top: 18vh; margin-top: 150px;
+    max-width: 340px; padding: 22px 26px; text-align: center;
+    border-radius: 10px; border: 1px dashed rgba(201,162,74,.55);
+    background: rgba(12,11,9,.96); box-shadow: 0 20px 50px -14px rgba(0,0,0,.9);
+    font-family: var(--sb-display);
+  }
+  .rk-empty-h { margin: 0 0 6px; font-size: 15px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--sb-gold-bright); }
+  .rk-empty-p { margin: 0 0 14px; font-size: 12.5px; line-height: 1.6; color: var(--sb-ink-2); }
+  .rk-empty.is-over { background: rgba(201,162,74,.18); }
+  .rk-empty.is-over .rk-empty-card { border-style: solid; border-color: var(--sb-gold-bright); }
+
+  /* ---- 23. explain notes (JS-injected after every titled control) -- */
+  /* Explain mode: the tooltips, made visible. The captions are generated
+     from the title attributes themselves, so any control added later is
+     covered without anyone remembering. */
+  .rk-explain-note {
+    display: block; margin-top: 4px; max-width: 24ch; padding-left: 6px;
+    border-left: 2px solid var(--sb-gold-line);
+    font-family: var(--sb-display); font-size: 12px; font-weight: 400; line-height: 1.4;
+    letter-spacing: 0; text-transform: none; white-space: normal; color: var(--sb-ink-2);
+  }
+  /* a note that lands inside a flex row (after .rk-cmp/.rk-lvl in .ru-ctl, after a
+     titled lamp or button in a .ru-row, after a segsw label, after a lane's WAV button)
+     drops under the row instead of splitting it */
+  .ru-ctl > .rk-explain-note, .ru-row > .rk-explain-note, .rk-segsw > .rk-explain-note,
+  .pick > .rk-explain-note, .lane > .rk-explain-note, .rk-transport > .rk-explain-note { flex: 1 0 100%; order: 9; }
+
+  /* ---- 24. page head + flow strip -------------------------------- */
+  /* header.rk-page-head > (.rk-page-id > p.rk-eyebrow + h1.sb-h1 + p.rk-lede) + .rk-page-ctl + nav.flow */
+  .rk-page-head {
+    max-width: 980px; margin: 0 auto 6px; display: grid; grid-template-columns: 1fr auto;
+    gap: 10px 16px; align-items: end; color: var(--sb-ink);
+  }
+  .rk-page-id { min-width: 0; }
+  .rk-eyebrow { margin: 0 0 4px; font-family: var(--sb-mono); font-size: 11px; letter-spacing: .34em; text-transform: uppercase; color: var(--sb-gold); }
+  .rk-page-head h1 { margin: 0; }
+  .rk-lede { margin: 6px 0 0; max-width: 62ch; font-family: var(--sb-display); font-size: 13px; line-height: 1.5; color: var(--sb-ink-2); }
+  .rk-page-ctl { display: flex; gap: 8px; align-items: center; justify-self: end; }
+  .rk-page-head > .flow { grid-column: 1 / -1; }
+  .flow {
+    max-width: 980px; margin: 4px auto 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+    gap: 4px 6px; font-family: var(--sb-mono); font-size: 11px; font-weight: 600; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--sb-ink-2);
+  }
+  .flow > span { color: var(--sb-gold-deep); }                  /* the .flow-sep arrows */
+  .flow-node {
+    padding: 4px 8px; border-radius: 6px; border: 1px solid var(--sb-line-strong); background: transparent;
+    color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer;
+    transition: border-color .12s, color .12s;
+  }
+  .flow-node:hover { border-color: var(--sb-gold-line); color: var(--sb-gold-bright); }
+  .flow-flash { outline: 2px solid var(--sb-gold-bright); outline-offset: -3px; transition: outline-color 1.2s; }
+
+  /* ---- 25. legacy + JS-created leaf classes ----------------------- */
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  /* .note — the ONE status/readout class: JS creates <p class="note"> (idle text, lane
+     fallbacks), and the template uses it on every -status/-note/-cap leaf the JS writes
+     into (#rk-hook-note, #rk-hookmap-cap, #rk-roughsplit-status, #rk-studiomode-note,
+     #rk-cnv-where, #rk-cnv-lufsnote, #rk-cnv-status, #rk-tk-status, #rk-ldn-status).
+     12px Archivo = read text (the 12px floor); an empty note takes no room. */
+  .note { margin: 0; font-family: var(--sb-display); font-size: 12px; line-height: 1.45; color: var(--sb-ink-2); }
+  .note:empty { display: none; }
+  /* status leaves the JS writes into */
+  #rk-status, #rk-fileinfo, #rk-roughsplit-status, #rk-studiomode-note, #rk-tk-status, #rk-ldn-status,
+  #rk-tk-bpmsub, #rk-tk-keysub, #rk-ldn-tpsub, #rk-ldn-lrasub {
+    font-family: var(--sb-mono); font-size: 12px; line-height: 1.4; color: var(--sb-ink-2);
+  }
+  #rk-status, #rk-fileinfo { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #rk-status { max-width: 34ch; letter-spacing: .04em; }       /* sits in SB-05's header beside #scope-lamp */
+  #rk-roughsplit-status, #rk-cnv-status, #rk-tk-status, #rk-ldn-status { color: var(--sb-gold-bright); }
+  /* .val in §11 (JS puts it on the loudness chips); .chip/.sk/.sk-sub/.plate/.w2/.big/.mods are
+     retired — nothing in the new markup or in the JS uses them. */
+
+  /* ---- 26. responsive, touch, reduced motion ---------------------- */
+  @media (max-width: 900px) {
+    .ru-head { padding: 9px 14px 7px; }
+    .ru-body { padding: 11px 14px 14px; }
+    .ru-explain { margin: 0 14px 14px; }
+    .deck { padding: 40px 16px 0; }
+    .tubes { gap: 10px; }
+    .ru-row { gap: 10px 16px; }
+    .rk-lcd { min-width: 104px; }
+  }
+  @media (max-width: 640px) {
+    /* the fixed power strip wraps to two or three rows here — give the last unit room */
+    .amp { --rk-ear: 18px; --rk-bolt: 9px; margin-bottom: 150px; }
+    .bolt.b1 { top: 12px; }
+    .bolt.b2 { bottom: 12px; }
+    .ru::before, .ru::after, .deck::before, .deck::after { top: 17px; }
+    .plate-strip { padding: 12px 14px; }
+    .brass { padding: 10px 30px; }
+    .brass .ln1 { letter-spacing: .1em; }
+    .brass .ln2 { letter-spacing: .22em; }
+    .rk-page-head { grid-template-columns: 1fr; }
+    .rk-page-ctl { justify-self: start; }
+    .ru-head { gap: 6px 10px; }
+    .ru-ctl { row-gap: 8px; }
+    .ru-explain { padding: 10px 12px 10px 8px; }
+    .ru-ex-art { flex-basis: 100%; max-width: 170px; }
+    /* six 62px tubes do not fit a ≤640px body (≈330px at 430px wide): two rows of three,
+       and the role line may use the whole column */
+    .tubes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 8px; }
+    .tlabel .vrole { max-width: 100%; }
+    .rk-lcd { min-width: 96px; flex: 1 1 30%; }
+    #rk-dock { padding: 6px 8px; gap: 6px 8px; }
+    #rk-dock .rk-seg { width: 80px; }
+  }
+  @media (max-width: 420px) {
+    .ru-head, .ru-body { padding-left: 10px; padding-right: 10px; }
+    .ru-explain { margin: 0 10px 12px; }
+    .ru-row { gap: 8px 10px; }
+    .ru-ctl .sw { padding: 0 7px; }
+    .rk-lcd-v, .rk-lcd input[type=number] { font-size: 19px; }
+    .rk-segsw > .sw, .rk-segsw > label { flex: 1 1 auto; }
+    #rk-vu { width: 100%; }
+    .rk-page-head h1 { font-size: 26px; }
+  }
+  /* Touch, rather than narrow. A touch laptop at 1400px needs the same
+     targets a phone does, and a narrow desktop window does not. */
+  @media (pointer: coarse) {
+    .sw, .pick label, .flow-node { min-height: 44px; }
+    .ru-ctl .sw, .lane .sw, .rk-segsw > .sw, #rk-zone .sw { min-width: 44px; min-height: 44px; }
+    #rk-dock .sw { min-height: 44px; }   /* the dock's own 30px rule is an id selector and would win */
+    .rk-knob { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+    /* 20px tall with a 10px thumb: a fader you cannot get hold of. */
+    .fader { height: 34px; }
+    .fader::-webkit-slider-thumb { width: 16px; height: 28px; margin-top: -11.5px; }
+    .fader::-moz-range-thumb { width: 16px; height: 28px; }
+    .vlv-amt .fader { height: 34px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .glass { animation: none; }
+    .rk-lvl i, .rk-seg > div, .rk-seg-fill, .rk-empty, .sw, .pick label, .flow-node, .flow-flash { transition: none; }
+    .sw:active { transform: none; }
+  }
+
+/* ---- unit-local CSS (§2.4, §3A 0.8, §3B 5, §3C 6, §3D 1.2) ---- */
+/* ---- §2.4 shell addendum — the dock's responsive hides (only names SPEC-1 lacks) ---- */
+.rk-dock-peak { width: 112px; flex: 0 0 auto; }
+.rk-ref-load { cursor: pointer; }
+@media (max-width: 639px)  { #rk-wave { order: 99; flex-basis: 100%; } .rk-dock-peak { display: none; } }
+@media (max-width: 767px)  { #rk-ref, .rk-ref-load { display: none; } }
+@media (max-width: 1023px) { #rk-rollout, #rk-vault { display: none; } }
+/* ---- §3A · SB-00 / SB-01 / SB-02 / SB-03 (after the kit) ---- */
+/* SB-00: the three-trace legend in the header (EQ solid · Cab dashed gold · Ref dashed cyan) */
+.rk-legend { display: inline-flex; align-items: center; gap: 6px; font-family: var(--sb-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--sb-ink-2); }
+.rk-legend i { display: inline-block; width: 18px; height: 0; margin-left: 10px; border-top: 2px solid var(--sb-ink); }
+.rk-legend i:first-child { margin-left: 0; }
+.rk-legend i.cab { border-top-style: dashed; border-top-color: var(--sb-gold); }
+.rk-legend i.ref { border-top-style: dashed; border-top-color: rgba(103,232,249,.8); }   /* the JS paints the ref trace rgba(103,232,249,.55) */
+/* SB-03: the Q knob sits right of the bank behind a hairline (the kit makes #kn-q a flex mount) */
+#kn-q { align-items: flex-end; margin-left: 18px; padding-left: 18px; border-left: 1px solid var(--sb-line); }
+/* the Q ring (D11): turn the knob's own dotted tick ring (the only circle with a stroke-dasharray attribute,
+   r=33 in the 80-unit viewBox, rack script L1039) into a solid gold ring around the cap. This touches the SVG only,
+   so the pinned .rk-knob:focus-visible box-shadow ring is untouched (no id-vs-class specificity fight). */
+#kn-q .rk-knob circle[stroke-dasharray] { stroke: var(--sb-gold); stroke-dasharray: none; stroke-width: 2.2; }
+@media (max-width: 640px) { #kn-q { margin-left: 0; padding-left: 0; border-left: 0; } }
+/* ---- §3B · SB-04 / SB-05 / SB-06 / SB-07 (after the kit) ------------------------------ */
+/* a row of module knobs: wraps, centred; one size for every module knob (F7) */
+.rk-knobs { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center;
+  gap: 14px 22px; flex: 1 1 320px; min-width: 0; }
+
+/* SB-04 */
+.rk-dyn { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.rk-grbank { flex: 0 1 136px; min-width: 120px; margin-left: auto; display: flex; flex-direction: column; gap: 6px; }
+.rk-seg-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.rk-seg-val { font-family: var(--sb-mono); font-size: 11px; letter-spacing: .06em; color: var(--sb-gold);
+  font-variant-numeric: tabular-nums; }
+.rk-seg-gr { height: 10px; }
+
+/* SB-05 */
+.rk-bridge { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.rk-src { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.rk-peakrow { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.rk-seg-peak { flex: 1 1 120px; min-width: 80px; height: 8px; }
+.rk-lcd-sm { flex: 0 0 auto; min-width: 0; padding: 4px 8px; }
+.rk-lcd-sm .rk-lcd-v { font-size: 13px; }
+.rk-statusctl { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+/* SB-06 */
+.rk-centerrow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+/* SB-07 */
+.rk-transport { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rk-outknob { margin-left: auto; }
+
+@media (max-width: 640px) {
+  .rk-grbank { margin-left: 0; flex-basis: 100%; }
+  .rk-outknob { margin-left: 0; }
+}
+/* ===== §3C · SB-08 CAB-3 · SB-09 DLY-1/REV-1 · SB-10 STM-4 · SB-11 SNP-1 (after the kit) ===== */
+
+/* CAB-3 power: the #rk-cab-on checkbox, read as a latching switch (sibling form: input + span.sw). */
+.rk-cab-pwr { display: inline-flex; position: relative; cursor: pointer; }
+.rk-cab-pwr .sw::after { content: "OFF"; }
+.rk-cab-pwr input:checked + .sw { color: var(--sb-on-gold); border-color: var(--sb-gold-deep); font-weight: 600;
+  background: linear-gradient(180deg, var(--sb-gold-bright), var(--sb-gold));
+  box-shadow: inset 0 1px 0 rgba(255,246,214,.45), 0 0 10px rgba(232,185,80,.28); }
+.rk-cab-pwr input:checked + .sw::after { content: "ON"; }
+.rk-cab-pwr input:focus-visible + .sw { box-shadow: var(--sb-focus); }
+
+/* Radio segment switch with pictograms: the template labels carry .sw + .cap (+ .gl/.gl-f art);
+   the kit draws the pill and hides the radios — this is the label's column layout and its states. */
+.rk-segsw > label.sw { flex-direction: column; gap: 3px; min-width: 54px; padding: 6px 9px 5px; user-select: none; }
+.rk-segsw > label.sw svg { display: block; }
+.rk-segsw .cap { font-family: var(--sb-mono); font-size: 11px; line-height: 1; letter-spacing: .12em;
+  text-transform: uppercase; color: inherit; white-space: nowrap; }
+.rk-segsw .gl { fill: none; stroke: currentColor; stroke-width: 1.2; }
+.rk-segsw .gl-f { fill: currentColor; stroke: none; }
+.rk-segsw > input:checked + label.sw { position: relative; z-index: 1; color: var(--sb-on-gold); font-weight: 600;
+  background: linear-gradient(180deg, var(--sb-gold-bright), var(--sb-gold));
+  box-shadow: inset 0 1px 0 rgba(255,246,214,.45), 0 0 10px rgba(232,185,80,.28); }
+.rk-segsw > input:checked + label.sw:hover { filter: brightness(1.06); }
+.rk-segsw > input:focus-visible + label.sw { position: relative; z-index: 1; box-shadow: var(--sb-focus); }
+
+/* SB-08 layout: schematic window left, pictogram groups + distance knob right. */
+#sb08 .ru-body { display: grid; grid-template-columns: minmax(196px, 236px) minmax(0, 1fr); gap: 14px 24px; align-items: start; }
+#sb08 .ru-col { display: flex; flex-direction: column; min-width: 0; gap: 6px; }
+#sb08 .ru-body > .ru-col { gap: 12px; }
+#sb08 .rk-screen { padding: 8px; }
+#rk-cabview { display: block; width: 100%; height: auto; }
+#rk-cabview-cap { display: block; margin-top: 6px; min-height: 16px; text-align: center; font-family: var(--sb-mono);
+  font-size: 11px; line-height: 1.4; letter-spacing: .12em; text-transform: uppercase; color: var(--sb-ink-2); }
+#sb08 .ru-row { gap: 14px 26px; align-items: flex-end; }
+@media (max-width: 640px) {
+  #sb08 .ru-body { grid-template-columns: 1fr; }
+  #sb08 .rk-screen { max-width: 260px; margin: 0 auto; }
+}
+
+/* SB-09: two half-units in one row, one seam between them, same faceplate. The kit's
+   .ru-head/.ru-body/.ru-explain carry the padding — the half itself has none. */
+#sb09 { display: grid; grid-template-columns: 1fr 1fr; padding: 0; }
+#sb09 > .ru-half { min-width: 0; }
+#sb09 > .ru-half + .ru-half { border-left: 1px solid var(--rk-seam); box-shadow: inset 1px 0 0 rgba(255,255,255,.03); }
+#sb09 .ru-body .ru-row { justify-content: center; gap: 14px 26px; padding-top: 12px; }
+@media (max-width: 720px) {
+  #sb09 { grid-template-columns: 1fr; }
+  #sb09 > .ru-half + .ru-half { border-left: 0; box-shadow: none; border-top: 1px solid var(--rk-seam); }
+}
+
+/* SB-10 */
+#sb10 .ru-body { display: flex; flex-direction: column; gap: 10px; }
+#sb10 .ru-row { align-items: center; gap: 10px 14px; }
+#rk-roughsplit-wrap { flex: 1 1 200px; min-width: 160px; }          /* no display: — Tailwind .hidden must keep working */
+#rk-roughsplit-wrap .rk-seg { width: 100%; }
+#rk-roughsplit-wrap .note { margin-top: 4px; }
+#rk-studiomode { min-height: 30px; padding: 7px 26px 7px 9px; border: 1px solid var(--sb-line-strong); border-radius: 5px;
+  font: 600 11px/1 var(--sb-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--sb-gold);
+  background-color: var(--rk-well-2); cursor: pointer; appearance: none; -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--sb-ink-2) 50%), linear-gradient(135deg, var(--sb-ink-2) 50%, transparent 50%);
+  background-position: right 12px top 12px, right 7px top 12px; background-size: 5px 5px; background-repeat: no-repeat; }
+
+/* SB-11 */
+#sb11 .ru-body { display: flex; flex-direction: column; gap: 10px; }
+#sb11 .ru-row > .ru-col { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+#sb11 .ru-row > .ru-col + .ru-col { margin-left: auto; align-items: flex-end; text-align: right; }
+#rk-hookmap rect[y="11"] { fill: var(--sb-gold); }                                   /* best 15 s — solid */
+#rk-hookmap rect[y="21"] { fill: none; stroke: var(--sb-gold); stroke-width: 1.2; stroke-dasharray: 3 2; }  /* best 30 s — dashed */
+/* ---- §3D · SB-12 CNV-2 · SB-13 TMP-1 · SB-15 LDN-1 · RIG (after the kit; last block) ---- */
+/* a dependent second line under an LCD caption (JS leaf: #rk-tk-bpmsub/-keysub, #rk-ldn-tpsub/-lrasub) */
+.rk-lcd-sub { margin-top: 3px; font-family: var(--sb-mono); font-size: 12px; line-height: 1.35; color: var(--sb-ink-2); }
+/* the typed-in LCD (#rk-tk-target) shows focus on the window, not on the bare input */
+.rk-lcd:focus-within { box-shadow: inset 0 2px 6px rgba(0,0,0,.7), 0 0 0 2px var(--sb-ground), 0 0 0 4px var(--sb-gold); }
+/* sentence readouts shown in an LCD window read at 13px, not at the numeral size */
+#rk-cnv-plan, #rk-cnv-peak, #rk-tk-plan, #rk-ldn-src { font-size: 13px; line-height: 1.35; letter-spacing: .01em; text-shadow: none; }
+.rk-lcd:has(> #rk-cnv-plan), .rk-lcd:has(> #rk-tk-plan) { flex: 1 1 240px; }
+
+/* SB-12: the loudness note beside the native select */
+#rk-cnv-lufsnote { flex: 1 1 160px; }
+
+/* SB-13 (#rk-tk-alts .sw is the kit's, SPEC-1 §18) */
+#rk-tk-semis { display: inline-block; min-width: 62px; text-align: center; font: 500 13px/1 var(--sb-mono);
+  color: var(--sb-gold-bright); background: var(--rk-well); border: 1px solid var(--sb-line); border-radius: 5px;
+  padding: 8px 8px 7px; box-shadow: inset 0 2px 6px rgba(0,0,0,.6); font-variant-numeric: tabular-nums; }
+
+/* SB-15: the target chips (JS-built .ldn-row into #rk-ldn-targets) in a responsive grid */
+#rk-ldn-targets { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
+#rk-ldn-targets > .note { grid-column: 1 / -1; }
+.ldn-row { display: grid; grid-template-columns: 1fr auto auto; column-gap: 8px; align-items: baseline;
+  padding: 7px 10px 6px; border-radius: 6px; background: var(--rk-well); border: 1px solid var(--sb-line);
+  box-shadow: inset 0 1px 4px rgba(0,0,0,.6); }
+.ldn-name { font-family: var(--sb-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--sb-ink); }
+.ldn-t { font-family: var(--sb-mono); font-size: 11px; color: var(--sb-ink-3); font-variant-numeric: tabular-nums; }
+.ldn-d { font-family: var(--sb-mono); font-size: 13px; font-weight: 600; text-align: right; min-width: 58px; color: var(--sb-ink-2); font-variant-numeric: tabular-nums; }
+.ldn-d.ok { color: var(--sb-good); }  .ldn-d.over { color: var(--sb-gold-bright); }  .ldn-d.under { color: var(--sb-ink-2); }
+.ldn-v { grid-column: 1 / -1; margin-top: 3px; font-family: var(--sb-display); font-size: 12px; line-height: 1.35; color: var(--sb-ink-2); }
+.ldn-v.warn { color: var(--sb-crit); font-weight: 600; }
+/* the JS also puts class "val" on .ldn-t/.ldn-d — the kit's .val (mono, tabular) is all it needs */
+
+/* RIG strip */
+#sb-rig .ru-ctl { flex: 1 1 auto; }          /* presets sit after the title, export/import at the far right */
+#sb-rig #rk-rig-export { margin-left: auto; }
+closing tag lines) ==== */
+/* ==== 2. SPEC-2 §2.4 — shell addendum (the dock's responsive hides) ==== */
+/* ==== 3. SPEC-3A 0.8 · 4. SPEC-3B §5 · 5. SPEC-3C §6 · 6. SPEC-3D 1.2 — unit-local rules, pasted at Stage 3 ==== */
+</style>
+
+<header class="rk-page-head">
+  <div class="rk-page-id">
+    <p class="rk-eyebrow">Street Banker · Studio</p>
+    <h1 class="sb-h1">The Rack</h1>
+    <p class="rk-lede">Real DSP running in your browser — 12-band EQ, tube stage, cab &amp; mic sim, compressor, WAV export. Your audio never leaves this machine. A utility rack for demos and drops, not a mastering engineer.</p>
+  </div>
+  <div class="rk-page-ctl">
+    <button id="rk-focus" class="sw" type="button">Focus mode</button>
+    <button id="rk-explain" class="sw" type="button" aria-pressed="false" title="Show what every control does, as text on the panel">Explain</button>
+  </div>
+  <!-- Unit nav: click a node to jump to that unit (page order, deck first) -->
+  <nav class="flow" aria-label="Jump to a unit">
+    {% for target, label in [('#sb14', 'VLV-6'), ('#sb00', 'Screen'), ('#sb01', 'Tube'), ('#sb02', 'SUB-1'), ('#sb03', 'EQ-12'), ('#sb04', 'DYN-1'), ('#sb05', 'Meters'), ('#sb06', 'Bus'), ('#sb07', 'Output'), ('#sb08', 'Cab & Mic'), ('#sb09', 'FX'), ('#sb10', 'Stems'), ('#sb11', 'Hooks'), ('#sb12', 'Format'), ('#sb13', 'Tempo'), ('#sb15', 'Loudness')] %}
+    <button type="button" class="flow-node" data-target="{{ target }}">{{ label }}</button>{% if not loop.last %}<span class="flow-sep" aria-hidden="true">→</span>{% endif %}
+    {% endfor %}
+  </nav>
+</header>
+
+<!-- THE AMP. One chassis: rails full height, nameplate, tube deck, then every unit flush. -->
+<div class="amp">
+  <div class="amp-row">
+    <div class="ear" aria-hidden="true">
+      <span class="bolt b1"></span>
+      <span class="bolt b2"></span>
+    </div>
+    <div class="amp-body">
+
+      <!-- Nameplate -->
+      <div class="plate-strip">
+        <div class="brass">
+          <span class="screw sl" aria-hidden="true"></span>
+          <div class="ln1">STREET BANKER</div>
+          <div class="ln2">SB-1200 · ROYALTY SWEEP · ANALOG EXCELLENCE</div>
+          <span class="screw sr" aria-hidden="true"></span>
+        </div>
+      </div>
+
+      <!-- SB-14 VLV-6 Valve Bank — the top deck. Six stages, each its own process; the glow is the meter. -->
+      {% set valves = [
+        ("triode",  "V1", "Triode",  "Even harmonics · warmth"),
+        ("pentode", "V2", "Pentode", "Odd harmonics · push"),
+        ("tape",    "V3", "Tape",    "Soft knee · HF loss · head bump"),
+        ("flutter", "V4", "Flutter", "Wow &amp; flutter · pitch drift"),
+        ("iron",    "V5", "Iron",    "Transformer · lows only"),
+        ("varimu",  "V6", "Vari-Mu", "Slow tube compression"),
+      ] %}
+      <section id="sb14" class="deck">
+        <div class="tubes">
+          {% for key, tube, name, blurb in valves %}
+          <div class="vlv" id="rk-vlv-{{ key }}" data-valve="{{ key }}" style="--heat:0">
+            <button class="vlv-pwr sw" data-valve="{{ key }}" type="button" aria-pressed="false"
+                    title="{{ name }} — {{ blurb|safe }}">
+              <div class="glass" aria-hidden="true"><div class="fil"></div><div class="anode"></div><div class="slits"></div><div class="hotspot"></div><div class="warmbase"></div><div class="mica"></div><div class="mica low"></div><div class="getter"></div></div>
+              <div class="tbase" aria-hidden="true"></div><div class="socket" aria-hidden="true"></div>
+              <div class="tlabel"><span class="vnum">{{ tube }}</span><span class="vname">{{ name }}</span><span class="vrole">{{ blurb|safe }}</span></div>
+            </button>
+            <div class="hmeter" aria-hidden="true"><i></i></div>
+            <label class="vlv-amt">
+              <span class="sr-only">{{ name }} amount</span>
+              <input class="fader" type="range" min="0" max="100" step="1" value="45"
+                     data-valve="{{ key }}" aria-label="{{ name }} amount">
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+        <header class="ru-head deck-head">
+          <span class="ru-tag">SB-14</span>
+          <div class="ru-title" role="heading" aria-level="2">VLV-6</div>
+          <span class="ru-sub">Valve Bank · six colour stages</span>
+          <div class="ru-ctl">
+            <button id="rk-vlv-all" class="sw" type="button">All off</button>
+            <button class="rk-cmp sw" type="button" data-mod="vlv" title="Compare — swap with your previous valve setup">A/B</button>
+            <span class="rk-ledwrap" data-mod="vlv"><b class="rk-la on">A</b><b class="rk-lb">B</b></span>
+            <span class="rk-lvl" data-mod="vlv" title="Level leaving this module" aria-hidden="true"><i></i></span>
+          </div>
+        </header>
+        <div class="ru-explain" hidden>
+          <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+          <div class="ru-ex-art" aria-hidden="true">
+            <svg viewBox="0 0 120 80" focusable="false">
+              <g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="40" cy="40" r="26"/>
+                <line x1="28" y1="24" x2="52" y2="24"/>
+                <line x1="40" y1="24" x2="40" y2="8"/>
+                <line x1="24" y1="36" x2="56" y2="36" stroke-dasharray="3 3"/>
+                <line x1="24" y1="36" x2="10" y2="36"/>
+                <path d="M30 48 Q40 56 50 48"/>
+                <line x1="50" y1="48" x2="50" y2="72"/>
+                <path d="M34 52v12M38 52v12" stroke-width="1"/>
+                <path d="M70 44q8 -18 16 0t16 0"/>
+                <path d="M70 66q8 -24 16 -6t16 4" stroke-dasharray="2 2"/>
+              </g>
+            </svg>
+          </div>
+          <div class="ru-ex-prose">
+            <p>Six separate processes, not one effect with six names — and the glow is a meter, not decoration: each tube lights by how hard that stage is <b>actually</b> being driven right now, and V6 lights by its real gain reduction. A stage doing nothing stays dark, and at zero every stage is mathematically the identity, so off is genuinely off. <b>V1</b> adds even harmonics via a squaring term (measured: 3× more 2nd harmonic than 3rd) with a DC blocker after it, because asymmetry makes DC. <b>V2</b> is odd-symmetric, so it can only make odd harmonics. <b>V3</b> is a soft-knee curve plus the two filter moves that make tape sound like tape. <b>V4</b> is two LFOs on a delay line — real pitch movement. <b>V5</b> saturates the low band only, where a transformer core actually saturates. <b>V6</b> is slow program-dependent compression. They sit after the tube stage and before the cab, so the compressor downstream hears the colour.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- The unit stack. Sixteen flush units; the drop scrim is the LAST child. -->
+      <div class="chassis">
+            <!-- SB-00 Screen: spectrum, EQ + cab curves, clickable instrument bands -->
+            <section class="ru" id="sb00">
+              <header class="ru-head">
+                <span class="ru-tag">SB-00</span>
+                <div class="ru-title" role="heading" aria-level="2">Screen</div>
+                <span class="ru-sub">13 instrument zones · energy detection</span>
+                <div class="ru-ctl">
+                  <span class="rk-legend" aria-hidden="true"><i class="eq"></i>EQ<i class="cab"></i>Cab<i class="ref"></i>Ref</span>
+                </div>
+              </header>
+              <div class="ru-body">
+                <div class="rk-screen">
+                  <canvas id="rk-scope" data-screen></canvas>
+                </div>
+                <!-- Zone trim: appears when an instrument band on the screen is clicked -->
+                <div id="rk-zone" style="display:none">
+                  <span class="ru-sub">Zone</span>
+                  <span id="rk-zone-name"></span>
+                  <span id="rk-zone-bands"></span>
+                  <button id="rk-zone-minus" class="sw">−1 dB</button>
+                  <button id="rk-zone-plus" class="sw">+1 dB</button>
+                  <button id="rk-zone-zero" class="sw">Reset zone</button>
+                  <button id="rk-zone-clear" class="sw" style="margin-left:auto">Done</button>
+                </div>
+              </div>
+              <div class="ru-explain" hidden>
+                <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+                <div class="ru-ex-art" aria-hidden="true">
+                  <svg viewBox="0 0 160 92" width="160" height="92" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="4" width="152" height="78" rx="4"/>
+                    <path d="M20 36 C 40 22, 60 44, 80 30 S 120 18, 142 32"/>
+                    <path d="M20 42 C 52 46, 92 26, 142 38" stroke-dasharray="4 3" opacity=".75"/>
+                    <g opacity=".28"><rect x="20" y="52" width="122" height="5" rx="1"/><rect x="20" y="60" width="122" height="5" rx="1"/><rect x="20" y="68" width="122" height="5" rx="1"/><rect x="20" y="76" width="122" height="4" rx="1"/></g>
+                    <g fill="currentColor" stroke="none" opacity=".8"><rect x="20" y="52" width="44" height="5" rx="1"/><rect x="20" y="60" width="78" height="5" rx="1"/><rect x="20" y="68" width="26" height="5" rx="1"/><rect x="20" y="76" width="58" height="4" rx="1"/></g>
+                    <text x="20" y="90" font-size="7" fill="currentColor" stroke="none" font-family="inherit">20</text>
+                    <text x="129" y="90" font-size="7" fill="currentColor" stroke="none" font-family="inherit">20k</text>
+                  </svg>
+                </div>
+                <div class="ru-ex-prose">
+                  <p>Screen. 13 zones mark where each instrument typically lives; the glow is the energy your track has there right now. Honest energy detection — not instrument identification. Solid curve = your EQ; dashed = cab &amp; mic voicing. The dashed cyan trace is a loaded reference's accumulated spectrum — load one with <b>Load ref</b> on the power strip and press <b>REF</b> to hear it.</p>
+                  <p>Click an instrument band on the screen — Kick, Vocals, Hi-Hats — then use the gold Zone bar under the screen to trim just that range in 1&nbsp;dB steps; watch its EQ knobs turn as you press.</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- PATCH · the bay: units stay put, the cables move -->
+            <section class="ru" id="sb-patch">
+              <header class="ru-head">
+                <span class="ru-tag">Patch</span>
+                <div class="ru-title" role="heading" aria-level="2">Patch Bay</div>
+                <span class="ru-sub">Signal order · the units stay put, the cables move</span>
+                <div class="ru-ctl">
+                  <button id="rk-patch-reset" class="sw" title="Back to the factory order: EQ, SUB, tube, valves, cab, dynamics, FX">Default</button>
+                </div>
+              </header>
+              <div class="ru-body">
+                <div class="rk-bay">
+                  <span class="rk-jack-end" aria-hidden="true">In</span>
+                  <ol id="rk-patch-row" class="rk-patch-row" role="list" aria-label="Signal chain, first to last"></ol>
+                  <span class="rk-jack-end" aria-hidden="true">Out</span>
+                </div>
+                <p id="rk-patch-note" class="rk-key-note" role="status" aria-live="polite"></p>
+              </div>
+            </section>
+
+            <!-- SB-01 Harmonic Bank · tube -->
+            <section class="ru" id="sb01">
+              <header class="ru-head">
+                <span class="ru-tag">SB-01</span>
+                <div class="ru-title" role="heading" aria-level="2">Harmonic Bank</div>
+                <span class="ru-sub">Tube Stage</span>
+                <div class="ru-ctl">
+                  <button class="rk-pwr sw" data-mod="tube">ON</button>
+                  <button class="rk-cmp sw" data-mod="tube" title="Compare — swap with your previous tube settings">A/B</button>
+                  <span class="rk-ledwrap" data-mod="tube"><b class="rk-la on">A</b><b class="rk-lb">B</b></span>
+                  <span class="rk-lvl" data-mod="tube" title="Level leaving this module" aria-hidden="true"><i></i></span>
+                </div>
+              </header>
+              <div class="ru-body">
+                <span id="tube-glow" class="pointer-events-none absolute inset-0 rounded" style="background: radial-gradient(ellipse at 50% 100%, #ff9c3f, #7a3c10 70%, transparent); opacity: 0.1; mix-blend-mode: screen;"></span>
+                <div class="ru-row" id="tube-knobs">
+                  <div data-kn="drive" data-ksize="56"></div>
+                  <div data-kn="bias" data-ksize="56"></div>
+                  <div data-kn="mix" data-ksize="56"></div>
+                </div>
+              </div>
+              <div class="ru-explain" hidden>
+                <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+                <div class="ru-ex-art" aria-hidden="true">
+                  <svg viewBox="0 0 160 70" width="160" height="70" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 35 C 13 10, 27 10, 34 35 S 55 60, 62 35"/>
+                    <path d="M70 35 H 84 M80 31 L84 35 L80 39"/>
+                    <path d="M92 35 C 97 12, 106 11, 114 11 L 118 11 C 126 11, 133 14, 139 35 C 143 48, 149 51, 154 35"/>
+                    <path d="M6 35 H 62 M92 35 H 154" opacity=".3" stroke-dasharray="2 3"/>
+                    <text x="123" y="58" font-size="7" fill="currentColor" stroke="none" font-family="inherit" text-anchor="middle">+ even harmonics</text>
+                  </svg>
+                </div>
+                <div class="ru-ex-prose">
+                  <p>Asymmetric waveshaping — the even-harmonic warmth tubes are loved for. An emulation, and labeled as one. Drive sets how hard the curve bends; Bias skews it so the two halves of the wave bend differently — that asymmetry is where the even harmonics come from; Mix blends the shaped signal against the clean one.</p>
+                  <p>Every unit's ON/OFF kills only that module (knobs hold their positions, export matches), and A/B swaps back to the settings you had before your last tweaks.</p>
+                </div>
+              </div>
+            </section>
+            <!-- SB-02 Foundation · SUB-1 -->
+            <section class="ru" id="sb02">
+              <header class="ru-head">
+                <span class="ru-tag">SB-02</span>
+                <div class="ru-title" role="heading" aria-level="2">Foundation</div>
+                <span class="ru-sub">SUB-1 · Psychoacoustic Lows</span>
+                <div class="ru-ctl">
+                  <button class="rk-pwr sw" data-mod="sub">ON</button>
+                  <button class="rk-cmp sw" data-mod="sub" title="Compare — swap with your previous SUB-1 settings">A/B</button>
+                  <span class="rk-ledwrap" data-mod="sub"><b class="rk-la on">A</b><b class="rk-lb">B</b></span>
+                  <span class="rk-lvl" data-mod="sub" title="Level leaving this module" aria-hidden="true"><i></i></span>
+                </div>
+              </header>
+              <div class="ru-body">
+                <div class="ru-row">
+                  <div data-kn="sdepth" data-ksize="56"></div>
+                  <div data-kn="sgrowl" data-ksize="56"></div>
+                  <div data-kn="sshake" data-ksize="56"></div>
+                </div>
+              </div>
+              <div class="ru-explain" hidden>
+                <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+                <div class="ru-ex-art" aria-hidden="true">
+                  <svg viewBox="0 0 160 70" width="160" height="70" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 52 H 152" opacity=".35"/>
+                    <path d="M8 30 L 34 30 C 46 30, 52 42, 64 42 L 78 42"/>
+                    <path d="M16 42 C 20 42, 22 20, 24 20 C 26 20, 28 42, 32 42" stroke-dasharray="3 2" opacity=".8"/>
+                    <path d="M92 52 V 26" stroke-dasharray="2 2" opacity=".6"/>
+                    <path d="M106 52 V 34 M118 52 V 40 M130 52 V 44"/>
+                    <text x="30" y="63" font-size="7" fill="currentColor" stroke="none" font-family="inherit" text-anchor="middle">45 Hz</text>
+                    <text x="112" y="63" font-size="7" fill="currentColor" stroke="none" font-family="inherit" text-anchor="middle">f · 2f · 3f</text>
+                  </svg>
+                </div>
+                <div class="ru-ex-prose">
+                  <p>Not a bass boost: Depth is a deep 45Hz shelf, Shake a 42Hz room resonance, Growl synthesizes sub harmonics so small speakers hear lows they can't play — psychoacoustics, not magic. A 24 Hz high-pass guards the bottom; the growl path takes only the sub band (under 120 Hz), bends it through a tube-style curve, then high-passes the result at 90 Hz so what comes back is the harmonics, not more sub.</p>
+                </div>
+              </div>
+            </section>
+            <!-- SB-03 Tone Bank · EQ-12 -->
+            <section class="ru" id="sb03">
+              <header class="ru-head">
+                <span class="ru-tag">SB-03</span>
+                <div class="ru-title" role="heading" aria-level="2">Tone Bank</div>
+                <span class="ru-sub">EQ-12 Parametric · 12 Band</span>
+                <div class="ru-ctl">
+                  <div class="rk-segsw" role="group" aria-label="EQ mid/side mode">
+                    <button data-eqmode="stereo" class="rk-eqmode sw sw-lit">Stereo</button>
+                    <button data-eqmode="mid" class="rk-eqmode sw">Mid</button>
+                    <button data-eqmode="side" class="rk-eqmode sw">Side</button>
+                  </div>
+                  <button id="rk-eq-flat" class="sw">Flat</button>
+                  <button class="rk-pwr sw" data-mod="eq">ON</button>
+                  <button class="rk-cmp sw" data-mod="eq" title="Compare — swap with your previous EQ curve">A/B</button>
+                  <span class="rk-ledwrap" data-mod="eq"><b class="rk-la on">A</b><b class="rk-lb">B</b></span>
+                  <span class="rk-lvl" data-mod="eq" title="Level leaving this module" aria-hidden="true"><i></i></span>
+                </div>
+              </header>
+              <div class="ru-body">
+                <div class="ru-row">
+                  <div id="rk-eq" data-ksize="40"></div>
+                  <div id="kn-q" data-ksize="44"></div>
+                </div>
+              </div>
+              <div class="ru-explain" hidden>
+                <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+                <div class="ru-ex-art" aria-hidden="true">
+                  <svg viewBox="0 0 160 70" width="160" height="70" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 42 H 152" opacity=".35"/>
+                    <path d="M56 42 C 66 42, 70 18, 74.5 18 C 79 18, 83 42, 93 42"/>
+                    <path d="M36 42 C 58 42, 62 18, 74.5 18 C 87 18, 91 42, 113 42" stroke-dasharray="3 3" opacity=".7"/>
+                    <g fill="currentColor" stroke="none"><circle cx="12" cy="42" r="2.2"/><circle cx="24.5" cy="42" r="2.2"/><circle cx="37" cy="42" r="2.2"/><circle cx="49.5" cy="42" r="2.2"/><circle cx="62" cy="42" r="2.2"/><circle cx="74.5" cy="18" r="2.6"/><circle cx="87" cy="42" r="2.2"/><circle cx="99.5" cy="42" r="2.2"/><circle cx="112" cy="42" r="2.2"/><circle cx="124.5" cy="42" r="2.2"/><circle cx="137" cy="42" r="2.2"/><circle cx="149.5" cy="42" r="2.2"/></g>
+                    <text x="74.5" y="11" font-size="8" fill="currentColor" stroke="none" font-family="inherit" text-anchor="middle">Q</text>
+                    <text x="12" y="56" font-size="7" fill="currentColor" stroke="none" font-family="inherit" text-anchor="middle">40</text>
+                    <text x="149.5" y="56" font-size="7" fill="currentColor" stroke="none" font-family="inherit" text-anchor="middle">14k</text>
+                  </svg>
+                </div>
+                <div class="ru-ex-prose">
+                  <p>Twelve bands — a 40 Hz low shelf, ten peaking bands from 80 Hz to 8 kHz, and a 14 kHz high shelf — sharing one Q. Drag a knob, double-click resets, scroll trims; Q shapes every band. Pull a band node on the screen and the matching knob turns; Flat returns every band to 0 dB.</p>
+                  <p>Every knob in the rack takes the keyboard: <kbd>Tab</kbd> to it or click it, then <kbd>↑</kbd><kbd>↓</kbd> to turn it — <kbd>Shift</kbd> for fine, <kbd>PgUp</kbd>/<kbd>PgDn</kbd> for coarse, <kbd>Home</kbd>/<kbd>End</kbd> for the ends, <kbd>0</kbd> to reset. Arrow keys land on the same values the mouse can reach, so you can dial an exact setting instead of hunting for it.</p>
+                </div>
+              </div>
+            </section>
+            <!-- SB-04 Dynamics Control · DYN-1 program compressor -->
+            <section class="ru" id="sb04">
+              <header class="ru-head">
+                <span class="ru-tag">SB-04</span>
+                <div class="ru-title" role="heading" aria-level="2">Dynamics Control</div>
+                <span class="ru-sub">DYN-1 · Program compressor</span>
+                <div class="ru-ctl">
+                  <span class="lg rk-key-lg">Key</span>
+                  <div class="rk-segsw" id="rk-comp-key" role="group" aria-label="Compressor key: internal detector or a loaded stem"></div>
+                  <span id="rk-comp-key-note" class="rk-key-note" role="status" aria-live="polite"></span>
+                  <button class="rk-pwr sw" data-mod="comp">ON</button>
+                  <button class="rk-cmp sw" data-mod="comp" title="Compare — swap with your previous compressor settings">A/B</button>
+                  <span class="rk-ledwrap" data-mod="comp"><b class="rk-la on">A</b><b class="rk-lb">B</b></span>
+                  <span class="rk-lvl" data-mod="comp" title="Level leaving this module" aria-hidden="true"><i></i></span>
+                </div>
+              </header>
+              <div class="ru-body">
+                <div class="ru-row rk-dyn">
+                  <div class="ru-row rk-knobs">
+                    <div data-kn="thr" data-ksize="56"></div>
+                    <div data-kn="ratio" data-ksize="56"></div>
+                    <div data-kn="att" data-ksize="56"></div>
+                    <div data-kn="rel" data-ksize="56"></div>
+                    <div data-kn="makeup" data-ksize="56"></div>
+                  </div>
+                  <!-- Gain reduction, right on the unit: the ladder is the compressor working -->
+                  <div class="rk-grbank">
+                    <div class="rk-seg-head"><span class="lg">Gain Red.</span><span id="rk-grdb2" class="rk-seg-val">0.0 dB</span></div>
+                    <div class="rk-seg rk-seg-gr"><div id="rk-gr" class="rk-seg-fill"></div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="ru-explain" hidden>
+                <span class="ru-ex-tag">Explain</span>
+                <div class="ru-ex-art" aria-hidden="true">
+                  <svg viewBox="0 0 140 72" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                    <path d="M16 62H130M16 62V6"/>
+                    <path d="M16 62 54 24Q60 18 68 17L126 10"/>
+                    <path d="M54 24 72 6" stroke-dasharray="2 3"/>
+                    <path d="M54 62V24" stroke-dasharray="2 3"/>
+                    <text x="54" y="70" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">THR</text>
+                    <text x="96" y="30" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">RATIO</text>
+                    <text x="8" y="12" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">OUT</text>
+                    <text x="126" y="70" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">IN</text>
+                  </svg>
+                </div>
+                <div class="ru-ex-prose"><p>Program compressor on the whole mix. Threshold, Ratio, Attack and Release drive the browser's own dynamics stage &mdash; a Web Audio DynamicsCompressorNode with its knee fixed at 6&nbsp;dB; Makeup is plain gain after it. The Gain Red. ladder is the compressor working: it reads the stage's real reduction value, so it moves while audio plays and rests at zero otherwise, and the same number swings the VU needle on SB-05. A ladder parked at zero means no reduction, not a broken meter &mdash; the VU face says COMP OFF or COMP AT 1:1 when that is why.</p></div>
+              </div>
+            </section>
+            <!-- SB-05 Meter Bridge · gain-reduction VU, source peak, transport status -->
+            <section class="ru" id="sb05">
+              <header class="ru-head">
+                <span class="ru-tag">SB-05</span>
+                <div class="ru-title" role="heading" aria-level="2">Meter Bridge</div>
+                <span class="ru-sub">VU · Peak · Source</span>
+                <div class="ru-ctl rk-statusctl">
+                  <span id="scope-lamp" class="lamp" aria-hidden="true"></span>
+                  <span id="rk-status"></span>
+                  <span id="rk-live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></span>
+                </div>
+              </header>
+              <div class="ru-body">
+                <div class="ru-row rk-bridge">
+                  <!-- VU: needle driven by the compressor's real reduction value -->
+                  <svg id="rk-vu" viewBox="0 0 200 112" width="120" height="67">
+                    <defs>
+                      <radialGradient id="vuGlow" cx="0.5" cy="1" r="1">
+                        <stop offset="0" stop-color="#f6ead0"/><stop offset="0.75" stop-color="#e8d9b4"/>
+                        <stop offset="1" stop-color="#d5c69e"/>
+                      </radialGradient>
+                    </defs>
+                    <rect x="2" y="2" width="196" height="108" rx="6" fill="#0a0906" stroke="#332d20"/>
+                    <rect x="8" y="8" width="184" height="96" rx="4" fill="url(#vuGlow)"/>
+                    <g font-size="9" fill="#4a4234" text-anchor="middle">
+                      <text x="30" y="46">0</text><text x="62" y="30">3</text>
+                      <text x="100" y="24">6</text><text x="138" y="30">10</text>
+                      <text x="172" y="46">20</text>
+                    </g>
+                    <path d="M 26 52 A 82 82 0 0 1 174 52" fill="none" stroke="#4a4234" stroke-width="1.5"/>
+                    <path d="M 138 33 A 82 82 0 0 1 174 52" fill="none" stroke="#a3402e" stroke-width="2.5"/>
+                    <text x="100" y="72" font-size="10" letter-spacing="3" fill="#6b5c3d" text-anchor="middle">GAIN REDUCTION</text>
+                    <text id="rk-grdb" x="100" y="86" font-size="10" font-weight="bold" fill="#4a4234" text-anchor="middle">0.0 dB</text>
+                    <line id="rk-vu-needle" x1="100" y1="100" x2="100" y2="26" stroke="#7a2c1e" stroke-width="2" stroke-linecap="round" transform="rotate(-52 100 100)"/>
+                    <circle cx="100" cy="100" r="5" fill="#2a251c"/>
+                  </svg>
+                  <div class="ru-col rk-src">
+                    <span class="lg">Source</span>
+                    <div id="rk-fileinfo">No file loaded — drop a WAV/MP3 anywhere on this page.</div>
+                    <div class="ru-row rk-peakrow">
+                      <div class="rk-seg rk-seg-peak"><div id="rk-peak" class="rk-seg-fill"></div></div>
+                      <div class="rk-lcd rk-lcd-sm"><span id="rk-peakdb" class="rk-lcd-v">−∞</span><span class="rk-lcd-cap">Peak · dBFS</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="ru-explain" hidden>
+                <span class="ru-ex-tag">Explain</span>
+                <div class="ru-ex-art" aria-hidden="true">
+                  <svg viewBox="0 0 140 72" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                    <rect x="6" y="8" width="76" height="46" rx="4"/>
+                    <path d="M18 44A26 26 0 0 1 70 44"/>
+                    <path d="M61 24A26 26 0 0 1 70 44" stroke-width="2.6"/>
+                    <path d="M44 48 35 24"/>
+                    <circle cx="44" cy="48" r="2.2"/>
+                    <text x="44" y="65" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">GR · dB</text>
+                    <rect x="94" y="22" width="4" height="12" fill="currentColor"/><rect x="100" y="22" width="4" height="12" fill="currentColor"/><rect x="106" y="22" width="4" height="12" fill="currentColor"/><rect x="112" y="22" width="4" height="12" fill="currentColor"/><rect x="118" y="22" width="4" height="12"/><rect x="124" y="22" width="4" height="12"/><rect x="130" y="22" width="4" height="12"/>
+                    <text x="114" y="46" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">PEAK</text>
+                  </svg>
+                </div>
+                <div class="ru-ex-prose"><p>The VU needle rides the compressor's real gain reduction &mdash; fast attack, slow release, like the real thing &mdash; and its scale is compressed at the top the way a GR meter's is, so 3&nbsp;dB of reduction points at the 3. Peak is read after Final Trim, from the same signal the WAV export carries; the ladder on the power strip mirrors it. The lamp is green while the rack is playing, and the status line reports loads, saves, renders and exports &mdash; it is mirrored to screen readers.</p></div>
+              </div>
+            </section>
+            <!-- SB-06 Master Bus · centre (mid/side), bypass, loop -->
+            <section class="ru" id="sb06">
+              <header class="ru-head">
+                <span class="ru-tag">SB-06</span>
+                <div class="ru-title" role="heading" aria-level="2">Master Bus</div>
+                <span class="ru-sub">Center · mid/side</span>
+                <div class="ru-ctl">
+                  <button id="rk-ab" class="sw" disabled>Bypass: OFF</button>
+                  <label class="sw"><input id="rk-loop" type="checkbox" checked class="sr-only">Loop</label>
+                </div>
+              </header>
+              <div class="ru-body">
+                <div class="ru-row rk-centerrow">
+                  <span class="lg">Center (mid/side)</span>
+                  <div class="rk-segsw" role="group" aria-label="Center (mid/side)">
+                    <button data-center="normal" class="rk-center sw sw-lit">Normal</button>
+                    <button data-center="solo" class="rk-center sw">Solo Center</button>
+                    <button data-center="remove" class="rk-center sw">Remove Center</button>
+                  </div>
+                </div>
+              </div>
+              <div class="ru-explain" hidden>
+                <span class="ru-ex-tag">Explain</span>
+                <div class="ru-ex-art" aria-hidden="true">
+                  <svg viewBox="0 0 140 72" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                    <text x="8" y="25" font-size="7" fill="currentColor" stroke="none">L</text>
+                    <text x="8" y="53" font-size="7" fill="currentColor" stroke="none">R</text>
+                    <path d="M16 22H30M16 50H30"/>
+                    <path d="M30 22 46 22M30 50 46 50M30 22 46 50M30 50 46 22"/>
+                    <circle cx="52" cy="22" r="6"/><circle cx="52" cy="50" r="6"/>
+                    <text x="52" y="24.5" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">+</text>
+                    <text x="52" y="52.5" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">−</text>
+                    <path d="M58 22H72M58 50H72"/>
+                    <rect x="72" y="14" width="26" height="16" rx="2"/>
+                    <rect x="72" y="42" width="26" height="16" rx="2" stroke-dasharray="2 2"/>
+                    <text x="85" y="24.5" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">MID</text>
+                    <text x="85" y="52.5" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">SIDE</text>
+                    <path d="M98 22H112M98 50H112M112 22 124 36M112 50 124 36M124 36H134"/>
+                    <text x="128" y="30" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">L R</text>
+                  </svg>
+                </div>
+                <div class="ru-ex-prose"><p>The classic mid/side trick on any stereo mix &mdash; center-panned vocals solo or vanish. Physics, not stem separation; mono files have no sides to keep. Normal leaves the image alone; Solo Center keeps only what both channels share; Remove Center keeps only what differs between them. Bypass plays the untouched file through the same output &mdash; hold it to compare for as long as you hold, click to latch; Loop starts the track again when it reaches the end.</p></div>
+              </div>
+            </section>
+            <!-- SB-07 Output Stage · transport + final trim -->
+            <section class="ru" id="sb07">
+              <header class="ru-head">
+                <span class="ru-tag">SB-07</span>
+                <div class="ru-title" role="heading" aria-level="2">Output Stage</div>
+                <span class="ru-sub">Monitor &amp; render</span>
+                <div class="ru-ctl">
+                  <button class="rk-pwr sw" data-mod="out">ON</button>
+                  <button class="rk-cmp sw" data-mod="out" title="Compare — swap with your previous trim">A/B</button>
+                  <span class="rk-ledwrap" data-mod="out"><b class="rk-la on">A</b><b class="rk-lb">B</b></span>
+                  <span class="rk-lvl" data-mod="out" title="Level leaving this module" aria-hidden="true"><i></i></span>
+                </div>
+              </header>
+              <div class="ru-body">
+                <div class="ru-row rk-transport">
+                  <label class="sw sw-gold">Load audio<input id="rk-file" type="file" accept="audio/*" class="sr-only"></label>
+                  <button id="rk-play" class="sw" disabled>Play</button>
+                  <button id="rk-export" class="sw" disabled>Export WAV</button>
+                  <button id="rk-save" class="sw">Save my rack</button>
+                  <button id="rk-lib-btn" class="sw" type="button"
+                          aria-haspopup="dialog" aria-expanded="false" aria-controls="rk-lib-back"
+                          title="Racks you have named and kept">Library</button>
+                  <div class="rk-outknob" data-kn="out" data-ksize="56"></div>
+                </div>
+              </div>
+              <div class="ru-explain" hidden>
+                <span class="ru-ex-tag">Explain</span>
+                <div class="ru-ex-art" aria-hidden="true">
+                  <svg viewBox="0 0 140 72" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                    <path d="M6 36H24"/>
+                    <path d="M24 20 56 36 24 52Z"/>
+                    <text x="34" y="38.5" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">dB</text>
+                    <text x="40" y="64" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">GAIN</text>
+                    <path d="M56 36H70"/>
+                    <rect x="72" y="30" width="4" height="12" fill="currentColor"/><rect x="78" y="30" width="4" height="12" fill="currentColor"/><rect x="84" y="30" width="4" height="12" fill="currentColor"/><rect x="90" y="30" width="4" height="12" fill="currentColor"/><rect x="96" y="30" width="4" height="12"/><rect x="102" y="30" width="4" height="12"/>
+                    <text x="89" y="56" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">PEAK</text>
+                    <path d="M108 36H116"/>
+                    <path d="M116 26H128L134 32V50H116Z"/><path d="M128 26V32H134"/>
+                    <text x="125" y="62" font-size="7" text-anchor="middle" fill="currentColor" stroke="none">WAV</text>
+                  </svg>
+                </div>
+                <div class="ru-ex-prose"><p>Final Trim is the actual output gain into the peak meter and your WAV export. Load audio decodes the file in this browser; Play runs the live chain; Export WAV renders the whole chain offline at the file's sample rate and downloads a 16-bit stereo WAV &mdash; the same chain you hear, module power included. Save my rack keeps the one rack that loads with this page; Library keeps named racks, scoped to you.</p></div>
+              </div>
+            </section>
+            <!-- SB-08 · CAB-3 · cabinet & microphone -->
+            <section class="ru" id="sb08">
+              <header class="ru-head">
+                <span class="ru-tag">SB-08</span>
+                <div class="ru-title" role="heading" aria-level="2">CAB-3</div>
+                <span class="ru-sub">Cabinet &amp; Microphone</span>
+                <div class="ru-ctl">
+                  <label class="rk-cab-pwr"><input id="rk-cab-on" type="checkbox" checked class="sr-only" aria-label="Cabinet and microphone on"><span class="sw" aria-hidden="true"></span></label>
+                  <button class="rk-cmp sw" data-mod="cab" title="Compare — swap with your previous cab &amp; mic setup">A/B</button>
+                  <span class="rk-ledwrap" data-mod="cab"><b class="rk-la on">A</b><b class="rk-lb">B</b></span>
+                  <span class="rk-lvl" data-mod="cab" title="Level leaving this module" aria-hidden="true"><i></i></span>
+                </div>
+              </header>
+              <div class="ru-body">
+                <!-- The signature: a schematic of the setup you've dialled in.
+                     Cones, mic, angle and gap all redraw from the live settings. -->
+                <div class="ru-col">
+                  <div class="rk-screen">
+                    <svg id="rk-cabview" viewBox="0 0 196 116" role="img" aria-labelledby="rk-cabview-cap"></svg>
+                  </div>
+                  <span id="rk-cabview-cap"></span>
+                </div>
+                <div class="ru-col">
+                  <div class="ru-col">
+                    <span class="lg">Cabinet</span>
+                    <div class="rk-segsw" id="rk-pick-cab" role="radiogroup" aria-label="Cabinet">
+                      <input type="radio" name="rk-cabpick" id="cb-direct" value="direct" checked>
+                      <label for="cb-direct" class="sw" title="Straight through — no cabinet or microphone in the circuit">
+                        <svg width="30" height="22" viewBox="0 0 30 22" aria-hidden="true"><rect class="gl" x="1.5" y="1.5" width="27" height="19" rx="2"/><circle class="gl" cx="15" cy="11" r="4.5"/><circle class="gl-f" cx="15" cy="11" r="1.6"/></svg>
+                        <span class="cap">DI</span>
+                      </label>
+                      <input type="radio" name="rk-cabpick" id="cb-combo112" value="combo112">
+                      <label for="cb-combo112" class="sw" title="Single 12-inch combo — the classic small-amp voicing">
+                        <svg width="30" height="22" viewBox="0 0 30 22" aria-hidden="true"><rect class="gl" x="1.5" y="1.5" width="27" height="19" rx="2"/><circle class="gl" cx="15" cy="11" r="7"/><circle class="gl-f" cx="15" cy="11" r="2.4"/></svg>
+                        <span class="cap">1×12</span>
+                      </label>
+                      <input type="radio" name="rk-cabpick" id="cb-open212" value="open212">
+                      <label for="cb-open212" class="sw" title="Two 12s, open back — wider and airier">
+                        <svg width="30" height="22" viewBox="0 0 30 22" aria-hidden="true"><rect class="gl" x="1.5" y="1.5" width="27" height="19" rx="2"/><circle class="gl" cx="9.5" cy="11" r="5.2"/><circle class="gl-f" cx="9.5" cy="11" r="1.8"/><circle class="gl" cx="20.5" cy="11" r="5.2"/><circle class="gl-f" cx="20.5" cy="11" r="1.8"/></svg>
+                        <span class="cap">2×12</span>
+                      </label>
+                      <input type="radio" name="rk-cabpick" id="cb-closed412" value="closed412">
+                      <label for="cb-closed412" class="sw" title="Four 12s, closed back — tight and forward">
+                        <svg width="30" height="22" viewBox="0 0 30 22" aria-hidden="true"><rect class="gl" x="1.5" y="1.5" width="27" height="19" rx="2"/><circle class="gl" cx="9.8" cy="6.6" r="4"/><circle class="gl" cx="20.2" cy="6.6" r="4"/><circle class="gl" cx="9.8" cy="15.4" r="4"/><circle class="gl" cx="20.2" cy="15.4" r="4"/></svg>
+                        <span class="cap">4×12</span>
+                      </label>
+                      <input type="radio" name="rk-cabpick" id="cb-bass810" value="bass810">
+                      <label for="cb-bass810" class="sw" title="Eight 10s — the big bass fridge">
+                        <svg width="30" height="22" viewBox="0 0 30 22" aria-hidden="true"><rect class="gl" x="1.5" y="1.5" width="27" height="19" rx="2"/><circle class="gl" cx="7.2" cy="7.4" r="2.7"/><circle class="gl" cx="12.8" cy="7.4" r="2.7"/><circle class="gl" cx="18.4" cy="7.4" r="2.7"/><circle class="gl" cx="24" cy="7.4" r="2.7"/><circle class="gl" cx="7.2" cy="14.6" r="2.7"/><circle class="gl" cx="12.8" cy="14.6" r="2.7"/><circle class="gl" cx="18.4" cy="14.6" r="2.7"/><circle class="gl" cx="24" cy="14.6" r="2.7"/></svg>
+                        <span class="cap">8×10</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="ru-row">
+                    <div class="ru-col">
+                      <span class="lg">Microphone</span>
+                      <div class="rk-segsw" id="rk-pick-mic" role="radiogroup" aria-label="Microphone type">
+                        <input type="radio" name="rk-micpick" id="mc-dynamic" value="dynamic" checked>
+                        <label for="mc-dynamic" class="sw" title="Dynamic, 57-style — the reliable close-mic workhorse">
+                          <svg width="22" height="24" viewBox="0 0 22 24" aria-hidden="true"><circle class="gl" cx="11" cy="6.4" r="4.6"/><path class="gl" d="M7.6 4.6h6.8M7.6 8.2h6.8"/><rect class="gl" x="8" y="10.4" width="6" height="12" rx="1.4"/></svg>
+                          <span class="cap">Dyn</span>
+                        </label>
+                        <input type="radio" name="rk-micpick" id="mc-ribbon" value="ribbon">
+                        <label for="mc-ribbon" class="sw" title="Ribbon — dark and smooth, tames the top">
+                          <svg width="22" height="24" viewBox="0 0 22 24" aria-hidden="true"><rect class="gl" x="5.6" y="2.4" width="10.8" height="14.4" rx="5.4"/><path class="gl" d="M5.6 9.6h10.8"/><rect class="gl-f" x="10.2" y="16.8" width="1.6" height="5.4"/></svg>
+                          <span class="cap">Ribbon</span>
+                        </label>
+                        <input type="radio" name="rk-micpick" id="mc-condenser" value="condenser">
+                        <label for="mc-condenser" class="sw" title="Condenser — open top end, more detail and more room">
+                          <svg width="22" height="24" viewBox="0 0 22 24" aria-hidden="true"><rect class="gl" x="4.6" y="2.4" width="12.8" height="12.8" rx="1.6"/><circle class="gl" cx="11" cy="8.8" r="4.2"/><rect class="gl-f" x="10.2" y="15.2" width="1.6" height="7"/></svg>
+                          <span class="cap">Cond</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="ru-col">
+                      <span class="lg">Position</span>
+                      <div class="rk-segsw" id="rk-pick-axis" role="radiogroup" aria-label="Microphone angle">
+                        <input type="radio" name="rk-axispick" id="ax-on" value="on" checked>
+                        <label for="ax-on" class="sw" title="Pointed straight at the cone — brighter, more bite">
+                          <svg width="26" height="18" viewBox="0 0 26 18" aria-hidden="true"><path class="gl" d="M22 2v14"/><path class="gl" d="M4 9h15"/><path class="gl" d="M15.4 5.6 19 9l-3.6 3.4"/></svg>
+                          <span class="cap">On-axis</span>
+                        </label>
+                        <input type="radio" name="rk-axispick" id="ax-off" value="off">
+                        <label for="ax-off" class="sw" title="Angled off the cone — softer top end">
+                          <svg width="26" height="18" viewBox="0 0 26 18" aria-hidden="true"><path class="gl" d="M22 2v14"/><path class="gl" d="M4 2.6 19 9"/><path class="gl" d="M13.8 3.4 19 9l-5.6 1.2"/></svg>
+                          <span class="cap">Off-axis</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div data-kn="dist" data-ksize="56"></div>
+                  </div>
+                </div>
+                <!-- Kept as the state holders so every other control, preset and rig
+                     import keeps one place to read and write. Hidden, not removed. -->
+                <select id="rk-cab-cab" hidden aria-hidden="true" tabindex="-1">
+                  <option value="direct">Direct / DI (no cab)</option>
+                  <option value="combo112">1×12 Combo</option>
+                  <option value="open212">2×12 Open-Back</option>
+                  <option value="closed412">4×12 Closed-Back</option>
+                  <option value="bass810">8×10 Bass</option>
+                </select>
+                <select id="rk-cab-mic" hidden aria-hidden="true" tabindex="-1">
+                  <option value="dynamic">Dynamic (57-style)</option>
+                  <option value="ribbon">Ribbon (dark &amp; smooth)</option>
+                  <option value="condenser">Condenser (open top)</option>
+                </select>
+                <span hidden>
+                  <input type="radio" name="rk-axis" value="on" checked tabindex="-1">
+                  <input type="radio" name="rk-axis" value="off" tabindex="-1">
+                </span>
+              </div>
+              <div class="ru-explain" hidden>
+                <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+                <div class="ru-ex-art" aria-hidden="true">
+                  <svg viewBox="0 0 120 72" width="120" height="72" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 60h108" opacity=".45"/>
+                    <rect x="10" y="20" width="34" height="40" rx="3"/>
+                    <circle cx="27" cy="40" r="11"/>
+                    <circle cx="27" cy="40" r="3.5" fill="currentColor" stroke="none"/>
+                    <path d="M44 40h18" stroke-dasharray="3 3"/>
+                    <circle cx="68" cy="40" r="5"/>
+                    <rect x="73" y="37" width="14" height="6" rx="1.5"/>
+                    <path d="M85 43v17m-8 0h16"/>
+                    <path d="M96 26c10 6 10 22 0 28" opacity=".6"/>
+                    <path d="M102 20c14 8 14 32 0 40" opacity=".35"/>
+                  </svg>
+                </div>
+                <div class="ru-ex-prose">
+                  <p>Voicings in the style of classic cabinets and mics — modeled curves plus a synthesized room, not measurements of any specific hardware. The diagram is a schematic of the settings you picked, not a photo of a room.</p>
+                  <p>Distance moves the mic off the grille; the caption's ROOM % is the synthesized room it mixes in, and the dashed line in the schematic is that gap.</p>
+                </div>
+              </div>
+            </section>
+            <!-- SB-09 · DLY-1 | REV-1 · two half-units, one row -->
+            <section class="ru" id="sb09">
+              <div class="ru-half">
+                <header class="ru-head">
+                  <span class="ru-tag">SB-09</span>
+                  <div class="ru-title" role="heading" aria-level="2">DLY-1</div>
+                  <span class="ru-sub">Delay</span>
+                  <div class="ru-ctl">
+                    <button class="rk-pwr sw" data-mod="dly">ON</button>
+                    <button class="rk-cmp sw" data-mod="dly" title="Compare — swap with your previous delay settings">A/B</button>
+                    <span class="rk-ledwrap" data-mod="dly"><b class="rk-la on">A</b><b class="rk-lb">B</b></span>
+                    <span class="rk-lvl" data-mod="dly" title="Level leaving this module" aria-hidden="true"><i></i></span>
+                  </div>
+                </header>
+                <div class="ru-body">
+                  <div class="ru-row">
+                    <div data-kn="dtime" data-ksize="56"></div>
+                    <div data-kn="dfb" data-ksize="56"></div>
+                    <div data-kn="dtone" data-ksize="56"></div>
+                    <div data-kn="dmix" data-ksize="56"></div>
+                  </div>
+                </div>
+                <div class="ru-explain" hidden>
+                  <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+                  <div class="ru-ex-art" aria-hidden="true">
+                    <svg viewBox="0 0 120 72" width="120" height="72" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 36h26"/>
+                      <rect x="30" y="24" width="30" height="24" rx="3"/>
+                      <path d="M38 30v12M45 30v12M52 30v12" opacity=".5"/>
+                      <path d="M60 36h56"/>
+                      <circle cx="96" cy="36" r="2.5" fill="currentColor" stroke="none"/>
+                      <path d="M96 38.5V58H80"/>
+                      <rect x="62" y="52" width="18" height="12" rx="2"/>
+                      <path d="M65 61c3-6 7 0 12-3" opacity=".7"/>
+                      <path d="M62 58H45V48"/>
+                      <path d="M48 53l-3-5-3 5" opacity=".7"/>
+                    </svg>
+                  </div>
+                  <div class="ru-ex-prose">
+                    <p>Feedback echo with a tone filter in the loop — darker repeats, like tape.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="ru-half">
+                <header class="ru-head">
+                  <span class="ru-tag">SB-09</span>
+                  <div class="ru-title" role="heading" aria-level="2">REV-1</div>
+                  <span class="ru-sub">Reverb · Convolver</span>
+                  <div class="ru-ctl">
+                    <button class="rk-pwr sw" data-mod="rev">ON</button>
+                    <button class="rk-cmp sw" data-mod="rev" title="Compare — swap with your previous reverb settings">A/B</button>
+                    <span class="rk-ledwrap" data-mod="rev"><b class="rk-la on">A</b><b class="rk-lb">B</b></span>
+                    <span class="rk-lvl" data-mod="rev" title="Level leaving this module" aria-hidden="true"><i></i></span>
+                  </div>
+                </header>
+                <div class="ru-body">
+                  <div class="ru-row">
+                    <div data-kn="rsize" data-ksize="56"></div>
+                    <div data-kn="rdamp" data-ksize="56"></div>
+                    <div data-kn="rpre" data-ksize="56"></div>
+                    <div data-kn="rmix" data-ksize="56"></div>
+                  </div>
+                </div>
+                <div class="ru-explain" hidden>
+                  <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+                  <div class="ru-ex-art" aria-hidden="true">
+                    <svg viewBox="0 0 120 72" width="120" height="72" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 60h112" opacity=".45"/>
+                      <path d="M14 60V12"/>
+                      <path d="M18 60 22 30 26 58 30 38 34 57 38 44 42 56 46 48 50 55 54 50 58 54 62 52 66 54 70 53 74 54 84 54 96 54"/>
+                      <path d="M22 30Q60 50 112 56" stroke-dasharray="3 3" opacity=".6"/>
+                    </svg>
+                  </div>
+                  <div class="ru-ex-prose">
+                    <p>A synthesized space through a real convolver — honestly generated, not a sampled hall.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <!-- SB-10 · STM-4 · stem deck -->
+            <section class="ru" id="sb10">
+              <header class="ru-head">
+                <span class="ru-tag">SB-10</span>
+                <div class="ru-title" role="heading" aria-level="2">STM-4</div>
+                <span class="ru-sub">Stem Deck · four-lane</span>
+                <div class="ru-ctl">
+                  <label class="sw">Add stems<input id="rk-stems-file" type="file" accept="audio/*" multiple class="sr-only"></label>
+                  <button id="rk-roughsplit" class="sw sw-gold" disabled title="Split the loaded track into four rough lanes — classical DSP, right here in this tab">Rough Split</button>
+                  {% if studio_split %}
+                  <button id="rk-studiosplit" class="sw sw-gold" disabled title="Demucs-class separation by StemSplit — this one uploads the track for processing">Studio Split</button>
+                  <label class="lg" for="rk-studiomode">How far to split</label>
+                  <select id="rk-studiomode">
+                    {% for m in studio_modes %}
+                    <option value="{{ m.value }}"{% if m.value == 'FOUR_STEMS' %} selected{% endif %}>{{ m.label }} · {{ m.count }}</option>
+                    {% endfor %}
+                  </select>
+                  {% endif %}
+                </div>
+              </header>
+              <div class="ru-body">
+                <div class="ru-row">
+                  <span class="lg">Separation</span>
+                  <span id="rk-roughsplit-lamp" class="lamp" title="Lit while a split is running"></span>
+                  <span class="lg">Run</span>
+                  <div id="rk-roughsplit-wrap" class="hidden">
+                    <div class="rk-seg"><div id="rk-roughsplit-fill" class="rk-seg-fill"></div></div>
+                    <p id="rk-roughsplit-status" class="note"></p>
+                  </div>
+                  {% if studio_split %}
+                  <p id="rk-studiomode-note" class="note"></p>
+                  <script id="rk-studiomodes" type="application/json">{{ studio_modes|tojson }}</script>
+                  {% endif %}
+                </div>
+                <div class="ru-row">
+                  <span class="lg">Four-lane bay</span>
+                  <span class="lg">Mute · Solo · Level</span>
+                </div>
+                <div id="rk-stems"></div>
+              </div>
+              <div class="ru-explain" hidden>
+                <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+                <div class="ru-ex-art" aria-hidden="true">
+                  <svg viewBox="0 0 120 72" width="120" height="72" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 14h44M6 30h44M6 46h44M6 62h44"/>
+                    <circle cx="6" cy="14" r="1.6" fill="currentColor" stroke="none"/>
+                    <circle cx="6" cy="30" r="1.6" fill="currentColor" stroke="none"/>
+                    <circle cx="6" cy="46" r="1.6" fill="currentColor" stroke="none"/>
+                    <circle cx="6" cy="62" r="1.6" fill="currentColor" stroke="none"/>
+                    <path d="M50 14c14 0 14 24 28 24M50 30c10 0 10 8 28 8M50 46c10 0 10-8 28-8M50 62c14 0 14-24 28-24"/>
+                    <circle cx="84" cy="38" r="6"/>
+                    <path d="M84 34v8M80 38h8"/>
+                    <path d="M90 38h24"/>
+                  </svg>
+                </div>
+                <div class="ru-ex-prose">
+                  <p>Have your stems? Load them, mute or solo, and bounce the mix through the whole rack. No stems? <b>Rough Split</b> cuts the loaded track into four lanes — vocals, drums, bass, instruments — using harmonic/percussive and center separation. That's frequency-and-space math, not ML isolation: session-prep quality, expect bleed. The four lanes sum back to your record exactly, everything runs in this tab, and nothing uploads. Center (mid/side) lives on the Master Bus above.{% if studio_split %} <b>Studio Split</b> is the quality tier: Demucs-class separation processed by StemSplit — the one Deck feature that uploads your track (to their servers, for the split, billed to this site's StemSplit account). Pick how far to take it: just the vocal, vocal and instrumental, four stems, or six — six lifts guitar and piano out of the “everything else” lane. Whichever you choose, the lanes you get back add up to your record.{% endif %}</p>
+                </div>
+              </div>
+            </section>
+            <!-- SB-11 · SNP-1 · snippet finder -->
+            <section class="ru" id="sb11">
+              <header class="ru-head">
+                <span class="ru-tag">SB-11</span>
+                <div class="ru-title" role="heading" aria-level="2">SNP-1</div>
+                <span class="ru-sub">Snippet Finder · Reels · Shorts · TikTok</span>
+                <div class="ru-ctl">
+                  <button id="rk-hook-scan" class="sw sw-gold">Find hooks</button>
+                </div>
+              </header>
+              <div class="ru-body">
+                <div class="ru-row">
+                  <div class="ru-col">
+                    <span class="lg">Scan</span>
+                    <p id="rk-hook-note" class="note"></p>
+                  </div>
+                  <div class="ru-col">
+                    <span class="lg">Hook map</span>
+                    <span id="rk-hookmap-cap" class="note">No scan yet</span>
+                  </div>
+                </div>
+                <div class="rk-screen">
+                  <!-- The strip is the whole track; marks sit at the real times. -->
+                  <svg id="rk-hookmap" viewBox="0 0 600 40" role="img" aria-labelledby="rk-hookmap-cap"></svg>
+                </div>
+                <span class="lg">Windows · Vertical video 720×1280</span>
+                <div id="rk-hooks"></div>
+              </div>
+              <div class="ru-explain" hidden>
+                <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+                <div class="ru-ex-art" aria-hidden="true">
+                  <svg viewBox="0 0 120 72" width="120" height="72" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 8v6M44 8v6M68 8v6M92 8v6" opacity=".7"/>
+                    <rect x="4" y="20" width="112" height="16" rx="2"/>
+                    <path d="M20 20v16M44 20v16M68 20v16M92 20v16" opacity=".45"/>
+                    <rect x="28" y="24" width="30" height="8" rx="1.5" stroke-dasharray="3 2"/>
+                    <path d="M34 40v10m-3-3l3 3 3-3"/>
+                    <rect x="20" y="54" width="30" height="8" rx="1.5" fill="currentColor" stroke="none" opacity=".9"/>
+                    <path d="M20 50v16" opacity=".7"/>
+                  </svg>
+                </div>
+                <div class="ru-ex-prose">
+                  <p>Two passes: the loudest sustained 15-second window, then the loudest 30 — each then snapped to the nearest downbeat.</p>
+                  <p>Scans your track's real energy for the loudest sustained 15- and 30-second stretches — level detection, not taste; trust your ears on the final pick. The window is then <b>snapped to the nearest downbeat</b> using the same beat grid SB-13 measures, because a clip that starts mid-beat reads as a mistake however good the audio is. It only snaps when the grid is confident and the move is under half a bar — a hook dragged most of a bar to reach a downbeat is no longer the hook it found — and the panel says which of those happened. Preview plays that window, Snippet WAV bounces it through the whole rack, and Vertical video records a 720×1280 WebM with a live spectrum ring (keep this tab visible while it records; phone editors convert WebM to MP4).</p>
+                </div>
+              </div>
+            </section>
+        <!-- SB-12 · CNV-2 Format Bench — kept as a flush unit between SB-11 and SB-13 -->
+        <section id="sb12" class="ru">
+          <header class="ru-head">
+            <span class="ru-tag">SB-12</span>
+            <div class="ru-title" role="heading" aria-level="2">Format Bench</div>
+            <span class="ru-sub">CNV-2 · convert &amp; bounce · exact PCM</span>
+            <div class="ru-ctl">
+              <span class="lg">Source</span>
+              <div class="rk-segsw" id="rk-cnv-src" role="radiogroup" aria-label="Conversion source">
+                <input type="radio" name="rk-cnvsrc" id="cs-raw" value="raw" checked>
+                <label class="sw" for="cs-raw" title="The file exactly as decoded — no rack processing at all"><span class="cap">Loaded file</span></label>
+                <input type="radio" name="rk-cnvsrc" id="cs-master" value="master">
+                <label class="sw" for="cs-master" title="The full rack chain applied, the same render Export WAV uses"><span class="cap">Rack master</span></label>
+              </div>
+            </div>
+          </header>
+          <div class="ru-body">
+            <div class="ru-row">
+              <div class="ru-col">
+                <span class="lg">Container</span>
+                <div class="rk-segsw" id="rk-cnv-fmt" role="radiogroup" aria-label="Output container">
+                  <input type="radio" name="rk-cnvfmt" id="cf-wav" value="wav" checked>
+                  <label class="sw" for="cf-wav" title="RIFF/WAVE — exact PCM, what every distributor wants"><span class="cap">WAV</span></label>
+                  <input type="radio" name="rk-cnvfmt" id="cf-aiff" value="aiff">
+                  <label class="sw" for="cf-aiff" title="AIFF — exact PCM, big-endian; the Mac studio standard"><span class="cap">AIFF</span></label>
+                  {% if server_convert %}
+                  <input type="radio" name="rk-cnvfmt" id="cf-flac" value="flac">
+                  <label class="sw" for="cf-flac" title="FLAC — lossless, about half the size of WAV"><span class="cap">FLAC</span></label>
+                  <input type="radio" name="rk-cnvfmt" id="cf-alac" value="alac">
+                  <label class="sw" for="cf-alac" title="Apple Lossless in an M4A"><span class="cap">ALAC</span></label>
+                  <input type="radio" name="rk-cnvfmt" id="cf-mp3" value="mp3">
+                  <label class="sw" for="cf-mp3" title="MP3 — plays on everything"><span class="cap">MP3</span></label>
+                  <input type="radio" name="rk-cnvfmt" id="cf-aac" value="aac">
+                  <label class="sw" for="cf-aac" title="AAC in an M4A — better than MP3 at the same size"><span class="cap">AAC</span></label>
+                  <input type="radio" name="rk-cnvfmt" id="cf-opus" value="opus">
+                  <label class="sw" for="cf-opus" title="Opus — the most music per byte here"><span class="cap">Opus</span></label>
+                  <input type="radio" name="rk-cnvfmt" id="cf-vorbis" value="vorbis">
+                  <label class="sw" for="cf-vorbis" title="OGG Vorbis"><span class="cap">OGG</span></label>
+                  {% endif %}
+                </div>
+                {% if server_convert %}
+                <p id="rk-cnv-where" class="note"></p>
+                <script id="rk-cnv-formats" type="application/json">{{ convert_formats|tojson }}</script>
+                {% endif %}
+              </div>
+              <div class="ru-col">
+                <span class="lg">Depth</span>
+                <div class="ru-row">
+                  <div class="rk-segsw" id="rk-cnv-bits" role="radiogroup" aria-label="Bit depth">
+                    <input type="radio" name="rk-cnvbits" id="cb16" value="16" checked>
+                    <label class="sw" for="cb16" title="16-bit integer — CD and streaming delivery"><span class="cap">16</span></label>
+                    <input type="radio" name="rk-cnvbits" id="cb24" value="24">
+                    <label class="sw" for="cb24" title="24-bit integer — mastering and archive"><span class="cap">24</span></label>
+                    <input type="radio" name="rk-cnvbits" id="cb32" value="32">
+                    <label class="sw" for="cb32" title="32-bit float — no clipping, largest files"><span class="cap">32f</span></label>
+                  </div>
+                  <label class="sw"><input id="rk-cnv-dither" type="checkbox" checked class="sr-only">TPDF dither</label>
+                </div>
+              </div>
+            </div>
+            <div class="ru-row">
+              <div class="ru-col">
+                <span class="lg">Sample rate</span>
+                <div class="pick rk-segsw" id="rk-cnv-rate" role="radiogroup" aria-label="Sample rate"></div>
+              </div>
+              <div class="ru-col">
+                <span class="lg">Channels</span>
+                <div class="rk-segsw" id="rk-cnv-ch" role="radiogroup" aria-label="Channel count">
+                  <input type="radio" name="rk-cnvch" id="cc-2" value="2" checked>
+                  <label class="sw" for="cc-2"><span class="cap">Stereo</span></label>
+                  <input type="radio" name="rk-cnvch" id="cc-1" value="1">
+                  <label class="sw" for="cc-1" title="Summed to one channel"><span class="cap">Mono</span></label>
+                </div>
+              </div>
+              {% if server_convert %}
+              <div id="rk-cnv-brwrap" class="hidden">
+                <div class="ru-col">
+                  <span class="lg">Bitrate</span>
+                  <div class="pick rk-segsw" id="rk-cnv-br" role="radiogroup" aria-label="Bitrate"></div>
+                </div>
+              </div>
+              {% endif %}
+              <div class="ru-col">
+                <span class="lg">Loudness</span>
+                <div class="ru-row">
+                  <select id="rk-cnv-lufs">
+                    <option value="">Leave the level alone</option>
+                  </select>
+                  <span id="rk-cnv-lufsnote" class="note"></span>
+                </div>
+              </div>
+            </div>
+            <div class="ru-row">
+              <div class="rk-lcd">
+                <div id="rk-cnv-plan" class="rk-lcd-v">Load a track to convert.</div>
+                <div class="rk-lcd-cap">Output · plan</div>
+              </div>
+              <div class="rk-lcd">
+                <div id="rk-cnv-peak" class="rk-lcd-v">No source</div>
+                <div class="rk-lcd-cap">Source · peak</div>
+              </div>
+              <button id="rk-cnv-go" class="sw sw-gold" type="button" disabled>Convert</button>
+            </div>
+            <p id="rk-cnv-status" class="note"></p>
+          </div>
+          <div class="ru-explain" hidden>
+            <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+            <div class="ru-ex-art" aria-hidden="true">
+              <svg viewBox="0 0 180 90" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 46 C 12 18, 20 18, 26 46 S 40 74, 46 46 S 58 22, 62 46"/>
+                <path d="M6 46 H62" opacity=".35" stroke-dasharray="2 3"/>
+                <path d="M66 46 h8 m-3 -3 l3 3 -3 3"/>
+                <path d="M78 46 h4 v-14 h4 v-10 h4 v8 h4 v12 h4 v14 h4 v8 h4 v-8 h4 v-14 h4 v-8 h4 v6 h4 v6"/>
+                <path d="M78 46 H126" opacity=".35" stroke-dasharray="2 3"/>
+                <path d="M84 70 h.5 M92 68 h.5 M100 71 h.5 M108 69 h.5 M116 70 h.5" stroke-width="2" opacity=".6"/>
+                <path d="M130 46 h8 m-3 -3 l3 3 -3 3"/>
+                <path d="M144 20 h20 l10 10 v40 h-30 z M164 20 v10 h10"/>
+                <path d="M150 40 h6 v-6 h6 v6 h6" opacity=".8"/>
+                <path d="M150 52 h18 M150 58 h18 M150 64 h12" opacity=".55"/>
+              </svg>
+            </div>
+            <div class="ru-ex-prose">
+              <p>Reads anything your browser can decode — MP3, WAV, FLAC, M4A, OGG. Decoding is your browser's, so anything it can play it can convert; the container and the sample maths are ours. Resampling is your browser's own resampler; the headers and the quantising are written here, and dropping to 16-bit applies TPDF dither so the error stays uncorrelated noise instead of quiet grit.</p>
+              <p>Loudness is measured on the actual output, after resampling, then a single clean gain change — no limiting, no compression. If the target would push the true peak past that platform's ceiling, the gain is capped so it lands exactly on the ceiling instead, and the status line says by how much it fell short. Turning a master down is lossless; only turning one up can clip.</p>
+              <p>{% if server_convert %}<b>WAV and AIFF are written in this tab and never leave it.</b> The compressed formats can't be — no browser gives a web page an MP3, FLAC or AAC encoder — so those are encoded on the server, which means the audio is uploaded. The panel says which path you're on before you press Convert. Either way the rate, channel and loudness choices above are applied here first; the server only changes the container. Bitrate: higher is bigger and closer to the source. A lossy encode throws detail away for good — keep the WAV or FLAC as your master and treat this as a copy for sending out.{% else %}Everything here runs in this tab; nothing uploads.{% endif %}</p>
+            </div>
+          </div>
+        </section>
+        <!-- SB-13 · TMP-1 Tempo & Key -->
+        <section id="sb13" class="ru">
+          <header class="ru-head">
+            <span class="ru-tag">SB-13</span>
+            <div class="ru-title" role="heading" aria-level="2">Tempo &amp; Key</div>
+            <span class="ru-sub">TMP-1 · WSOLA stretch · resample shift</span>
+            <div class="ru-ctl">
+              <button id="rk-tk-zero" class="sw" type="button" title="Back to 100% tempo, 0 semitones, 0 cents">Reset</button>
+            </div>
+          </header>
+          <div class="ru-body">
+            <div class="ru-row">
+              <div class="rk-lcd">
+                <div id="rk-tk-bpm" class="rk-lcd-v">—</div>
+                <div class="rk-lcd-cap">BPM · detected</div>
+                <div id="rk-tk-bpmsub" class="rk-lcd-sub">not measured yet</div>
+              </div>
+              <div class="rk-lcd">
+                <div id="rk-tk-key" class="rk-lcd-v">—</div>
+                <div class="rk-lcd-cap">Key · chroma</div>
+                <div id="rk-tk-keysub" class="rk-lcd-sub">not measured yet</div>
+              </div>
+              <div class="rk-lcd">
+                <input id="rk-tk-target" class="rk-lcd-v" type="number" min="40" max="260" step="0.1" placeholder="—" aria-label="Target BPM">
+                <div class="rk-lcd-cap">Target BPM</div>
+              </div>
+              <div class="ru-col">
+                <span class="lg">Analyse</span>
+                <div class="ru-row">
+                  <span id="rk-tk-lamp" class="lamp" title="Lit while analysing"></span>
+                  <button id="rk-tk-detect" class="sw sw-gold" type="button" disabled title="Measures BPM and key from the audio itself — estimates with a score, never a tag">Detect BPM &amp; key</button>
+                </div>
+                <div id="rk-tk-alts"></div>
+              </div>
+            </div>
+            <div class="ru-row">
+              <div class="ru-col">
+                <span class="lg">Tempo</span>
+                <div class="ru-row">
+                  <input id="rk-tk-tempo" class="fader" type="range" min="50" max="200" step="1" value="100" aria-label="Tempo percent">
+                  <span id="rk-tk-tempoval" class="k-value">100%</span>
+                </div>
+              </div>
+              <div class="ru-col">
+                <span class="lg">Key</span>
+                <div class="ru-row">
+                  <button id="rk-tk-down" class="sw" type="button" aria-label="Down one semitone">−</button>
+                  <span id="rk-tk-semis">0 st</span>
+                  <button id="rk-tk-up" class="sw" type="button" aria-label="Up one semitone">+</button>
+                  <span class="k-label">Cents</span>
+                  <input id="rk-tk-cents" class="fader" type="range" min="-50" max="50" step="1" value="0" aria-label="Fine tune in cents">
+                  <span id="rk-tk-centsval" class="k-value">0</span>
+                </div>
+              </div>
+            </div>
+            <div class="ru-row">
+              <div class="ru-col" style="flex:1 1 100%">
+                <span class="lg">Chroma</span>
+                <!-- The 12 pitch classes as measured; the detected root is lit. Painted by the rack script; leave empty. -->
+                <div class="rk-screen"><svg id="rk-tk-chroma" viewBox="0 0 480 76" role="img" aria-labelledby="rk-tk-keysub"></svg></div>
+              </div>
+            </div>
+            <div class="ru-row">
+              <div class="rk-lcd">
+                <div id="rk-tk-plan" class="rk-lcd-v">Load a track, then detect.</div>
+                <div class="rk-lcd-cap">Plan</div>
+              </div>
+              <button id="rk-tk-preview" class="sw" type="button" disabled>Preview 12s</button>
+              <button id="rk-tk-render" class="sw sw-gold" type="button" disabled>Bounce WAV</button>
+            </div>
+            <div id="rk-tk-wrap" class="hidden"><div class="rk-seg"><div id="rk-tk-fill" class="rk-seg-fill"></div></div></div>
+            <p id="rk-tk-status" class="note"></p>
+          </div>
+          <div class="ru-explain" hidden>
+            <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+            <div class="ru-ex-art" aria-hidden="true">
+              <svg viewBox="0 0 180 90" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 8 V40 M52 8 V40 M92 8 V40 M132 8 V40 M172 8 V40" opacity=".35" stroke-dasharray="2 3"/>
+                <path d="M6 38 L10 22 12 10 14 26 18 34 30 36 48 30 52 12 54 28 60 35 72 36 88 30 92 11 95 27 100 35 112 37 128 31 132 13 135 28 140 36 156 37 168 29 172 10 175 27 178 36"/>
+                <path d="M52 44 H92 M52 42 v4 M92 42 v4" opacity=".7"/>
+                <path d="M4 84 H146" opacity=".4"/>
+                <path d="M8 84 v-8 M20 84 v-12 M32 84 v-6 M44 84 v-20 M56 84 v-9 M68 84 v-14 M80 84 v-7 M104 84 v-10 M116 84 v-12 M128 84 v-6 M140 84 v-16" stroke-width="5" opacity=".45"/>
+                <path d="M92 84 v-26" stroke-width="5"/>
+                <path d="M150 84 q8 -22 16 0 M158 84 q8 -22 16 0 M166 84 q8 -22 16 0" opacity=".8"/>
+              </svg>
+            </div>
+            <div class="ru-ex-prose">
+              <p>BPM comes from a spectral-flux onset envelope autocorrelated over 60–190 BPM; key from a 12-class chroma correlated against the Krumhansl-Schmuckler major and minor profiles. Both are <b>estimates with a score attached</b>, not readings off a tag — autocorrelation genuinely cannot tell a tempo from its half or double, so both are offered rather than guessed at.</p>
+              <p>Tempo: pitch stays put — WSOLA time-stretch. Key: length stays put — resample plus stretch. Honest time-domain DSP that holds up at the ratios people actually use (0.5× to 2×), and smears transients if you push it far. Runs in this tab.</p>
+            </div>
+          </div>
+        </section>
+        <!-- SB-15 · LDN-1 Loudness -->
+        <section id="sb15" class="ru">
+          <header class="ru-head">
+            <span class="ru-tag">SB-15</span>
+            <div class="ru-title" role="heading" aria-level="2">LDN-1 Loudness</div>
+            <span class="ru-sub">ITU-R BS.1770-4</span>
+            <div class="ru-ctl">
+              <div class="rk-segsw" id="rk-ldn-source" role="radiogroup" aria-label="What to measure">
+                <input type="radio" name="rk-ldnsrc" id="ld-master" value="master">
+                <label class="sw" for="ld-master" title="The full rack chain — what you would actually bounce"><span class="cap">Master</span></label>
+                <input type="radio" name="rk-ldnsrc" id="ld-raw" value="raw" checked>
+                <label class="sw" for="ld-raw" title="The file as decoded, before the rack touches it"><span class="cap">File</span></label>
+              </div>
+            </div>
+          </header>
+          <div class="ru-body">
+            <div class="ru-row">
+              <div class="rk-lcd">
+                <div id="rk-ldn-i" class="rk-lcd-v">—</div>
+                <div class="rk-lcd-cap"><span class="lg">Integrated</span></div>
+                <div class="rk-lcd-sub">LUFS · gated</div>
+              </div>
+              <div class="rk-lcd">
+                <div id="rk-ldn-tp" class="rk-lcd-v">—</div>
+                <div class="rk-lcd-cap"><span class="lg">True peak</span></div>
+                <div id="rk-ldn-tpsub" class="rk-lcd-sub">dBTP · 4× oversampled</div>
+              </div>
+              <div class="rk-lcd">
+                <div id="rk-ldn-lra" class="rk-lcd-v">—</div>
+                <div class="rk-lcd-cap"><span class="lg">Range</span></div>
+                <div id="rk-ldn-lrasub" class="rk-lcd-sub">LU · EBU 3342</div>
+              </div>
+              <div class="ru-col">
+                <span class="lg">Measure</span>
+                <div class="ru-row">
+                  <span id="rk-ldn-lamp" class="lamp" title="Lit while measuring"></span>
+                  <button id="rk-ldn-go" class="sw sw-gold" type="button" disabled title="Integrated loudness, true peak and range to ITU-R BS.1770-4, measured in this tab">Measure</button>
+                </div>
+                <div class="rk-lcd">
+                  <div id="rk-ldn-src" class="rk-lcd-v">No source</div>
+                  <div class="rk-lcd-cap">Source</div>
+                </div>
+                <div id="rk-ldn-wrap" class="hidden"><div class="rk-seg"><div id="rk-ldn-fill" class="rk-seg-fill"></div></div></div>
+                <p id="rk-ldn-status" class="note"></p>
+              </div>
+            </div>
+            <div class="ru-row">
+              <div class="ru-col" style="flex:1 1 100%">
+                <span class="lg">Against published targets</span>
+                <div id="rk-ldn-targets"></div>
+              </div>
+            </div>
+            <div class="ru-row">
+              <div class="ru-col" style="flex:1 1 100%">
+                <span class="lg">Short-term</span>
+                <!-- Real 3-second-block loudness over the length of the track. Painted by the rack script; leave empty. -->
+                <div class="rk-screen"><svg id="rk-ldn-graph" viewBox="0 0 600 90" role="img" aria-labelledby="rk-ldn-status"></svg></div>
+              </div>
+            </div>
+          </div>
+          <div class="ru-explain" hidden>
+            <span class="ru-ex-tag" aria-hidden="true">Explain</span>
+            <div class="ru-ex-art" aria-hidden="true">
+              <svg viewBox="0 0 180 90" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 56 H172" opacity=".4"/>
+                <path d="M8 20 V80" opacity=".4"/>
+                <path d="M8 80 C 20 60, 30 57, 44 56 L 104 56 C 118 56, 126 47, 140 46 L 172 46"/>
+                <path d="M150 46 v-4" opacity=".6"/>
+                <path d="M8 68 H172" opacity=".5" stroke-dasharray="3 3"/>
+                <path d="M8 62 H172" opacity=".35" stroke-dasharray="1.5 3"/>
+                <path d="M60 24 v10 M72 16 v18 M84 24 v10" opacity=".6"/>
+                <path d="M54 34 Q 72 -4 90 34" opacity=".9"/>
+                <circle cx="72" cy="11" r="1.6" fill="currentColor" stroke="none"/>
+              </svg>
+            </div>
+            <div class="ru-ex-prose">
+              <p>Peak metering tells you about clipping and nothing about how loud you'll actually sound — this is the number every platform normalises by. Measured to the standard, not approximated: K-weighting derived for <b>your file's</b> sample rate rather than the 48 kHz coefficients printed in the spec, 400 ms blocks with both required gates (absolute at −70 LUFS, relative at −10 LU) so silence and quiet passages can't drag the average down, loudness range per EBU 3342, and a true peak found by 4× oversampling because the peak <i>between</i> samples is what converters and lossy encoders actually see. That method under-reads by up to about 0.7 dB in the worst case, which is why mastering ceilings sit at −1 dBTP rather than 0. Verified against the published EBU Tech 3341 compliance cases.</p>
+              <p>The targets are the figures the platforms publish, not something this app checks with them, and they do move. Every service turns a loud master <b>down</b> — that costs nothing. Turning a quiet one <b>up</b> is where the true peak comes up with it, which is the only case that can clip.</p>
+            </div>
+          </div>
+        </section>
+        <!-- RIG · presets + rig file — the last strip above the power conditioner -->
+        <section id="sb-rig" class="ru">
+          <header class="ru-head">
+            <span class="ru-tag">Rig</span>
+            <div class="ru-title" role="heading" aria-level="2">Presets</div>
+            <span class="ru-sub">Starting points · share the chain</span>
+            <div class="ru-ctl">
+              <button data-preset="flat" class="rk-preset sw" type="button">Flat</button>
+              <button data-preset="warm" class="rk-preset sw" type="button">Warm Master</button>
+              <button data-preset="vocal" class="rk-preset sw" type="button">Vocal Forward</button>
+              <button data-preset="bass" class="rk-preset sw" type="button">Bass Tight</button>
+              <button data-preset="guitar" class="rk-preset sw" type="button">Guitar Rig</button>
+              <button id="rk-rig-export" class="sw" type="button" title="Download this whole chain as a JSON rig file to share">Export rig</button>
+              <label class="sw" title="Load a rig file from a collaborator">Import rig<input id="rk-rig-import" type="file" accept="application/json,.json" class="sr-only"></label>
+            </div>
+          </header>
+        </section>
+            <!-- MANUAL · the drawer under the amp -->
+            <section class="ru" id="sb-manual">
+              <button id="rk-man-toggle" class="rk-man-front" aria-expanded="false" aria-controls="rk-man-body"
+                      title="The manual: the signal path as patched right now, every unit's card in one read, and every key the rack answers to">
+                <span class="rk-man-pull" aria-hidden="true"></span>
+                <span class="ru-tag">Manual</span>
+                <span class="rk-man-label">The drawer · signal path, every unit, every key</span>
+                <span class="rk-man-pull" aria-hidden="true"></span>
+              </button>
+              <div id="rk-man-body" class="rk-man-body" hidden>
+                <div class="rk-man-cols">
+                  <div class="rk-man-sec">
+                    <div class="rk-man-head" role="heading" aria-level="3">Signal path · as patched right now</div>
+                    <p id="rk-man-path" class="rk-man-path"></p>
+                    <p class="rk-man-note">Rewire it in the Patch Bay under the screen. The order is part of your rack and rides its saves, its A/B and its undo.</p>
+                  </div>
+                  <div class="rk-man-sec">
+                    <div class="rk-man-head" role="heading" aria-level="3">Every key the rack answers to</div>
+                    <dl class="rk-man-keys">
+                      <dt>Any knob</dt><dd>drag up or down · mouse wheel · double-click puts it back to its default</dd>
+                      <dt>Focused knob</dt><dd>arrows step · Shift+arrows fine (a fifth of a step) · PageUp / PageDown jump 10 · Home / End are the ends · Backspace, Delete or 0 reset</dd>
+                      <dt>EQ band, knob focused</dt><dd>B bypasses the band · S held is LISTEN — you hear the band's region while it is down</dd>
+                      <dt>EQ band switch</dt><dd>tap bypasses · hold is LISTEN</dd>
+                      <dt>Patch jack</dt><dd>arrows move it a slot · or press it, then press its new place</dd>
+                      <dt>Tubes</dt><dd>press the glass to switch its stage · the small fader is how much</dd>
+                      <dt>Undo</dt><dd>Ctrl/Cmd+Z · add Shift to redo · never while you are typing in a field</dd>
+                      <dt>Overlays</dt><dd>Escape closes the history, the library and this drawer</dd>
+                    </dl>
+                  </div>
+                </div>
+                <div class="rk-man-head" role="heading" aria-level="3">The units, in signal order of the rack face</div>
+                <div id="rk-man-units" class="rk-man-units"></div>
+              </div>
+            </section>
+
+        <div id="rk-empty" class="rk-empty">
+          <div class="rk-empty-card">
+            <p class="rk-empty-h">Drop audio to activate the rack</p>
+            <p class="rk-empty-p">Drag a file anywhere on this page, or pick one below.
+               The controls still work without it &mdash; dial in a rack and save it to
+               your library &mdash; but nothing will make a sound until there is
+               something to play.</p>
+            <label for="rk-file" class="sw sw-gold">Load audio</label>
+          </div>
+        </div>
+      </div><!-- /chassis -->
+
+    </div>
+    <div class="ear r" aria-hidden="true">
+      <span class="bolt b1"></span>
+      <span class="bolt b2"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Power-conditioner strip: the fixed transport, same finish as the rack. #rk-dock is the flex row itself. -->
+<div id="rk-dock">
+  <span class="pw-led" aria-hidden="true"></span>
+  <button id="rk-play2" class="sw" disabled>Play</button>
+  <canvas id="rk-wave" title="Click to jump anywhere in the track"></canvas>
+  <span id="rk-time">0:00 / 0:00</span>
+  <div class="rk-dock-peak"><div class="rk-seg"><div id="rk-peak2" class="rk-seg-fill"></div></div></div>
+  <div class="rk-hist-wrap">
+    <button id="rk-undo" class="sw" type="button" disabled title="Nothing to undo">&#8630;</button>
+    <button id="rk-redo" class="sw" type="button" disabled title="Nothing to redo">&#8631;</button>
+    <button id="rk-hist-btn" class="sw" type="button" disabled
+            aria-haspopup="true" aria-expanded="false" aria-controls="rk-hist-pop"
+            title="Every change you have made, newest first">History</button>
+    <div id="rk-hist-pop" class="rk-hist-pop" hidden role="dialog" aria-label="Change history">
+      <p class="rk-hist-head">Newest first &middot; pick one to go back to just before it</p>
+      <ul id="rk-hist-list" class="rk-hist-list" role="list"></ul>
+    </div>
+  </div>
+  <span id="rk-cost" class="rk-cost" role="status" aria-live="off"
+        title="How long a bounce takes. Measured on this machine, not estimated.">measuring&hellip;</span>
+  <button id="rk-ab2" class="sw" disabled>Bypass: OFF</button>
+  <button id="rk-export2" class="sw" disabled>Export</button>
+  <button id="rk-rollout" class="sw" title="Start a Smart Link campaign titled after this session" disabled>→ Smart Link</button>
+  <label class="sw rk-ref-load" title="Load a commercial reference track to A/B against — it plays untouched">
+    Load ref<input id="rk-ref-file" type="file" accept="audio/*" class="sr-only">
+  </label>
+  <button id="rk-ref" class="sw" title="Toggle between your chain and the untouched reference — the dashed cyan trace on the screen is the reference's accumulated spectrum" disabled>REF</button>
+  <button id="rk-vault" class="sw" title="Render the processed master and archive it in your Asset Vault" disabled>→ Vault</button>
+</div>
+<div class="h-14" aria-hidden="true"></div>
+
+<script src="/static/js/roughsplit.js?v=1"></script>
+<script src="/static/js/audioconv.js?v=1"></script>
+<script src="/static/js/tempokey.js?v=3"></script>
+<script src="/static/js/tubes.js?v=3"></script>
+<script src="/static/js/loudness.js?v=1"></script>
+<!-- The rack library. Named racks, kept server-side and scoped to the
+     signed-in artist. Distinct from "Save my rack", which keeps only the
+     one rack that loads with the page. -->
+<!-- BOUNCE · render once, measure that render, hand over the file -->
+<div id="rk-bnc-back" class="rk-bnc-back" hidden>
+  <div class="rk-bnc" role="dialog" aria-modal="true" aria-labelledby="rk-bnc-title">
+    <div class="rk-bnc-top">
+      <div id="rk-bnc-title" class="rk-bnc-title" role="heading" aria-level="2">Bounce</div>
+      <p id="rk-bnc-src" class="rk-bnc-src"></p>
+      <button id="rk-bnc-x" class="sw rk-bnc-x" type="button">Close</button>
+    </div>
+
+    <p id="rk-bnc-status" class="rk-bnc-status" role="status" aria-live="polite">Rendering the rack…</p>
+
+    <div id="rk-bnc-body" class="rk-bnc-body" hidden>
+      <div class="rk-bnc-nums">
+        <div class="rk-lcd"><span id="rk-bnc-i" class="rk-lcd-v">—</span><span class="rk-lcd-cap">Integrated · LUFS</span></div>
+        <div class="rk-lcd"><span id="rk-bnc-tp" class="rk-lcd-v">—</span><span class="rk-lcd-cap">True peak · dBTP</span></div>
+        <div class="rk-lcd"><span id="rk-bnc-lra" class="rk-lcd-v">—</span><span class="rk-lcd-cap">Range · LU</span></div>
+      </div>
+      <p class="rk-bnc-note">Measured on this exact render — not an earlier one, and not the file you loaded. The numbers describe the bounce you are about to take.</p>
+
+      <div class="rk-bnc-head" role="heading" aria-level="3">Against published targets</div>
+      <div id="rk-bnc-targets" class="rk-bnc-targets"></div>
+      <p class="rk-bnc-note">These are the figures the platforms publish. They are references for planning a master, not something this app checks with them, and they do move. Nothing here changes your audio: the bounce is your rack, at your level.</p>
+
+      <div class="rk-bnc-head" role="heading" aria-level="3">The file</div>
+      <div class="rk-bnc-file">
+        <span class="lg">Container</span>
+        <div class="rk-segsw" id="rk-bnc-fmt" role="group" aria-label="Container"></div>
+        <span class="lg">Depth</span>
+        <div class="rk-segsw" id="rk-bnc-depth" role="group" aria-label="Bit depth"></div>
+        <label id="rk-bnc-dither-wrap" class="sw" title="TPDF dither: a whisper of noise that stops 24-bit rounding turning into distortion on the way down to 16">
+          <input id="rk-bnc-dither" type="checkbox" checked> TPDF dither
+        </label>
+      </div>
+      <p id="rk-bnc-plan" class="rk-bnc-plan"></p>
+
+      <div class="rk-bnc-actions">
+        <button id="rk-bnc-go" class="sw sw-gold" type="button">Bounce WAV</button>
+        <button id="rk-bnc-vault" class="sw" type="button" title="Render is done — this archives the same bounce into your Asset Vault">→ Vault</button>
+        <span id="rk-bnc-done" class="rk-bnc-done" role="status" aria-live="polite"></span>
+      </div>
+      <p class="rk-bnc-note">Sample-rate changes and the compressed formats live in SB-12 Format Bench, which is built for exactly that. This drawer bounces what the rack is playing, at its own rate.</p>
+    </div>
+  </div>
+</div>
+
+<div id="rk-lib-back" class="rk-lib-back" hidden>
+  <div class="rk-lib" role="dialog" aria-modal="true" aria-labelledby="rk-lib-title">
+    <div class="rk-lib-top">
+      <h2 id="rk-lib-title" class="rk-lib-title">Rack library</h2>
+      <p id="rk-lib-count" class="rk-lib-count"></p>
+      <button id="rk-lib-x" class="sw rk-lib-x" type="button">Close</button>
+    </div>
+    <form id="rk-lib-form" class="rk-lib-new">
+      <input id="rk-lib-name" class="rk-lib-in" type="text" maxlength="80" required
+             placeholder="Name this rack &mdash; vocal chain, drum bus&hellip;" aria-label="Name for this rack">
+      <input id="rk-lib-note" class="rk-lib-in" type="text" maxlength="200"
+             placeholder="Note (optional)" aria-label="Note about this rack">
+      <button class="sw sw-gold" type="submit">Save current</button>
+    </form>
+    <p id="rk-lib-msg" class="rk-lib-msg" role="status" aria-live="polite"></p>
+    <ul id="rk-lib-list" class="rk-lib-list" role="list"></ul>
+  </div>
+</div>
+
+{# The rack reads window.__savedRack once, at load. It has to be set
+   BEFORE the script that reads it — the other way round it was always
+   undefined, so no saved rack ever came back. #}
+{% if saved_rack %}<script>window.__savedRack = {{ saved_rack | js_json }};</script>{% endif %}
+<script src="/static/js/rackdsp.js?v=56"></script>
+{% endblock %}

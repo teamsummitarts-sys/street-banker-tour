@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Playlists - Royalty Sweep{% endblock %}
+
+{% set pl = playlists %}
+
+{% block content %}
+<div class="mx-auto max-w-[1400px] space-y-5">
+  <div>
+    <h1 class="sb-h1">Playlist Pitching</h1>
+    <p class="mt-1 text-sm text-gray-300">Track your playlist pitches from submission to placement — editorial adds are a top driver of streams.</p>
+  </div>
+
+  {# The disclosure used to sit below the pitch list, thirty lines under
+     the numbers it applies to. "Placement Reach · 842,000 playlist
+     followers" is the first thing on this page and read as the artist's
+     own. A label placed after the claim is a footnote, not a label. #}
+  {% with kind='sample',
+          body='The pitch pipeline below is illustrative.',
+          note='Playlists, curators, follower counts and these four totals are examples. Only the song titles are yours.' %}
+    {% include 'partials/data_label.html' %}
+  {% endwith %}
+
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="rounded-2xl border border-green-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Placements</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-green-400">{{ pl.summary.placements }}</div>
+    </div>
+    <div class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Pending</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-sb-ink">{{ pl.summary.pending }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Total Pitches</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ pl.summary.total_pitches }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Placement Reach</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ "{:,}".format(pl.summary.reach) }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">playlist followers</div>
+    </div>
+  </div>
+
+  <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">Pitches</h2>
+    <div class="mt-4 space-y-2">
+      {% for p in pl.pitches %}
+      <div class="flex flex-wrap items-center gap-3 rounded-xl border border-white/5 bg-white/5 px-4 py-3">
+        <div class="min-w-0 flex-1">
+          <div class="text-sm font-semibold text-gray-100">{{ p.playlist }}</div>
+          <div class="text-xs text-gray-300 font-medium">"{{ p.song }}" · {{ p.curator }} · {{ "{:,}".format(p.followers) }} followers</div>
+        </div>
+        <span class="shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold {{ pl.stage_tone.get(p.stage, '') }}">{{ p.stage }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {# Moved to the top of the page, above the totals it qualifies. #}
+  </section>
+</div>
+{% endblock %}

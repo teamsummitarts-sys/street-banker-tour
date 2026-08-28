@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sb-preview",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["tools/dev_preview.py"],
+      "port": 5055,
+      "autoPort": true
+    },
+    {
+      "name": "sb-design",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["tools/dev_preview.py"],
+      "port": 5077,
+      "autoPort": true
+    }
+  ]
+}

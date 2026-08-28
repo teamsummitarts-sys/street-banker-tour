@@ -1,0 +1,53 @@
+{% extends "signal/_shell.html" %}
+{% from "signal/_macros.html" import artist_cell, score_cell, dist_pill %}
+{% block title %}{{ mandate['name'] }}{% endblock %}
+{% block main %}
+  <p class="sg-eyebrow"><a href="/signal/mandates">Mandates</a></p>
+  <h1 class="sg-h1">{{ mandate['name'] }}</h1>
+  <p class="sg-lede">{{ matched|length }} artist{{ '' if matched|length == 1 else 's' }} match every criterion.</p>
+
+  {% if matched %}
+    <div class="sg-table-wrap"><table class="sg-table">
+      <thead><tr><th scope="col">Artist</th><th scope="col" class="sg-num">Deal readiness</th>
+        <th scope="col" class="sg-num">Momentum</th><th scope="col">Distribution</th>
+        <th scope="col">Why it matched</th><th scope="col"><span class="sg-sr">Actions</span></th></tr></thead>
+      <tbody>
+        {% for r in matched %}
+          <tr>
+            <td>{{ artist_cell(r['artist']) }}</td>
+            <td class="sg-num">{{ score_cell(r['artist']['id'], 'deal_readiness', r['deal']) }}</td>
+            <td class="sg-num">{{ score_cell(r['artist']['id'], 'sb_momentum', r['momentum']) }}</td>
+            <td>{{ dist_pill(r['distribution']) }}</td>
+            <td><ul class="sg-list">{% for why in r['match_reasons'] %}<li>{{ why }}</li>{% endfor %}</ul></td>
+            <td>
+              {% if r['on_desk'] %}<span class="sg-pill is-ok">On desk</span>
+              {% elif sg_can('push_to_desk') %}
+                <form method="post" action="/signal/artist/{{ r['artist']['id'] }}/operator-desk">
+                  <button class="sg-btn sg-btn--small" type="submit">→ Desk</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  {% else %}
+    <div class="sg-empty">Nothing matches every criterion yet. The near-misses below show what is holding them back.</div>
+  {% endif %}
+
+  {% if missed %}
+    <h2 class="sg-h2">Near misses — and why</h2>
+    <div class="sg-table-wrap"><table class="sg-table">
+      <thead><tr><th scope="col">Artist</th><th scope="col">What is missing</th></tr></thead>
+      <tbody>
+        {% for r in missed %}
+          <tr>
+            <td>{{ artist_cell(r['artist']) }}</td>
+            <td><ul class="sg-list">{% for m in r['match_misses'] %}<li>{{ m }}</li>{% endfor %}</ul></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="sg-note">Showing why an artist did <i>not</i> match is as useful as showing why one did — it tells you whether the mandate or the market is wrong.</p>
+  {% endif %}
+{% endblock %}

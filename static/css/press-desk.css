@@ -1,0 +1,288 @@
+/* Press Desk.
+ *
+ * Hand-written rather than Tailwind utilities: the build is frozen and
+ * checked in, so a class this page invented would arrive unstyled.
+ *
+ * Two grounds on purpose. The desk itself is the app's dark surface, but
+ * anything meant to be READ as a document - a written announcement, a
+ * prepared message - sits on ivory. Long prose in dim grey on black is
+ * the thing this product has already decided not to do.
+ */
+
+.pd {
+  --pd-ink: var(--sb-ground);
+  --pd-panel: var(--sb-surface-1);
+  --pd-line: rgb(201 162 74 / 0.28);
+  --pd-rule: rgb(255 255 255 / 0.10);
+  --pd-gold: var(--sb-gold);
+  --pd-amber: var(--sb-gold-bright);
+  --pd-copy: var(--sb-ink);
+  --pd-soft: var(--sb-ink-2);
+  --pd-paper: var(--sb-ink);
+  --pd-paper-ink: var(--sb-surface-2);
+
+  color: var(--pd-copy);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.pd a { color: inherit; }
+
+/* --- headings ------------------------------------------------------------ */
+.pd-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.pd-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--pd-amber);
+  margin: 0 0 6px;
+}
+.pd-h1 { font-family: var(--sb-display); font-size: 28px; font-weight: 800; font-stretch: 112%; line-height: 1.1; text-transform: uppercase; letter-spacing: 0; margin: 0; margin: 0; }
+.pd-h2 { font-family: var(--sb-mono); font-size: 12px; font-weight: 500; letter-spacing: 0.13em; text-transform: uppercase; color: var(--pd-amber); margin: 26px 0 10px; }
+.pd-sub { color: var(--pd-soft); font-size: 13.5px; margin: 4px 0 0; max-width: 70ch; line-height: 1.6; }
+
+/* --- buttons ------------------------------------------------------------- */
+.pd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: var(--sb-r-control);
+  border: 1px solid var(--pd-gold);
+  background: var(--pd-gold);
+  color: var(--sb-on-gold);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 180ms;
+}
+.pd-btn:hover { opacity: 0.88; }
+.pd-btn--ghost {
+  background: transparent;
+  color: var(--pd-copy);
+  border-color: var(--pd-rule);
+}
+.pd-btn--ghost:hover { border-color: var(--pd-gold); }
+.pd-btn--small { min-height: 28px; padding: 0 11px; font-size: 12px; }
+
+/* --- cards --------------------------------------------------------------- */
+.pd-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.pd-card {
+  border: 1px solid var(--pd-rule);
+  border-radius: var(--sb-r-panel);
+  background: var(--pd-panel);
+  padding: 14px 16px;
+  text-decoration: none;
+  display: block;
+}
+.pd-card:hover { border-color: var(--pd-line); }
+.pd-card b { display: block; font-size: 26px; font-weight: 700; line-height: 1.1; }
+.pd-card span {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--pd-soft);
+}
+
+.pd-panel {
+  border: 1px solid var(--pd-rule);
+  border-radius: var(--sb-r-panel);
+  background: var(--pd-panel);
+  padding: 18px;
+}
+
+/* --- notices ------------------------------------------------------------- */
+.pd-note {
+  border: 1px solid var(--pd-line);
+  border-left-width: 3px;
+  border-radius: var(--sb-r-panel);
+  background: rgb(201 162 74 / 0.07);
+  padding: 13px 15px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--pd-copy);
+  margin: 0 0 16px;
+}
+.pd-note strong { color: var(--pd-amber); }
+.pd-note--warn {
+  border-color: rgb(224 122 95 / 0.5);
+  background: rgb(224 122 95 / 0.08);
+}
+.pd-note--warn strong { color: var(--sb-crit); }
+.pd-note p { margin: 6px 0 0; color: var(--pd-soft); }
+
+/* --- tables -------------------------------------------------------------- */
+.pd-table-wrap { overflow-x: auto; border: 1px solid var(--pd-rule); border-radius: var(--sb-r-panel); }
+.pd-table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--pd-panel); }
+.pd-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pd-soft);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--pd-rule);
+  white-space: nowrap;
+}
+.pd-table td { padding: 11px 12px; border-bottom: 1px solid var(--pd-rule); vertical-align: top; }
+.pd-table tr:last-child td { border-bottom: 0; }
+.pd-table a { color: var(--pd-amber); text-decoration: none; }
+.pd-table a:hover { text-decoration: underline; }
+.pd-muted { color: var(--pd-soft); font-size: 12px; }
+
+.pd-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--sb-r-pill);
+  border: 1px solid var(--pd-rule);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  color: var(--pd-soft);
+}
+.pd-chip--gold { border-color: var(--pd-line); color: var(--pd-amber); }
+.pd-chip--ok { border-color: rgb(126 176 121 / 0.5); color: var(--sb-good); }
+.pd-chip--warn { border-color: rgb(224 122 95 / 0.5); color: var(--sb-crit); }
+
+/* --- forms --------------------------------------------------------------- */
+.pd-form { border: 1px solid var(--pd-rule); border-radius: var(--sb-r-panel); background: var(--pd-panel); padding: 18px; }
+.pd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; }
+.pd-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.pd-field > span { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pd-soft); }
+.pd-field input, .pd-field select, .pd-field textarea, .pd-input {
+  width: 100%;
+  background: var(--sb-ground);
+  border: 1px solid var(--pd-rule);
+  border-radius: var(--sb-r-control);
+  color: var(--pd-copy);
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 10px;
+}
+.pd-field textarea { resize: vertical; line-height: 1.6; }
+.pd-field input:focus, .pd-field select:focus, .pd-field textarea:focus {
+  outline: 2px solid var(--pd-gold);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.pd-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+.pd-bar form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pd-mini { background: var(--sb-ground); border: 1px solid var(--pd-rule); border-radius: var(--sb-r-control); color: var(--pd-copy); font-size: 12px; padding: 7px 9px; }
+.pd-inline { display: inline-flex; gap: 5px; align-items: center; }
+
+.pd-checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 6px; }
+.pd-checks label {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: 12.5px;
+  padding: 8px 10px;
+  border: 1px solid var(--pd-rule);
+  border-radius: var(--sb-r-control);
+  cursor: pointer;
+}
+.pd-checks label:hover { border-color: var(--pd-line); }
+.pd-checks input { margin-top: 2px; flex: none; }
+.pd-checks .pd-who { display: block; font-weight: 600; }
+
+.pd-empty {
+  border: 1px dashed var(--pd-rule);
+  border-radius: var(--sb-r-panel);
+  padding: 26px 20px;
+  text-align: center;
+  color: var(--pd-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* --- the document surface ------------------------------------------------ */
+/* Anything written to be read by a person, on paper rather than in the
+   dark: the announcement preview and every prepared message. */
+.pd-paper {
+  background: var(--pd-paper);
+  color: var(--pd-paper-ink);
+  border-radius: var(--sb-r-panel);
+  padding: 30px 32px;
+  font: 14px/1.7 ui-serif, Georgia, "Times New Roman", serif;
+}
+.pd-paper h3 { font-size: 22px; line-height: 1.25; margin: 0 0 6px; font-weight: 700; }
+.pd-paper .pd-paper-sub { font-size: 15px; color: var(--sb-line-strong); margin: 0 0 16px; font-style: italic; }
+.pd-paper .pd-paper-tag {
+  font: 700 12px/1 -apple-system, Segoe UI, Roboto, sans-serif;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--sb-gold-deep);
+  display: block;
+  margin-bottom: 10px;
+}
+.pd-paper p { margin: 0 0 12px; }
+.pd-paper hr { border: 0; border-top: 1px solid rgb(20 18 16 / 0.14); margin: 18px 0; }
+.pd-paper blockquote {
+  margin: 16px 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--sb-gold);
+  font-style: italic;
+}
+.pd-paper .pd-paper-meta { font: 12px/1.6 -apple-system, Segoe UI, Roboto, sans-serif; color: var(--sb-ink-3); }
+.pd-paper--message { font: 13.5px/1.7 -apple-system, Segoe UI, Roboto, sans-serif; white-space: pre-wrap; padding: 18px 20px; }
+
+/* --- the public page a journalist opens ---------------------------------- */
+.pdp-body {
+  background: var(--sb-surface-1);
+  margin: 0;
+  padding: 28px 18px 60px;
+  font: 15px/1.65 -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  color: var(--sb-ink);
+}
+.pdp {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.pdp-brand {
+  font: 700 12px/1 -apple-system, Segoe UI, Roboto, sans-serif;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--sb-gold);
+  margin-bottom: 14px;
+}
+.pdp-embargo {
+  border: 1px solid rgb(224 122 95 / 0.55);
+  background: rgb(224 122 95 / 0.12);
+  border-radius: var(--sb-r-panel);
+  padding: 12px 15px;
+  font-size: 13.5px;
+  margin-bottom: 16px;
+  color: var(--sb-crit);
+}
+.pdp-embargo strong { color: var(--sb-crit); }
+.pdp-links { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
+.pdp-foot {
+  margin-top: 22px;
+  font-size: 12px;
+  color: var(--sb-ink-3);
+  line-height: 1.6;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .pd-paper { padding: 22px 18px; }
+  .pd-h1 { font-size: 22px; }
+}

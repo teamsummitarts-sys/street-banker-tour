@@ -1,0 +1,30 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Files - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Files</p><h1 class="to-h1" style="font-size:20px">Tour documents</h1><p class="to-sub">Stored privately (never in the public uploads tree); every download runs the same permission check as the page. Money documents need the financials permission.</p></div></div>
+<form method="get" class="to-bar" style="margin-top:0">
+  <input class="to-input" type="search" name="q" value="{{ q }}" placeholder="File name" style="width:200px;min-height:36px;padding:6px 10px">
+  <select name="category" class="to-input" style="width:auto;min-height:36px;padding:6px 10px"><option value="">All categories</option>{% for c in vocab['file_categories'] %}<option value="{{ c }}" {% if c == cat %}selected{% endif %}>{{ c|replace('_',' ')|capitalize }}</option>{% endfor %}</select>
+  <button class="to-btn to-btn--ghost to-btn--small" type="submit">Filter</button>
+</form>
+{% if rows %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>File</th><th>Attached to</th><th>Category</th><th>Visibility</th><th>By</th><th>When</th><th></th></tr></thead>
+  <tbody>{% for f in rows %}<tr><td data-k="File"><a href="/tours/{{ tour['id'] }}/files/{{ f['id'] }}/download">{{ f['file_name'] }}</a> <span class="to-muted">v{{ f['version'] }}</span></td>
+    <td data-k="Attached">{% if f['entity_type'] == 'show' and f['entity_id'] in show_by_id %}<a href="/tours/{{ tour['id'] }}/shows/{{ f['entity_id'] }}?tab=files">{{ show_by_id[f['entity_id']]['city'] or show_by_id[f['entity_id']]['venue'] }}</a>{% else %}{{ f['entity_type'] }}{% endif %}</td>
+    <td data-k="Category">{{ f['category']|replace('_',' ') }}</td><td data-k="Visibility">{{ f['visibility'] }}</td><td data-k="By">{{ f['uploaded_by'] }}</td><td data-k="When">{{ f['created'][:10] }}</td>
+    <td><form method="post" action="/tours/{{ tour['id'] }}/files/{{ f['id'] }}/delete"><button class="to-btn to-btn--ghost to-btn--small to-btn--danger" type="submit">✕</button></form></td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}{{ m.empty("No files yet", "Upload tour-wide documents here (rider, insurance, tech pack) and show-specific ones from each show.") }}{% endif %}
+<form method="post" action="/tours/{{ tour['id'] }}/files/upload" enctype="multipart/form-data" class="to-form" style="margin-top:10px">
+  <div class="to-grid">
+    <label class="to-field"><span>File (up to 25 MB)</span><input type="file" name="file" required></label>
+    <label class="to-field"><span>Attach to</span><select name="entity_type" onchange="this.form.entity_id.disabled = this.value !== 'show'"><option value="tour">Whole tour</option><option value="show">A show</option></select></label>
+    <label class="to-field"><span>Show</span><select name="entity_id" disabled>{% for s in shows %}<option value="{{ s['id'] }}">{{ s['date'] }} {{ s['city'] or s['venue'] }}</option>{% endfor %}</select></label>
+    {{ m.select('category', 'Category', vocab['file_categories'], 'other') }}
+    {{ m.select('visibility', 'Visibility', vocab['visibility'], 'all') }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Upload</button></div>
+</form>
+{% endblock %}

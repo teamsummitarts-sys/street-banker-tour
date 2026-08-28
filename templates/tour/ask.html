@@ -1,0 +1,19 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Ask Tour - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Ask Tour</p><h1 class="to-h1" style="font-size:20px">Ask the tour, in words</h1><p class="to-sub">Answers come from the rows you are allowed to see, with the source named. When something has not been entered, it says so — it never fills the gap. This is a rule-based reader, not a language model.</p></div></div>
+<form method="post" action="/tours/{{ tour['id'] }}/ask" class="to-form">
+  <label class="to-field"><span>Question</span><input name="q" value="{{ q }}" placeholder="What time is lobby call tomorrow?" autofocus></label>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Ask</button></div>
+</form>
+{% if answer %}
+<div class="to-panel is-warm" style="margin-top:12px">
+  <div class="to-eyebrow">{{ 'Answer' if answer['found'] else 'Not on record' }}</div>
+  <div style="font-size:16px;line-height:1.5">{{ answer['answer'] }}</div>
+  {% if answer['sources'] %}<div class="to-muted" style="margin-top:6px">Source: {% for s in answer['sources'] %}{{ s['kind'] }} · {{ s['label'] }}{{ '; ' if not loop.last }}{% endfor %}</div>{% endif %}
+</div>
+{% endif %}
+<h2 class="to-h2">Try</h2>
+<div class="to-inline">{% for e in examples %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/ask?q={{ e|urlencode }}">{{ e }}</a>{% endfor %}</div>
+{% endblock %}

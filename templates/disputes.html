@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Disputes - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Disputes</div>
+    <h1 class="sb-h1 mt-1">Dispute Tracker</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Every fight over your money in one place — missing payments, wrong splits, content claims. Log it, work it, close it.</p>
+  </div>
+
+  <div class="grid grid-cols-3 gap-3">
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Open Disputes</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ open_count }}</div>
+    </div>
+    <div class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-4">
+      <div class="sb-label text-gray-300">In Dispute</div>
+      <div class="mt-1 text-2xl font-black tabular-nums text-sb-ink">${{ "{:,.2f}".format(disputed_total) }}</div>
+    </div>
+    <div class="rounded-2xl border border-green-500/25 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Resolved</div>
+      <div class="mt-1 text-2xl font-black tabular-nums text-green-400">${{ "{:,.2f}".format(recovered_total) }}</div>
+    </div>
+  </div>
+
+  <!-- New dispute -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5">
+    <h2 class="sb-label text-gray-300">Log a dispute</h2>
+    <form id="dispute-form" class="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+      <input name="platform" required placeholder="Platform / payor (e.g. Spotify, distributor)" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+      <select name="dispute_type" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-gray-200 focus:border-sb-gold focus:outline-none">
+        {% for t in types %}<option value="{{ t }}">{{ t|capitalize }}</option>{% endfor %}
+      </select>
+      <div class="flex items-center gap-1 rounded-lg border border-white/15 bg-black/40 px-3">
+        <span class="text-sm font-bold text-gray-300">$</span>
+        <input name="amount" type="number" step="0.01" min="0" placeholder="0.00" class="w-24 bg-transparent py-2.5 text-sm text-white placeholder-gray-300 focus:outline-none">
+      </div>
+      <textarea name="description" rows="2" placeholder="What happened — dates, emails, statement lines…" class="sm:col-span-3 rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none"></textarea>
+      <button type="submit" class="sb-btn sb-btn-primary sm:col-span-3 sm:justify-self-start">Open Dispute</button>
+    </form>
+    <div id="dispute-error" class="mt-2 hidden text-xs font-semibold text-red-400"></div>
+  </section>
+
+  <!-- Board -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-sb-gold">Your disputes</h2>
+    {% if disputes %}
+    <div class="mt-3 divide-y divide-white/5">
+      {% for d in disputes %}
+      <div class="flex flex-wrap items-center gap-3 py-3.5">
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-baseline gap-2">
+            <span class="text-sm font-bold">{{ d.platform }}</span>
+            <span class="text-xs font-bold uppercase tracking-wide text-gray-300">{{ d.dispute_type }}</span>
+            {% if d.amount %}<span class="text-xs font-black sb-num text-sb-ink">${{ "{:,.2f}".format(d.amount) }}</span>{% endif %}
+          </div>
+          {% if d.description %}<div class="mt-0.5 line-clamp-2 text-xs text-gray-300">{{ d.description }}</div>{% endif %}
+        </div>
+        <select data-id="{{ d.id }}" class="dispute-status rounded-lg border px-2.5 py-1.5 text-xs font-bold focus:outline-none {{ 'border-green-500/40 text-green-400' if d.status == 'resolved' else ('border-red-500/40 text-red-400' if d.status == 'rejected' else 'border-sb-gold/40 text-sb-gold-bright') }}">
+          {% for st in statuses %}<option value="{{ st }}" {{ 'selected' if st == d.status }}>{{ st|capitalize }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="mt-3 text-sm text-gray-300">Nothing in dispute. When a payment goes missing or a claim lands, log it here so it can't be forgotten.</p>
+    {% endif %}
+  </section>
+
+  <p class="px-1 text-xs text-gray-300 font-medium">A tracker for your own records — workflow support, not legal advice. For large amounts, involve an attorney early.</p>
+</div>
+
+<script>
+  document.getElementById("dispute-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const res = await fetch("/disputes/new", { method: "POST", body: new FormData(e.target) });
+    const data = await res.json();
+    if (data.ok) window.location.reload();
+    else {
+      const err = document.getElementById("dispute-error");
+      err.textContent = data.error || "Could not save.";
+      err.classList.remove("hidden");
+    }
+  });
+  document.querySelectorAll(".dispute-status").forEach((sel) =>
+    sel.addEventListener("change", async () => {
+      await fetch("/disputes/" + sel.dataset.id + "/status", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: sel.value }) });
+      window.location.reload();
+    }));
+</script>
+{% endblock %}

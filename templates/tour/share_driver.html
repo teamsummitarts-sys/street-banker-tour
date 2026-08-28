@@ -1,0 +1,15 @@
+{% extends "tour/_public.html" %}
+{% block title %}Driver sheet · {{ show['venue'] }}{% endblock %}
+{% block body %}
+<div class="to-paper">
+  <span class="tag">Driver sheet · {{ tour['name'] }}</span>
+  <h2 style="font-size:20px">{{ fmt_day(show['date']) }} — {{ show['venue'] }}{% if show['city'] %}, {{ show['city'] }}{% endif %}</h2>
+  {% if venue %}<p><b>Venue:</b> {{ venue['address'] }}{% if venue['city'] %}, {{ venue['city'] }}{% endif %}{% if venue['loading'] %} · Loading: {{ venue['loading'] }}{% endif %}{% if venue['bus_parking'] %} · Bus parking: {{ venue['bus_parking'] }}{% elif venue['parking'] %} · Parking: {{ venue['parking'] }}{% endif %}</p>{% endif %}
+  <h3 style="margin-top:14px">Legs</h3>
+  {% if travel %}<table><tbody>{% for t in travel %}<tr><td style="width:90px"><b>{{ fmt_time(t['dep_time']) or 'TBD' }}</b></td><td>{{ t['mode']|capitalize }}{% if t['vehicle'] %} · {{ t['vehicle'] }}{% endif %}: {{ t['pickup'] or t['dep_loc'] }} → {{ t['destination'] or t['arr_loc'] }}{% if t['notes'] %}<div class="meta">{{ t['notes'] }}</div>{% endif %}</td></tr>{% endfor %}</tbody></table>{% else %}<p class="meta">No ground legs entered for this date.</p>{% endif %}
+  <h3 style="margin-top:14px">Key times</h3>
+  {% if schedule %}<table><tbody>{% for r in schedule %}<tr><td style="width:90px"><b>{{ fmt_time(r['start_time']) or 'TBD' }}</b></td><td>{{ r['title'] }}</td><td class="meta">{{ r['location'] }}</td></tr>{% endfor %}</tbody></table>{% else %}<p class="meta">No times entered.</p>{% endif %}
+  {% if lodging %}<h3 style="margin-top:14px">Hotel</h3>{% for l in lodging %}<p><b>{{ l['property'] }}</b>{% if l['address'] %}, {{ l['address'] }}{% endif %}{% if l['city'] %}, {{ l['city'] }}{% endif %}</p>{% endfor %}{% endif %}
+</div>
+{% endblock %}
+{% block foot %}Driver sheet — addresses and times only.{% endblock %}

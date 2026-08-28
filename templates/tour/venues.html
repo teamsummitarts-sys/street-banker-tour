@@ -1,0 +1,31 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Venues - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Venues</p><h1 class="to-h1" style="font-size:20px">Your venue records</h1><p class="to-sub">What you know about each room, kept across tours. A show's advance is current and may differ; promote it into the record once it is confirmed.</p></div>
+  <form method="get" class="to-inline"><input class="to-input" type="search" name="q" value="{{ q }}" placeholder="Name or city" style="width:200px;min-height:36px;padding:6px 10px"><button class="to-btn to-btn--ghost to-btn--small" type="submit">Search</button></form></div>
+
+{% if edit or (can('edit') and not rows) %}
+<h2 class="to-h2">{{ 'Edit venue' if edit else 'Add a venue' }}</h2>
+{% include "tour/_venue_form.html" %}
+{% endif %}
+
+{% if rows %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Venue</th><th>City</th><th>Cap</th><th>Used on this tour</th><th></th></tr></thead>
+  <tbody>
+  {% for v in rows %}
+  <tr><td data-k="Venue"><b>{{ v['name'] }}</b>{% if v['address'] %}<div class="to-muted">{{ v['address'] }}</div>{% endif %}</td><td data-k="City">{{ v['city'] }}{% if v['region'] %}, {{ v['region'] }}{% endif %}</td><td data-k="Cap">{{ v['capacity'] or '—' }}</td>
+    <td data-k="Used">{% if v['id'] in use %}{% for s in use[v['id']] %}<a href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}">{{ s['date'] }}</a>{{ ', ' if not loop.last }}{% endfor %}{% else %}<span class="to-muted">—</span>{% endif %}</td>
+    <td>{% if can('edit') %}<a class="to-btn to-btn--ghost to-btn--small" href="?edit={{ v['id'] }}">Edit</a>{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% elif not can('edit') %}
+  {{ m.empty("No venue records yet", "They are created from a show's advance, or added by someone with the edit permission.") }}
+{% endif %}
+{% if can('edit') and rows and not edit %}
+<h2 class="to-h2">Add a venue</h2>
+{% with edit=None %}{% include "tour/_venue_form.html" %}{% endwith %}
+{% endif %}
+{% endblock %}

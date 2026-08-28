@@ -1,0 +1,49 @@
+{% import "tour/_macros.html" as m %}
+{% if rows %}
+{% for l in rows %}
+<div class="to-panel" style="margin-bottom:10px">
+  <div class="to-head" style="margin-bottom:6px">
+    <div><div style="font-weight:800;font-size:16px">{{ l['property'] }} {{ m.chip(l['status']) }}{% if l['visibility'] != 'all' %} <span class="to-chip to-chip--gold">{{ l['visibility'] }}</span>{% endif %}</div>
+      <div class="to-muted">{{ l['address'] }}{% if l['city'] %}, {{ l['city'] }}{% endif %} · in {{ l['checkin'] }}{% if l['checkout'] %} → out {{ l['checkout'] }}{% endif %}</div>
+      <div class="to-muted">{% if l['confirmation'] %}Conf. {{ l['confirmation'] }} · {% endif %}{% if l['room_type'] %}{{ l['room_type'] }} · {% endif %}{% if l['phone'] %}{{ l['phone'] }} · {% endif %}{% if l['wifi'] %}Wi-Fi {{ l['wifi'] }} · {% endif %}{% if l['parking'] %}Parking {{ l['parking'] }}{% endif %}</div>
+      {% if l['notes'] %}<div class="to-muted">{{ l['notes'] }}</div>{% endif %}</div>
+    <div class="to-inline">
+      {% if l['address'] %}<a class="to-btn to-btn--ghost to-btn--small" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query={{ (l['address'] ~ ' ' ~ l['city'])|urlencode }}">Directions</a>{% endif %}
+      {% if can('hotel') %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/hotels?edit={{ l['id'] }}">Edit</a>
+      <a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/hotels/{{ l['id'] }}/rooming" target="_blank" rel="noopener">Rooming list</a>{% endif %}
+    </div>
+  </div>
+  {% set rl = rooms[l['id']] if rooms is defined and l['id'] in rooms else [] %}
+  {% if rl %}
+  <div class="to-table-wrap"><table class="to-table">
+    <thead><tr><th>Name</th><th>Room</th><th>Type</th><th>Notes</th>{% if can('hotel') %}<th></th>{% endif %}</tr></thead>
+    <tbody>{% for r in rl %}<tr><td>{{ r['person_name'] or r['guest_name'] or '—' }}</td><td>{{ r['room_number'] or '—' }}</td><td>{{ r['room_kind']|replace('_',' ') }}</td><td class="to-muted">{{ r['notes'] }}</td>
+      {% if can('hotel') %}<td><details><summary class="to-muted" style="cursor:pointer">Edit</summary>
+        <form method="post" action="/tours/{{ tour['id'] }}/hotels/{{ l['id'] }}/rooms" class="to-inline" style="margin-top:6px">
+          <input type="hidden" name="room_id" value="{{ r['id'] }}"><input type="hidden" name="person_id" value="{{ r['person_id'] or '' }}"><input type="hidden" name="guest_name" value="{{ r['guest_name'] }}">
+          <input class="to-input" style="width:90px;min-height:32px;padding:4px 8px" name="room_number" value="{{ r['room_number'] }}" placeholder="Room">
+          <select name="room_kind" class="to-input" style="width:auto;min-height:32px;padding:4px 8px">{% for k in vocab['room_kinds'] %}<option value="{{ k }}" {% if k == r['room_kind'] %}selected{% endif %}>{{ k|replace('_',' ') }}</option>{% endfor %}</select>
+          <input class="to-input" style="width:140px;min-height:32px;padding:4px 8px" name="notes" value="{{ r['notes'] }}" placeholder="Notes">
+          <button class="to-btn to-btn--small" type="submit">Save</button>
+          <button class="to-btn to-btn--ghost to-btn--small to-btn--danger" type="submit" name="action" value="delete">Remove</button>
+        </form></details></td>{% endif %}</tr>{% endfor %}</tbody>
+  </table></div>
+  {% elif can('hotel') %}<p class="to-muted">No rooms assigned yet.</p>{% endif %}
+  {% if can('hotel') %}
+  <div class="to-inline" style="margin-top:8px">
+    <form method="post" action="/tours/{{ tour['id'] }}/hotels/{{ l['id'] }}/rooms" class="to-inline">
+      <select name="person_id" class="to-input" style="width:auto;min-height:34px;padding:4px 8px"><option value="">Guest by name…</option>{% for p in people %}<option value="{{ p['id'] }}">{{ p['name'] }}</option>{% endfor %}</select>
+      <input class="to-input" style="width:140px;min-height:34px;padding:4px 8px" name="guest_name" placeholder="or a name">
+      <input class="to-input" style="width:80px;min-height:34px;padding:4px 8px" name="room_number" placeholder="Room">
+      <select name="room_kind" class="to-input" style="width:auto;min-height:34px;padding:4px 8px">{% for k in vocab['room_kinds'] %}<option value="{{ k }}">{{ k|replace('_',' ') }}</option>{% endfor %}</select>
+      <button class="to-btn to-btn--small" type="submit">Assign</button>
+    </form>
+    <form method="post" action="/tours/{{ tour['id'] }}/hotels/{{ l['id'] }}/rooms"><input type="hidden" name="action" value="assign_all"><button class="to-btn to-btn--ghost to-btn--small" type="submit">Add everyone on the touring party</button></form>
+    {% if missing is defined and l['id'] in missing and missing[l['id']] %}<span class="to-muted">Not yet roomed: {% for p in missing[l['id']][:8] %}{{ p['name'] }}{{ ', ' if not loop.last }}{% endfor %}{% if missing[l['id']]|length > 8 %} +{{ missing[l['id']]|length - 8 }}{% endif %}</span>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+{% else %}
+  {{ m.empty("No hotel entered", "Property, address, check-in and out, confirmation, then rooms by name. Confirmation numbers and payment details stay with the hotel permission.") }}
+{% endif %}

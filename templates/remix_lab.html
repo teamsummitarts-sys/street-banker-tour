@@ -1,0 +1,292 @@
+{# Remix Lab — one release into more moments, rights-safe.
+
+   Light editorial page: off-white ground, black type, thin rules, gold
+   only where it earns it. All layout classes are sbrl-* in
+   remix-lab.css; tailwind is linked for the shared header only.
+
+   Honesty rules, same as the rest of the site: generation is not
+   connected and the page says so; the results panel is a worked example
+   labelled EXAMPLE OUTPUT; nothing the visitor selects is uploaded or
+   stored in this preview. The upload control stays disabled until both
+   rights confirmations are checked — enforced in markup (disabled
+   attribute server-side) and in script. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Remix Lab · Street Banker</title>
+  <meta name="description" content="Turn one release into remix briefs, social edit concepts, DJ versions, and producer-ready directions — rights-safe, from audio you own or control.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+  <link rel="stylesheet" href="/static/css/remix-lab.css?v=3">
+</head>
+<body class="sbrl-body">
+
+{% include "partials/public_header.html" %}
+
+{% set rl = remix %}
+<main id="main" class="sbrl-main">
+
+  {# --- hero ----------------------------------------------------------- #}
+  <section class="sbrl-hero">
+    <p class="sbrl-eyebrow">{{ rl.eyebrow }}
+      <span class="sbrl-chip">{{ "Reads your track and composes a brief" if rl.engine_live else "Preview — generation coming soon" }}</span>
+    </p>
+    <h1 class="sbrl-h1">
+      {% for line in rl.hero_headline %}<span>{{ line }}</span>{% endfor %}
+    </h1>
+    <p class="sbrl-sub">{{ rl.hero_subline }}</p>
+    <div class="sbrl-ctas">
+      <a class="sbrl-btn sbrl-btn--primary" href="{{ rl.primary_cta.href }}">{{ rl.primary_cta.label }}</a>
+      <a class="sbrl-btn sbrl-btn--ghost" href="{{ rl.secondary_cta.href }}">{{ rl.secondary_cta.label }}</a>
+    </div>
+  </section>
+
+  {# --- what it is ------------------------------------------------------ #}
+  <section class="sbrl-about">
+    <h2 class="sbrl-h2">{{ rl.subhead }}</h2>
+    <p class="sbrl-body-copy">{{ rl.body }}</p>
+    <ul class="sbrl-features">
+      {% for name, detail in rl.features %}
+      <li>
+        <h3>{{ name }}</h3>
+        <p>{{ detail }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  {# --- the brief builder ----------------------------------------------- #}
+  <section class="sbrl-brief" id="brief" aria-labelledby="sbrl-brief-h">
+    <h2 class="sbrl-h2" id="sbrl-brief-h">Start a remix brief</h2>
+    <p class="sbrl-preview-note">{{ rl.preview_note }}</p>
+
+    <form id="sbrl-form" novalidate
+            {%- if rl.engine_live %} method="post" action="/remix-lab/brief" enctype="multipart/form-data"{% endif %}>
+
+      {# 0 · the rights gate: nothing uploads until both are true #}
+      <fieldset class="sbrl-block sbrl-rights-gate">
+        <legend class="sbrl-block-label">Rights confirmation <span class="sbrl-req">required</span></legend>
+        <label class="sbrl-check">
+          <input type="checkbox" id="sbrl-rights-own" name="rights_own" value="1" required>
+          <span>&ldquo;{{ rl.rights_checkbox }}&rdquo;</span>
+        </label>
+        <label class="sbrl-check">
+          <input type="checkbox" id="sbrl-rights-likeness" name="rights_likeness" value="1" required>
+          <span>&ldquo;{{ rl.likeness_checkbox }}&rdquo;</span>
+        </label>
+      </fieldset>
+
+      {# 1 · upload — disabled until the gate opens #}
+      <div class="sbrl-block">
+        <p class="sbrl-block-label">Upload audio <span class="sbrl-req">required</span></p>
+        <div class="sbrl-drop is-locked" id="sbrl-drop">
+          <input type="file" id="sbrl-file" name="file"
+                 accept="{{ rl.upload_formats | join(',') }},audio/wav,audio/mpeg,audio/aiff,audio/flac"
+                 disabled aria-describedby="sbrl-drop-note">
+          <label class="sbrl-drop-inner" for="sbrl-file">
+            <span class="sbrl-drop-hint">Drag a file here, or</span>
+            <span class="sbrl-btn sbrl-btn--primary sbrl-upload-btn" id="sbrl-upload-btn"
+                  aria-disabled="true">Upload Track</span>
+          </label>
+          <p class="sbrl-drop-note" id="sbrl-drop-note">
+            {{ rl.upload_formats | map('upper') | join(' · ') | replace('.', '') }}
+            · up to {{ rl.upload_max_mb }} MB
+            · confirm both rights statements above to enable
+          </p>
+          <p class="sbrl-file-name" id="sbrl-file-name" aria-live="polite"></p>
+        </div>
+      </div>
+
+      {# 2 · optional stems #}
+      <fieldset class="sbrl-block">
+        <legend class="sbrl-block-label">Optional stems</legend>
+        <div class="sbrl-stems">
+          {% for stem in rl.stem_options %}
+          <label class="sbrl-pill"><input type="checkbox" name="stems" value="{{ stem | lower }}"><span>{{ stem }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      {# 3 · reference direction, screened as you type #}
+      <div class="sbrl-block">
+        <p class="sbrl-block-label">Reference direction</p>
+        <p class="sbrl-helper">{{ rl.reference_helper }}</p>
+        <div id="sbrl-refs">
+          <input type="text" class="sbrl-input sbrl-ref" name="reference" maxlength="300"
+                 placeholder="A reference link, or a direction in words — tempo, energy, instrumentation, mood">
+          <input type="text" class="sbrl-input sbrl-ref" name="reference" maxlength="300"
+                 placeholder="Another direction (optional)">
+        </div>
+        <button type="button" class="sbrl-add-ref" id="sbrl-add-ref">+ Add another (up to {{ rl.reference_max }})</button>
+        <div class="sbrl-warning" id="sbrl-warning" role="alert" hidden>
+          <p class="sbrl-warning-text">{{ rl.safety_warning }}</p>
+          <p class="sbrl-warning-lead">Try shapes like these instead:</p>
+          <ul>
+            {% for example in rl.allowed_examples %}
+            <li>&ldquo;{{ example }}&rdquo;</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      {# 4 · remix lane #}
+      <fieldset class="sbrl-block">
+        <legend class="sbrl-block-label">Desired remix lane <span class="sbrl-req">required</span></legend>
+        <div class="sbrl-cards">
+          {% for lane in rl.remix_lanes %}
+          <label class="sbrl-card">
+            <input type="radio" name="remixLane" value="{{ lane }}" required>
+            <span>{{ lane }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      {# 5 · target use #}
+      <fieldset class="sbrl-block">
+        <legend class="sbrl-block-label">Target use <span class="sbrl-req">required</span></legend>
+        <div class="sbrl-cards">
+          {% for use in rl.target_uses %}
+          <label class="sbrl-card">
+            <input type="radio" name="targetUse" value="{{ use }}" required>
+            <span>{{ use }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      {# 6 · vibe controls #}
+      <fieldset class="sbrl-block">
+        <legend class="sbrl-block-label">Vibe controls</legend>
+        <div class="sbrl-vibes">
+          {% for key, label, options in rl.vibe_controls %}
+          <label class="sbrl-vibe">
+            <span>{{ label }}</span>
+            <select name="{{ key }}" class="sbrl-select">
+              {% for option in options %}<option{% if loop.index0 == 1 or (options | length == 4 and loop.first) %} selected{% endif %}>{{ option }}</option>{% endfor %}
+            </select>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      {# submit — sticky on phones once the form validates #}
+      <div class="sbrl-submit-bar" id="sbrl-submit-bar">
+        <button type="submit" class="sbrl-btn sbrl-btn--primary sbrl-submit" id="sbrl-submit">
+          Start Remix Brief
+        </button>
+        <p class="sbrl-submit-note" id="sbrl-submit-note" aria-live="polite">
+          Shows a worked example of the brief you would get back.
+        </p>
+      </div>
+      <noscript><p class="sbrl-helper">The brief builder needs JavaScript in this preview; the example output and rights policy below read without it.</p></noscript>
+    </form>
+  </section>
+
+  {# --- example output --------------------------------------------------- #}
+  <section class="sbrl-results" id="sbrl-results" aria-labelledby="sbrl-results-h" hidden>
+    <div class="sbrl-example-head">
+      <h2 class="sbrl-h2" id="sbrl-results-h">What you get back</h2>
+      <span class="sbrl-chip sbrl-chip--example">{{ rl.example_tag }}</span>
+    </div>
+    <p class="sbrl-helper">{{ rl.example_note }}</p>
+
+    <div class="sbrl-result-block">
+      <h3 class="sbrl-h3">A · Remix Brief</h3>
+      <dl class="sbrl-brief-fields">
+        {% for field, detail in rl.example_brief %}
+        <dt>{{ field }}</dt><dd>{{ detail }}</dd>
+        {% endfor %}
+      </dl>
+    </div>
+
+    <div class="sbrl-result-block">
+      <h3 class="sbrl-h3">B · Three Social Edit Concepts</h3>
+      <div class="sbrl-concepts">
+        {% for c in rl.example_social %}
+        <article class="sbrl-concept">
+          <h4>{{ c.name }}</h4>
+          <dl>
+            <dt>Hook</dt><dd>{{ c.hook }}</dd>
+            <dt>Opening</dt><dd>{{ c.opening }}</dd>
+            <dt>Caption</dt><dd>{{ c.caption }}</dd>
+            <dt>Call to action</dt><dd>{{ c.cta }}</dd>
+          </dl>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="sbrl-result-block">
+      <h3 class="sbrl-h3">C · Three Producer Remix Directions</h3>
+      <div class="sbrl-concepts">
+        {% for p in rl.example_producer %}
+        <article class="sbrl-concept">
+          <h4>{{ p.lane }}</h4>
+          <dl>
+            <dt>Drums / rhythm</dt><dd>{{ p.drums }}</dd>
+            <dt>Instrumentation</dt><dd>{{ p.instrumentation }}</dd>
+            <dt>Vocal treatment</dt><dd>{{ p.vocal }}</dd>
+            <dt>Release potential</dt><dd>{{ p.release }}</dd>
+          </dl>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="sbrl-result-block">
+      <h3 class="sbrl-h3">D · Release Readiness Notes</h3>
+      <ul class="sbrl-readiness">
+        {% for item in rl.example_readiness %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="sbrl-result-block">
+      <h3 class="sbrl-h3">E · Worth Making?</h3>
+      <ul class="sbrl-worth">
+        {% for dimension, band in rl.example_worth %}
+        <li><span>{{ dimension }}</span><strong>{{ band }}</strong></li>
+        {% endfor %}
+      </ul>
+      <p class="sbrl-helper">{{ rl.worth_note }}</p>
+    </div>
+
+    {# the human handoff #}
+    <aside class="sbrl-producer">
+      <div>
+        <h3 class="sbrl-h3">{{ rl.producer_card.title }}</h3>
+        <p>{{ rl.producer_card.body }}</p>
+      </div>
+      <a class="sbrl-btn sbrl-btn--primary" href="{{ rl.producer_card.cta.href }}">{{ rl.producer_card.cta.label }}</a>
+    </aside>
+  </section>
+
+  {# --- rights protection ------------------------------------------------ #}
+  <section class="sbrl-rights" id="rights" aria-labelledby="sbrl-rights-h">
+    <h2 class="sbrl-h2" id="sbrl-rights-h">How rights protection works</h2>
+    <div class="sbrl-rights-grid">
+      {% for title, detail in rl.rights_points %}
+      <div class="sbrl-rights-point">
+        <h3>{{ title }}</h3>
+        <p>{{ detail }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+</main>
+
+<footer class="sbrl-footer">
+  <a href="/">&larr; Back to Street Banker</a>
+</footer>
+
+<script type="application/json" id="sbrl-config">{{ remix_json | js_json }}</script>
+<script src="/static/js/remix-lab.js?v=2" defer></script>
+</body>
+</html>

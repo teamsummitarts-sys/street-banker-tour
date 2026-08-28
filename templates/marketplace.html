@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Collab Marketplace - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1100px] space-y-6">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Community</div>
+    <h1 class="sb-h1 mt-1">Collab Marketplace</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Real requests from real members — need a vocalist, a producer, a mix? Post it, set your terms, and applicants come to you. Nothing here is seeded; every card is a member who actually posted.</p>
+  </div>
+
+  {% if request.args.get('applied') %}
+  <div class="rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">Application sent — the poster got a notification with your contact.</div>
+  {% endif %}
+
+  <!-- Collab Flow: how the board works, start to finish -->
+  <section class="overflow-hidden rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground">
+    <div class="grid items-center gap-0 lg:grid-cols-[1fr_minmax(0,420px)]">
+      <div class="p-5">
+        <h2 class="sb-label text-sb-gold-bright">Collab Flow</h2>
+        <div class="mt-3 grid gap-3 sm:grid-cols-4">
+          {% for num, step, blurb in [('1', 'Posting', 'Say what you need, your terms up front.'),
+                                      ('2', 'Applying', 'Members pitch with their work and their terms.'),
+                                      ('3', 'Working', 'You pick, connect directly, and make the record.'),
+                                      ('4', 'Delivering', 'Register it — passports, splits, and lockbox sign-offs live here too.')] %}
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-b from-sb-gold-bright to-sb-gold-deep text-xs font-black text-sb-on-gold">{{ num }}</span>
+              <span class="text-xs font-bold uppercase tracking-wide text-gray-200">{{ step }}</span>
+            </div>
+            <p class="mt-1.5 text-xs leading-relaxed text-gray-300 font-medium">{{ blurb }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <img src="/static/img/collab-flow.jpg" alt="Illustration: collaborator cards feeding one project" class="hidden h-full w-full object-cover lg:block" loading="lazy">
+    </div>
+  </section>
+
+  <!-- Interactive kind filters -->
+  <div class="flex flex-wrap gap-2">
+    {% for k, label, blurb in [('', 'All requests', ''), ('bid', 'For Bid', 'paid work, poster sets the budget'), ('split', 'Royalty Split', 'points on the song instead of cash'), ('fun', 'For Fun', 'portfolio and community builds')] %}
+    <a href="/marketplace?kind={{ k }}{% if role %}&role={{ role }}{% endif %}{% if genre %}&genre={{ genre }}{% endif %}"
+       class="rounded-xl border px-4 py-2.5 {{ 'border-amber-500/50 bg-amber-500/15' if kind == k else 'border-white/10 bg-sb-surface-1 hover:border-white/25' }}">
+      <div class="text-xs font-bold uppercase tracking-wide {{ 'text-amber-400' if kind == k else 'text-gray-200' }}">{{ label }}</div>
+      {% if blurb %}<div class="text-xs text-gray-300 font-medium">{{ blurb }}</div>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Role / genre filters -->
+  <form method="get" action="/marketplace" class="flex flex-wrap items-center gap-2">
+    {% if kind %}<input type="hidden" name="kind" value="{{ kind }}">{% endif %}
+    <select name="role" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white">
+      <option value="">Any role</option>
+      {% for r in roles %}<option value="{{ r }}" {{ 'selected' if role == r }}>{{ r }}</option>{% endfor %}
+    </select>
+    <input name="genre" value="{{ genre }}" placeholder="Genre (exact tag)"
+           class="w-40 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder-gray-300">
+    <button class="sb-btn sb-btn-secondary sb-btn-sm">Filter</button>
+    {% if kind or role or genre %}<a href="/marketplace" class="text-xs font-semibold text-amber-400 hover:underline">Clear</a>{% endif %}
+  </form>
+
+  <!-- Open requests -->
+  <section class="space-y-3">
+    <h2 class="sb-label text-sb-gold">Open Requests</h2>
+    {% for r in requests %}
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="rounded-full border px-2.5 py-1 text-xs font-bold uppercase tracking-wide {{ 'border-sb-gold/50 bg-sb-gold/10 text-sb-gold-bright' if r.kind == 'bid' else ('border-sky-500/40 bg-sky-500/10 text-sky-400' if r.kind == 'split' else 'border-white/15 bg-white/5 text-gray-300') }}">{{ {'bid': 'For Bid', 'split': 'Royalty Split', 'fun': 'For Fun'}[r.kind] }}</span>
+        <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ r.title }}</span>
+        <span class="text-xs text-gray-300 font-medium">{{ r.ago }}</span>
+        {% if r.closes %}<span class="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-400">closes {{ r.closes }}</span>{% endif %}
+        <form method="post" action="/marketplace/{{ r.id }}/save">
+          <button title="{{ 'Saved — click to remove' if r.id in saves else 'Save for later' }}" class="text-base {{ 'text-sb-gold-bright' if r.id in saves else 'text-gray-300 hover:text-white' }}">{{ '★' if r.id in saves else '☆' }}</button>
+        </form>
+      </div>
+      <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-gray-300 font-medium">
+        <span class="font-bold text-gray-200">{{ r.poster_name }}</span>
+        <span class="rounded-full border border-white/10 px-2 py-0.5" title="Poster's real Trust Score — completeness and verifiability of their Street Banker record">Trust {{ r.trust }}</span>
+        <span>needs a <span class="font-bold text-gray-200">{{ r.role }}</span></span>
+        {% if r.genre %}<span class="rounded-full border border-white/10 px-2 py-0.5">{{ r.genre }}</span>{% endif %}
+        {% if r.terms %}<span class="rounded-full border border-sb-gold/30 bg-sb-gold/5 px-2 py-0.5 font-bold text-sb-gold-bright">{{ r.terms }}</span>{% endif %}
+      </div>
+      {% if r.details %}<p class="mt-2 text-xs leading-relaxed text-gray-300">{{ r.details }}</p>{% endif %}
+      {% if r.ref_url %}<a href="{{ r.ref_url }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-block text-xs font-bold text-sb-gold-bright hover:underline">▶ Hear the reference track ↗</a>{% endif %}
+      {% if r.user_id != user.id %}
+      <details class="mt-3">
+        <summary class="inline-block cursor-pointer rounded-lg bg-sb-gold-bright px-4 py-1.5 text-xs font-black text-sb-on-gold hover:bg-sb-gold-bright">Apply / Submit</summary>
+        <form method="post" action="/marketplace/{{ r.id }}/apply" class="mt-3 space-y-2 rounded-xl border border-white/10 bg-black/30 p-3">
+          <textarea name="message" required rows="3" placeholder="Pitch yourself — what you'd bring to this track…" class="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder-gray-300"></textarea>
+          <div class="flex flex-wrap gap-2">
+            <input name="contact" type="email" required placeholder="you@email.com" class="w-52 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder-gray-300">
+            <input name="proposal" placeholder="Your terms (e.g. $200 flat · 10% master)" class="w-64 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder-gray-300">
+            <input name="ref_url" type="url" placeholder="Link to your work (smart link, portfolio…)" class="w-64 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder-gray-300">
+          </div>
+          <button class="sb-btn sb-btn-primary sb-btn-sm">Send application</button>
+          <p class="text-xs text-gray-300 font-medium">The poster gets your message and contact — terms are between the two of you. Street Banker doesn't hold funds or broker deals.</p>
+        </form>
+      </details>
+      {% else %}
+      <p class="mt-2 text-xs uppercase tracking-wide text-gray-300 font-medium">Your request — applications appear below.</p>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="rounded-2xl border border-dashed border-white/10 py-10 text-center text-sm text-gray-300">
+      {% if kind or role or genre %}No open requests match those filters — <a href="/marketplace" class="font-semibold text-amber-400 hover:underline">clear them</a> or post your own below.
+      {% else %}No open requests yet. This board starts empty on purpose — every card is a real member. Be the first to post.{% endif %}
+    </div>
+    {% endfor %}
+  </section>
+
+  <!-- My requests -->
+  {% if own %}
+  <section class="space-y-3">
+    <h2 class="sb-label text-sb-gold">My Requests</h2>
+    {% for r in own %}
+    <div class="rounded-2xl border {{ 'border-sb-gold/30' if r.status == 'open' else 'border-white/10 opacity-70' }} bg-sb-surface-2 p-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ r.title }}</span>
+        <span class="rounded-full border border-white/10 px-2 py-0.5 text-xs font-bold uppercase text-gray-300">{{ r.status }}</span>
+        {% if r.status == 'open' %}
+        <form method="post" action="/marketplace/{{ r.id }}/close"><button class="sb-btn sb-btn-secondary sb-btn-sm">Close</button></form>
+        {% endif %}
+        <form method="post" action="/marketplace/{{ r.id }}/delete"><button class="sb-btn sb-btn-danger sb-btn-sm">Remove</button></form>
+      </div>
+      {% set apps = replies_by_req.get(r.id, []) %}
+      {% if apps %}
+      <div class="mt-3 space-y-2">
+        {% for a in apps %}
+        <div class="rounded-xl border border-white/10 bg-black/30 p-3">
+          <div class="flex flex-wrap items-center gap-2 text-xs font-medium">
+            <span class="font-bold text-gray-200">{{ a.applicant_name }}</span>
+            <a href="mailto:{{ a.contact }}" class="font-mono text-sb-gold-bright hover:underline">{{ a.contact }}</a>
+            {% if a.proposal %}<span class="rounded-full border border-sb-gold/30 px-2 py-0.5 font-bold text-sb-gold-bright">{{ a.proposal }}</span>{% endif %}
+            {% if a.ref_url %}<a href="{{ a.ref_url }}" target="_blank" rel="noopener noreferrer" class="text-sb-gold-bright hover:underline">their work ↗</a>{% endif %}
+          </div>
+          <p class="mt-1 text-xs text-gray-300">{{ a.message }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="mt-2 text-xs text-gray-300 font-medium">No applications yet.</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <!-- Post a request -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5">
+    <h2 class="sb-label text-gray-300">Post a Request</h2>
+    <form method="post" action="/marketplace/post" class="mt-3 space-y-2.5">
+      <div class="flex flex-wrap gap-2">
+        <select name="kind" required class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-xs text-white">
+          <option value="bid">For Bid — I'm paying</option>
+          <option value="split">Royalty Split — points on the song</option>
+          <option value="fun">For Fun — no money involved</option>
+        </select>
+        <select name="role" required class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-xs text-white">
+          {% for r in roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+        </select>
+        <input name="genre" placeholder="Genre" class="w-36 rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-xs text-white placeholder-gray-300">
+      </div>
+      <input name="title" required maxlength="120" placeholder="What do you need? (e.g. Airy topline for a late-night driver)" class="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-xs text-white placeholder-gray-300">
+      <textarea name="details" rows="2" placeholder="Details — vibe, references, deadline…" class="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-xs text-white placeholder-gray-300"></textarea>
+      <div class="flex flex-wrap gap-2">
+        <input name="terms" placeholder="Terms up front (e.g. $150–$300 · 5–15% master)" class="w-72 rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-xs text-white placeholder-gray-300">
+        <input name="ref_url" type="url" placeholder="Scratch track link (smart link, private stream…)" class="w-72 rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-xs text-white placeholder-gray-300">
+        <input name="closes" type="date" title="Optional closing date" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white">
+      </div>
+      <button class="sb-btn sb-btn-primary">Post request</button>
+      <p class="text-xs text-gray-300 font-medium">Stating a budget or split range up front gets better applicants. Your Trust Score shows on the card — a complete Street Banker record is your credibility here.</p>
+    </form>
+  </section>
+</div>
+{% endblock %}

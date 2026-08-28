@@ -1,0 +1,10 @@
+{% extends "partner/_shell.html" %}
+{% block partner_body %}
+<section class="rounded-xl border border-sb-line bg-sb-surface-1 p-5">
+  <p class="font-mono text-xs uppercase tracking-[0.16em] text-sb-gold">The roster</p>
+  <p class="mt-1 text-3xl font-black tabular-nums text-sb-ink">{{ roster|length }}</p>
+  <p class="mt-1 text-sm text-sb-ink-2">
+    {% if roster %}Accounts this partner owns.{% else %}No accounts yet. Artists you invite land here.{% endif %}
+  </p>
+</section>
+{% endblock %}

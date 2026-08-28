@@ -1,0 +1,331 @@
+{# Rack-gear component kit v2 — brushed aluminum with real grain (SVG noise),
+   dimensional jacks, knurled knobs, glass-faced VU meters, LEDs, screws,
+   engraved plates, and a patchbay with sagging labeled cables.
+   Everything is code-drawn; no image assets.
+
+   Panel usage:
+     <div class="{{ gear.alu_classes() }}" style="{{ gear.alu_style() }}">
+       {{ gear.corner_screws() }} ...content...
+     </div>
+#}
+
+{% macro alu_classes() %}relative overflow-hidden rounded-xl border border-black/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-2px_4px_rgba(0,0,0,0.22),0_22px_50px_rgba(0,0,0,0.5)]{% endmacro %}
+
+{% macro alu_style() %}background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22160%22 height=%22160%22 filter=%22url(%23n)%22 opacity=%220.06%22/%3E%3C/svg%3E'), repeating-linear-gradient(90deg, rgba(255,255,255,0.055) 0px, rgba(0,0,0,0.035) 1px, rgba(255,255,255,0.02) 2px), linear-gradient(180deg, #e6e6ea 0%, #cdcdd2 46%, #b6b6bc 52%, #d2d2d7 100%);{% endmacro %}
+
+{% macro screw(cls='h-3.5 w-3.5', rot=20) %}
+<svg viewBox="0 0 14 14" class="{{ cls }}" aria-hidden="true">
+  <defs>
+    <radialGradient id="scrhead" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#e9e9ee"/><stop offset="0.55" stop-color="#a9a9b1"/><stop offset="1" stop-color="#6f6f78"/>
+    </radialGradient>
+  </defs>
+  <circle cx="7" cy="7" r="6.2" fill="#00000035"/>
+  <circle cx="7" cy="6.6" r="5.6" fill="url(#scrhead)"/>
+  <circle cx="7" cy="6.6" r="5.6" fill="none" stroke="#00000050" stroke-width="0.6"/>
+  <g transform="rotate({{ rot }} 7 6.6)" stroke="#3f3f47" stroke-width="1.3" stroke-linecap="round">
+    <line x1="3.6" y1="6.6" x2="10.4" y2="6.6"/>
+    <line x1="7" y1="3.2" x2="7" y2="10"/>
+  </g>
+</svg>
+{% endmacro %}
+
+{% macro corner_screws() %}
+<span class="pointer-events-none absolute left-2.5 top-2.5">{{ screw(rot=20) }}</span>
+<span class="pointer-events-none absolute right-2.5 top-2.5">{{ screw(rot=65) }}</span>
+<span class="pointer-events-none absolute bottom-2.5 left-2.5">{{ screw(rot=105) }}</span>
+<span class="pointer-events-none absolute bottom-2.5 right-2.5">{{ screw(rot=42) }}</span>
+{% endmacro %}
+
+{# Rotary knob: knurled metal collar, black body, specular crescent, gold
+   pointer, seated shadow. angle: -135..135; dark=True for gold-on-black. #}
+{% macro knob(angle=-30, cls='h-16 w-16', min_label='MIN', max_label='MAX', dark=False) %}
+<svg viewBox="0 0 90 96" class="{{ cls }}" aria-hidden="true">
+  <defs>
+    <radialGradient id="knobmetal" cx="0.35" cy="0.28" r="0.95">
+      <stop offset="0" stop-color="#f0f0f4"/><stop offset="0.55" stop-color="#a8a8b0"/><stop offset="1" stop-color="#6e6e76"/>
+    </radialGradient>
+    <radialGradient id="knobbody" cx="0.38" cy="0.3" r="1">
+      <stop offset="0" stop-color="#43434b"/><stop offset="0.65" stop-color="#1b1b20"/><stop offset="1" stop-color="#0b0b0f"/>
+    </radialGradient>
+  </defs>
+  <defs>
+    <radialGradient id="knobcollardark" cx="0.35" cy="0.28" r="0.95">
+      <stop offset="0" stop-color="#4a4a52"/><stop offset="0.6" stop-color="#26262c"/><stop offset="1" stop-color="#121216"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="45" cy="82" rx="22" ry="4.5" fill="#00000060"/>
+  {% set tick = '#c9a24a' if dark else '#33333b' %}
+  {% set lbl = '#c9a24a' if dark else '#3d3d45' %}
+  {% for i in range(11) %}
+  <line x1="45" y1="7" x2="45" y2="12" stroke="{{ tick }}" stroke-width="1.6" transform="rotate({{ -135 + i * 27 }} 45 45)"/>
+  {% endfor %}
+  <circle cx="45" cy="45" r="30" fill="url(#{{ 'knobcollardark' if dark else 'knobmetal' }})"/>
+  <circle cx="45" cy="45" r="30" fill="none" stroke="{{ '#c9a24a55' if dark else '#00000045' }}"/>
+  <circle cx="45" cy="45" r="28.4" fill="none" stroke="{{ '#5c5c64' if dark else '#4c4c54' }}" stroke-width="1.7" stroke-dasharray="1.8 2.6"/>
+  <circle cx="45" cy="45" r="24" fill="url(#knobbody)"/>
+  <circle cx="45" cy="45" r="24" fill="none" stroke="{{ '#c9a24a40' if dark else '#ffffff1c' }}"/>
+  <path d="M28 33 A21 21 0 0 1 44 22" fill="none" stroke="#ffffff30" stroke-width="5" stroke-linecap="round"/>
+  <line x1="45" y1="45" x2="45" y2="24.5" stroke="#e8c667" stroke-width="2.8" stroke-linecap="round" transform="rotate({{ angle }} 45 45)"/>
+  <circle cx="45" cy="45" r="2" fill="#0a0a0c"/>
+  {% if min_label %}<text x="10" y="90" font-size="7.5" font-weight="700" letter-spacing="0.5" fill="{{ lbl }}" font-family="sans-serif">{{ min_label }}</text>{% endif %}
+  {% if max_label %}<text x="80" y="90" text-anchor="end" font-size="7.5" font-weight="700" letter-spacing="0.5" fill="{{ lbl }}" font-family="sans-serif">{{ max_label }}</text>{% endif %}
+</svg>
+{% endmacro %}
+
+{# Cream VU meter: numbered scale, red zone, warm backlight, glass sweep,
+   bezel shadow. needle: 0..100 #}
+{% macro mini_vu(needle=34, cls='h-16') %}
+<svg viewBox="0 0 150 88" class="{{ cls }}" aria-hidden="true">
+  <defs>
+    <linearGradient id="vuface2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8efcd"/><stop offset="0.7" stop-color="#ecd9a3"/><stop offset="1" stop-color="#d9bf85"/>
+    </linearGradient>
+    <radialGradient id="vuglow" cx="0.5" cy="0.85" r="0.8">
+      <stop offset="0" stop-color="#fff6d8" stop-opacity="0.9"/><stop offset="1" stop-color="#fff6d8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="vuglass" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.32"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0.04"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="1.5" y="1.5" width="147" height="85" rx="8" fill="#0e0e12"/>
+  <rect x="1.5" y="1.5" width="147" height="85" rx="8" fill="none" stroke="#000000" stroke-opacity="0.6"/>
+  <rect x="8" y="8" width="134" height="72" rx="4" fill="url(#vuface2)"/>
+  <rect x="8" y="8" width="134" height="72" rx="4" fill="url(#vuglow)"/>
+  <rect x="8.5" y="8.5" width="133" height="71" rx="4" fill="none" stroke="#00000040" stroke-width="1.4"/>
+  <path d="M27 68 A58 58 0 0 1 123 68" fill="none" stroke="#5c4a1e" stroke-width="1.4"/>
+  <path d="M100 33 A58 58 0 0 1 123 68" fill="none" stroke="#b23227" stroke-width="2.6"/>
+  {% set marks = [('-20', 0.04), ('-10', 0.2), ('-5', 0.38), ('-3', 0.52), ('0', 0.72), ('+3', 0.95)] %}
+  {% for lbl, f in marks %}
+  {% set a = 3.14159 - f * 3.14159 %}
+  <line x1="{{ 75 + 52 * cos(a) }}" y1="{{ 68 - 52 * sin(a) }}" x2="{{ 75 + 58 * cos(a) }}" y2="{{ 68 - 58 * sin(a) }}" stroke="{{ '#b23227' if f > 0.72 else '#5c4a1e' }}" stroke-width="1.3"/>
+  <text x="{{ 75 + 63 * cos(a) }}" y="{{ 70 - 63 * sin(a) }}" text-anchor="middle" font-size="6" font-weight="700" fill="{{ '#b23227' if f > 0.72 else '#4a3c18' }}" font-family="sans-serif">{{ lbl }}</text>
+  {% endfor %}
+  <text x="75" y="56" text-anchor="middle" font-size="13" font-weight="700" fill="#3a2f14" font-family="serif" letter-spacing="1.5">VU</text>
+  {% set na = 3.14159 - (needle / 100.0) * 3.14159 %}
+  <line x1="75" y1="68" x2="{{ 75 + 48 * cos(na) }}" y2="{{ 68 - 48 * sin(na) }}" stroke="#16130a" stroke-width="1.8"/>
+  <circle cx="75" cy="68" r="3.2" fill="#16130a"/>
+  <path d="M8 8 h134 v26 l-134 18 Z" fill="url(#vuglass)" opacity="0.8"/>
+</svg>
+{% endmacro %}
+
+{# Amber LED bar matrix with glow on lit cells. #}
+{% macro led_bars(lit=4, cls='h-16') %}
+<svg viewBox="0 0 120 88" class="{{ cls }}" aria-hidden="true">
+  <rect x="1.5" y="1.5" width="117" height="85" rx="8" fill="#0e0e12"/>
+  <rect x="1.5" y="1.5" width="117" height="85" rx="8" fill="none" stroke="#000000" stroke-opacity="0.6"/>
+  {% for col in range(5) %}
+  {% for row in range(6) %}
+  {% set on = (5 - row) <= (lit + col) % 7 %}
+  {% if on %}<rect x="{{ 21 + col * 17 }}" y="{{ 15 + row * 10 }}" width="12" height="7" rx="1.5" fill="#e8c667" opacity="0.28"/>{% endif %}
+  <rect x="{{ 22 + col * 17 }}" y="{{ 16 + row * 10 }}" width="10" height="5.5" rx="1.2"
+        fill="{{ '#f3d47e' if on else '#26262c' }}"{% if on %} opacity="{{ 0.6 + (row / 14) }}"{% endif %}/>
+  {% endfor %}
+  {% endfor %}
+</svg>
+{% endmacro %}
+
+{# Status LED with glow + label. #}
+{% macro led(color='#7ee083', label='NORMAL', dark=False) %}
+<span class="inline-flex items-center gap-1.5">
+  <span class="h-2 w-2 rounded-full" style="background: {{ color }}; box-shadow: 0 0 7px {{ color }}, 0 0 2px {{ color }};"></span>
+  <span class="text-[8px] font-semibold uppercase tracking-[0.2em] {{ 'text-gray-300' if dark else 'text-[#44444c]' }}">{{ label }}</span>
+</span>
+{% endmacro %}
+
+{# Black engraved label plate. gold=True for the gold-bordered variant. #}
+{% macro label_plate(text, cls='', gold=False) %}
+<span class="inline-block rounded-[4px] border {{ 'border-[#c9a24a]/60' if gold else 'border-black/60' }} bg-gradient-to-b from-[#26262a] to-[#111114] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_2px_rgba(0,0,0,0.4)] {{ cls }}">{{ text }}</span>
+{% endmacro %}
+
+{# Gold patchbay ("send it to the desk"): black rows, dark jacks with a gold
+   cable routing OUTPUT -> SEND, and a gold-ruled end plate. #}
+{% macro patchbay_gold(from_idx=0, to_idx=2, n=10) %}
+{% set x0 = 128 %}{% set dx = 62 %}
+{% set ty = 58 %}{% set by = 138 %}
+<svg viewBox="0 0 900 216" class="h-auto w-full" aria-hidden="true">
+  <defs>
+    <radialGradient id="jknutd" cx="0.4" cy="0.32" r="0.95">
+      <stop offset="0" stop-color="#3c3c44"/><stop offset="0.7" stop-color="#1e1e24"/><stop offset="1" stop-color="#101014"/>
+    </radialGradient>
+    <radialGradient id="jkringd" cx="0.38" cy="0.3" r="0.95">
+      <stop offset="0" stop-color="#8a8a92"/><stop offset="0.55" stop-color="#4e4e56"/><stop offset="1" stop-color="#2a2a30"/>
+    </radialGradient>
+    <linearGradient id="goldcable" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0d68a"/><stop offset="0.5" stop-color="#c9a24a"/><stop offset="1" stop-color="#8a6d1f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- row labels -->
+  {% for label, y in [('OUTPUT', ty + 3), ('SEND', by + 3)] %}
+  <text x="34" y="{{ y }}" font-size="9" font-weight="700" letter-spacing="2.5" fill="#c9a24a" font-family="sans-serif">{{ label }}</text>
+  {% endfor %}
+
+  <!-- gold cable first (plugs above) -->
+  {% set x1 = x0 + from_idx * dx %}{% set x2 = x0 + to_idx * dx %}
+  {% set path = 'M ' ~ x1 ~ ' ' ~ (ty + 6) ~ ' C ' ~ x1 ~ ' 196, ' ~ x2 ~ ' 196, ' ~ x2 ~ ' ' ~ (by - 16) %}
+  <path d="{{ path }}" fill="none" stroke="#000000" stroke-opacity="0.5" stroke-width="10" stroke-linecap="round" transform="translate(2 3)"/>
+  <path d="{{ path }}" fill="none" stroke="url(#goldcable)" stroke-width="8" stroke-linecap="round"/>
+  <path d="{{ path }}" fill="none" stroke="#fff3c4" stroke-opacity="0.5" stroke-width="1.5" stroke-linecap="round" transform="translate(-1 -1.5)"/>
+
+  <!-- jacks -->
+  {% for i in range(n) %}
+  {% set x = x0 + i * dx %}
+  {% for y in [ty, by] %}
+  {% set lit = (y == ty and i == from_idx) or (y == by and i == to_idx) %}
+  <circle cx="{{ x }}" cy="{{ y + 1.5 }}" r="15" fill="#00000060"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="15" fill="url(#jknutd)"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="15" fill="none" stroke="{{ '#c9a24a66' if lit else '#00000070' }}"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="10.5" fill="url(#jkringd)"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="10.5" fill="none" stroke="#00000050"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="6" fill="#050507"/>
+  <path d="M {{ x - 3.8 }} {{ y - 3 }} A 4.8 4.8 0 0 1 {{ x + 1.6 }} {{ y - 4.3 }}" fill="none" stroke="#ffffff2a" stroke-width="1.3" stroke-linecap="round"/>
+  {% if lit %}
+  <circle cx="{{ x }}" cy="{{ y }}" r="5.2" fill="url(#goldcable)"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="5.2" fill="none" stroke="#00000050"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="1.8" fill="#3a2c0e"/>
+  {% endif %}
+  {% endfor %}
+  {% endfor %}
+
+  <!-- status LEDs under the field -->
+  {% for i in range(n) %}
+  <circle cx="{{ x0 + i * dx }}" cy="{{ by + 34 }}" r="2.2" fill="{{ '#e8c667' if i in [from_idx, to_idx] else '#33332c' }}"{% if i in [from_idx, to_idx] %} opacity="0.9"{% endif %}/>
+  {% endfor %}
+
+  <!-- gold-ruled end plate -->
+  {% set px = x0 + (n - 1) * dx + 36 %}
+  <rect x="{{ px }}" y="30" width="{{ 890 - px }}" height="150" rx="8" fill="#0d0d10"/>
+  <rect x="{{ px }}" y="30" width="{{ 890 - px }}" height="150" rx="8" fill="none" stroke="#c9a24a55"/>
+  {% set ex = px + (890 - px) / 2 %}
+  <line x1="{{ ex - 52 }}" y1="66" x2="{{ ex + 52 }}" y2="66" stroke="#c9a24a66" stroke-width="0.8"/>
+  <text x="{{ ex }}" y="90" text-anchor="middle" font-size="14" font-weight="800" letter-spacing="3" fill="#e8c667" font-family="sans-serif">PATCHBAY</text>
+  <text x="{{ ex }}" y="110" text-anchor="middle" font-size="7.5" font-weight="600" letter-spacing="2.6" fill="#b8b8c0" font-family="sans-serif">STREET BANKER</text>
+  <text x="{{ ex }}" y="124" text-anchor="middle" font-size="7.5" font-weight="600" letter-spacing="2.6" fill="#8a8a92" font-family="sans-serif">A&amp;R DESK</text>
+  <line x1="{{ ex - 52 }}" y1="140" x2="{{ ex + 52 }}" y2="140" stroke="#c9a24a66" stroke-width="0.8"/>
+  <circle cx="{{ ex - 36 }}" cy="158" r="3" fill="#7ee083"/>
+  <circle cx="{{ ex - 36 }}" cy="158" r="5.5" fill="#7ee083" opacity="0.2"/>
+  <text x="{{ ex - 27 }}" y="161" font-size="6.5" font-weight="600" letter-spacing="1.6" fill="#c9c9cf" font-family="sans-serif">SIGNAL</text>
+  <circle cx="{{ ex + 14 }}" cy="158" r="3" fill="#54544c"/>
+  <text x="{{ ex + 23 }}" y="161" font-size="6.5" font-weight="600" letter-spacing="1.6" fill="#8a8a92" font-family="sans-serif">RECEIVED</text>
+</svg>
+{% endmacro %}
+
+{# 1/4-inch panel jack. plugged=True draws the plug barrel seated in it. #}
+{% macro jack_defs() %}
+<defs>
+  <radialGradient id="scrhead" cx="0.35" cy="0.3" r="0.9">
+    <stop offset="0" stop-color="#e9e9ee"/><stop offset="0.55" stop-color="#a9a9b1"/><stop offset="1" stop-color="#6f6f78"/>
+  </radialGradient>
+  <radialGradient id="jknut" cx="0.4" cy="0.32" r="0.95">
+    <stop offset="0" stop-color="#8f8f97"/><stop offset="0.7" stop-color="#4c4c54"/><stop offset="1" stop-color="#2e2e34"/>
+  </radialGradient>
+  <radialGradient id="jkchrome" cx="0.38" cy="0.3" r="0.95">
+    <stop offset="0" stop-color="#fbfbfe"/><stop offset="0.5" stop-color="#c6c6cd"/><stop offset="1" stop-color="#7c7c85"/>
+  </radialGradient>
+  <linearGradient id="cablesheen" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#3a3a40"/><stop offset="0.35" stop-color="#141417"/><stop offset="1" stop-color="#0a0a0d"/>
+  </linearGradient>
+  <linearGradient id="tagmetal" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#f4f4f7"/><stop offset="0.55" stop-color="#d9d9de"/><stop offset="1" stop-color="#b9b9c0"/>
+  </linearGradient>
+</defs>
+{% endmacro %}
+
+{% macro jack(x, y, plugged=False, r=12) %}
+{% set nut = r + 5 %}{% set hole = r * 0.58 %}
+<g>
+  <circle cx="{{ x }}" cy="{{ y + 1.5 }}" r="{{ nut }}" fill="#00000030"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="{{ nut }}" fill="url(#jknut)"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="{{ nut }}" fill="none" stroke="#00000055"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="{{ r }}" fill="url(#jkchrome)"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="{{ r }}" fill="none" stroke="#00000030"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="{{ hole }}" fill="#060608"/>
+  <path d="M {{ x - hole * 0.64 }} {{ y - hole * 0.5 }} A {{ hole * 0.8 }} {{ hole * 0.8 }} 0 0 1 {{ x + hole * 0.28 }} {{ y - hole * 0.72 }}" fill="none" stroke="#ffffff2e" stroke-width="1.4" stroke-linecap="round"/>
+  {% if plugged %}
+  <circle cx="{{ x }}" cy="{{ y }}" r="{{ hole * 0.86 }}" fill="#1a1a1f"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="{{ hole * 0.86 }}" fill="none" stroke="#ffffff22"/>
+  <circle cx="{{ x }}" cy="{{ y }}" r="{{ hole * 0.34 }}" fill="#2c2c33"/>
+  {% endif %}
+</g>
+{% endmacro %}
+
+{# Patchbay strip, dense like real hardware: 12 jacks per row, a black
+   end-cap module, and sagging labeled cables.
+   tags: list of (label, top_index, bottom_index), indexes 0..11. #}
+{% macro patchbay(tags=[('SONG', 1, 4), ('STORY', 5, 8), ('SEND', 9, 2)], module_title='PATCHBAY', module_sub='SIGNAL ROUTING') %}
+{% set n = 12 %}
+{% set x0 = 46 %}{% set dx = 58 %}
+{% set ty = 42 %}{% set by = 118 %}
+<svg viewBox="0 0 900 236" class="h-auto w-full" aria-hidden="true">
+  {{ jack_defs() }}
+
+  <!-- engraved row rules + captions -->
+  {% for label, y in [('YOU SEND', 16), ('OUR DESK', 92)] %}
+  <text x="{{ x0 - 12 }}" y="{{ y + 0.9 }}" font-size="7.5" font-weight="700" letter-spacing="2.5" fill="#ffffff70" font-family="sans-serif">{{ label }}</text>
+  <text x="{{ x0 - 12 }}" y="{{ y }}" font-size="7.5" font-weight="700" letter-spacing="2.5" fill="#33333b" font-family="sans-serif">{{ label }}</text>
+  <line x1="{{ x0 + 62 }}" y1="{{ y - 2.6 }}" x2="{{ x0 + (n - 1) * dx + 16 }}" y2="{{ y - 2.6 }}" stroke="#00000028" stroke-width="1"/>
+  <line x1="{{ x0 + 62 }}" y1="{{ y - 1.7 }}" x2="{{ x0 + (n - 1) * dx + 16 }}" y2="{{ y - 1.7 }}" stroke="#ffffff55" stroke-width="0.6"/>
+  {% endfor %}
+
+  {% set plugged_top = tags | map(attribute=1) | list %}
+  {% set plugged_bottom = tags | map(attribute=2) | list %}
+
+  <!-- cables first (plugs render above) -->
+  {% for label, ti, bi in tags %}
+  {% set x1 = x0 + ti * dx %}{% set x2 = x0 + bi * dx %}
+  {% set sag = 196 + loop.index0 * 12 %}
+  {% set path = 'M ' ~ x1 ~ ' ' ~ (ty + 6) ~ ' C ' ~ x1 ~ ' ' ~ sag ~ ', ' ~ x2 ~ ' ' ~ sag ~ ', ' ~ x2 ~ ' ' ~ (by + 6) %}
+  <path d="{{ path }}" fill="none" stroke="#000000" stroke-opacity="0.28" stroke-width="10" stroke-linecap="round" transform="translate(2 3)"/>
+  <path d="{{ path }}" fill="none" stroke="url(#cablesheen)" stroke-width="8" stroke-linecap="round"/>
+  <path d="{{ path }}" fill="none" stroke="#ffffff2c" stroke-width="1.4" stroke-linecap="round" transform="translate(-1 -1.6)"/>
+  {% set mx = (x1 + x2) / 2 %}{% set myy = sag * 0.75 + (ty + by) * 0.125 %}
+  <g transform="rotate({{ -5 + loop.index0 * 5 }} {{ mx }} {{ myy }})">
+    <rect x="{{ mx - 31 }}" y="{{ myy - 11 }}" width="62" height="22" rx="4" fill="url(#tagmetal)"/>
+    <rect x="{{ mx - 31 }}" y="{{ myy - 11 }}" width="62" height="22" rx="4" fill="none" stroke="#00000045"/>
+    <text x="{{ mx }}" y="{{ myy + 4 }}" text-anchor="middle" font-size="10.5" font-weight="800" letter-spacing="1.8" fill="#1b1b20" font-family="sans-serif">{{ label }}</text>
+  </g>
+  {% endfor %}
+
+  <!-- dense jack field, numbered like real bays -->
+  {% for i in range(n) %}
+  {% set x = x0 + i * dx %}
+  <text x="{{ x }}" y="{{ ty - 20 }}" text-anchor="middle" font-size="7.5" font-weight="700" letter-spacing="0.8" fill="#3a3a42" font-family="sans-serif">{{ '%02d' % (i + 1) }}</text>
+  {{ jack(x, ty, plugged=(i in plugged_top), r=12) }}
+  {{ jack(x, by, plugged=(i in plugged_bottom), r=12) }}
+  {% endfor %}
+
+  <!-- black end-cap module -->
+  <g>
+    <rect x="{{ x0 + (n - 1) * dx + 34 }}" y="10" width="132" height="132" rx="8" fill="#101013"/>
+    <rect x="{{ x0 + (n - 1) * dx + 34 }}" y="10" width="132" height="132" rx="8" fill="none" stroke="#00000070"/>
+    <rect x="{{ x0 + (n - 1) * dx + 35 }}" y="11" width="130" height="130" rx="7.5" fill="none" stroke="#ffffff12"/>
+    {% set ex = x0 + (n - 1) * dx + 100 %}
+    <line x1="{{ ex - 44 }}" y1="52" x2="{{ ex + 44 }}" y2="52" stroke="#ffffff30" stroke-width="0.8"/>
+    <text x="{{ ex }}" y="72" text-anchor="middle" font-size="12.5" font-weight="800" letter-spacing="2.5" fill="#e8e8ec" font-family="sans-serif">{{ module_title }}</text>
+    <text x="{{ ex }}" y="90" text-anchor="middle" font-size="7" font-weight="600" letter-spacing="2.2" fill="#9a9aa2" font-family="sans-serif">{{ module_sub }}</text>
+    <line x1="{{ ex - 44 }}" y1="104" x2="{{ ex + 44 }}" y2="104" stroke="#ffffff30" stroke-width="0.8"/>
+    <circle cx="{{ ex - 30 }}" cy="122" r="3" fill="#54545c"/>
+    <text x="{{ ex - 21 }}" y="125" font-size="6.5" font-weight="600" letter-spacing="1.4" fill="#9a9aa2" font-family="sans-serif">ROUTING</text>
+    <circle cx="{{ ex + 8 }}" cy="122" r="3" fill="#7ee083"/>
+    <circle cx="{{ ex + 8 }}" cy="122" r="5.5" fill="#7ee083" opacity="0.25"/>
+    <text x="{{ ex + 17 }}" y="125" font-size="6.5" font-weight="600" letter-spacing="1.4" fill="#c9c9cf" font-family="sans-serif">OK</text>
+    <!-- module screws -->
+    <g transform="translate({{ x0 + (n - 1) * dx + 42 }} 18) scale(0.8)">{{ screw_inline(30) }}</g>
+    <g transform="translate({{ x0 + (n - 1) * dx + 148 }} 18) scale(0.8)">{{ screw_inline(75) }}</g>
+    <g transform="translate({{ x0 + (n - 1) * dx + 42 }} 126) scale(0.8)">{{ screw_inline(110) }}</g>
+    <g transform="translate({{ x0 + (n - 1) * dx + 148 }} 126) scale(0.8)">{{ screw_inline(55) }}</g>
+  </g>
+</svg>
+{% endmacro %}
+
+{# Screw drawn inline inside an existing SVG (no nested <svg>). #}
+{% macro screw_inline(rot=20) %}
+<circle cx="0" cy="0" r="6" fill="#00000045"/>
+<circle cx="0" cy="-0.4" r="5.4" fill="url(#scrhead)"/>
+<circle cx="0" cy="-0.4" r="5.4" fill="none" stroke="#00000050" stroke-width="0.6"/>
+<g transform="rotate({{ rot }})" stroke="#3f3f47" stroke-width="1.2" stroke-linecap="round">
+  <line x1="-3.4" y1="-0.4" x2="3.4" y2="-0.4"/>
+  <line x1="0" y1="-3.8" x2="0" y2="3"/>
+</g>
+{% endmacro %}

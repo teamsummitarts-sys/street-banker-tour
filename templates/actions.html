@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Actions - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker · Action Center</div>
+      <h1 class="sb-h1 mt-1">Actions</h1>
+      <p class="mt-1 max-w-xl text-sm text-gray-300">Every insight becomes work you can assign, track, and finish. Alerts and release checklists feed this board.</p>
+    </div>
+    <a href="/command-center" class="sb-btn sb-btn-secondary">← Command Center</a>
+  </div>
+
+  <!-- New action -->
+  <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+    <h2 class="sb-label text-sb-gold-bright">New Action</h2>
+    <form method="post" class="mt-3 grid gap-2 sm:grid-cols-[2fr_1fr_1fr_1fr_auto]">
+      <input name="title" required placeholder="What needs to happen?" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none">
+      <select name="category" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-100 [color-scheme:dark]">
+        {% for cat in categories %}<option value="{{ cat }}">{{ cat.replace('_', ' ') | title }}</option>{% endfor %}
+      </select>
+      <select name="priority" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-100 [color-scheme:dark]">
+        {% for p in priorities %}<option value="{{ p }}" {{ 'selected' if p == 'medium' }}>{{ p | title }}</option>{% endfor %}
+      </select>
+      <input name="due_date" type="date" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-100 [color-scheme:dark]">
+      <button class="sb-btn sb-btn-secondary">Add</button>
+    </form>
+  </section>
+
+  <!-- Live board stats: every number is your real action list -->
+  {% if stats.total %}
+  <section class="flex flex-wrap items-center gap-5 rounded-2xl border border-sb-gold/20 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 px-5 py-4">
+    <div class="relative h-16 w-16 shrink-0">
+      <svg viewBox="0 0 64 64" class="h-full w-full -rotate-90">
+        <circle cx="32" cy="32" r="26" fill="none" stroke="#221D18" stroke-width="7"/>
+        <circle cx="32" cy="32" r="26" fill="none" stroke="#E8B950" stroke-width="7" stroke-linecap="round"
+                stroke-dasharray="{{ (stats.pct / 100 * 163.4) | round(1) }} 200"/>
+      </svg>
+      <div class="absolute inset-0 grid place-items-center text-sm font-black sb-num text-sb-ink">{{ stats.pct }}%</div>
+    </div>
+    <div class="text-xs text-gray-300"><span class="font-bold text-gray-100">{{ stats.complete }}</span> of {{ stats.total }} complete</div>
+    <div class="text-xs text-gray-300"><span class="font-bold text-sb-gold-bright">{{ stats.in_progress }}</span> in progress</div>
+    <div class="text-xs text-gray-300"><span class="font-bold text-gray-100">{{ stats.open }}</span> open</div>
+    <div class="ml-auto flex gap-1.5 text-xs font-semibold">
+      <a href="/actions" class="rounded-lg border px-3 py-1.5 {{ 'border-amber-500/40 bg-amber-500/15 text-amber-400' if view == 'list' else 'border-white/10 text-gray-300 hover:text-white' }}">List</a>
+      <a href="/actions?view=board" class="rounded-lg border px-3 py-1.5 {{ 'border-amber-500/40 bg-amber-500/15 text-amber-400' if view == 'board' else 'border-white/10 text-gray-300 hover:text-white' }}">Board</a>
+    </div>
+  </section>
+  {% endif %}
+
+  {% macro due_chip(a) -%}
+    {%- if a.due_date -%}
+    {%- set overdue = a.due_date < today and a.status in ('new', 'in_progress') -%}
+    <span class="rounded px-1.5 py-0.5 text-xs font-bold tabular-nums {{ 'bg-red-500/15 text-red-400' if overdue else 'bg-white/10 text-gray-300' }}">{{ 'overdue · ' if overdue }}due {{ a.due_date }}</span>
+    {%- endif -%}
+  {%- endmacro %}
+
+  {% if view == 'board' %}
+  <!-- Kanban board: your real actions by status -->
+  <div class="grid gap-3 md:grid-cols-3">
+    {% for col_status, col_label in [('new', 'To do'), ('in_progress', 'In progress'), ('complete', 'Done')] %}
+    <div class="rounded-2xl border border-white/10 bg-sb-ground p-3">
+      <div class="px-1 text-xs font-bold uppercase tracking-[0.25em] text-gray-300">{{ col_label }} · {{ all_actions | selectattr('status', 'equalto', col_status) | list | length }}</div>
+      <div class="mt-2 space-y-2">
+        {% for a in all_actions if a.status == col_status %}
+        <div class="rounded-xl border border-white/10 bg-sb-surface-2 p-3">
+          <div class="flex items-start gap-2">
+            <span class="mt-1 h-2 w-2 shrink-0 rounded-full {{ 'bg-red-500' if a.priority == 'high' else ('bg-amber-500' if a.priority == 'medium' else 'bg-gray-500') }}"></span>
+            <div class="min-w-0 flex-1 text-sm font-semibold {{ 'text-gray-300 line-through' if a.status == 'complete' else 'text-gray-100' }}">{{ a.title }}</div>
+          </div>
+          <div class="mt-2 flex flex-wrap items-center gap-1.5">
+            <span class="rounded bg-white/10 px-1.5 py-0.5 text-xs font-bold uppercase text-gray-300">{{ a.category.replace('_', ' ') }}</span>
+            {{ due_chip(a) }}
+            <form method="post" class="ml-auto flex gap-1">
+              <input type="hidden" name="action_id" value="{{ a.id }}">
+              {% if a.status == 'new' %}<button name="status" value="in_progress" class="sb-btn sb-btn-secondary sb-btn-sm">Start</button>{% endif %}
+              {% if a.status in ('new', 'in_progress') %}<button name="status" value="complete" class="rounded border border-green-500/40 bg-green-500/10 px-2 py-0.5 text-xs font-bold text-green-400 hover:bg-green-500/20">Done</button>
+              {% else %}<button name="status" value="new" class="sb-btn sb-btn-secondary sb-btn-sm">Reopen</button>{% endif %}
+            </form>
+          </div>
+        </div>
+        {% else %}
+        <div class="rounded-xl border border-dashed border-white/10 py-5 text-center text-xs text-gray-300 font-medium">Empty</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+
+  <!-- Filters -->
+  <div class="flex flex-wrap gap-1.5 text-xs font-semibold">
+    {% for s, label in [('', 'All'), ('new', 'New'), ('in_progress', 'In Progress'), ('complete', 'Complete'), ('dismissed', 'Dismissed')] %}
+    <a href="/actions{% if s %}?status={{ s }}{% endif %}" class="rounded-full border px-3 py-1 {{ 'border-amber-500/40 bg-amber-500/15 text-amber-400' if status_filter == s else 'border-white/10 text-gray-300 hover:text-white' }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+
+  {% if actions %}
+  <div class="space-y-2">
+    {% for a in actions %}
+    <div class="rounded-xl border {{ 'border-white/5 opacity-60' if a.status in ('complete', 'dismissed') else 'border-white/10' }} bg-sb-surface-1 p-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="h-2 w-2 shrink-0 rounded-full {{ 'bg-red-500' if a.priority == 'high' else ('bg-amber-500' if a.priority == 'medium' else 'bg-gray-500') }}"></span>
+        <div class="min-w-0 flex-1">
+          <div class="text-sm font-semibold {{ 'text-gray-300 line-through' if a.status == 'complete' else 'text-gray-100' }}">{{ a.title }}</div>
+          {% if a.description %}<div class="text-xs text-gray-300 font-medium">{{ a.description }}</div>{% endif %}
+        </div>
+        <span class="rounded bg-white/10 px-1.5 py-0.5 text-xs font-bold uppercase text-gray-300">{{ a.category.replace('_', ' ') }}</span>
+        {{ due_chip(a) }}
+        <span class="rounded px-1.5 py-0.5 text-xs font-bold uppercase {{ 'bg-green-500/15 text-green-400' if a.status == 'complete' else ('bg-sb-gold/15 text-sb-gold-bright' if a.status == 'in_progress' else 'bg-white/10 text-gray-300') }}">{{ a.status.replace('_', ' ') }}</span>
+        <form method="post" class="flex shrink-0 gap-1.5">
+          <input type="hidden" name="action_id" value="{{ a.id }}">
+          {% if a.status == 'new' %}
+          <button name="status" value="in_progress" class="sb-btn sb-btn-secondary sb-btn-sm">Start</button>
+          {% endif %}
+          {% if a.status in ('new', 'in_progress') %}
+          <button name="status" value="complete" class="rounded-md border border-green-500/40 bg-green-500/10 px-2.5 py-1 text-xs font-bold text-green-400 hover:bg-green-500/20">Complete</button>
+          <button name="status" value="dismissed" class="sb-btn sb-btn-secondary sb-btn-sm">Dismiss</button>
+          {% else %}
+          <button name="status" value="new" class="sb-btn sb-btn-secondary sb-btn-sm">Reopen</button>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-white/10 py-10 text-center text-xs text-gray-300">No actions here. Create one above, or use “Create action” on any Command Center alert or release check.</div>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{# Section 4 — one system, six departments.
+
+   One photograph, six coded slices. The picture is a single <img> with a
+   single description; the slices above it are markup — tone wash, rule,
+   hover and focus state — so the frame is never cut into six files and
+   the reader is never told the same thing six times.
+
+   Desktop: the six links sit in one grid over the picture, each spanning
+   its slice and the label beneath it, so a department is one control.
+   Below 1024px the same six links become a snap scroller and each one
+   carries its own sixth of the same file as a background window; the
+   picture itself stays in the document for anyone reading it aloud. #}
+
+{% set dep = departments %}
+{% set img = dep.image %}
+<section class="sbdept" id="departments" aria-labelledby="sbdept-heading">
+  <div class="sbdept-inner">
+    <header class="sbdept-head">
+      <h2 class="sbdept-eyebrow" id="sbdept-heading">{{ dep.eyebrow }}</h2>
+      <p class="sbdept-support">{{ dep.support }}</p>
+    </header>
+
+    <div class="sbdept-grid" style="--sbdept-count: {{ dep.count }}">
+      <picture class="sbdept-photo">
+        <source type="image/avif"
+                srcset="{% for w in img.widths %}{{ img.stem }}-{{ w }}.avif {{ w }}w{% if not loop.last %}, {% endif %}{% endfor %}"
+                sizes="(min-width: 1600px) 1540px, 100vw">
+        <source type="image/webp"
+                srcset="{% for w in img.widths %}{{ img.stem }}-{{ w }}.webp {{ w }}w{% if not loop.last %}, {% endif %}{% endfor %}"
+                sizes="(min-width: 1600px) 1540px, 100vw">
+        <img src="{{ img.stem }}-1200.jpg"
+             srcset="{% for w in img.widths %}{{ img.stem }}-{{ w }}.jpg {{ w }}w{% if not loop.last %}, {% endif %}{% endfor %}"
+             sizes="(min-width: 1600px) 1540px, 100vw"
+             width="{{ img.width }}" height="{{ img.height }}"
+             alt="{{ img.alt }}" loading="lazy" decoding="async">
+      </picture>
+
+      {% for d in dep.departments %}
+      <a class="sbdept-dept" href="{{ d.href }}"
+         style="--sbdept-i: {{ loop.index0 }}; --sbdept-wash: {{ d.wash }}"
+         data-dept="{{ d.slug }}" data-index="{{ loop.index0 }}">
+        {# The slice treatment: a tone wash and a rule. Decorative — the
+           department is named in the label below, once. #}
+        <span class="sbdept-window" aria-hidden="true">
+          <span class="sbdept-wash"></span>
+        </span>
+        <span class="sbdept-body">
+          <span class="sbdept-num">{{ d.num }}</span>
+          <span class="sbdept-name">{{ d.name }}</span>
+          <span class="sbdept-desc">{{ d.desc }}</span>
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script type="application/json" id="sbdept-config">{{ departments_json | js_json }}</script>
+</section>

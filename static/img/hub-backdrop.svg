@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900" preserveAspectRatio="xMidYMin slice">
+  <!-- Artist Hub backdrop: a brass wash at the crown with two faint
+       concentric arcs under it, like the throw of a single lamp over a
+       stage. The page is one column on a phone, so the light sits where
+       the photograph does and falls off before the first link. -->
+  <defs>
+    <radialGradient id="lamp" cx="50%" cy="2%" r="62%">
+      <stop offset="0%" stop-color="#c9a24a" stop-opacity="0.30"/>
+      <stop offset="45%" stop-color="#c9a24a" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#0b0a09" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="arc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#c9a24a" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#e8c667" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#c9a24a" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="hubgrain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.05"/></feComponentTransfer>
+    </filter>
+  </defs>
+  <rect width="900" height="900" fill="#0b0a09"/>
+  <rect width="900" height="900" fill="url(#lamp)"/>
+  <path d="M-40 250 A 500 500 0 0 1 940 250" fill="none" stroke="url(#arc)" stroke-width="1"/>
+  <path d="M-40 330 A 620 620 0 0 1 940 330" fill="none" stroke="url(#arc)" stroke-width="1" opacity="0.55"/>
+  <rect width="900" height="900" filter="url(#hubgrain)" opacity="0.5"/>
+</svg>

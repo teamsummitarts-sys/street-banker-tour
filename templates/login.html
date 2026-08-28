@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "_fonts.html" %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in - Street Banker</title>
+  <meta name="description" content="Sign in to manage your releases, royalties, fans, and catalog.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141210'/%3E%3Cpath d='M6 12l5 4 5-7 5 7 5-4v10a1 1 0 01-1 1H7a1 1 0 01-1-1z' fill='none' stroke='%23d8b25a' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  <link rel="stylesheet" href="/static/css/login-session-recall.css?v=7">
+</head>
+<body class="lsr">
+
+  <main class="lsr-page">
+
+    <!-- 1. wordmark + intro -->
+    <header class="lsr-intro">
+      <a href="/" class="lsr-brand">
+        <img src="/static/img/streetbanker-logo.svg" alt="Street Banker">
+        <span>ARTIST INFRASTRUCTURE</span>
+      </a>
+      <h1 class="lsr-title">RETURN TO YOUR DESK.</h1>
+      <p class="lsr-support">Sign in to manage your releases, royalties, fans, and catalog.</p>
+    </header>
+
+    <!-- 2. A. SESSION RECALL -->
+    {% include "partials/login_session_recall.html" %}
+
+    <!-- 3. YOUR MIX IS READY - rendered hidden; the script reveals it only
+         when a valid saved Artist EQ mix exists in this browser. -->
+    {% include "partials/login_artist_eq_recall.html" %}
+
+    <!-- 4. B. TOUR STREET BANKER -->
+    {% include "partials/login_demo_tour.html" %}
+
+    <!-- 5. one row, because there is one question: which account -->
+    {# These were two rows of identical weight, and both buttons went to
+       the same /signup with the artist type already selected - so
+       "GO TO FAN EXPERIENCE" promised a different destination and
+       delivered the artist form. One row, two named choices, and the fan
+       link now actually arrives on the fan side. #}
+    <div class="lsr-rows">
+      <section class="lsr-row" aria-labelledby="lsr-new-h">
+        <div>
+          <h2 class="lsr-row-title" id="lsr-new-h">NO ACCOUNT YET?</h2>
+          <p class="lsr-row-sub">
+            Artists get the back office — royalties, releases, catalog.
+            Or <a class="lsr-row-alt" href="/signup?as=fan">Create a free fan account →</a>
+          </p>
+        </div>
+        <a class="lsr-row-btn" href="/signup">CREATE ARTIST ACCOUNT</a>
+      </section>
+    </div>
+
+    <!-- 6. security statement -->
+    <p class="lsr-security">
+      <span class="lsr-security-mark" aria-hidden="true"></span>
+      Secure account access. Demo workspaces contain sample data.
+    </p>
+
+    <!-- 7. minimal footer -->
+    <footer class="lsr-footer">
+      <nav aria-label="Legal">
+        <a href="/terms">Terms</a><span aria-hidden="true">·</span>
+        <a href="/privacy">Privacy</a><span aria-hidden="true">·</span>
+        <a href="/submit">Contact</a>
+      </nav>
+      <p>&copy; 2026 Street Banker LLC. All rights reserved.</p>
+    </footer>
+
+    <p class="lsr-sr" id="lsr-live" aria-live="polite" role="status"></p>
+  </main>
+
+  <script src="/static/js/login-session-recall.js?v=4" defer></script>
+</body>
+</html>

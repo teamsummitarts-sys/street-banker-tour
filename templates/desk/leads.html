@@ -1,0 +1,63 @@
+{% set nav = 'leads' %}
+{% extends "desk/layout.html" %}
+{% block title %}Leads{% endblock %}
+{% block main %}
+<h1 class="dk-h1">Leads</h1>
+<p class="dk-sub">{{ leads | length }} shown. Search covers names, cities, genres, managers, distributors, tags — and the notes, so a phrase from a call is enough.</p>
+
+<div class="dk-bar">
+  <form method="get" action="/operator-desk/leads">
+    <input class="dk-search" type="search" name="q" value="{{ filters['q'] }}" placeholder="Search leads and notes">
+    <select class="dk-mini" name="stage">
+      <option value="">Any stage</option>
+      {% for s in vocab.stages %}<option {{ 'selected' if filters['stage'] == s }}>{{ s }}</option>{% endfor %}
+    </select>
+    <select class="dk-mini" name="priority">
+      <option value="">Any priority</option>
+      {% for p in vocab.priorities %}<option {{ 'selected' if filters['priority'] == p }}>{{ p }}</option>{% endfor %}
+    </select>
+    <select class="dk-mini" name="assigned">
+      <option value="">Anyone</option>
+      {% for n in vocab.team %}<option {{ 'selected' if filters['assigned'] == n }}>{{ n }}</option>{% endfor %}
+    </select>
+    <select class="dk-mini" name="opportunity">
+      <option value="">Any opportunity</option>
+      {% for o in vocab.opportunities %}<option {{ 'selected' if filters['opportunity'] == o }}>{{ o }}</option>{% endfor %}
+    </select>
+    <select class="dk-mini" name="source">
+      <option value="">Any source</option>
+      {% for s in vocab.sources %}<option {{ 'selected' if filters['source'] == s }}>{{ s }}</option>{% endfor %}
+    </select>
+    <button class="dk-btn dk-btn--ghost" type="submit">Filter</button>
+  </form>
+  {% if can('lead_add') %}<a class="dk-btn" href="/operator-desk/leads/new">+ New lead</a>{% endif %}
+  {% if can('export') %}<a class="dk-btn dk-btn--ghost" href="/operator-desk/export/leads.csv">Export CSV</a>{% endif %}
+</div>
+
+{% if leads %}
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr>
+    <th>Artist / Company</th><th>Contact</th><th>Role</th><th>Stage</th>
+    <th>Priority</th><th>Opportunity</th><th>Assigned</th><th>Follow-up</th><th>Tags</th>
+  </tr></thead>
+  <tbody>
+  {% for l in leads %}
+  <tr>
+    <td><a href="/operator-desk/leads/{{ l.id }}">{{ l.artist_name }}</a>
+        {% if l.city %}<div style="font-size:12px;color:var(--dk-faint)">{{ l.city }}{{ ', ' ~ l.state if l.state }}</div>{% endif %}</td>
+    <td>{{ l.contact_name or '—' }}</td>
+    <td>{{ l.role or '—' }}</td>
+    <td><span class="dk-chip">{{ l.pipeline_stage }}</span></td>
+    <td><span class="dk-chip {{ 'dk-chip--amber' if l.priority in ('High', 'Urgent') }}">{{ l.priority }}</span></td>
+    <td style="font-size:12px">{{ l.opportunity_types | join(', ') or '—' }}</td>
+    <td>{{ l.assigned_to or '—' }}</td>
+    <td>{{ l.follow_up_date or '—' }}</td>
+    <td>{% for t in l.tags %}<span class="dk-chip {{ 'dk-chip--warn' if t in ('High Risk', 'Do Not Contact') }}">{{ t }}</span> {% endfor %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="dk-empty">Nothing matches. Clear a filter or two.</p>
+{% endif %}
+{% endblock %}

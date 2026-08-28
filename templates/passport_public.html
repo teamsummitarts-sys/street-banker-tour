@@ -1,0 +1,107 @@
+{# The Metadata Passport, explained before an account is asked for: the
+   seven records, what a conflict looks like, how one entry moves the
+   others, and what happens to the information. Everything shown is the
+   labelled example. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Metadata Passport · Street Banker</title>
+  <meta name="description" content="Credits, ownership, identifiers, versions, agreements, assets and release history as one connected record — and what happens to the information.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-3xl px-6 py-14 lg:px-10 lg:py-20">
+  <div class="sb-label text-sb-gold">Metadata Passport + Rights</div>
+  <h1 class="mt-4 text-[clamp(1.9rem,5vw,2.8rem)] font-semibold uppercase leading-[1.04] tracking-tight">
+    One release. Every detail connected.
+  </h1>
+  <p class="mt-5 max-w-xl text-base leading-relaxed text-sb-ink-2">
+    A release is not an audio file. It is a record of who contributed, who owns
+    what, how it is identified, which versions exist, which agreements apply,
+    which files belong to it and what has changed since it came out.
+  </p>
+
+  <h2 class="mt-12 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">The seven records</h2>
+  <div class="mt-5 space-y-4">
+    {% for cat in categories %}
+    <section class="rounded border border-[rgb(201_168_106_/_0.22)] bg-sb-surface-1 p-5">
+      <div class="flex flex-wrap items-baseline justify-between gap-3">
+        <h3 class="text-[clamp(1rem,2.2vw,1.25rem)] font-semibold uppercase tracking-tight">
+          <span class="tracking-[0.18em] text-sb-gold">{{ cat.num }}</span> {{ cat.label }}
+        </h3>
+        <span class="sb-label text-sb-ink-2">{{ cat.status }}</span>
+      </div>
+      <p class="mt-2 max-w-2xl text-sm leading-relaxed text-sb-ink-2">{{ cat.why }}</p>
+      <p class="mt-3 text-xs leading-relaxed text-sb-ink-2">
+        <span class="sb-label text-sb-gold">Stored:</span>
+        {{ cat.stored | join(" · ") }}
+      </p>
+    </section>
+    {% endfor %}
+  </div>
+
+  <h2 class="mt-14 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">How one entry moves the others</h2>
+  <p class="mt-3 text-sm font-semibold text-sb-ink">{{ connected.trigger }}</p>
+  <ul class="mt-3">
+    {% for area, effect in connected.effects %}
+    <li class="grid grid-cols-1 gap-1 border-t border-white/[0.07] py-2.5 sm:grid-cols-[168px_minmax(0,1fr)] sm:gap-4">
+      <span class="sb-label text-sb-gold">{{ area }}</span>
+      <span class="text-sm leading-relaxed text-sb-ink-2">{{ effect }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="mt-3 text-sm leading-relaxed text-sb-ink-2">{{ connected.note }}</p>
+
+  <h2 class="mt-14 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">What a conflict looks like</h2>
+  <p class="mt-3 max-w-2xl text-sm leading-relaxed text-sb-ink-2">
+    From the example passport. Nothing here has been verified — a conflict is
+    open until a person has reviewed it.
+  </p>
+  <div class="mt-5 space-y-3">
+    {% for issue in issues %}
+    <div class="rounded border border-[rgb(201_168_106_/_0.22)] p-4">
+      <div class="flex flex-wrap items-baseline justify-between gap-3">
+        <p class="text-sm font-semibold text-sb-ink">{{ issue.issue }}</p>
+        <span class="sb-label text-sb-gold">{{ issue.severity }} · {{ issue.status }}</span>
+      </div>
+      <p class="mt-1.5 text-xs text-sb-ink-2">
+        <span class="sb-label text-sb-gold">{{ issue.category }}</span>
+        — {{ issue.evidence }}
+      </p>
+      <p class="mt-1.5 text-sm leading-relaxed text-sb-ink-2">{{ issue.action }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2 id="used" class="mt-14 scroll-mt-28 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">How metadata is used</h2>
+  <dl class="mt-5 space-y-6">
+    {% for title, body in use %}
+    <div class="border-t border-white/[0.07] pt-4">
+      <dt class="text-base font-semibold text-sb-ink">{{ title }}</dt>
+      <dd class="mt-1.5 max-w-2xl text-sm leading-relaxed text-sb-ink-2">{{ body }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+
+  <h2 class="mt-14 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">Portability</h2>
+  <p class="mt-3 max-w-2xl text-sm leading-relaxed text-sb-ink-2">{{ standards }}</p>
+
+  <div class="mt-12 flex flex-wrap gap-3">
+    <a href="/signup" class="inline-flex min-h-[48px] items-center justify-center rounded-sm bg-sb-gold px-6 text-xs font-bold uppercase tracking-[0.14em] text-sb-surface-2 transition-colors hover:bg-sb-gold-bright">Create an account to start one</a>
+    <a href="/distribution" class="inline-flex min-h-[48px] items-center justify-center rounded-sm border border-[rgb(201_168_106_/_0.22)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-sb-ink transition-colors hover:border-sb-gold hover:text-sb-gold">What delivery needs</a>
+  </div>
+</main>
+
+<footer class="mx-auto max-w-3xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/#metadata-passport" class="font-semibold hover:text-sb-ink">← Back to Street Banker</a>
+</footer>
+</body>
+</html>

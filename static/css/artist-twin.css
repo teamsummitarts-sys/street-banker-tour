@@ -1,0 +1,329 @@
+/* Section 5 — the AI Artist Twin.
+ *
+ * Photograph left, assessment right, both on the same near-black ground
+ * the EQ and the departments sit on. The panel is graphite with brass
+ * linework: no gauges, no charts, no progress bars - the reasoning is
+ * the interface.
+ */
+
+.sbtw {
+  --tw-ink: var(--sb-ground);
+  --tw-raised: var(--sb-surface-1);
+  --tw-second: var(--sb-surface-1);
+  --tw-line: rgb(201 168 106 / 0.26);
+  --tw-line-soft: rgb(238 233 223 / 0.10);
+  --tw-brass: var(--sb-gold);
+  --tw-ivory: var(--sb-ink);
+  --tw-muted: var(--sb-ink-2);
+  --tw-green: var(--sb-good);
+
+  background: var(--tw-ink);
+  color: var(--tw-ivory);
+  padding: clamp(56px, 7vw, 104px) 0;
+}
+
+/* Small screens read in the order the brief sets - eyebrow, headline,
+   support, photograph, then the assessment - which is not the DOM order,
+   because on a desktop the photograph is the left column. The panel
+   becomes `display: contents` so its children can be ordered directly;
+   it is a plain div, so nothing is lost from the accessibility tree. */
+/* The page's shared container. Was 1560px. */
+.sbtw-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 56px);
+  display: flex;
+  flex-direction: column;
+}
+.sbtw-panel { display: contents; }
+.sbtw-eyebrow, .sbtw-title, .sbtw-support { order: 1; }
+.sbtw-photo { order: 2; margin: 22px 0 4px; }
+.sbtw-card { order: 3; }
+.sbtw-ctas { order: 4; }
+.sbtw-microcopy { order: 5; }
+
+@media (min-width: 1180px) {
+  .sbtw-inner {
+    display: grid;
+    /* The gap comes out of the photograph's share, so the columns are
+       set past the target to land the picture at 52-58% of the row. */
+    grid-template-columns: 57fr 43fr;
+    gap: clamp(28px, 3.5vw, 56px);
+    align-items: center;
+  }
+  .sbtw-panel { display: block; }
+  .sbtw-photo { order: 0; margin: 0; }
+}
+
+/* --- the photograph ------------------------------------------------------ */
+.sbtw-photo { margin: 0; }
+.sbtw-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 893 / 941;
+  object-fit: cover;
+  object-position: 58% center;     /* keep the artist, drop the far wall first */
+}
+@media (max-width: 1179px) {
+  /* Stacked, the frame is wider than it is tall, and the crop has to
+     keep the artist rather than the people moving past him. */
+  .sbtw-photo img { aspect-ratio: 4 / 3; object-position: 62% 38%; }
+}
+
+/* --- the panel ----------------------------------------------------------- */
+.sbtw-panel { min-width: 0; }
+
+.sbtw-eyebrow {
+  margin: 0;
+  font-size: clamp(11px, 0.85vw, 13px);
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--tw-brass);
+}
+
+.sbtw-title {
+  margin: 14px 0 0;
+  font-size: clamp(1.9rem, 3.4vw, 3.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--tw-ivory);
+}
+.sbtw-title span { display: block; }
+
+.sbtw-support {
+  margin: 18px 0 0;
+  max-width: 52ch;
+  font-size: clamp(14px, 1.05vw, 17px);
+  line-height: 1.6;
+  color: var(--tw-muted);
+}
+
+/* --- the assessment ------------------------------------------------------ */
+.sbtw-card {
+  margin-top: clamp(22px, 2.4vw, 34px);
+  border: 1px solid var(--tw-line);
+  border-radius: var(--sb-r-control);
+  background: var(--tw-raised);
+}
+
+.sbtw-example {
+  margin: 0;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--tw-line-soft);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--tw-muted);
+}
+
+.sbtw-rows { margin: 0; padding: 0; list-style: none; }
+.sbtw-rows > li + li { border-top: 1px solid var(--tw-line-soft); }
+
+.sbtw-row { position: relative; }
+.sbtw-row[open] { background: var(--tw-second); }
+
+.sbtw-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  cursor: pointer;
+  list-style: none;
+  min-height: 44px;
+  transition: background-color 180ms ease;
+}
+.sbtw-summary::-webkit-details-marker { display: none; }
+.sbtw-summary:hover { background: rgb(201 168 106 / 0.05); }
+.sbtw-summary:focus-visible {
+  outline: 2px solid var(--tw-brass);
+  outline-offset: -2px;
+}
+
+.sbtw-icon {
+  display: grid;
+  place-items: center;
+  width: 38px; height: 38px;
+  border: 1px solid var(--tw-line);
+  border-radius: 50%;
+  color: var(--tw-brass);
+  transition: border-color 180ms ease;
+}
+.sbtw-icon svg { width: 19px; height: 19px; }
+.sbtw-row[open] .sbtw-icon { border-color: rgb(201 168 106 / 0.55); }
+
+.sbtw-text { min-width: 0; }
+.sbtw-row-title {
+  display: block;
+  font-size: clamp(14px, 1vw, 16px);
+  font-weight: 600;
+  letter-spacing: -0.003em;
+  color: var(--tw-ivory);
+}
+.sbtw-row-summary {
+  display: block;
+  margin-top: 3px;
+  font-size: clamp(12px, 0.85vw, 13.5px);
+  line-height: 1.5;
+  color: var(--tw-muted);
+}
+
+.sbtw-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding-left: 14px;
+  border-left: 1px solid var(--tw-line-soft);
+  font-size: clamp(12px, 0.85vw, 13.5px);
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--tw-ivory);
+}
+.sbtw-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--tw-brass); }
+.sbtw-status--strong .sbtw-dot,
+.sbtw-status--good .sbtw-dot { background: var(--tw-green); }
+.sbtw-status--suggested {
+  padding: 5px 12px 5px 12px;
+  margin-left: 4px;
+  border: 1px solid var(--tw-line);
+  border-radius: var(--sb-r-pill);
+  color: var(--tw-brass);
+}
+.sbtw-status--suggested .sbtw-dot { display: none; }
+
+.sbtw-chev { display: grid; place-items: center; color: var(--tw-muted); }
+.sbtw-chev svg { width: 15px; height: 15px; transition: transform 200ms ease; }
+.sbtw-row[open] .sbtw-chev svg { transform: rotate(90deg); }
+
+.sbtw-detail {
+  padding: 2px 18px 20px 70px;
+  border-top: 1px solid var(--tw-line-soft);
+  margin-top: -1px;
+}
+.sbtw-detail dl { margin: 0; }
+.sbtw-detail dt {
+  margin-top: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--tw-brass);
+}
+.sbtw-detail dd {
+  margin: 5px 0 0;
+  max-width: 58ch;
+  font-size: clamp(12.5px, 0.9vw, 14px);
+  line-height: 1.6;
+  color: var(--tw-muted);
+}
+
+/* --- what it reads from -------------------------------------------------- */
+.sbtw-sources {
+  padding: 16px 18px;
+  border-top: 1px solid var(--tw-line-soft);
+}
+.sbtw-sources-label {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--tw-muted);
+}
+.sbtw-sources ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 8px 18px;
+}
+.sbtw-source {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--tw-ivory);
+}
+.sbtw-source-dot {
+  align-self: center;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--tw-muted);
+}
+.sbtw-source--connected .sbtw-source-dot { background: var(--tw-green); }
+.sbtw-source--added .sbtw-source-dot { background: var(--tw-brass); }
+.sbtw-source--needs-input .sbtw-source-dot {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--tw-muted);
+}
+.sbtw-source-state { color: var(--tw-muted); }
+
+/* --- controls ------------------------------------------------------------ */
+.sbtw-ctas {
+  margin-top: clamp(18px, 2vw, 26px);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.sbtw-cta, .sbtw-cta-2 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 24px;
+  border-radius: var(--sb-r-control);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+.sbtw-cta { background: var(--tw-brass); color: var(--sb-surface-2); border: 1px solid var(--tw-brass); }
+.sbtw-cta:hover { background: var(--sb-gold-bright); border-color: var(--sb-gold-bright); }
+.sbtw-cta-2 {
+  background: transparent;
+  color: var(--tw-ivory);
+  border: 1px solid var(--tw-line);
+  font-family: inherit;
+}
+.sbtw-cta-2:hover { border-color: var(--tw-brass); color: var(--tw-brass); }
+.sbtw-cta:focus-visible, .sbtw-cta-2:focus-visible {
+  outline: 2px solid var(--tw-brass);
+  outline-offset: 3px;
+}
+
+.sbtw-microcopy {
+  margin: 16px 0 0;
+  max-width: 56ch;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--tw-muted);
+}
+.sbtw-trust {
+  color: var(--tw-brass);
+  text-decoration: none;
+  border-bottom: 1px solid rgb(201 168 106 / 0.4);
+  white-space: nowrap;
+}
+.sbtw-trust:hover { border-bottom-color: var(--tw-brass); }
+
+/* --- small screens ------------------------------------------------------- */
+@media (max-width: 640px) {
+  .sbtw-summary { grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; padding: 14px; }
+  .sbtw-chev { display: none; }
+  .sbtw-status {
+    grid-column: 2 / -1;
+    padding-left: 0;
+    border-left: 0;
+    margin-top: 6px;
+  }
+  .sbtw-detail { padding: 2px 14px 18px; }
+  .sbtw-cta, .sbtw-cta-2 { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sbtw-summary, .sbtw-icon, .sbtw-chev svg, .sbtw-cta, .sbtw-cta-2 { transition: none; }
+}

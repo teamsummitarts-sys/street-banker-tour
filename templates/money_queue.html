@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Money Queue - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[900px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Royalty Sweep · Artist OS</div>
+    <h1 class="sb-h1 mt-1">Missing Money Action Queue</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Exactly what is costing you money, in priority order: release-blocking rights first, then collection gaps. Every dollar figure is sized from your own statement earnings — where there's no basis, the queue says so instead of guessing.</p>
+  </div>
+
+  <div class="grid grid-cols-3 gap-3">
+    <div class="rounded-2xl border border-red-500/30 bg-sb-on-gold p-4">
+      <div class="sb-label text-gray-300">Release-Blocking</div>
+      <div class="mt-1 text-2xl font-black tabular-nums {{ 'text-red-400' if criticals else 'text-green-400' }}">{{ criticals }}</div>
+    </div>
+    <div class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-4">
+      <div class="sb-label text-gray-300">Est. On The Table</div>
+      <div class="mt-1 text-2xl font-black tabular-nums text-sb-ink">{{ ('$' + '%.2f' % est_total) if est_total else '—' }}</div>
+      <div class="text-xs text-gray-300 font-medium">{{ 'from your own statements' if est_total else 'no statement basis yet' }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Open Actions</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ queue | length }}</div>
+    </div>
+  </div>
+
+  {% if tour_settled %}
+  <!-- Money already in hand: settled tour walk-aways, from your own settlements -->
+  <section class="rounded-2xl border border-green-500/25 bg-sb-on-gold p-4">
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="min-w-0 flex-1">
+        <div class="sb-label text-green-400">Settled tour income</div>
+        <p class="mt-0.5 text-xs text-gray-300">Total walk-away across {{ tour_settled }} settled show{{ '' if tour_settled == 1 else 's' }} — summed from the settlement numbers you entered, already collected, not part of the missing-money estimate above.</p>
+      </div>
+      <div class="text-2xl font-black tabular-nums text-green-400">${{ '%.2f' % tour_income }}</div>
+      <a href="/tour" class="sb-btn sb-btn-secondary sb-btn-sm shrink-0">Tour Hub →</a>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if queue %}
+  <div class="space-y-2.5">
+    {% for a in queue %}
+    <div class="rounded-2xl border {{ 'border-red-500/30' if a.critical else 'border-white/10' }} bg-sb-surface-1 p-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="rounded-full border px-2.5 py-1 text-xs font-bold uppercase tracking-wide {{ 'border-red-500/40 bg-red-500/10 text-red-400' if a.critical else 'border-sb-gold/40 bg-sb-gold/10 text-sb-gold-bright' }}">{{ a.urgency }}</span>
+        <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ a.problem }}</span>
+        {% if a.impact %}<span class="shrink-0 text-sm font-black sb-num text-sb-ink" title="Sized from your own statement earnings">~${{ '%.2f' % a.impact }}</span>{% endif %}
+      </div>
+      <div class="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-300 font-medium">
+        <span>Track: <span class="text-gray-200">{{ a.track }}</span></span>
+        <span>Lane: <span class="text-gray-200">{{ a.lane }}</span></span>
+        <span>Difficulty: <span class="text-gray-200">{{ a.difficulty }}</span></span>
+        {% if a.docs %}<span>Needs: <span class="text-gray-200">{{ a.docs }}</span></span>{% endif %}
+        <a href="{{ a.fix }}" class="sb-btn sb-btn-primary sb-btn-sm ml-auto">Fix this</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-8 text-center">
+    {% if ctx.statement_rows or true %}
+    <p class="text-sm text-gray-300">The queue is empty — either your catalog is clean, or there are no tracks in the spine yet. <a href="/tracks" class="font-bold text-sb-gold-bright hover:underline">Add tracks in Track Passports</a> and this page fills with exactly what to fix, in order.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <p class="px-1 text-xs text-gray-300 font-medium">The queue reads your passports, lockboxes, and statements — it never invents impact numbers. See the full grid on <a href="/royalty-lanes" class="font-bold text-sb-gold-bright hover:underline">Royalty Lanes</a>.</p>
+</div>
+{% endblock %}

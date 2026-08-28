@@ -1,0 +1,58 @@
+{# Section 12 — the closing statement.
+
+   The last frame of the page: an empty room, one road case, the catalog
+   on the floor. The copy sits in the dark left third of the photograph
+   behind a gradient that starts inside the picture, so there is no black
+   panel and no edge where the image stops.
+
+   Nothing is baked into the photograph. Two sentences, two buttons, one
+   line, and then the footer. #}
+
+{% set cl = closing %}
+{% set img = cl.image %}
+<section class="sbcl" id="closing" aria-labelledby="sbcl-heading">
+  <div class="sbcl-stage">
+    <picture class="sbcl-photo">
+      {# The phone gets the road case and the catalog trail; the wide
+         frame keeps the room and the stage behind it. #}
+      <source media="(max-width: 767px)" type="image/avif"
+              srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/webp"
+              srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/jpeg"
+              srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source type="image/avif"
+              srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source type="image/webp"
+              srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <img class="sbcl-img" src="{{ img.wide.stem }}-1440.jpg"
+           srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+           sizes="100vw"
+           width="{{ img.wide.width }}" height="{{ img.wide.height }}"
+           alt="{{ img.alt }}" loading="lazy" decoding="async">
+    </picture>
+    <span class="sbcl-veil" aria-hidden="true"></span>
+
+    <div class="sbcl-inner">
+      <div class="sbcl-copy">
+        <p class="sbcl-eyebrow">{{ cl.eyebrow }}</p>
+        <h2 class="sbcl-title" id="sbcl-heading">
+          {% for lead, accent in cl.headline %}
+          <span>{{ lead }}<em>{{ accent }}</em></span>
+          {% endfor %}
+        </h2>
+        <p class="sbcl-support">{{ cl.support }}</p>
+        <div class="sbcl-ctas">
+          <a class="sbcl-cta" href="{{ cl.primary_cta.href }}">{{ cl.primary_cta.label }}</a>
+          <a class="sbcl-cta-2" href="{{ cl.secondary_cta.href }}">{{ cl.secondary_cta.label }}</a>
+        </div>
+        <p class="sbcl-trust">{{ cl.trust_line }}</p>
+      </div>
+    </div>
+  </div>
+</section>

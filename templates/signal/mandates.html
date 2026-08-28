@@ -1,0 +1,55 @@
+{% extends "signal/_shell.html" %}
+{% block title %}Mandates{% endblock %}
+{% block main %}
+  <p class="sg-eyebrow">{{ org['name'] }}</p>
+  <h1 class="sg-h1">Mandates</h1>
+  <p class="sg-lede">
+    A mandate is what you are actually looking for. Signal ranks against it and shows why each artist
+    matched — and why the near-misses did not. Mandates are private to {{ org['name'] }}.
+  </p>
+
+  {% if sg_can('mandate_edit') %}
+    <details class="sg-card" style="margin-top:16px">
+      <summary style="cursor:pointer;font-weight:600">+ New mandate</summary>
+      <form method="post" style="margin-top:12px">
+        <div class="sg-rail" style="margin:0">
+          <label class="sg-field"><span>Name</span><input class="sg-input" name="name" required maxlength="120" placeholder="Emerging alternative, Southeast"></label>
+          <label class="sg-field"><span>Genres (comma separated)</span><input class="sg-input" name="genres" maxlength="200" placeholder="alternative, indie rock"></label>
+          <label class="sg-field"><span>Max monthly listeners</span><input class="sg-input" name="max_listeners" type="number" min="0" placeholder="250000"></label>
+          <label class="sg-field"><span>Min SB Momentum</span><input class="sg-input" name="min_momentum" type="number" min="0" max="100" placeholder="55"></label>
+          <label class="sg-field"><span>Min Distribution Gap</span><input class="sg-input" name="min_gap" type="number" min="0" max="100" placeholder="65"></label>
+          <label class="sg-field"><span>Territories</span><input class="sg-input" name="territories" maxlength="200" placeholder="US Southeast"></label>
+          <button class="sg-btn" type="submit">Create mandate</button>
+        </div>
+      </form>
+    </details>
+  {% endif %}
+
+  {% if mandates %}
+    <div class="sg-grid" style="margin-top:16px">
+      {% for m in mandates %}
+        <div class="sg-card">
+          <h3><a href="/signal/mandates/{{ m['id'] }}">{{ m['name'] }}</a></h3>
+          <p>
+            {% set c = m['criteria'] %}
+            {% if c['genres'] %}{{ c['genres'] }}<br>{% endif %}
+            {% if c['max_listeners'] %}Up to {{ c['max_listeners'] }} listeners<br>{% endif %}
+            {% if c['min_momentum'] %}Momentum ≥ {{ c['min_momentum'] }}<br>{% endif %}
+            {% if c['min_gap'] %}Gap ≥ {{ c['min_gap'] }}<br>{% endif %}
+            {% if c['territories'] %}{{ c['territories'] }}{% endif %}
+          </p>
+          <p style="margin-top:8px" class="sg-inline">
+            <a class="sg-btn sg-btn--ghost sg-btn--small" href="/signal/deal-ready?mandate={{ m['id'] }}">Deal Ready</a>
+            {% if sg_can('mandate_edit') %}
+              <form method="post" action="/signal/mandates/{{ m['id'] }}/delete">
+                <button class="sg-btn sg-btn--ghost sg-btn--small" type="submit">Delete</button>
+              </form>
+            {% endif %}
+          </p>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="sg-empty">No mandates yet. A mandate turns the discovery boards into a shortlist.</div>
+  {% endif %}
+{% endblock %}

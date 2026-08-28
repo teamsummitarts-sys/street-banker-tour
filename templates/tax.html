@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Tax Center - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Tax Center</div>
+    <h1 class="sb-h1 mt-1">Tax Center</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Your royalty income organized by tax year, straight from the statements you've uploaded — the numbers your accountant asks for in April.</p>
+  </div>
+
+  {% if not years %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-6">
+    <p class="text-sm text-gray-200">No income to organize yet. <a href="/statements" class="font-bold text-sb-gold-bright hover:underline">Upload a royalty statement</a> and this page builds your per-year income summary automatically.</p>
+  </section>
+  {% else %}
+
+  <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-4">
+      <div class="sb-label text-gray-300">Total Reported Income</div>
+      <div class="mt-1 text-2xl font-black tabular-nums text-sb-ink">${{ "{:,.2f}".format(grand_total) }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Tax Years</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ years|length }}</div>
+    </div>
+    <div class="col-span-2 rounded-2xl border border-white/10 bg-sb-surface-1 p-4 sm:col-span-1">
+      <div class="sb-label text-gray-300">Tax Documents</div>
+      <a href="/documents" class="mt-1 inline-block text-sm font-bold text-sb-gold-bright hover:underline">Store 1099s in your vault →</a>
+    </div>
+  </div>
+
+  {% for y in years %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="text-lg font-black">{{ y.year }}</h2>
+      <div class="flex items-baseline gap-3">
+        <span class="text-xl font-black tabular-nums text-sb-ink">${{ "{:,.2f}".format(y.total) }}</span>
+        <span class="text-xs text-gray-300 font-medium">{{ y.rows }} statement line{{ 's' if y.rows != 1 }}</span>
+      </div>
+    </div>
+    {% if y.over_600 and y.year != 'Undated' %}
+    <div class="mt-2 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-xs text-amber-400/90 font-medium">Over $600 from at least one payor — expect 1099 forms from US sources for {{ y.year }}. Match them against this list.</div>
+    {% endif %}
+    <div class="mt-3 space-y-1.5">
+      {% for src, amt in y.sources %}
+      <div class="flex items-center gap-3">
+        <span class="w-24 shrink-0 truncate text-xs font-bold text-gray-200 sm:w-40">{{ src }}</span>
+        <div class="h-2 flex-1 overflow-hidden rounded-full bg-white/5">
+          <div class="h-full rounded-full bg-sb-gold/70" style="width: {{ (amt / y.total * 100) if y.total else 0 }}%;"></div>
+        </div>
+        <span class="w-24 shrink-0 text-right text-xs font-bold sb-num">${{ "{:,.2f}".format(amt) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+  {% endif %}
+
+  <p class="px-1 text-xs text-gray-300 font-medium">Income summaries are computed from your uploaded statements — completeness depends on what you've uploaded. Informational only, not tax advice; confirm filings with a tax professional.</p>
+</div>
+{% endblock %}

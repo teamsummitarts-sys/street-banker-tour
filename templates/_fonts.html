@@ -1,0 +1,18 @@
+{# Design system v1 typefaces.
+
+   Archivo variable carries display and text from one file - its width
+   axis is what gives headings an expanded, institutional stance (the
+   bank half of "street banker") while the normal width stays tight and
+   legible in dense tables. IBM Plex Mono owns every machine value:
+   timecode, DMX address, ISRC, money, deltas.
+
+   display=swap because a slow font must never blank a page a light
+   operator is reading mid-show. The fallback stacks live in the Tailwind
+   theme (fontFamily) and in --sb-text / --sb-mono.
+
+   Included by base.html and by every template that carries its own
+   <head>; there is no third place to add it. #}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">

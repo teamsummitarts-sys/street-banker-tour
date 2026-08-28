@@ -1,0 +1,17 @@
+{% extends "tour/_public.html" %}
+{% block title %}VIP check-in · {{ show['venue'] }}{% endblock %}
+{% block body %}
+<div class="to-head"><div><p class="to-eyebrow">{{ tour['name'] }} · VIP</p><h1 class="to-h1" style="font-size:20px">{{ show['venue'] }} · {{ fmt_day(show['date']) }}</h1><p class="to-sub">{{ summary['sold'] }} sold · {{ summary['checked_in'] }} in · {{ summary['no_show'] }} no-show</p></div></div>
+{% if rows %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Time</th><th>Guest</th><th>Package</th><th>Status</th><th></th></tr></thead>
+  <tbody>{% for v in rows %}<tr>
+    <td data-k="Time">{{ fmt_time(v['schedule_time']) or '—' }}</td>
+    <td data-k="Guest" style="font-size:16px"><b>{{ v['guest'] or v['purchaser'] }}</b></td>
+    <td data-k="Package">{{ v['package'] }} × {{ v['quantity'] }}{% if v['merch'] %} · merch{% endif %}{% if v['meet_greet'] %} · M&amp;G{% endif %}</td>
+    <td data-k="Status">{% if v['status'] == 'checked_in' %}<span class="to-chip to-chip--ok">in</span>{% elif v['status'] == 'no_show' %}<span class="to-chip to-chip--warn">no show</span>{% else %}<span class="to-chip to-chip--gold">expected</span>{% endif %}</td>
+    <td><form method="post" action="/tour-share/{{ token }}"><input type="hidden" name="action" value="checkin"><input type="hidden" name="vip_id" value="{{ v['id'] }}">{% if v['status'] == 'checked_in' %}<input type="hidden" name="undo" value="1"><button class="to-btn to-btn--ghost to-btn--small" type="submit">Undo</button>{% else %}<button class="to-btn" type="submit" style="min-height:44px">Check in</button>{% endif %}</form></td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<div class="to-empty">No VIP packages on record for this show.</div>{% endif %}
+{% endblock %}

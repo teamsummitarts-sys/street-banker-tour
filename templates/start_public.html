@@ -1,0 +1,84 @@
+{# BUILD MY STREET BANKER — the guided start, in public.
+
+   If the visitor used the Artist EQ at the top of the page, the closing
+   button carries their mix down here and this opens on the plan those
+   settings produce. Otherwise they pick what they are working on. Either
+   way it is the same engine the console and /plan already use, so the
+   answer cannot disagree with itself. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Build my Street Banker · Street Banker</title>
+  <meta name="description" content="Pick what you are working on and get the lane, the modules and the first three actions that follow from it.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-3xl px-6 py-14 lg:px-10 lg:py-20">
+  <div class="sb-label text-sb-gold">Your Street Banker starting plan</div>
+  <h1 class="mt-4 text-[clamp(1.9rem,5vw,2.8rem)] font-semibold uppercase leading-[1.04] tracking-tight">
+    {{ plan.lane.name }}
+  </h1>
+  <p class="mt-4 max-w-xl text-base leading-relaxed text-sb-ink-2">{{ plan.lane.why }}</p>
+  {% if carried %}
+  <p class="mt-3 text-xs text-sb-ink-2">
+    Built from the Artist EQ settings you made on the homepage. Change them below and this changes with them.
+  </p>
+  {% endif %}
+
+  <h2 class="mt-11 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">Start here</h2>
+  <ol class="mt-4 space-y-2.5">
+    {% for action in plan.actions %}
+    <li class="flex gap-3 border-t border-white/[0.07] pt-3 text-sm leading-relaxed text-sb-ink">
+      <span class="shrink-0 font-semibold text-sb-gold">{{ loop.index }}</span>
+      <span>{{ action.label }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  <p class="mt-3 text-xs text-sb-ink-2">Estimated setup time: <strong class="text-sb-ink">{{ plan.setup_time }}</strong> — an estimate, not a quote.</p>
+
+  <h2 class="mt-11 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">The modules this points at</h2>
+  <div class="mt-4 space-y-3">
+    {% for module in plan.modules %}
+    <div class="rounded border border-[rgb(201_168_106_/_0.22)] p-4">
+      <p class="text-sm font-semibold uppercase tracking-tight text-sb-ink">{{ module.name }}</p>
+      <p class="mt-1 max-w-2xl text-sm leading-relaxed text-sb-ink-2">{{ module.note }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2 class="mt-11 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">What you will need</h2>
+  <p class="mt-3 max-w-2xl text-sm leading-relaxed text-sb-ink-2">
+    Nothing to begin. To save this plan, upload a statement, connect a catalog,
+    build a real release or open a recovery case, you will need an account —
+    and not before.
+  </p>
+
+  <h2 class="mt-11 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">Change the mix</h2>
+  <form method="get" class="mt-4 flex flex-wrap gap-2.5">
+    {% for preset in presets %}
+    <button type="submit" name="preset" value="{{ preset.id }}"
+            class="rounded-sm border px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.09em] transition-colors
+                   {% if preset.id == plan.preset %}border-sb-gold bg-sb-gold text-sb-surface-2{% else %}border-[rgb(201_168_106_/_0.22)] text-sb-ink hover:border-sb-gold hover:text-sb-gold{% endif %}"
+            {% if preset.id == plan.preset %}aria-current="true"{% endif %}>{{ preset.name }}</button>
+    {% endfor %}
+  </form>
+
+  <div class="mt-11 flex flex-wrap gap-3">
+    <a href="/signup" class="inline-flex min-h-[50px] items-center justify-center rounded-sm bg-sb-gold px-6 text-xs font-bold uppercase tracking-[0.14em] text-sb-surface-2 transition-colors hover:bg-sb-gold-bright">Create an account to save this</a>
+    <a href="/product-tour" class="inline-flex min-h-[50px] items-center justify-center rounded-sm border border-[rgb(201_168_106_/_0.22)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-sb-ink transition-colors hover:border-sb-gold hover:text-sb-gold">Walk the product tour</a>
+  </div>
+</main>
+
+<footer class="mx-auto max-w-3xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/#closing" class="font-semibold hover:text-sb-ink">← Back to Street Banker</a>
+</footer>
+</body>
+</html>

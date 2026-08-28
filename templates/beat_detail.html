@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}{{ beat.title }} - Beats{% endblock %}
+{% block head_scripts %}<link rel="stylesheet" href="/static/css/beats.css?v=2">{% endblock %}
+
+{% block content %}
+<div class="bt" id="bt-detail-root"><div id="bt-live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div></div>
+<div class="mx-auto max-w-[1100px] space-y-5">
+
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <a href="/beats" class="text-xs font-semibold text-sb-gold-bright hover:underline">← Beats</a>
+      <h1 class="sb-h1 mt-1">{{ beat.title }}</h1>
+      <p class="mt-1 text-sm text-gray-200">
+        {{ beat.bpm or '—' }} BPM · {{ beat.song_key or 'key not set' }}{% if beat.tags %} · {{ beat.tags }}{% endif %}
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <a href="/cleared/{{ beat.id }}" target="_blank" rel="noopener" class="sb-btn sb-btn-secondary sb-btn-sm">Open the public cleared page ↗</a>
+      <a href="/beats/{{ beat.id }}/clearance.csv" class="sb-btn sb-btn-secondary sb-btn-sm">Clearance CSV</a>
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-white/10 bg-sb-surface-2 px-4 py-3">
+    <div class="sb-label text-gray-200">The link a label checks</div>
+    <div class="mt-1 break-all font-mono text-xs text-sb-gold-bright">{{ public_base }}/cleared/{{ beat.id }}</div>
+    <p class="mt-1 text-xs text-gray-200">Anyone can open it without an account. It shows what you listed and whether the licence behind it is signed — never the fee, the terms text, or your licensee's email.</p>
+  </div>
+
+  {# The audio, and the private links that carry it. #}
+  <div class="bt">
+    <section class="bt-glass" style="padding:16px">
+      <h2 class="bt-h2">The audio</h2>
+      {% if audio %}
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px">
+        <button id="bt-d-play" class="bts-big" type="button" aria-pressed="false" aria-label="Play {{ beat.title }}">&#9654;</button>
+        <span class="bts-clock" id="bt-d-clock">0:00</span>
+        <div style="flex:1 1 240px;min-width:0">
+          <canvas id="bt-d-wave" class="bt-wave" height="52" style="height:52px" aria-label="Waveform — click to seek"></canvas>
+        </div>
+        <form method="post" action="/beats/{{ beat.id }}/audio/delete" id="bt-d-drop-form">
+          <button class="bt-btn bt-btn--ghost bt-btn--small" type="button" id="bt-d-remove">Remove audio</button>
+        </form>
+      </div>
+      <p class="bt-hint" style="margin-top:11px">
+        {{ audio.filename }} · {{ (audio.bytes / 1048576) | round(1) }} MB
+        {% if audio.bpm %} · measured {{ audio.bpm | round | int }} BPM (confidence {{ audio.bpm_confidence | round(2) }}{% if audio.bpm_alternates %}, could also be {{ audio.bpm_alternates }}{% endif %}){% endif %}
+        {% if audio.song_key %} · key {{ audio.song_key }}{% if audio.key_fit %} (fit {{ audio.key_fit | round(2) }}){% endif %}{% endif %}
+      </p>
+      <p class="bt-hint">Tempo and key were measured in your browser when you uploaded it. They are a guess with a number attached — the fields at the top of this page are yours, and nothing here overwrites what you typed.</p>
+      {% else %}
+      <p class="bt-hint" style="margin:0">No audio on this beat. Drop a file on the <a href="/beats" style="color:var(--bt-amber)">Beats page</a> to attach one, and its tempo and key are measured as it uploads.</p>
+      {% endif %}
+    </section>
+
+    <section class="bt-glass" style="padding:16px;margin-top:12px">
+      <h2 class="bt-h2">Private links</h2>
+      <p class="bt-hint">Send this one beat to one artist. They need no account, they see this beat and nothing else about your catalogue, and you can switch the link off. A link is a courtesy, not a lock — anyone who can play a file can record it.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-top:11px">
+        <label class="bt-field" style="flex:1 1 180px"><span>Who is it for?</span>
+          <input id="bt-share-label" class="bt-input" type="text" maxlength="80" placeholder="e.g. Rina (A&amp;R)">
+        </label>
+        <label class="bt-field" style="flex:0 0 140px"><span>Lapses after</span>
+          <select id="bt-share-days" class="bt-select">
+            <option value="0">never</option>
+            <option value="7">7 days</option>
+            <option value="30" selected>30 days</option>
+            <option value="90">90 days</option>
+          </select>
+        </label>
+        <button id="bt-share-new" class="bt-btn bt-btn--fill" type="button">Make a link</button>
+        <span id="bt-share-status" class="bt-hint" role="status" aria-live="polite"></span>
+      </div>
+      <ul id="bt-share-list" class="bt-links" role="list"></ul>
+    </section>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-200">Licences</h2>
+      <p class="mt-1 text-sm text-gray-200">{{ summary.signed }} signed, {{ summary.unsigned }} awaiting signature.{% if summary.exclusive %} An exclusive has been signed on this beat — check it before issuing another licence.{% endif %}</p>
+
+      <div class="mt-3 space-y-2">
+        {% for l in licences %}
+        <div class="rounded-lg border border-white/5 bg-white/5 px-3 py-2.5 text-xs">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="rounded-full border px-2 py-0.5 text-xs font-bold uppercase {{ 'border-green-500/25 bg-green-500/10 text-green-400' if l.status == 'signed' else ('border-red-500/25 bg-red-500/10 text-red-400' if l.status == 'revoked' else 'border-white/15 text-gray-200') }}">{{ l.status }}</span>
+            <span class="min-w-0 flex-1 truncate font-semibold text-gray-100">{{ l.licensee_name or l.licensee_email or 'Unnamed licensee' }}</span>
+            <span class="shrink-0 font-bold sb-num text-sb-ink">${{ "{:,.2f}".format(l.fee) }}</span>
+          </div>
+          <div class="mt-1 text-xs text-gray-200">
+            {{ l.licence_type.replace('_', ' ') | title }} · {{ l.territory }}{% if l.term %} · {{ l.term }}{% endif %} · producer split {{ l.producer_split | round | int }}%
+            {% if l.signed_at %}<br>Signed by {{ l.signed_by }} on {{ l.signed_at[:10] }}{% endif %}
+          </div>
+          <div class="mt-2 flex flex-wrap items-center gap-2">
+            {% if l.status != 'signed' %}
+            <span class="break-all font-mono text-xs text-gray-200">{{ public_base }}/licence/{{ l.token }}</span>
+            {% endif %}
+            {% if l.status not in ('revoked',) %}
+            <form method="post" class="ml-auto">
+              <input type="hidden" name="action" value="revoke">
+              <input type="hidden" name="licence_id" value="{{ l.id }}">
+              <button class="sb-btn sb-btn-danger sb-btn-sm">Revoke</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+        {% if not licences %}
+        <p class="text-xs text-gray-200">No licence issued yet. The signing link is generated when you issue one.</p>
+        {% endif %}
+      </div>
+
+      <div class="bt mt-4 border-t border-white/10 pt-4">
+        <button id="bt-lic-open" class="bt-btn bt-btn--fill" type="button" aria-haspopup="dialog">Generate a licence →</button>
+        <p class="bt-hint" style="margin-top:8px">Pick a shape, adjust it, and it becomes a link the licensee reads and signs in a browser.</p>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-200">Cleared list</h2>
+      <p class="mt-1 text-sm text-gray-200">Who is allowed to use this beat. A list nobody can enforce for you — but one anybody can check, which is what settles most of these before they become a dispute.</p>
+
+      <form method="post" class="mt-3 grid gap-2 sm:grid-cols-[140px_1fr_auto]">
+        <input type="hidden" name="action" value="clear">
+        <select name="kind" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-100 [color-scheme:dark]">
+          {% for key, label in clearance_kinds %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+        </select>
+        <input name="value" required placeholder="Channel, handle, release title or ISRC" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none">
+        <button class="sb-btn sb-btn-secondary sb-btn-sm">Clear it</button>
+      </form>
+
+      <div class="mt-3 space-y-2">
+        {% for row in clearances %}
+        <div class="flex flex-wrap items-center gap-2 rounded-lg border border-white/5 bg-white/5 px-3 py-2 text-xs">
+          <span class="shrink-0 rounded-full border border-white/15 px-2 py-0.5 text-xs font-bold uppercase text-gray-200">{{ row.kind }}</span>
+          <span class="min-w-0 flex-1 truncate font-semibold text-gray-100">{{ row.value }}</span>
+          {% if row.note %}<span class="truncate text-gray-200">{{ row.note }}</span>{% endif %}
+          <form method="post" class="shrink-0">
+            <input type="hidden" name="action" value="unclear">
+            <input type="hidden" name="row_id" value="{{ row.id }}">
+            <button class="text-gray-200 hover:text-red-400" title="Remove">✕</button>
+          </form>
+        </div>
+        {% endfor %}
+        {% if not clearances %}
+        <p class="text-xs text-gray-200">Nothing cleared yet. Until something is listed, the public page says it cannot answer either way — which is the truth, and better than implying every use is unlicensed.</p>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h2 class="sb-label text-gray-200">Usage cases</h2>
+        <p class="mt-1 text-sm text-gray-200">{{ monitoring.detail }}</p>
+      </div>
+    </div>
+
+    <form method="post" class="mt-3 grid gap-2 sm:grid-cols-[1fr_160px_1fr_auto]">
+      <input type="hidden" name="action" value="use">
+      <input name="url" placeholder="Link to the use you found" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none">
+      <input name="platform" placeholder="Platform" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none">
+      <input name="notes" placeholder="What you saw" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none">
+      <button class="sb-btn sb-btn-secondary sb-btn-sm">Log it</button>
+    </form>
+
+    <div class="mt-4 space-y-2">
+      {% for u in uses %}
+      <div class="rounded-lg border border-white/5 bg-white/5 px-3 py-2.5 text-xs">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="shrink-0 rounded-full border border-white/15 px-2 py-0.5 text-xs font-bold uppercase text-gray-200">{{ u.status }}</span>
+          {% if u.found_via == 'fingerprint' %}<span class="shrink-0 rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-xs font-bold uppercase text-green-400">Fingerprint</span>{% endif %}
+          <span class="min-w-0 flex-1 truncate text-gray-100">{{ u.url or u.notes or 'Logged use' }}</span>
+          <span class="shrink-0 text-gray-200">{{ u.platform }}</span>
+        </div>
+        <form method="post" class="mt-2 flex flex-wrap items-center gap-2">
+          <input type="hidden" name="action" value="use_status">
+          <input type="hidden" name="use_id" value="{{ u.id }}">
+          <select name="status" class="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-gray-100 [color-scheme:dark]">
+            {% for s in use_statuses %}<option value="{{ s }}" {{ 'selected' if s == u.status }}>{{ s }}</option>{% endfor %}
+          </select>
+          <input name="resolved_amount" type="number" step="0.01" min="0" placeholder="Amount recovered" value="{{ u.resolved_amount or '' }}" class="w-40 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-gray-100 placeholder-gray-300">
+          <button class="sb-btn sb-btn-secondary sb-btn-sm">Update</button>
+        </form>
+      </div>
+      {% endfor %}
+      {% if not uses %}
+      <p class="text-xs text-gray-200">No uses logged for this beat.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <form method="post" action="/beats/{{ beat.id }}/delete" class="pt-2">
+    <button class="text-xs font-semibold text-gray-200 hover:text-red-400">Delete this beat and everything filed under it</button>
+  </form>
+</div>
+
+{# --- licence generator ------------------------------------------------ #}
+<div id="bt-scrim" class="bt-scrim" hidden></div>
+<div id="bt-lic" class="bt bt-glass bt-modal" role="dialog" aria-modal="true" aria-labelledby="bt-lic-title" hidden>
+  <div class="bt-drawer-head">
+    <div>
+      <p class="bt-eyebrow">{{ beat.title }}</p>
+      <h2 class="bt-h1" style="font-size:17px" id="bt-lic-title">Generate a licence</h2>
+    </div>
+    <button id="bt-lic-close" class="bt-x" type="button" aria-label="Close">&#10005;</button>
+  </div>
+
+  {% if summary.exclusive %}
+  <p class="bt-hint" style="border-left:3px solid var(--bt-live);padding-left:11px;margin:12px 0">
+    An exclusive has already been signed on this beat. Issuing another licence is your call, but read the exclusive first — you may have promised not to.
+  </p>
+  {% endif %}
+
+  <p class="bt-hint" style="margin-top:12px">Start from a shape, then change anything. These prefill the form below; nothing is sent until you press Issue.</p>
+  <div class="bt-preset" style="margin-top:9px" role="group" aria-label="Licence shapes">
+    <button class="bt-btn bt-btn--small" type="button" data-preset="lease" aria-pressed="false">Standard lease</button>
+    <button class="bt-btn bt-btn--small" type="button" data-preset="premium" aria-pressed="false">Premium lease</button>
+    <button class="bt-btn bt-btn--small" type="button" data-preset="exclusive" aria-pressed="false">Exclusive</button>
+    <button class="bt-btn bt-btn--small" type="button" data-preset="work_for_hire" aria-pressed="false">Work for hire</button>
+    <button class="bt-btn bt-btn--small" type="button" data-preset="free" aria-pressed="false">Free / promo</button>
+  </div>
+
+  <form method="post" id="bt-lic-form" style="display:flex;flex-direction:column;gap:11px;margin-top:16px">
+    <input type="hidden" name="action" value="licence">
+    <div class="bt-grid2">
+      <label class="bt-field"><span>Licensee name</span><input name="licensee_name" class="bt-input" maxlength="120" placeholder="Who is signing"></label>
+      <label class="bt-field"><span>Licensee email</span><input name="licensee_email" type="email" class="bt-input" maxlength="200" placeholder="Where the signing link goes"></label>
+      <label class="bt-field"><span>Licence type</span>
+        <select name="licence_type" id="bt-lic-type" class="bt-select">
+          {% for key, label in licence_types %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="bt-field"><span>Territory</span><input name="territory" id="bt-lic-territory" class="bt-input" maxlength="120" placeholder="Worldwide"></label>
+      <label class="bt-field"><span>Term</span><input name="term" id="bt-lic-term" class="bt-input" maxlength="120" placeholder="e.g. 2 years"></label>
+      <label class="bt-field"><span>Fee (USD)</span><input name="fee" id="bt-lic-fee" type="number" step="0.01" min="0" class="bt-input" placeholder="0.00"></label>
+      <label class="bt-field"><span>Your split (%)</span><input name="producer_split" id="bt-lic-split" type="number" step="1" min="0" max="100" value="50" class="bt-input"></label>
+    </div>
+    <label class="bt-field"><span>Terms</span>
+      <textarea name="terms" id="bt-lic-terms" class="bt-area bt-terms" rows="7" maxlength="6000" placeholder="What the licensee may and may not do, in your own words."></textarea>
+    </label>
+    <p class="bt-hint">This is your agreement, not legal advice from Street Banker. The preset wording is a starting point somebody who knows your situation should read before you send it on anything that matters.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="bt-btn bt-btn--fill" type="submit">Issue licence</button>
+      <button class="bt-btn bt-btn--ghost" type="button" id="bt-lic-cancel">Cancel</button>
+    </div>
+  </form>
+</div>
+
+<script>window.__btDetail = {{ {'beatId': beat.id, 'title': beat.title, 'audio': audio, 'shares': shares, 'origin': share_origin} | js_json }};</script>
+<script src="/static/js/beat-detail.js?v=1"></script>
+{% endblock %}

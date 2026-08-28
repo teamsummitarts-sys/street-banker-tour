@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Not in your permissions - Street Banker{% endblock %}
+{% block head_scripts %}<link rel="stylesheet" href="/static/css/tour-os.css?v=3">{% endblock %}
+{% block content %}
+<div class="to">
+  <p class="to-eyebrow">TOUR · {{ tour['name'] }}</p>
+  <h1 class="to-h1">Not in your permissions</h1>
+  <p class="to-sub">This part of the tour needs the <b>{{ needed|join(' or ')|replace('_',' ') }}</b> permission. Ask the tour owner or an admin to add it to your membership.</p>
+  <div class="to-bar"><a class="to-btn to-btn--ghost" href="/tours/{{ tour['id'] }}">Back to the tour</a></div>
+</div>
+{% endblock %}

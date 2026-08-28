@@ -1,0 +1,16 @@
+{% extends "tour/_public.html" %}
+{% block title %}Rooming list · {{ lodging['property'] }}{% endblock %}
+{% block body %}
+<div class="to-paper">
+  <span class="tag">Rooming list · {{ tour['name'] }}</span>
+  <h2 style="font-size:20px">{{ lodging['property'] }}</h2>
+  <p class="meta">{{ lodging['address'] }}{% if lodging['city'] %}, {{ lodging['city'] }}{% endif %} · in {{ lodging['checkin'] }}{% if lodging['checkout'] %} → out {{ lodging['checkout'] }}{% endif %}{% if lodging['confirmation'] %} · conf. {{ lodging['confirmation'] }}{% endif %}{% if lodging['reservation_name'] %} · under {{ lodging['reservation_name'] }}{% endif %}</p>
+  {% if rooms %}
+  <table style="margin-top:12px"><thead><tr><th>Name</th><th>Room</th><th>Type</th><th>Notes</th></tr></thead><tbody>
+  {% for r in rooms %}<tr><td><b>{{ r['person_name'] or r['guest_name'] }}</b></td><td>{{ r['room_number'] or '—' }}</td><td>{{ r['room_kind']|replace('_',' ') }}</td><td class="meta">{{ r['notes'] }}</td></tr>{% endfor %}
+  </tbody></table>
+  <p class="meta" style="margin-top:10px">{{ rooms|length }} room{{ '' if rooms|length == 1 else 's' }}.</p>
+  {% else %}<p class="meta">No rooms assigned.</p>{% endif %}
+</div>
+<div class="to-bar no-print"><button class="to-btn to-btn--ghost to-btn--small" onclick="window.print()">Print</button> <a class="to-btn to-btn--ghost to-btn--small" href="?format=csv">CSV</a></div>
+{% endblock %}

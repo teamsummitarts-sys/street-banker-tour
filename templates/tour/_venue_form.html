@@ -1,0 +1,34 @@
+{% import "tour/_macros.html" as m %}
+{% set e = edit if edit is defined and edit else {} %}
+<form method="post" action="/tours/{{ tour['id'] }}/venues/save" class="to-form">
+  {% if e %}<input type="hidden" name="venue_id" value="{{ e['id'] }}">{% endif %}
+  {% if link_show_id is defined and link_show_id %}<input type="hidden" name="link_show_id" value="{{ link_show_id }}">{% endif %}
+  <div class="to-grid">
+    {{ m.field('name', 'Venue name', e['name'] if e else '', required=True) }}
+    {{ m.field('address', 'Address', e['address'] if e else '') }}
+    {{ m.field('city', 'City', e['city'] if e else '') }}
+    {{ m.field('region', 'State / region', e['region'] if e else '') }}
+    {{ m.field('country', 'Country', e['country'] if e else '') }}
+    {{ m.field('tz', 'Timezone', e['tz'] if e else '', placeholder='America/Chicago') }}
+    {{ m.field('lat', 'Latitude', e['lat'] if e else '', placeholder='optional, for route distances') }}
+    {{ m.field('lng', 'Longitude', e['lng'] if e else '') }}
+    {{ m.field('phone', 'Phone', e['phone'] if e else '') }}
+    {{ m.field('website', 'Website', e['website'] if e else '') }}
+    {{ m.field('capacity', 'Capacity', e['capacity'] if e else '') }}
+    {{ m.field('venue_type', 'Type', e['venue_type'] if e else '', placeholder='club, theatre, festival') }}
+    {{ m.field('loading', 'Loading', e['loading'] if e else '') }}
+    {{ m.field('parking', 'Parking', e['parking'] if e else '') }}
+    {{ m.field('bus_parking', 'Bus parking', e['bus_parking'] if e else '') }}
+    {{ m.field('stage', 'Stage', e['stage'] if e else '', placeholder='dimensions, height') }}
+    {{ m.field('backstage', 'Backstage', e['backstage'] if e else '') }}
+    {{ m.field('dressing_rooms', 'Dressing rooms', e['dressing_rooms'] if e else '') }}
+    {{ m.field('showers', 'Showers', e['showers'] if e else '') }}
+    {{ m.field('catering', 'Catering', e['catering'] if e else '') }}
+    {{ m.field('wifi', 'Wi-Fi', e['wifi'] if e else '') }}
+    {{ m.field('settlement_location', 'Settlement location', e['settlement_location'] if e else '') }}
+    {{ m.field('merch_location', 'Merch location', e['merch_location'] if e else '') }}
+    {{ m.textarea('production_notes', 'Production notes', e['production_notes'] if e else '', rows=2) }}
+    {{ m.textarea('notes', 'Notes', e['notes'] if e else '', rows=2) }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">{{ 'Save' if e else 'Add venue' }}</button>{% if e %} <a class="to-btn to-btn--ghost" href="/tours/{{ tour['id'] }}/venues">Cancel</a>{% endif %}</div>
+</form>

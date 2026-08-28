@@ -1,0 +1,38 @@
+{% import "tour/_macros.html" as m %}
+<div class="to-split">
+  <div>
+    <h2 class="to-h2" style="margin-top:0">Production advance</h2>
+    <div class="to-table-wrap"><table class="to-table is-stack">
+      <thead><tr><th>Item</th><th>Status</th><th>Detail</th></tr></thead>
+      <tbody>
+      {% for row in advance if row['category'] == 'production' %}
+      <tr><td data-k="Item"><b>{{ row['label'] }}</b></td><td data-k="Status">{{ m.chip(row['status']) }}</td><td data-k="Detail">{{ row['value'] or '—' }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% if can('advance') or can('edit') %}<div class="to-bar"><a class="to-btn to-btn--ghost to-btn--small" href="?tab=advance">Edit in the advance</a></div>{% endif %}
+
+    <h2 class="to-h2">Stage plot, rider & tech</h2>
+    <p class="to-sub">Your plot and input list live in <a href="/stage-plot">Stage Plot</a> and your cue stacks in <a href="/lights">Light Studio</a>; they are one per artist, not one per show. Attach the exported files here so the production pack for this room is complete.</p>
+    {% set all_files = files + tour_files %}
+    {% if all_files %}
+    <div class="to-table-wrap"><table class="to-table is-stack">
+      <tbody>{% for f in all_files %}<tr><td data-k="File"><a href="/tours/{{ tour['id'] }}/files/{{ f['id'] }}/download">{{ f['file_name'] }}</a></td><td data-k="Kind">{{ f['category']|replace('_',' ') }}{% if f['entity_type'] == 'tour' %} <span class="to-chip">tour-wide</span>{% endif %}</td><td class="to-muted">v{{ f['version'] }} · {{ f['created'][:10] }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<p class="to-sub">No production files attached yet.</p>{% endif %}
+    {% if can('files') %}
+    <form method="post" action="/tours/{{ tour['id'] }}/files/upload" enctype="multipart/form-data" class="to-inline" style="margin-top:8px">
+      <input type="hidden" name="entity_type" value="show"><input type="hidden" name="entity_id" value="{{ show['id'] }}">
+      <input type="file" name="file" class="to-input" style="width:auto;min-height:36px;padding:5px 8px" required>
+      <select name="category" class="to-input" style="width:auto;min-height:36px;padding:5px 8px"><option value="stage_plot">Stage plot</option><option value="tech_pack">Tech pack</option><option value="rider">Rider</option><option value="production">Production</option><option value="venue_map">Venue map</option></select>
+      <button class="to-btn to-btn--small" type="submit">Attach</button>
+    </form>
+    {% endif %}
+  </div>
+  <aside>
+    <div class="to-panel">
+      <div class="to-eyebrow">Production pack</div>
+      <p class="to-sub">A scoped share link gives the house crew the production advance, the plot and tech files, and the times — nothing else. {% if can('admin') %}<a href="/tours/{{ tour['id'] }}/share">Create one</a>.{% endif %}</p>
+    </div>
+  </aside>
+</div>

@@ -1,0 +1,21 @@
+flask
+gunicorn
+pytest
+segno
+cryptography
+tzdata
+
+# Audio Intelligence. Pinned, unlike everything above it, on purpose: this is
+# a fast-moving vendor SDK and audio_elevenlabs.py is written against 2.65.0's
+# real method signatures. Unpinned, a breaking major lands on the next deploy
+# with no commit of ours to blame it on.
+#
+# The `pyaudio` extra is deliberately NOT requested - it is the only piece of
+# the tree that needs a C toolchain, it is used for local microphone playback
+# which the server has no use for, and asking for it would make the Render
+# build depend on PortAudio headers being present.
+#
+# Optional at runtime. audio_providers.bootstrap() catches an ImportError here
+# and leaves the mock adapters registered, so an install without this line
+# still boots and still demos - it just never reaches a vendor.
+elevenlabs==2.65.0

@@ -1,0 +1,90 @@
+{% extends "signal/_shell.html" %}
+{% block title %}Data sources{% endblock %}
+{% block main %}
+  <div class="sg-head">
+    <div>
+      <p class="sg-eyebrow">Admin</p>
+      <h1 class="sg-h1">Data sources</h1>
+      <p class="sg-lede">
+        Signal is provider-agnostic on purpose: each capability is served by whichever adapter is
+        configured and preferred, and the product keeps working when none are. Nothing here is
+        wired to a single vendor.
+      </p>
+    </div>
+    <form method="post" action="/signal/admin/refresh">
+      <button class="sg-btn" type="submit">Refresh universe</button>
+    </form>
+  </div>
+
+  <h2 class="sg-h2">Preferred provider per capability</h2>
+  <div class="sg-table-wrap"><table class="sg-table">
+    <thead><tr><th scope="col">Capability</th><th scope="col">Serving it now</th></tr></thead>
+    <tbody>
+      {% for cap, label in preferred %}
+        <tr>
+          <td>{{ capability_labels[cap] if cap in capability_labels else cap }}</td>
+          <td>{{ label }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+
+  <h2 class="sg-h2">Adapters</h2>
+  <div class="sg-table-wrap"><table class="sg-table">
+    <thead><tr><th scope="col">Provider</th><th scope="col">State</th><th scope="col">Capabilities</th></tr></thead>
+    <tbody>
+      {% for h in health %}
+        <tr>
+          <td><b>{{ h['provider'] }}</b></td>
+          <td>
+            <span class="sg-pill{{ ' is-ok' if h['configured'] else '' }}">{{ 'configured' if h['configured'] else 'not configured' }}</span>
+            <span class="sg-artist-meta">{{ h['detail'] }}</span>
+          </td>
+          <td><span class="sg-artist-meta">{{ h['capabilities']|join(', ') }}</span></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="sg-note">
+    Adapters declare what they could answer and stay inert until their credentials exist. An adapter
+    that has not been implemented raises rather than returning a plausible guess — a fabricated
+    distributor or manager is worse than a blank one.
+  </p>
+
+  <h2 class="sg-h2">Usage — last 30 days</h2>
+  {% if usage %}
+    <div class="sg-table-wrap"><table class="sg-table">
+      <thead><tr><th scope="col">Provider</th><th scope="col" class="sg-num">Calls</th>
+        <th scope="col" class="sg-num">Error rate</th><th scope="col" class="sg-num">Avg ms</th>
+        <th scope="col" class="sg-num">Est. cost</th></tr></thead>
+      <tbody>
+        {% for u in usage %}
+          <tr>
+            <td>{{ u['provider'] }}</td>
+            <td class="sg-num">{{ '{:,}'.format(u['runs']) }}</td>
+            <td class="sg-num">{{ (u['error_rate'] * 100)|round(1) }}%</td>
+            <td class="sg-num">{{ u['avg_ms'] }}</td>
+            <td class="sg-num">${{ '%.4f'|format(u['cost']) }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  {% else %}
+    <div class="sg-empty">No provider calls recorded yet.</div>
+  {% endif %}
+
+  <h2 class="sg-h2">Freshness</h2>
+  <div class="sg-table-wrap"><table class="sg-table">
+    <thead><tr><th scope="col">Table</th><th scope="col" class="sg-num">Rows</th><th scope="col">Last written</th><th scope="col">State</th></tr></thead>
+    <tbody>
+      {% for f in freshness %}
+        <tr>
+          <td>{{ f['label'] }}</td>
+          <td class="sg-num">{{ '{:,}'.format(f['rows']) }}</td>
+          <td>{{ f['last'][:16]|replace('T', ' ') if f['last'] else 'never' }}</td>
+          <td><span class="sg-pill{{ ' is-warn' if f['stale'] else ' is-ok' }}">{{ 'stale' if f['stale'] else 'fresh' }}</span></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+{% endblock %}

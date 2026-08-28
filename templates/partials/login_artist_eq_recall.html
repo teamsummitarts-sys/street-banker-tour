@@ -1,0 +1,47 @@
+{# Conditional rack — only real when this browser holds a valid saved
+   Artist EQ mix. Rendered hidden and empty; login-session-recall.js reads
+   localStorage, validates the shape, fills the fields, and reveals it.
+   Every value shown is the visitor's own saved setting - nothing invented.
+   No letter on this rack: it is an insert between A and B, and the fixed
+   letters must not re-shuffle depending on browser state. #}
+<section class="lsr-rack lsr-rack--mix" id="lsr-mix" hidden aria-labelledby="lsr-mix-h">
+  <span class="lsr-screw lsr-screw--tl" aria-hidden="true"></span>
+  <span class="lsr-screw lsr-screw--bl" aria-hidden="true"></span>
+  <span class="lsr-screw lsr-screw--tr" aria-hidden="true"></span>
+  <span class="lsr-screw lsr-screw--br" aria-hidden="true"></span>
+
+  <div class="lsr-badge" aria-hidden="true">
+    <img src="/static/img/login-icon-wave.png?v=2" alt="" loading="lazy">
+    <span>YOUR<br>MIX<br>IS READY</span>
+  </div>
+
+  <div class="lsr-face">
+    <div class="lsr-face-head">
+      <h2 class="lsr-face-title" id="lsr-mix-h">YOUR MIX IS READY</h2>
+      <span class="lsr-face-rule" aria-hidden="true"></span>
+      {# This LED is a real state: lit means a saved mix exists. #}
+      <span class="lsr-led lsr-led--on" title="A saved mix exists in this browser" aria-hidden="true"></span>
+    </div>
+    <p class="lsr-face-sub">Pick up where you left off.</p>
+
+    <div class="lsr-mix-cols">
+      <div class="lsr-mix-col">
+        <h3>RECOMMENDED LANE</h3>
+        <p class="lsr-mix-lane" id="lsr-mix-lane"></p>
+      </div>
+      <div class="lsr-mix-col">
+        <h3>TOP PRIORITIES</h3>
+        <ul class="lsr-mix-list" id="lsr-mix-priorities"></ul>
+      </div>
+      <div class="lsr-mix-col">
+        <h3>RECOMMENDED TOOLS</h3>
+        <ul class="lsr-mix-list" id="lsr-mix-tools"></ul>
+      </div>
+    </div>
+
+    <div class="lsr-mix-cta">
+      <a class="lsr-gold-btn" id="lsr-mix-build" href="/signup?source=artist-eq">CREATE ACCOUNT &amp; LOAD MY PROGRAM</a>
+      <a class="lsr-side-link lsr-mix-what" href="/#artist-eq">What is the Artist EQ?</a>
+    </div>
+  </div>
+</section>

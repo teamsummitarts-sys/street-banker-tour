@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Inbox - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker</div>
+    <h1 class="sb-h1 mt-1">Inbox</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-200">Pitches and licence requests that came to you, submissions you sent, and a trail of what went out. Yours only — nobody else's account can read this page.</p>
+  </div>
+
+  {% set tone = {
+    'received': 'border-green-500/25 bg-green-500/10 text-green-400',
+    'sent': 'border-sb-gold/30 bg-sb-gold/10 text-sb-gold-bright',
+    'records': 'border-white/15 text-gray-200',
+    'platform': 'border-blue-500/25 bg-blue-500/10 text-blue-400',
+  } %}
+
+  {% for group in inbox.groups %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="sb-label text-gray-200">{{ group.title }}</h2>
+      <span class="text-xs font-medium text-gray-200">{{ group['items'] | length }} item{{ '' if group['items'] | length == 1 else 's' }}</span>
+    </div>
+    <p class="mt-1 text-xs text-gray-200">{{ group.blurb }}</p>
+    <div class="mt-4 space-y-2">
+      {% for item in group['items'] %}
+      <div class="rounded-xl border border-white/5 bg-white/5 px-4 py-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide {{ tone.get(item.group, tone['records']) }}">{{ item.label }}</span>
+          <span class="text-xs font-medium text-gray-200">{{ item.created[:16].replace('T', ' ') }}</span>
+        </div>
+        <div class="mt-2 text-sm font-semibold text-gray-100">{{ item.title }}</div>
+        {% if item.body %}<p class="mt-1 text-xs text-gray-200">{{ item.body }}</p>{% endif %}
+        {% if item.reply %}
+        <a href="mailto:{{ item.reply }}" class="sb-btn sb-btn-secondary sb-btn-sm mt-2">Reply to {{ item.reply }}</a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+
+  {% if not inbox.groups %}
+  {# Two ways in rather than one, so the partial's single CTA is not
+     enough: the motif and copy come from it, the pair of links stays. #}
+  <div class="rounded-2xl border border-dashed border-sb-gold/30 bg-sb-surface-2 px-6 py-10 text-center">
+    <svg class="mx-auto h-16 w-16" viewBox="0 0 64 64" fill="none" stroke="#C9A24A" stroke-width="1.4"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M10 34l6-18h32l6 18v16a2 2 0 01-2 2H12a2 2 0 01-2-2z"/>
+      <path d="M10 34h12l3 5h14l3-5h12" opacity="0.7" stroke="#E8B950"/>
+      <path d="M24 24h16" opacity="0.45"/>
+    </svg>
+    <div class="mt-4 text-sm font-bold text-gray-100">Nothing here yet</div>
+    <p class="mx-auto mt-2 max-w-md text-xs text-gray-200">This fills when somebody pitches your one-sheet or asks to licence a sync pack, when you submit to a playlist or enquire about a show, and when you raise an invoice.</p>
+    <div class="mt-4 flex flex-wrap justify-center gap-2">
+      <a href="/reports" class="sb-btn sb-btn-secondary sb-btn-sm">Share a one-sheet →</a>
+      <a href="/network" class="sb-btn sb-btn-secondary sb-btn-sm">Open the network →</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if inbox_is_owner %}
+  <p class="text-xs text-gray-200">You are signed in on an owner account, so this page also lists platform-level rows that belong to no artist — demo access requests, and anything recorded before inbox rows had an owner.</p>
+  {% endif %}
+</div>
+{% endblock %}

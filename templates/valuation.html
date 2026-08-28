@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Valuation - Royalty Sweep{% endblock %}
+
+{% block content %}
+{% set vv = valuation_view %}
+<div class="mx-auto max-w-[1100px] space-y-5">
+
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker</div>
+    <h1 class="sb-h1 mt-1">Valuation</h1>
+    {% include "partials/score_trend.html" %}
+    <p class="mt-1 max-w-2xl text-sm text-gray-200">Built from the statement months you uploaded — nothing modelled, nothing borrowed from another account. An estimate for your own planning, not an appraisal and not financial advice.</p>
+  </div>
+
+  {% if not vv.has_data %}
+  {% with motif = 'statement',
+          title = 'No income on record to value',
+          body = 'A catalog valuation is a multiple of income. With no statements uploaded there is no income here to multiply, and a figure produced anyway would be a figure about nobody.',
+          cta_href = '/statements', cta_label = 'Upload a statement →' %}
+    {% include "partials/empty_state.html" %}
+  {% endwith %}
+
+  {% elif vv.no_periods %}
+  <section class="rounded-2xl border border-dashed border-sb-gold/30 bg-sb-surface-2 p-8 text-center">
+    <div class="text-sm font-bold text-gray-100">${{ "{:,.2f}".format(vv.tracked_total) }} tracked, but no dates on it</div>
+    <p class="mx-auto mt-2 max-w-lg text-xs text-gray-200">None of your {{ vv.row_count }} statement rows carry a period, so there is no way to tell whether that money took a month or three years to arrive — and a run rate is exactly that question. Upload a statement with a period or date column and this page fills in.</p>
+    <a href="/statements" class="sb-btn sb-btn-secondary sb-btn-sm mt-4">Manage statements →</a>
+  </section>
+
+  {% else %}
+
+  <div class="rounded-xl border border-green-500/25 bg-green-500/10 px-4 py-2.5 text-xs font-semibold text-green-400">
+    Built from {{ vv.months }} statement month{{ '' if vv.months == 1 else 's' }} across {{ vv.source_count }} source{{ '' if vv.source_count == 1 else 's' }} — ${{ "{:,.2f}".format(vv.tracked_total) }} tracked in {{ vv.row_count }} rows.
+  </div>
+
+  {% if vv.thin %}
+  <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-sb-gold-bright">
+    <span class="font-bold">Thin history — read the range, not the number.</span>
+    {{ vv.months }} month{{ '' if vv.months == 1 else 's' }} of statements annualised into a year is the weakest kind of estimate there is. It moves hard with every upload until you have six months on record.
+  </div>
+  {% endif %}
+
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+      <div class="sb-label text-gray-200">Catalog signal (mid, {{ vv.multiples.mid }}x)</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-sb-ink">${{ "{:,.0f}".format(vv.value.mid) }}</div>
+      <div class="mt-1 text-xs font-medium text-gray-200">${{ "{:,.0f}".format(vv.value.low) }}–${{ "{:,.0f}".format(vv.value.high) }} across {{ vv.multiples.low }}–{{ vv.multiples.high }}x</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-2 p-5">
+      <div class="sb-label text-gray-200">Annualised run rate</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-gray-100">${{ "{:,.0f}".format(vv.annualized) }}</div>
+      <div class="mt-1 text-xs font-medium text-gray-200">${{ "{:,.2f}".format(vv.monthly_avg) }} average month × 12</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-2 p-5">
+      <div class="sb-label text-gray-200">Suggested advance</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums {{ 'text-gray-100' if vv.advance.real else 'text-gray-300' }}">{{ "${:,.0f}".format(vv.advance.suggested_advance) if vv.advance.real else "—" }}</div>
+      <div class="mt-1 text-xs font-medium text-gray-200">{{ 'Conservative end of the band' if vv.advance.real else 'No income to lend against' }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-2 p-5">
+      <div class="sb-label text-gray-200">Capital readiness</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-gray-100">{{ vv.advance.score }}<span class="text-base text-gray-200">/100</span></div>
+      <div class="mt-1 text-xs font-medium text-gray-200">{{ vv.advance.tier }}</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <section id="catalog-value-estimate" class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-200">Catalog Value Estimate</h2>
+      <p class="mt-1 text-sm text-gray-200">A conservative independent-catalog range applied to your own annualised run rate of ${{ "{:,.0f}".format(vv.annualized) }}.</p>
+      <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+        <div class="rounded-lg border border-white/10 bg-white/5 p-3">
+          <div class="text-xs font-medium uppercase tracking-widest text-gray-200">Low ({{ vv.multiples.low }}x)</div>
+          <div class="mt-1 text-sm font-bold text-gray-100">${{ "{:,.0f}".format(vv.value.low) }}</div>
+        </div>
+        <div class="rounded-lg border border-sb-gold/30 bg-sb-gold/10 p-3">
+          <div class="text-xs font-medium uppercase tracking-widest text-sb-gold-bright">Mid ({{ vv.multiples.mid }}x)</div>
+          <div class="mt-1 text-sm font-bold text-sb-gold-bright">${{ "{:,.0f}".format(vv.value.mid) }}</div>
+        </div>
+        <div class="rounded-lg border border-white/10 bg-white/5 p-3">
+          <div class="text-xs font-medium uppercase tracking-widest text-gray-200">High ({{ vv.multiples.high }}x)</div>
+          <div class="mt-1 text-sm font-bold text-gray-100">${{ "{:,.0f}".format(vv.value.high) }}</div>
+        </div>
+      </div>
+      <div class="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-3">
+        <label for="custom-multiple" class="text-xs text-gray-200">Try another multiple</label>
+        <input type="number" id="custom-multiple" min="1" max="30" step="0.5" value="{{ vv.multiples.mid }}"
+               class="h-11 w-16 rounded-md border border-white/15 bg-white/5 px-2 text-center text-base text-gray-100 focus:border-sb-gold focus:outline-none sm:h-auto sm:py-1 sm:text-xs">
+        <span class="text-xs text-gray-200">x =</span>
+        <span id="custom-multiple-value" class="ml-auto text-sm font-bold text-sb-gold-bright"></span>
+      </div>
+      <p class="mt-3 text-xs text-gray-200">Real buyers weigh trend, rights cleanliness, territory depth and how long the catalog has been earning. A multiple on a run rate is where that conversation starts, not where it lands.</p>
+      <a href="/reports" class="sb-btn sb-btn-secondary sb-btn-sm mt-3">Download the valuation report →</a>
+    </section>
+
+    <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-200">Your Statement Months</h2>
+      <p class="mt-1 text-sm text-gray-200">The months the run rate is averaged from. Every bar is a period you uploaded.</p>
+      {% set peak = vv.monthly | map(attribute='amount') | max %}
+      <div class="mt-3 space-y-1.5">
+        {% for m in vv.monthly[-12:] %}
+        <div class="flex items-center gap-3 text-xs">
+          <span class="w-20 shrink-0 font-semibold text-gray-100">{{ m.period }}</span>
+          <span class="h-2 flex-1 overflow-hidden rounded-full bg-white/5"><span class="block h-full rounded-full bg-sb-gold" style="width: {{ (100 * m.amount / (peak or 1)) | round }}%;"></span></span>
+          <span class="w-24 shrink-0 text-right font-bold sb-num text-gray-100">${{ "{:,.2f}".format(m.amount) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% if vv.undated_rows %}
+      <p class="mt-3 text-xs text-gray-200">{{ vv.undated_rows }} row{{ '' if vv.undated_rows == 1 else 's' }} carried no period and could not be placed in a month, so they count toward tracked revenue but not toward the run rate.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <section id="royalty-forecast" class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-200">Range Your Own Months Have Produced</h2>
+    <p class="mt-1 text-sm text-gray-200">Not a model and not a projection of growth — your worst, average and best month on record, carried forward unchanged.</p>
+    <div class="mt-4 overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b border-white/10 text-xs uppercase tracking-wide text-gray-200">
+            <th class="py-2 pr-4 font-medium">Month on record</th>
+            <th class="py-2 pr-4 text-right font-medium">30 days</th>
+            <th class="py-2 pr-4 text-right font-medium">90 days</th>
+            <th class="py-2 pr-4 text-right font-medium">12 months</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in vv.forecast %}
+          <tr class="border-b border-white/5 last:border-0">
+            <td class="py-3 pr-4 font-medium text-gray-100">{{ f.label }}</td>
+            <td class="py-3 pr-4 text-right font-semibold sb-num text-gray-100">${{ "{:,.2f}".format(f.d30) }}</td>
+            <td class="py-3 pr-4 text-right font-semibold sb-num text-gray-100">${{ "{:,.2f}".format(f.d90) }}</td>
+            <td class="py-3 pr-4 text-right font-semibold sb-num text-gray-100">${{ "{:,.2f}".format(f.y1) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="advance-eligibility" class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h2 class="sb-label text-gray-200">Advance Eligibility</h2>
+        <p class="mt-1 text-sm text-gray-200">{{ vv.advance.note }}</p>
+      </div>
+      <span class="rounded-full border border-sb-gold/40 bg-sb-gold/10 px-2.5 py-0.5 text-xs font-semibold text-sb-gold-bright">{{ vv.advance.tier }}</span>
+    </div>
+    {% if vv.advance.real %}
+    <div class="mt-3 flex flex-wrap items-end gap-6">
+      <div>
+        <div class="sb-label text-gray-200">Indicative range</div>
+        <div class="mt-1 text-3xl font-bold tabular-nums text-gray-100">${{ "{:,.0f}".format(vv.advance.band.low) }}–${{ "{:,.0f}".format(vv.advance.band.high) }}</div>
+      </div>
+      <div>
+        <div class="sb-label text-gray-200">Income on record</div>
+        <div class="mt-1 text-xl font-bold tabular-nums text-gray-100">${{ "{:,.2f}".format(vv.advance.income_total) }}</div>
+      </div>
+    </div>
+    {% endif %}
+    <p class="mt-3 text-xs text-gray-200">Indicative only. Any real offer depends on the funder's own underwriting, and they will read the same statements you uploaded here.</p>
+    <a href="/funding" class="sb-btn sb-btn-secondary sb-btn-sm mt-3">Capital readiness detail →</a>
+  </section>
+
+  {% if vv.drivers %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-200">What Would Move This Number</h2>
+    <p class="mt-1 text-sm text-gray-200">Each of these is measured against your account as it stands today.</p>
+    <div class="mt-3 space-y-2">
+      {% for d in vv.drivers %}
+      <a href="{{ d.route }}" class="flex items-start gap-3 rounded-lg border border-white/5 bg-white/5 px-3 py-2.5 transition-colors hover:border-sb-gold/40">
+        <span class="min-w-0 flex-1">
+          <span class="block text-xs font-bold text-gray-100">{{ d.title }}</span>
+          <span class="block text-xs text-gray-200">{{ d.detail }}</span>
+        </span>
+        <span class="shrink-0 text-xs font-bold text-sb-gold-bright">{{ d.impact }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const ANNUAL_RUN_RATE = {{ (valuation_view.annualized or 0) | round(2) }};
+  const input = document.getElementById("custom-multiple");
+  if (input) {
+    const out = document.getElementById("custom-multiple-value");
+    const render = () => {
+      const m = parseFloat(input.value) || 0;
+      out.textContent = fmtMoney(ANNUAL_RUN_RATE * m);
+    };
+    input.addEventListener("input", render);
+    render();
+  }
+</script>
+{% endblock %}

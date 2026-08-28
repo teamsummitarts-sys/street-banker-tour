@@ -1,0 +1,343 @@
+/* Section 11 — Metadata Passport + Rights.
+ *
+ * The blueprint is the section. Seven transparent controls sit over it on
+ * a desktop, each one positioned from the fraction measured off the
+ * photograph; the same seven are a row of names underneath, which is the
+ * only control below 1024 because seven targets over a shrunken picture
+ * are seven places to miss.
+ */
+
+.sbmp {
+  --mp-ink: var(--sb-ground);
+  --mp-raised: var(--sb-surface-1);
+  --mp-brass: var(--sb-gold);
+  --mp-brass-lit: var(--sb-gold-bright);
+  --mp-ivory: var(--sb-ink);
+  --mp-muted: var(--sb-ink-2);
+  --mp-warn: var(--sb-gold);
+  --mp-ok: var(--sb-good);
+  --mp-line: rgb(201 168 106 / 0.22);
+
+  background: var(--mp-ink);
+  color: var(--mp-ivory);
+  padding: clamp(50px, 6vw, 88px) 0 clamp(44px, 5vw, 72px);
+}
+
+/* --- header --------------------------------------------------------------- */
+/* The heading sits over the photograph now, so it drops the section
+   padding and the centring; .sbmp-over places it. */
+.sbmp-head {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+.sbmp-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  font-size: clamp(11px, 0.85vw, 13px);
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--mp-brass);
+}
+.sbmp-num { font-size: 1.15em; letter-spacing: 0.1em; }
+.sbmp-rule { flex: 0 0 26px; height: 1px; background: var(--mp-line); }
+
+.sbmp-title {
+  margin: 18px auto 0;
+  max-width: 22ch;
+  font-size: clamp(1.9rem, 3.6vw, 3.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.008em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--mp-ivory);
+}
+.sbmp-title span { display: block; }
+
+.sbmp-support {
+  margin: 18px auto 0;
+  max-width: 70ch;
+  font-size: clamp(13.5px, 1vw, 16px);
+  line-height: 1.65;
+  color: var(--mp-muted);
+}
+
+.sbmp-ctas {
+  margin-top: clamp(22px, 2.6vw, 30px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.sbmp-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  padding: 0 30px;
+  border: 1px solid var(--mp-brass);
+  border-radius: var(--sb-r-control);
+  color: var(--mp-brass);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+.sbmp-cta svg { width: 16px; height: 16px; }
+.sbmp-cta:hover { background: var(--mp-brass); color: var(--sb-surface-2); }
+
+.sbmp-connect-btn {
+  background: none;
+  border: 0;
+  padding: 6px 0;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mp-muted);
+  border-bottom: 1px solid rgb(167 161 152 / 0.4);
+  transition: color 200ms ease, border-color 200ms ease;
+}
+.sbmp-connect-btn:hover { color: var(--mp-brass); border-bottom-color: var(--mp-brass); }
+
+.sbmp-cta:focus-visible, .sbmp-connect-btn:focus-visible,
+.sbmp-cat:focus-visible,
+.sbmp-trust-link:focus-visible {
+  outline: 2px solid var(--mp-brass);
+  outline-offset: 3px;
+}
+
+/* --- the blueprint -------------------------------------------------------- */
+.sbmp-plan { max-width: 1600px; margin: 0 auto; }
+.sbmp-photo { position: relative; margin: 0; }
+.sbmp-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1672 / 941;
+  object-fit: cover;
+}
+
+/* --- the heading, over the blueprint -------------------------------------- */
+/* Desktop: the copy takes the right third, where the floor markings are
+   quietest. The scrim is a horizontal gradient rather than a panel, so
+   the photograph darkens toward the type instead of ending at an edge. */
+.sbmp-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Vertical, darkest through the middle, so the blueprint markings at
+     the top and bottom edges stay readable under centred copy. */
+  background: linear-gradient(to bottom,
+              rgb(8 8 7 / 0.50) 0%,
+              rgb(8 8 7 / 0.80) 38%,
+              rgb(8 8 7 / 0.80) 62%,
+              rgb(8 8 7 / 0.50) 100%);
+}
+
+.sbmp-over {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 0;
+  /* Horizontal gutter matched to the rest of the page; was 3.4vw/60px. */
+  padding: clamp(24px, 3vw, 56px) clamp(20px, 4vw, 56px);
+}
+
+.sbmp-over .sbmp-head { text-align: center; }
+.sbmp-over .sbmp-title { margin-left: auto; margin-right: auto; max-width: 20ch; }
+.sbmp-over .sbmp-support { margin-left: auto; margin-right: auto; max-width: 52ch; }
+.sbmp-over .sbmp-ctas { justify-content: center; }
+
+.sbmp-over-trust {
+  margin: clamp(18px, 2vw, 28px) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px 16px;
+}
+.sbmp-over-trust .sbmp-trust-line {
+  font-size: clamp(11px, 0.85vw, 13px);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mp-ivory);
+}
+
+/* Phone: a touch more scrim, because the close crop is busier per pixel. */
+@media (max-width: 1023px) {
+  .sbmp-scrim {
+    background: linear-gradient(to bottom,
+                rgb(8 8 7 / 0.62) 0%,
+                rgb(8 8 7 / 0.82) 50%,
+                rgb(8 8 7 / 0.62) 100%);
+  }
+}
+
+/* Where the copy cannot fit over the picture without covering all of it,
+   the picture gets taller rather than the type getting smaller. */
+@media (max-width: 640px) {
+  .sbmp-img { aspect-ratio: 3 / 4; }
+  .sbmp-over { padding: 22px 18px; }
+}
+
+/* --- the seven names ------------------------------------------------------ */
+.sbmp-cats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--mp-line);
+}
+@media (min-width: 620px) { .sbmp-cats { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 900px) { .sbmp-cats { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1280px) { .sbmp-cats { grid-template-columns: repeat(7, 1fr); } }
+
+.sbmp-cats > li { min-width: 0; }
+.sbmp-cats > li + li .sbmp-cat { border-left: 1px solid rgb(238 232 220 / 0.07); }
+
+.sbmp-cat {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 46px;
+  padding: 14px clamp(12px, 1.2vw, 20px) 16px;
+  background: none;
+  border: 0;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+/* No hover or selected state: these are records, not controls. */
+.sbmp-cat:hover { background: rgb(201 168 106 / 0.05); }
+
+.sbmp-cat-num {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: var(--mp-brass);
+  opacity: 0.7;
+}
+.sbmp-cat-label {
+  display: block;
+  margin-top: 5px;
+  font-size: clamp(12px, 0.92vw, 13.5px);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mp-brass);
+  transition: color 200ms ease;
+}
+.sbmp-cat-short {
+  display: block;
+  margin-top: 7px;
+  font-size: clamp(11.5px, 0.82vw, 12.5px);
+  line-height: 1.5;
+  color: var(--mp-muted);
+  transition: color 200ms ease;
+}
+.sbmp-cat:hover .sbmp-cat-label,
+.sbmp-cat:hover .sbmp-cat-short,
+
+/* --- body ----------------------------------------------------------------- */
+.sbmp-body {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: clamp(24px, 3vw, 38px) clamp(20px, 4vw, 56px) 0;
+}
+
+/* --- what one entry asks of everything else ------------------------------- */
+.sbmp-connect {
+  margin-top: 16px;
+  border: 1px solid var(--mp-line);
+  border-radius: var(--sb-r-control);
+  padding: 16px clamp(16px, 2vw, 26px) 18px;
+}
+.sbmp-connect-trigger {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--mp-ivory);
+}
+.sbmp-connect-list { margin: 0; padding: 0; list-style: none; }
+.sbmp-connect-list li {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px 14px;
+  padding: 8px 0;
+  border-top: 1px solid rgb(238 232 220 / 0.07);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--mp-muted);
+}
+@media (min-width: 640px) {
+  .sbmp-connect-list li { grid-template-columns: 176px minmax(0, 1fr); }
+}
+.sbmp-connect-area {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mp-brass);
+}
+.sbmp-connect-note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--mp-muted);
+}
+
+/* --- completeness --------------------------------------------------------- */
+/* --- trust ---------------------------------------------------------------- */
+.sbmp-trust {
+  margin: clamp(20px, 2.4vw, 28px) auto 0;
+  max-width: 70ch;
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--mp-muted);
+}
+.sbmp-trust-line {
+  display: block;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mp-ivory);
+}
+.sbmp-trust-copy { display: block; margin-top: 6px; }
+.sbmp-trust-link {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--mp-brass);
+  text-decoration: none;
+  border-bottom: 1px solid rgb(201 168 106 / 0.4);
+}
+.sbmp-trust-link:hover { border-bottom-color: var(--mp-brass); }
+
+/* --- small screens -------------------------------------------------------- */
+@media (max-width: 767px) {
+  .sbmp-img { aspect-ratio: 1037 / 734; }
+  .sbmp-cta { width: 100%; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sbmp-cat, .sbmp-cat-label, .sbmp-cat-short, .sbmp-cta,
+  .sbmp-connect-btn { transition: none; }
+}

@@ -1,0 +1,26 @@
+{# Reached when the login exists but holds no Signal seat, or the seat's role
+   does not carry the permission. Deliberately says nothing about what is
+   inside. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "_fonts.html" %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signal · Street Banker</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  <link rel="stylesheet" href="/static/css/signal.css?v=2">
+</head>
+<body class="sg-body">
+<main class="sg-main" style="max-width:620px">
+  <p class="sg-eyebrow">Street Banker</p>
+  <h1 class="sg-h1">Signal</h1>
+  <p class="sg-lede">
+    {{ reason or "You do not have access to Street Banker Signal." }}
+    Access is granted per account by an owner; if you should be on this roster, ask them to add you.
+  </p>
+  <p style="margin-top:18px"><a class="sg-btn sg-btn--ghost" href="/command-center">Back to Street Banker</a></p>
+</main>
+</body>
+</html>

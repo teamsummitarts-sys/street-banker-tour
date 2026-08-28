@@ -1,0 +1,78 @@
+{% set tab = 'contacts' %}
+{% extends "press/_shell.html" %}
+{% block title %}Media list - Press Desk{% endblock %}
+{% block press %}
+
+<div class="pd-head">
+  <div>
+    <p class="pd-eyebrow">Media list</p>
+    <h1 class="pd-h1">{{ contacts | length }} contact{{ '' if contacts | length == 1 else 's' }}</h1>
+    <p class="pd-sub">People, not addresses. A list of forty writers who cover your genre beats a list of four hundred who do not — and only the ones marked active can be pitched.</p>
+  </div>
+  <div class="pd-inline">
+    <a class="pd-btn pd-btn--ghost" href="/press-desk/contacts/import">Import CSV</a>
+    <a class="pd-btn" href="/press-desk/contacts/new">Add contact</a>
+  </div>
+</div>
+
+<div class="pd-bar">
+  <form method="get" action="/press-desk/contacts">
+    <input class="pd-mini" type="search" name="q" value="{{ filters['q'] }}"
+           placeholder="Search name, outlet, beat, notes" style="min-width:230px">
+    <select class="pd-mini" name="role">
+      <option value="">Any role</option>
+      {% for r in vocab.roles %}<option {{ 'selected' if filters['role'] == r }}>{{ r }}</option>{% endfor %}
+    </select>
+    <select class="pd-mini" name="status">
+      <option value="">Any status</option>
+      {% for s in vocab.contact_statuses %}
+      <option value="{{ s }}" {{ 'selected' if filters['status'] == s }}>{{ vocab.status_labels[s] }}</option>{% endfor %}
+    </select>
+    <button class="pd-btn pd-btn--ghost" type="submit">Filter</button>
+  </form>
+</div>
+
+{% if contacts %}
+<div class="pd-table-wrap"><table class="pd-table">
+  <thead><tr>
+    <th>Name</th><th>Outlet</th><th>Role</th><th>Email</th><th>Beat</th>
+    <th>Status</th><th>Last contacted</th><th></th>
+  </tr></thead>
+  <tbody>
+  {% for c in contacts %}
+  <tr>
+    <td>{{ c.name }}{% if c.tags %}<div class="pd-muted">{{ c.tags | join(', ') }}</div>{% endif %}</td>
+    <td>{{ c.outlet or '—' }}{% if c.city %}<div class="pd-muted">{{ c.city }}</div>{% endif %}</td>
+    <td>{{ c.role }}</td>
+    <td>{{ c.email or '—' }}</td>
+    <td class="pd-muted">{{ c.beat or '—' }}</td>
+    <td>
+      <span class="pd-chip {{ 'pd-chip--ok' if c.status == 'active' }} {{ 'pd-chip--warn' if c.status != 'active' }}">{{ vocab.status_labels[c.status] }}</span>
+    </td>
+    <td class="pd-muted">{{ c.last_contacted[:10] if c.last_contacted else '—' }}</td>
+    <td>
+      <a class="pd-btn pd-btn--ghost pd-btn--small" href="/press-desk/contacts/{{ c.id }}/edit">Edit</a>
+      {% if c.status == 'active' %}
+      <form class="pd-inline" method="post" action="/press-desk/contacts/{{ c.id }}/status">
+        <input type="hidden" name="status" value="do-not-contact">
+        <button class="pd-btn pd-btn--ghost pd-btn--small" type="submit">Do not contact</button>
+      </form>
+      {% else %}
+      <form class="pd-inline" method="post" action="/press-desk/contacts/{{ c.id }}/status">
+        <input type="hidden" name="status" value="active">
+        <button class="pd-btn pd-btn--ghost pd-btn--small" type="submit">Reactivate</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<div class="pd-empty">
+  Nothing here yet. Add the writers, editors and shows you already have a
+  reason to contact — this list is deliberately empty until you fill it,
+  because a press list you did not build is not a press list.
+</div>
+{% endif %}
+{% endblock %}

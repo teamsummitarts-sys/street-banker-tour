@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Executive Report — {{ user.name }} | Street Banker</title>
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <style>
+    @media print { .no-print { display: none !important; } body { background: #fff !important; } }
+  </style>
+</head>
+<body class="min-h-screen bg-sb-ink text-sb-surface-2 antialiased">
+
+  <div class="no-print mx-auto flex max-w-[900px] items-center justify-between px-6 py-4">
+    <a href="/reports" class="sb-label text-sb-surface-2/60 hover:text-sb-surface-2">← Reports</a>
+    <button onclick="window.print()" class="border border-sb-surface-2/25 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] hover:bg-sb-surface-2 hover:text-white">Print / Save PDF</button>
+  </div>
+
+  <main class="mx-auto mb-12 max-w-[900px] bg-white p-10 shadow-[0_20px_60px_rgba(20,18,16,0.15)] sm:p-14">
+    <!-- Masthead -->
+    <div class="h-[3px] w-full bg-gradient-to-r from-sb-gold-deep via-sb-gold-bright to-sb-gold-deep"></div>
+    <div class="flex items-baseline justify-between pt-6">
+      <div class="text-xs font-bold uppercase tracking-[0.4em] text-sb-gold-deep">Street Banker · Executive Report</div>
+      <div class="sb-label text-sb-surface-2/50">{{ today }}</div>
+    </div>
+    <h1 class="mt-4 text-4xl font-black uppercase tracking-tight">{{ user.name }}</h1>
+    <p class="mt-2 max-w-xl text-sm text-sb-surface-2/70">Account performance across campaigns, fan ownership, royalty findings, and qualification — compiled from live platform activity.</p>
+
+    <!-- Headline metrics -->
+    <div class="mt-8 grid grid-cols-2 gap-px border border-sb-surface-2/10 bg-sb-surface-2/10 sm:grid-cols-4">
+      {% for label, value in [("SB Qualification", q.total ~ "/100"),
+                               ("Campaigns", summary.campaign_count),
+                               ("Link Visits", summary.visits),
+                               ("Fans Owned", summary.fan_count)] %}
+      <div class="bg-white px-3 py-5 text-center">
+        <div class="text-2xl font-black tabular-nums">{{ value }}</div>
+        <div class="sb-label mt-1 text-sb-gold-deep">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Qualification -->
+    <section class="mt-10">
+      <h2 class="sb-label text-sb-gold-deep">Qualification</h2>
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <span class="text-sm font-bold">{{ q.recommendation }}</span>
+        {% for b in q.badges %}<span class="border border-sb-gold-deep/50 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-sb-gold-deep">{{ b }}</span>{% endfor %}
+      </div>
+      <div class="mt-4 grid gap-x-8 gap-y-2 sm:grid-cols-2">
+        {% for name, pts, note in q.categories %}
+        <div class="flex items-center gap-3">
+          <span class="w-44 shrink-0 text-xs font-semibold">{{ name }}</span>
+          <span class="h-1.5 flex-1 overflow-hidden rounded-full bg-sb-surface-2/10"><span class="block h-full rounded-full {{ 'bg-green-600' if pts >= 7 else '#' and 'bg-sb-gold-deep' }}" style="width: {{ pts * 10 }}%;"></span></span>
+          <span class="w-8 shrink-0 text-right text-xs font-bold sb-num">{{ pts }}/10</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Royalty findings -->
+    <section class="mt-10">
+      <h2 class="sb-label text-sb-gold-deep">Royalty Findings</h2>
+      {% if rr %}
+      <div class="mt-3 grid grid-cols-2 gap-px border border-sb-surface-2/10 bg-sb-surface-2/10 sm:grid-cols-4">
+        {% for label, value in [("Tracked Revenue", "$%s" | format("{:,.2f}".format(rr.total))),
+                                 ("Unmatched Found", "$%s" | format("{:,.2f}".format(rr.unmatched_revenue))),
+                                 ("Coverage Gaps", rr.coverage_gaps | length),
+                                 ("Annualized Pace", "$%s" | format("{:,.0f}".format(rr.annualized)))] %}
+        <div class="bg-white px-3 py-4 text-center">
+          <div class="text-lg font-black tabular-nums">{{ value }}</div>
+          <div class="sb-label mt-0.5 text-sb-surface-2/50">{{ label }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if rr.coverage_gaps %}
+      <table class="mt-4 w-full text-left text-xs">
+        <thead><tr class="border-b border-sb-surface-2/20 text-xs font-bold uppercase tracking-wide text-sb-surface-2/50">
+          <th class="py-1.5 pr-4">Track</th><th class="py-1.5 pr-4">Missing From</th><th class="py-1.5 text-right">Estimate</th></tr></thead>
+        <tbody>
+          {% for g in rr.coverage_gaps[:8] %}
+          <tr class="border-b border-sb-surface-2/5"><td class="py-1.5 pr-4 font-semibold">{{ g.title }}</td>
+            <td class="py-1.5 pr-4">{{ g.missing_sources | join(', ') }}</td>
+            <td class="py-1.5 text-right font-bold sb-num">${{ "{:,.2f}".format(g.estimated_value) }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="mt-2 text-xs text-sb-surface-2/50 font-medium">Gap values are estimates from each track's own per-source average — verification required. Not financial advice.</p>
+      {% endif %}
+      {% else %}
+      <p class="mt-3 text-xs text-sb-surface-2/60">No royalty statements uploaded yet — findings appear here once statements are in.</p>
+      {% endif %}
+    </section>
+
+    <!-- Campaigns -->
+    <section class="mt-10">
+      <h2 class="sb-label text-sb-gold-deep">Campaign Performance</h2>
+      {% if campaigns %}
+      <table class="mt-3 w-full text-left text-xs">
+        <thead><tr class="border-b border-sb-surface-2/20 text-xs font-bold uppercase tracking-wide text-sb-surface-2/50">
+          <th class="py-1.5 pr-4">Campaign</th><th class="py-1.5 pr-4">Status</th>
+          <th class="py-1.5 pr-4 text-right">Visits</th><th class="py-1.5 pr-4 text-right">Clicks</th><th class="py-1.5 text-right">Fans</th></tr></thead>
+        <tbody>
+          {% for c in campaigns[:10] %}
+          <tr class="border-b border-sb-surface-2/5">
+            <td class="py-1.5 pr-4 font-semibold">{{ c.title }}</td>
+            <td class="py-1.5 pr-4">{{ c.eff_status }}</td>
+            <td class="py-1.5 pr-4 text-right sb-num">{{ c.visits }}</td>
+            <td class="py-1.5 pr-4 text-right sb-num">{{ c.clicks }}</td>
+            <td class="py-1.5 text-right font-bold sb-num">{{ c.fans }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="mt-3 text-xs text-sb-surface-2/60">No campaigns yet.</p>
+      {% endif %}
+    </section>
+
+    <!-- Fan ownership -->
+    <section class="mt-10">
+      <h2 class="sb-label text-sb-gold-deep">Fan Ownership</h2>
+      <p class="mt-2 text-xs text-sb-surface-2/70">
+        {{ fans | length }} owned fan{{ 's' if fans | length != 1 }} with logged consent
+        {% set hot = fans | selectattr('intent_level', 'in', ['Hot', 'Superfan']) | list %}
+        — {{ hot | length }} rated Hot or Superfan by intent scoring. Full list exportable from the Fan CRM.
+      </p>
+    </section>
+
+    <footer class="mt-12 flex items-center justify-between border-t border-sb-surface-2/15 pt-5">
+      <span class="sb-label text-sb-surface-2/45">Prepared by Street Banker</span>
+      <span class="sb-label text-sb-surface-2/40">Live account data · {{ today }}</span>
+    </footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,108 @@
+{# A light show sent out for notes.
+
+   Standalone: this is opened by a tour manager, an MD or the artist, who
+   has no account here. The token in the URL is the authorisation, like
+   every other share link on the platform.
+
+   There is no audio. The song never left the designer's machine, so the
+   honest thing to show is the cue list against a timeline and a stage
+   that runs the cues — which is exactly what the designer sees when they
+   press "Run cues only". #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "_fonts.html" %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0B0A08">
+  <title>{% if gone %}Link expired{% else %}{{ share['name'] }} · light show{% endif %}</title>
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  <link rel="stylesheet" href="/static/css/light-studio.css?v=15">
+</head>
+<body class="lxs-body">
+{% if gone %}
+  <div class="lx lxs-gone">
+    <p class="lx-eyebrow">Street Banker · Light Studio</p>
+    <h1 class="lx-h1">This link is no longer live</h1>
+    <p class="lx-lede">The designer revoked it, or the show it pointed at was deleted. Ask them for a fresh link.</p>
+  </div>
+{% else %}
+  <div class="lx lxs">
+    <header class="lxs-head">
+      <div>
+        <p class="lx-eyebrow">Street Banker · Light Studio</p>
+        <h1 class="lx-h1">{{ share['name'] or 'Untitled show' }}</h1>
+        <p class="lx-lede">
+          {{ share['cue_count'] }} cue{{ '' if share['cue_count'] == 1 else 's' }} ·
+          last saved {{ share['updated'][:10] }} ·
+          {% if share['permission'] == 'comment' %}you can leave notes{% else %}read only{% endif %}.
+          There is no audio here — the song stays on the designer's machine. Press <b>Run</b> to watch the
+          cues play against the clock.
+        </p>
+      </div>
+      <div class="lxs-transport">
+        <button id="lxs-run" class="lx-btn lx-btn--fill" type="button" aria-pressed="false">Run</button>
+        <button id="lxs-rewind" class="lx-btn lx-btn--ghost lx-btn--small" type="button" aria-label="Back to the start">⏮ Start</button>
+        <span class="lx-timecode"><span id="lxs-clock">0:00.0</span><small>timecode</small></span>
+      </div>
+    </header>
+
+    <section class="lxs-stage-wrap" aria-label="Stage preview">
+      <div id="lxs-stage" class="lxs-stage" role="img" aria-label="Stage preview: the light bars as the cues render them"></div>
+    </section>
+
+    <section class="lxs-timeline-wrap" aria-label="Timeline">
+      <div id="lxs-timeline" class="lxs-timeline" tabindex="0" role="slider"
+           aria-label="Show timeline. Click to move the playhead; arrow keys step one second."
+           aria-valuemin="0" aria-valuenow="0">
+        <div id="lxs-playhead" class="lxs-playhead"></div>
+      </div>
+      <p class="lx-hint">Cue flags sit above the line, notes below it. Click either to jump there.</p>
+    </section>
+
+    <div class="lxs-cols">
+      <section class="lxs-cues" aria-label="Cue list">
+        <h2 class="lxs-h2">Cues</h2>
+        <ol id="lxs-cue-list" class="lxs-cue-list" role="list"></ol>
+      </section>
+
+      <section class="lxs-notes" aria-label="Notes">
+        <h2 class="lxs-h2">Notes <span id="lxs-note-count" class="lx-hint"></span></h2>
+        {% if share['permission'] == 'comment' %}
+          <form id="lxs-form" class="lxs-form">
+            <label class="lxs-field">
+              <span>Your name</span>
+              <input id="lxs-author" class="lx-input" type="text" maxlength="60" required
+                     autocomplete="name" placeholder="e.g. Marcus (tour manager)">
+            </label>
+            <label class="lxs-field">
+              <span>Note</span>
+              <textarea id="lxs-body" class="lx-input" rows="3" maxlength="1200" required
+                        placeholder="What should change, and where?"></textarea>
+            </label>
+            <div class="lxs-anchor">
+              <label class="lxs-check">
+                <input id="lxs-at" type="checkbox" checked>
+                <span>Pin this note to <b id="lxs-at-time">0:00.0</b></span>
+              </label>
+              <button class="lx-btn lx-btn--fill lx-btn--small" type="submit">Leave the note</button>
+            </div>
+            <p id="lxs-form-hint" class="lx-hint" role="status" aria-live="polite"></p>
+          </form>
+        {% else %}
+          <p class="lx-hint">This link is read only. The designer can send you one that takes notes.</p>
+        {% endif %}
+        <div id="lxs-threads" class="lxs-threads"></div>
+      </section>
+    </div>
+
+    <p class="lxs-foot">Sent from Street Banker · Light Studio. This link carries one show and nothing else about the account.</p>
+  </div>
+
+  <script src="/static/js/lights-engine.js?v=7"></script>
+  <script>window.__lxShare = {{ share | js_json }}; window.__lxComments = {{ comments | js_json }}; window.__lxToken = {{ token | js_json }};</script>
+  <script src="/static/js/lights-share.js?v=2"></script>
+{% endif %}
+</body>
+</html>

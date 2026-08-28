@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Fan Club - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Fan Club</div>
+    <h1 class="sb-h1 mt-1">Fan Club</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">A paid membership your biggest fans subscribe to monthly — real recurring income through Stripe, and every member lands in your Fan CRM.</p>
+  </div>
+
+  {% if request.args.get('posted') %}
+  {% set n = request.args.get('notified', 0) | int %}
+  {% set f = request.args.get('failed', 0) | int %}
+  <div class="rounded-2xl border border-green-500/25 bg-green-500/10 px-4 py-3 text-sm">
+    <span class="font-bold text-green-400">Drop posted.</span>
+    {% if n %}<span class="text-gray-200"> Emailed {{ n }} member{{ 's' if n != 1 }} their access link.</span>{% endif %}
+    {% if request.args.get('email_off') %}<span class="text-gray-300"> Member emails are off until Resend is configured — members will see it when they open the area.</span>{% endif %}
+  </div>
+  {% if f %}
+  <div class="rounded-2xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-sm text-amber-400/90">{{ f }} member email{{ 's' if f != 1 }} couldn't be delivered — the email service only sends to your own address until a domain is verified in Resend. Members can still sign in from the club page.</div>
+  {% endif %}
+  {% endif %}
+
+  <div class="grid grid-cols-3 gap-3">
+    <div class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-4">
+      <div class="sb-label text-gray-300">Monthly Recurring</div>
+      <div class="mt-1 text-2xl font-black tabular-nums text-sb-ink">${{ "{:,.2f}".format(mrr) }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Active Members</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ active_count }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Status</div>
+      <div class="mt-1 text-lg font-black {{ 'text-green-400' if club and club.active else 'text-gray-300' }}">{{ 'Open for members' if club and club.active else 'Not open yet' }}</div>
+    </div>
+  </div>
+
+  {% if not stripe_live %}
+  <section class="rounded-2xl border border-amber-500/30 bg-sb-surface-2 p-5">
+    <p class="text-sm text-gray-200">Memberships charge through Stripe, which isn't configured on this server — the club can be set up but can't take joins yet. Nothing here pretends otherwise.</p>
+  </section>
+  {% endif %}
+
+  <!-- Configure -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5">
+    <h2 class="sb-label text-gray-300">Your club</h2>
+    <form method="post" class="mt-3 space-y-3">
+      <div class="grid gap-3 sm:grid-cols-[1fr_140px]">
+        <div>
+          <label class="sb-label text-gray-300">Club name</label>
+          <input name="name" value="{{ club.name if club else '' }}" placeholder="e.g. The Inner Circle" required
+                 class="mt-1 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+        </div>
+        <div>
+          <label class="sb-label text-gray-300">Price / month</label>
+          <div class="mt-1 flex items-center gap-1 rounded-lg border border-white/15 bg-black/40 px-3">
+            <span class="text-sm font-bold text-gray-300">$</span>
+            <input name="price" type="number" min="1" max="500" step="0.5" value="{{ '%g' % (club.price_cents / 100) if club else '5' }}"
+                   class="w-full bg-transparent py-2.5 text-sm font-black sb-num text-white focus:outline-none">
+          </div>
+        </div>
+      </div>
+      <div>
+        <label class="sb-label text-gray-300">Pitch — why join?</label>
+        <textarea name="blurb" rows="2" placeholder="What members get, in your voice."
+                  class="mt-1 w-full resize-none rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">{{ club.blurb if club else '' }}</textarea>
+      </div>
+      <div>
+        <label class="sb-label text-gray-300">Perks — one per line</label>
+        <textarea name="perks" rows="3" placeholder="Early access to every drop&#10;Members-only merch prices&#10;Name in the album credits"
+                  class="mt-1 w-full resize-none rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">{{ club.perks | join('\n') if club else '' }}</textarea>
+        <p class="mt-1 text-xs text-gray-300 font-medium">Perks are your promise to members — only list what you'll actually deliver.</p>
+      </div>
+      <label class="flex cursor-pointer items-center gap-2 text-xs font-bold text-gray-200">
+        <input type="checkbox" name="active" value="1" {{ 'checked' if club and club.active }} class="h-4 w-4 accent-sb-gold">
+        Open the club — the public join page goes live
+      </label>
+      <button class="sb-btn sb-btn-primary">Save Club</button>
+    </form>
+    {% if club and club.active %}
+    <div class="mt-4 rounded-lg border border-green-500/25 bg-green-500/5 px-3 py-2.5 text-xs">
+      <span class="font-bold text-green-400">Join page is live:</span>
+      <a href="{{ club_url }}" target="_blank" class="break-all font-mono text-sb-gold-bright hover:underline">{{ request.url_root.rstrip('/') }}{{ club_url }}</a>
+      <span class="text-gray-300">— put it in your bio, smart links, and EPK.</span>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Drops -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="sb-label text-sb-gold">Members-Only Drops</h2>
+      {% if club %}<a href="{{ club_url }}/members" target="_blank" class="text-xs font-bold text-sb-gold-bright hover:underline">View as a member →</a>{% endif %}
+    </div>
+    <p class="mt-1 text-xs text-gray-300">Whatever you post here is only visible behind the paywall — unreleased links, early tickets, member price codes. This is how the perks you promised get delivered.</p>
+    <form method="post" action="/fan-club/drops" class="mt-3 space-y-2.5">
+      <div class="grid gap-2.5 sm:grid-cols-2">
+        <input name="title" required placeholder="Drop title — e.g. Unreleased demo: Midnight Run"
+               class="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+        <input name="link_url" placeholder="Link (optional) — private SoundCloud, ticket page…"
+               class="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+      </div>
+      <textarea name="body" rows="2" placeholder="A few words for members (optional)."
+                class="w-full resize-none rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none"></textarea>
+      <button class="sb-btn sb-btn-primary sb-btn-sm">Post Drop</button>
+    </form>
+    {% if drops %}
+    <div class="mt-4 divide-y divide-white/5">
+      {% for drop in drops %}
+      <div class="flex items-start gap-3 py-2.5">
+        <div class="min-w-0 flex-1">
+          <div class="text-sm font-bold">{{ drop.title }}</div>
+          <div class="mt-0.5 text-xs text-gray-300 font-medium">{{ drop.created[:10] }}{% if drop.link_url %} · <a href="{{ drop.link_url }}" target="_blank" rel="noopener" class="text-sb-gold-bright hover:underline">link</a>{% endif %}</div>
+        </div>
+        <form method="post" action="/fan-club/drops/{{ drop.id }}/delete">
+          <button class="sb-btn sb-btn-danger sb-btn-sm shrink-0">Remove</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Roster -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-sb-gold">Members</h2>
+    {% if members %}
+    <div class="mt-3 divide-y divide-white/5">
+      {% for m in members %}
+      <div class="flex items-center gap-3 py-2.5">
+        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sb-gold/15 text-xs font-black text-sb-gold-bright">{{ m.member_email[0]|upper }}</span>
+        <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ m.member_email }}</span>
+        <span class="shrink-0 rounded-full border px-2.5 py-1 text-xs font-bold uppercase tracking-wide {{ 'border-green-500/30 bg-green-500/10 text-green-400' if m.status == 'active' else 'border-white/15 text-gray-300' }}">{{ m.status }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="mt-3 text-sm text-gray-300">No members yet. Open the club and share the join link — your hottest fans in the Fan CRM are the first people to tell.</p>
+    {% endif %}
+  </section>
+
+  <p class="px-1 text-xs text-gray-300 font-medium">Members pay through Stripe-hosted checkout — no card data touches this server. Cancellations flow back automatically via webhook and members stay in your Fan CRM either way.</p>
+</div>
+{% endblock %}

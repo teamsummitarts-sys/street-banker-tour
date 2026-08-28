@@ -1,0 +1,27 @@
+{% import "tour/_macros.html" as m %}
+{% set e = edit if edit is defined and edit else {} %}
+<form method="post" action="{% if e %}/tours/{{ tour['id'] }}/hotels/{{ e['id'] }}/edit{% else %}/tours/{{ tour['id'] }}/hotels/add{% endif %}" class="to-form">
+  <div class="to-grid">
+    {% if show_id is defined and show_id %}<input type="hidden" name="show_id" value="{{ show_id }}">{% else %}
+    <label class="to-field"><span>Show (optional)</span><select name="show_id"><option value="">— none —</option>{% for s in shows %}<option value="{{ s['id'] }}" {% if e and e['show_id'] == s['id'] %}selected{% endif %}>{{ s['date'] }} {{ s['city'] or s['venue'] }}</option>{% endfor %}</select></label>
+    {% endif %}
+    {{ m.field('property', 'Property', e['property'] if e else '', required=True) }}
+    {{ m.field('address', 'Address', e['address'] if e else '') }}
+    {{ m.field('city', 'City', e['city'] if e else '') }}
+    {{ m.field('checkin', 'Check-in', e['checkin'] if e else (checkin if checkin is defined else ''), type='date') }}
+    {{ m.field('checkout', 'Check-out', e['checkout'] if e else '', type='date') }}
+    {{ m.field('confirmation', 'Confirmation', e['confirmation'] if e else '') }}
+    {{ m.field('reservation_name', 'Reservation name', e['reservation_name'] if e else '') }}
+    {{ m.field('room_type', 'Room type / block', e['room_type'] if e else '') }}
+    {{ m.field('payment', 'Payment', e['payment'] if e else '', placeholder='card on file / direct bill') }}
+    {{ m.field('contact', 'Hotel contact', e['contact'] if e else '') }}
+    {{ m.field('phone', 'Phone', e['phone'] if e else '') }}
+    {{ m.field('parking', 'Parking', e['parking'] if e else '') }}
+    {{ m.field('wifi', 'Wi-Fi', e['wifi'] if e else '') }}
+    {{ m.select('status', 'Status', vocab['travel_statuses'], e['status'] if e else 'planned') }}
+    {{ m.select('visibility', 'Visibility', vocab['visibility'], e['visibility'] if e else 'all') }}
+    {{ m.textarea('notes', 'Notes', e['notes'] if e else '', rows=2) }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">{{ 'Save' if e else 'Add hotel' }}</button>
+    {% if e %}<button class="to-btn to-btn--ghost to-btn--danger" type="submit" name="action" value="delete">Delete</button> <a class="to-btn to-btn--ghost" href="/tours/{{ tour['id'] }}/hotels">Cancel</a>{% endif %}</div>
+</form>

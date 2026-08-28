@@ -1,0 +1,237 @@
+{% extends "signal/_shell.html" %}
+{% from "signal/_macros.html" import score_cell, delta, dist_pill %}
+{% block title %}{{ a['canonical_name'] }}{% endblock %}
+{% block main %}
+  <div class="sg-head">
+    <div>
+      <p class="sg-eyebrow">Artist</p>
+      <h1 class="sg-h1">{{ a['canonical_name'] }}</h1>
+      <p class="sg-lede">
+        {{ a['genre'] or 'Genre unknown' }}
+        {%- if a['city'] %} · {{ a['city'] }}{% endif %}
+        {%- if a['country'] %}, {{ a['country'] }}{% endif %}
+        {%- if a['career_stage'] %} · {{ a['career_stage'] }}{% endif %}
+        {%- if a['monthly_listeners'] %} · {{ '{:,}'.format(a['monthly_listeners']) }} monthly listeners{% endif %}
+      </p>
+      <p class="sg-lede" style="font-size:12.5px">
+        Scored against <b>{{ cohort }}</b>
+        {%- if percentile is not none %} — ahead of {{ percentile }}% of that cohort on SB Momentum{% endif %}.
+        Identity confidence {{ (a['identity_confidence'] * 100)|round|int }}%.
+      </p>
+    </div>
+    <div class="sg-inline">
+      {% if desk_link and has_desk_seat %}
+        <a class="sg-btn sg-btn--ghost sg-btn--small" href="/operator-desk/leads/{{ desk_link['lead_id'] }}">Open on the desk →</a>
+      {% elif desk_link %}
+        <span class="sg-pill is-ok" title="Added {{ desk_link['added_at'][:10] }} by {{ desk_link['added_by'] }}">On the desk</span>
+        <span class="sg-artist-meta">You do not hold an Operator Desk seat, so the lead is not open to you here.</span>
+      {% elif sg_can('push_to_desk') %}
+        <form method="post" action="/signal/artist/{{ a['id'] }}/operator-desk">
+          <button class="sg-btn" type="submit">Add to Operator Desk</button>
+        </form>
+      {% endif %}
+      {% if not watched and sg_can('watch') %}
+        <form method="post" action="/signal/artist/{{ a['id'] }}/watch">
+          <input type="hidden" name="next" value="/signal/artist/{{ a['id'] }}">
+          <button class="sg-btn sg-btn--ghost sg-btn--small" type="submit">Watch</button>
+        </form>
+      {% elif watched %}<span class="sg-pill is-gold">Watching</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="sg-grid" style="margin-top:14px">
+    {% for key in ['sb_momentum', 'momentum_quality', 'distribution_gap', 'rights_health', 'deal_readiness'] %}
+      {% set s = scores[key] if key in scores else none %}
+      <div class="sg-card">
+        <div class="sg-stat-label">{{ score_labels[key] }}</div>
+        <div class="sg-stat">{{ (s['value'])|round|int if s else '—' }}</div>
+        {% if s %}
+          <p><a href="/signal/artist/{{ a['id'] }}/score/{{ key }}">How this was built →</a>
+            {% if s['data_quality'] != 'ok' %}<br><span class="sg-pill is-warn">{{ s['data_quality'] }} data</span>{% endif %}
+          </p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <nav class="sg-tabs" aria-label="Artist detail">
+    {% for key, label in [('overview','Why now'), ('momentum','Momentum'), ('releases','Releases'),
+                          ('cities','Cities'), ('distribution','Distribution'),
+                          ('contacts','Team & contacts'), ('rights','Rights health'),
+                          ('opportunity','Opportunity')] %}
+      <a class="sg-tab{% if tab == key %} is-active{% endif %}" href="/signal/artist/{{ a['id'] }}?tab={{ key }}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  <div style="margin-top:16px">
+  {% if tab == 'overview' %}
+    <h2 class="sg-h2">Why they are moving</h2>
+    <ul class="sg-list">{% for line in brief['why_now'] %}<li>{{ line }}</li>{% endfor %}</ul>
+
+    <h2 class="sg-h2">Momentum quality</h2>
+    <p>{{ brief['quality'] }} — 7d {{ momentum_expl['change_7d'] if momentum_expl['change_7d'] is not none else '—' }}%,
+       28d {{ momentum_expl['change_28d'] if momentum_expl['change_28d'] is not none else '—' }}%,
+       90d {{ momentum_expl['change_90d'] if momentum_expl['change_90d'] is not none else '—' }}%.</p>
+
+    <h2 class="sg-h2">Risks</h2>
+    {% if brief['risks'] %}
+      <ul class="sg-list">{% for r in brief['risks'] %}<li>{{ r }}</li>{% endfor %}</ul>
+    {% else %}<p>Nothing flagged.</p>{% endif %}
+
+    <h2 class="sg-h2">Recommendation</h2>
+    <p><span class="sg-pill is-gold">{{ rec['action'] }}</span> — {{ rec['primary_lane'] }} lane.</p>
+    <ul class="sg-list">{% for r in rec['reasons'] %}<li>{{ r }}</li>{% endfor %}</ul>
+    <p class="sg-note">{{ rec['disclaimer'] }}</p>
+
+  {% elif tab == 'momentum' %}
+    <div class="sg-expl">
+      <b>SB Momentum {{ momentum_expl['score'] }}</b> — version {{ score_version }}, cohort {{ cohort }}.
+      <table class="sg-contrib">
+        <thead><tr><th scope="col">Input</th><th scope="col">Value</th><th scope="col">Weight</th><th scope="col">Points</th><th scope="col"><span class="sg-sr">Bar</span></th></tr></thead>
+        <tbody>
+        {% for name, c in momentum_expl['contributions'].items() %}
+          <tr>
+            <td>{{ name|replace('_', ' ')|capitalize }}</td>
+            <td>{{ c['value'] }}</td><td>{{ (c['weight'] * 100)|round|int }}%</td><td>{{ c['points'] }}</td>
+            <td><span class="sg-meter"><i style="width:{{ c['value'] }}%"></i></span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% if momentum_expl['anomaly_penalty'] %}
+        <p style="margin-top:10px"><span class="sg-pill is-warn">Anomaly penalty −{{ momentum_expl['anomaly_penalty'] }}</span></p>
+        <ul class="sg-list">{% for r in momentum_expl['anomaly_reasons'] %}<li>{{ r }}</li>{% endfor %}</ul>
+        <p class="sg-note">Risk indicators, not an accusation. Each one names the metric that triggered it.</p>
+      {% endif %}
+      {% if momentum_expl['missing'] %}
+        <p class="sg-note">Not available for this artist: {{ momentum_expl['missing']|join(', ') }}.
+          The score is renormalised over the inputs that were available ({{ (momentum_expl['coverage'] * 100)|round|int }}% of the weight), never padded with zeroes.</p>
+      {% endif %}
+    </div>
+
+  {% elif tab == 'releases' %}
+    {% if releases %}
+      <div class="sg-table-wrap"><table class="sg-table">
+        <thead><tr><th scope="col">Release</th><th scope="col">Type</th><th scope="col">Date</th>
+          <th scope="col">UPC</th><th scope="col">Label</th><th scope="col">Distributor</th></tr></thead>
+        <tbody>
+        {% for r in releases %}
+          <tr>
+            <td><b>{{ r['title'] }}</b></td><td>{{ r['release_type'] }}</td><td>{{ r['release_date'] }}</td>
+            <td>{{ r['upc'] or '—' }}</td><td>{{ r['label_text'] or '—' }}</td>
+            <td>{{ r['distributor_name'] or '—' }}<br><span class="sg-pill">{{ r['distributor_class'] }}</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    {% else %}<div class="sg-empty">No releases observed yet.</div>{% endif %}
+
+  {% elif tab == 'cities' %}
+    {% if cities %}
+      <div class="sg-table-wrap"><table class="sg-table">
+        <thead><tr><th scope="col">City</th><th scope="col" class="sg-num">Listeners</th><th scope="col" class="sg-num">28d</th></tr></thead>
+        <tbody>
+        {% for c in cities %}
+          <tr><td>{{ c['city'] }}{% if c['region'] %}, {{ c['region'] }}{% endif %}</td>
+            <td class="sg-num">{{ '{:,}'.format(c['listeners']) }}</td>
+            <td class="sg-num">{{ delta(c['change_28d_pct']) }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+    {% else %}<div class="sg-empty">No city breakdown available from the connected providers.</div>{% endif %}
+
+  {% elif tab == 'distribution' %}
+    <div class="sg-expl">
+      <dl class="sg-kv">
+        <dt>Current</dt><dd>{{ distribution['name'] or 'Not identified' }}</dd>
+        <dt>Classification</dt><dd>{{ dist_pill(distribution) }}</dd>
+        <dt>Consistency</dt><dd>{{ distribution['recent_matching'] }} of {{ distribution['recent_of'] }} recent releases match</dd>
+        <dt>Changed</dt><dd>{{ 'Appears to have changed recently' if distribution['changed'] else 'No change detected' }}</dd>
+      </dl>
+    </div>
+    <h2 class="sg-h2">Evidence</h2>
+    {% for e in dist_evidence %}
+      <div class="sg-ev">
+        <div class="sg-ev-head">
+          <span class="sg-ev-claim">{{ e['claim_value'] }}{% if e['claim_key'] %} — {{ e['claim_key'] }}{% endif %}</span>
+          <span class="sg-inline">
+            <span class="sg-pill">{{ e['status_label'] }}</span>
+            <span class="sg-pill">{{ (e['confidence'] * 100)|round|int }}%</span>
+            {% if e['is_stale'] %}<span class="sg-pill is-warn">stale</span>{% endif %}
+          </span>
+        </div>
+        {% if e['excerpt'] %}<p class="sg-ev-quote">{{ e['excerpt'] }}</p>{% endif %}
+        <div class="sg-ev-src">{{ e['source_label'] }} · first seen {{ e['first_observed_at'][:10] }} · last checked {{ e['last_verified_at'][:10] }}</div>
+      </div>
+    {% else %}<div class="sg-empty">No distributor evidence on file.</div>{% endfor %}
+
+  {% elif tab == 'contacts' %}
+    {% if contacts %}
+      {% for e in contacts %}
+        <div class="sg-ev">
+          <div class="sg-ev-head">
+            <span class="sg-ev-claim">{{ e['claim_key'] }} — {{ e['claim_value'] }}</span>
+            <span class="sg-inline">
+              <span class="sg-pill">{{ e['status_label'] }}</span>
+              <span class="sg-pill">{{ (e['confidence'] * 100)|round|int }}%</span>
+              {% if e['is_stale'] %}<span class="sg-pill is-warn">stale</span>{% endif %}
+            </span>
+          </div>
+          {% if e['detail']['company'] %}<div class="sg-ev-src">{{ e['detail']['company'] }}{% if e['detail']['person'] %} · {{ e['detail']['person'] }}{% endif %}</div>{% endif %}
+          {% if e['excerpt'] %}<p class="sg-ev-quote">{{ e['excerpt'] }}</p>{% endif %}
+          <div class="sg-ev-src">{{ e['source_label'] }} · first seen {{ e['first_observed_at'][:10] }} · last checked {{ e['last_verified_at'][:10] }}</div>
+        </div>
+      {% endfor %}
+      <p class="sg-note">
+        Public professional contacts only — official sites, rosters, press. No home addresses, no
+        private numbers, no guessed email patterns presented as confirmed.
+      </p>
+    {% else %}
+      <div class="sg-empty">No public professional contact found yet. That is not evidence that the artist is unrepresented.</div>
+    {% endif %}
+
+  {% elif tab == 'rights' %}
+    {% set rh = scores['rights_health'] if 'rights_health' in scores else none %}
+    {% if rh %}
+      <div class="sg-expl">
+        <b>Rights Health {{ rh['value']|round|int }}</b> — {{ 'review required' if rh['value'] < 60 else 'no obvious gaps' }}.
+        {% if rh['explanation']['findings'] %}
+          <ul class="sg-list">
+            {% for f in rh['explanation']['findings'] %}
+              <li><b>{{ f['area'] }}:</b> {{ f['detail'] }} <span class="sg-pill is-warn">{{ f['status']|replace('_',' ') }}</span></li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        <p class="sg-note">{{ rh['explanation']['caution'] }}</p>
+        {% if rh['explanation']['recommend_sweep'] %}
+          <p><span class="sg-pill is-gold">Recommended: Royalty Sweep</span></p>
+        {% endif %}
+      </div>
+    {% endif %}
+    <h2 class="sg-h2">Registry evidence</h2>
+    {% for e in rights_evidence %}
+      <div class="sg-ev">
+        <div class="sg-ev-head">
+          <span class="sg-ev-claim">{{ e['claim_key'] or 'Catalogue' }}</span>
+          <span class="sg-pill{{ ' is-warn' if e['status'] == 'potential_gap' else '' }}">{{ e['status_label'] }}</span>
+        </div>
+        <div class="sg-ev-src">{{ e['source_label'] }} · last checked {{ e['last_verified_at'][:10] }}</div>
+      </div>
+    {% else %}<div class="sg-empty">No registry lookup has run for this catalogue.</div>{% endfor %}
+
+  {% elif tab == 'opportunity' %}
+    <div class="sg-expl">
+      <h3 style="margin-top:0">Suggested lanes</h3>
+      <p class="sg-inline">{% for l in rec['lanes'] %}<span class="sg-pill is-gold">{{ l }}</span>{% endfor %}</p>
+      <ul class="sg-list">{% for r in rec['reasons'] %}<li>{{ r }}</li>{% endfor %}</ul>
+      <h3>Best entry point</h3>
+      {% if rec['best_contact'] %}
+        <p><b>{{ rec['best_contact']['role'] }}</b> — {{ rec['best_contact']['value'] }}<br>
+          <span class="sg-ev-src">{{ rec['best_contact']['source'] }} · {{ rec['best_contact']['status'] }}</span><br>
+          {{ rec['best_contact']['why'] }}</p>
+      {% else %}<p>No credible public contact yet — research it before reaching out.</p>{% endif %}
+      <p class="sg-note">{{ rec['disclaimer'] }}</p>
+    </div>
+  {% endif %}
+  </div>
+{% endblock %}

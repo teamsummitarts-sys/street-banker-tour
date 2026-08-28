@@ -1,0 +1,54 @@
+{# The artist-control policy, in public. Ten statements, no login. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Artist control · Street Banker</title>
+  <meta name="description" content="Data ownership, AI training consent, recommendation limits, royalty verification, deletion, export, collaborator permissions and audit history.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-2xl px-6 py-14 lg:px-10 lg:py-20">
+  <div class="sb-label text-sb-gold">Built for artist control</div>
+  <h1 class="mt-4 text-[clamp(1.9rem,5vw,2.8rem)] font-semibold uppercase leading-[1.04] tracking-tight">
+    Artist control policy
+  </h1>
+  <p class="mt-5 max-w-xl text-base leading-relaxed text-sb-ink-2">
+    What you keep, what happens to what you upload, what a recommendation is
+    worth, and how to leave. Short on purpose — the long version is in the
+    terms.
+  </p>
+
+  <dl class="mt-11 space-y-8">
+    {# The footer's Trust column deep-links at these, so each entry
+       carries an id derived from its own title. #}
+    {% for title, body in policy %}
+    <div id="{{ title | lower | replace(' ', '-') }}" class="border-t border-[rgb(201_168_106_/_0.22)] pt-6" style="scroll-margin-top: 90px;">
+      <dt class="text-base font-semibold text-sb-ink">{{ title }}</dt>
+      <dd class="mt-2 max-w-2xl text-base leading-relaxed text-sb-ink-2">{{ body }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+
+  <p class="mt-11 text-xs leading-relaxed text-sb-ink-2">
+    The full terms are in the
+    <a href="/terms" class="border-b border-[rgb(201_168_106_/_0.4)] text-sb-gold hover:border-sb-gold">terms of service</a>
+    and the
+    <a href="/privacy" class="border-b border-[rgb(201_168_106_/_0.4)] text-sb-gold hover:border-sb-gold">privacy policy</a>.
+    How the Artist Twin uses AI is set out on
+    <a href="/ai" class="border-b border-[rgb(201_168_106_/_0.4)] text-sb-gold hover:border-sb-gold">its own page</a>.
+  </p>
+</main>
+
+<footer class="mx-auto max-w-2xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/#artist-control" class="font-semibold hover:text-sb-ink">← Back to Street Banker</a>
+</footer>
+</body>
+</html>

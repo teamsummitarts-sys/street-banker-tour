@@ -1,0 +1,34 @@
+{% set tab = 'releases' %}
+{% extends "press/_shell.html" %}
+{% block title %}Sending is off - Press Desk{% endblock %}
+{% block press %}
+
+<div class="pd-head">
+  <div>
+    <p class="pd-eyebrow">Sending refused</p>
+    <h1 class="pd-h1">Nothing was sent.</h1>
+    <p class="pd-sub">This is deliberate, and it is not a failure you need to retry.</p>
+  </div>
+</div>
+
+<div class="pd-note pd-note--warn">
+  <strong>{{ state.reason }}</strong>
+  <p>{{ state.detail }}</p>
+</div>
+
+<div class="pd-panel">
+  <p style="margin:0 0 10px;font-size:13.5px;line-height:1.7">
+    A press desk that reports a send it did not make is worse than one that
+    cannot send at all — you would spend a fortnight waiting on replies from
+    people who never got anything. So this refuses instead of pretending.
+  </p>
+  <p style="margin:0;font-size:13.5px;line-height:1.7;color:var(--pd-soft)">
+    Your prepared messages are untouched. Open the pitch, copy each one into
+    your own email, and mark it sent as you go — the tracked links still
+    work exactly the same, and opens still come back to this desk.
+  </p>
+  <p style="margin:14px 0 0">
+    <a class="pd-btn" href="/press-desk/pitch/{{ pitch.id }}">Back to the pitch</a>
+  </p>
+</div>
+{% endblock %}

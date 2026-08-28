@@ -1,0 +1,87 @@
+{# Onboarding — YOUR STREET BANKER PROGRAM IS READY.
+
+   Rendered hidden and hydrated client-side from the visitor's own saved
+   Artist Signal Profile, so it appears only for people who actually came
+   through the Artist EQ. Module and action links resolve through the
+   server-provided map: anything without a real route renders as plain
+   text, never a dead link. The profile is also pushed to the account so
+   the Command Center and Artist Twin can read it. #}
+<section class="mb-6 w-full rounded-2xl border border-sb-gold/30 bg-sb-surface-1 p-5 text-left" id="sb-program-ready" hidden>
+  <div class="sb-label text-sb-gold">Artist Signal Profile</div>
+  <h2 class="mt-1 text-lg font-black uppercase tracking-tight text-gray-100">Your Street Banker program is ready.</h2>
+  <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div>
+      <div class="sb-label text-gray-300">Your lane</div>
+      <p class="mt-1 text-sm font-bold text-sb-gold-bright" id="sb-pr-lane"></p>
+      <div class="sb-label mt-3 text-gray-300">Top priorities</div>
+      <ul class="mt-1 space-y-0.5 text-xs text-gray-200" id="sb-pr-top"></ul>
+    </div>
+    <div>
+      <div class="sb-label text-gray-300">Recommended modules</div>
+      <ul class="mt-1 space-y-1 text-xs text-gray-200" id="sb-pr-modules"></ul>
+    </div>
+    <div>
+      <div class="sb-label text-gray-300">Your first three actions</div>
+      <ol class="mt-1 list-decimal space-y-1 pl-4 text-xs text-gray-200" id="sb-pr-actions"></ol>
+    </div>
+  </div>
+</section>
+<script type="application/json" id="sb-program-links">{{ program_links_json | js_json }}</script>
+<script>
+(function () {
+  "use strict";
+  var panel = document.getElementById("sb-program-ready");
+  var linksEl = document.getElementById("sb-program-links");
+  if (!panel || !linksEl) { return; }
+  var LINKS;
+  try { LINKS = JSON.parse(linksEl.textContent); } catch (e) { return; }
+  var profile = null;
+  try {
+    var raw = localStorage.getItem("streetBankerArtistSignalProfile") ||
+              localStorage.getItem("streetBankerArtistEq");
+    if (raw) { profile = JSON.parse(raw); }
+  } catch (e) { profile = null; }
+  if (!profile || !profile.priorities || !profile.recommendedLane) { return; }
+
+  function fill(id, items, hrefMap) {
+    var el = document.getElementById(id);
+    if (!el) { return; }
+    (items || []).forEach(function (text) {
+      if (typeof text !== "string") { return; }
+      var li = document.createElement("li");
+      var href = hrefMap ? hrefMap[text] : null;
+      if (href) {
+        var a = document.createElement("a");
+        a.href = href;
+        a.textContent = text;
+        a.className = "underline decoration-sb-gold/50 hover:text-sb-gold-bright";
+        li.appendChild(a);
+      } else {
+        li.textContent = text;
+      }
+      el.appendChild(li);
+    });
+  }
+
+  document.getElementById("sb-pr-lane").textContent =
+    String(profile.recommendedLane);
+  fill("sb-pr-top", (profile.topPriorities || []).slice(0, 3), null);
+  fill("sb-pr-modules", (profile.recommendedModules || []).slice(0, 4),
+       LINKS.modules);
+  fill("sb-pr-actions", (profile.firstActions || []).slice(0, 3),
+       LINKS.actions);
+  panel.hidden = false;
+
+  /* Associate the profile with the new account. */
+  fetch("/api/artist-signal-profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(profile)
+  }).catch(function () {});
+  try {
+    if (typeof window.sbTrack === "function") {
+      window.sbTrack("artist_eq_signup_completed", {});
+    }
+  } catch (e) {}
+})();
+</script>

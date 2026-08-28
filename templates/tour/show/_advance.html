@@ -1,0 +1,29 @@
+{% import "tour/_macros.html" as m %}
+<div class="to-bar" style="margin-top:0">
+  <div class="to-meter" style="flex:1;min-width:160px"><i style="width:{{ advance_progress['pct'] }}%"></i></div>
+  <span class="to-muted">{{ advance_progress['done'] }} of {{ advance_progress['total'] }} complete · {{ advance_progress['waiting'] }} waiting</span>
+  {% if can('advance') %}<a class="to-btn to-btn--ghost to-btn--small" href="?tab=inbox">Paste an advance email</a>{% endif %}
+</div>
+
+{% if can('advance') or can('edit') %}<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/advance-bulk">{% endif %}
+{% for category, items in vocab['advance_categories'].items() %}
+<h2 class="to-h2">{{ category|capitalize }}</h2>
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th style="width:180px">Item</th><th style="width:150px">Status</th><th>Detail</th></tr></thead>
+  <tbody>
+  {% for row in advance if row['category'] == category %}
+  <tr>
+    <td data-k="Item"><b>{{ row['label'] }}</b>{% if row['comments'] %}<div class="to-muted" style="white-space:pre-line">{{ row['comments'] }}</div>{% endif %}</td>
+    <td data-k="Status">{% if can('advance') or can('edit') %}
+      <select name="status__{{ row['item_key'] }}" class="to-input" style="min-height:34px;padding:4px 8px">{% for s in vocab['advance_statuses'] %}<option value="{{ s }}" {% if s == row['status'] %}selected{% endif %}>{{ {'na':'Not applicable'}[s] if s == 'na' else s|capitalize }}</option>{% endfor %}</select>
+      {% else %}{{ m.chip(row['status']) }}{% endif %}</td>
+    <td data-k="Detail">{% if can('advance') or can('edit') %}<input class="to-input" style="min-height:34px;padding:4px 8px" name="value__{{ row['item_key'] }}" value="{{ row['value'] }}" placeholder="—">{% else %}{{ row['value'] or '—' }}{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endfor %}
+{% if can('advance') or can('edit') %}
+<div class="to-bar"><button class="to-btn" type="submit">Save advance</button></div>
+</form>
+{% endif %}

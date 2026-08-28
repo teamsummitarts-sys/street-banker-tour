@@ -1,0 +1,289 @@
+/* Section 4 — one system, six departments.
+ *
+ * A near-black editorial band across a white page: the photograph is the
+ * argument, the type sits under it, and the six slices are drawn in CSS
+ * so the picture stays one file.
+ *
+ * Layout note: the whole section is a single grid. The <picture> occupies
+ * row 1 across all six columns; each department link spans rows 1-2 of
+ * one column, so its slice treatment, its rule and its label are one
+ * control. The slice window carries the picture's own aspect ratio
+ * divided by six, which is what keeps the two rows in register without
+ * subgrid.
+ */
+
+.sbdept {
+  --sbdept-ink: var(--sb-ground);
+  --sbdept-ivory: var(--sb-ink);
+  --sbdept-ivory-dim: var(--sb-ink-2);
+  --sbdept-brass: var(--sb-gold);
+  --sbdept-rule: rgb(237 231 218 / 0.14);
+  --sbdept-ratio: 1553 / 676;          /* the master photograph */
+
+  background: var(--sbdept-ink);
+  color: var(--sbdept-ivory);
+  padding: clamp(56px, 8vw, 104px) 0 clamp(48px, 7vw, 88px);
+  overflow: hidden;                    /* the desktop slices are clipped to it */
+}
+
+/* Container and gutter are the page's shared pair - 1600px and
+   clamp(20px, 4vw, 56px) - so this section's content starts the same
+   distance from the edge as the ones above and below it. They were
+   1540px and clamp(16px, 4vw, 48px), which put the left edge 4px
+   further out than its neighbours on a phone and 8px further on a
+   desktop: not a decision, just drift from being built separately. */
+.sbdept-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 56px);
+}
+
+/* --- head ---------------------------------------------------------------- */
+.sbdept-head { text-align: center; margin-bottom: clamp(28px, 4vw, 52px); }
+
+.sbdept-eyebrow {
+  margin: 0;
+  font-size: clamp(12px, 1.1vw, 15px);
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--sbdept-brass);
+}
+
+.sbdept-support {
+  margin: 14px 0 0;
+  font-size: clamp(15px, 1.35vw, 19px);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--sbdept-ivory-dim);
+}
+
+/* --- the picture and the six departments --------------------------------- */
+.sbdept-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--sbdept-count, 6), 1fr);
+  grid-template-rows: auto auto;
+}
+
+.sbdept-photo {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: block;
+  min-width: 0;
+}
+.sbdept-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: var(--sbdept-ratio);
+  object-fit: cover;
+}
+
+.sbdept-dept {
+  grid-row: 1 / 3;
+  grid-column: calc(var(--sbdept-i) + 1);
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: start;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  isolation: isolate;
+}
+.sbdept-dept + .sbdept-dept { border-left: 1px solid var(--sbdept-rule); }
+
+/* Row 1: the slice. Its ratio is the picture's, divided by the number of
+   departments, so it lands exactly over its sixth of the photograph. */
+.sbdept-window {
+  position: relative;
+  display: block;
+  aspect-ratio: 1553 / 4056;           /* (1553 / 6) : 676 */
+  overflow: hidden;
+}
+
+/* Where subgrid exists the slice takes the picture's row outright, which
+   is exact rather than nearly-exact: six 1fr columns round to whole
+   pixels differently from six aspect-ratio boxes, and a two-pixel drift
+   would step the label row. The ratio above stays as the fallback. */
+@supports (grid-template-rows: subgrid) {
+  .sbdept-dept { grid-template-rows: subgrid; }
+  .sbdept-window { aspect-ratio: auto; }
+}
+
+.sbdept-wash {
+  position: absolute;
+  inset: 0;
+  background: var(--sbdept-wash);
+  transition: opacity 200ms ease, background-color 200ms ease;
+}
+
+/* Row 2: the label. */
+.sbdept-body {
+  display: block;
+  padding: 18px clamp(10px, 1.1vw, 20px) 4px;
+}
+
+.sbdept-num {
+  display: inline-block;
+  font-size: clamp(12px, 0.95vw, 15px);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--sbdept-brass);
+  opacity: 0.75;
+  transition: opacity 200ms ease;
+}
+
+.sbdept-name {
+  display: inline-block;
+  margin-left: 10px;
+  font-size: clamp(14px, 1.15vw, 19px);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--sbdept-ivory);
+}
+
+.sbdept-desc {
+  display: block;
+  margin-top: 10px;
+  font-size: clamp(12px, 0.95vw, 16px);
+  line-height: 1.5;
+  color: var(--sbdept-ivory-dim);
+  transition: color 200ms ease;
+}
+
+/* --- interaction --------------------------------------------------------- */
+/* The selected slice lifts slightly and its wash steps back towards
+   neutral; the others take a thin veil. Brightness moves by a few
+   percent - this is a photograph, not a light switch.
+
+   Three ways in, one state: the pointer, the keyboard, and the class the
+   component script sets, which is what carries the same state to a touch
+   or assistive-technology focus. */
+.sbdept-dept:hover .sbdept-wash,
+.sbdept-dept:focus-visible .sbdept-wash,
+.sbdept-dept.is-active .sbdept-wash {
+  opacity: 0.3;
+}
+.sbdept-dept:hover .sbdept-window::after,
+.sbdept-dept:focus-visible .sbdept-window::after,
+.sbdept-dept.is-active .sbdept-window::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgb(255 255 255 / 0.06);
+  pointer-events: none;
+}
+.sbdept-dept:hover .sbdept-desc,
+.sbdept-dept:focus-visible .sbdept-desc,
+.sbdept-dept.is-active .sbdept-desc { color: var(--sbdept-ivory); }
+.sbdept-dept:hover .sbdept-num,
+.sbdept-dept:focus-visible .sbdept-num,
+.sbdept-dept.is-active .sbdept-num { opacity: 1; }
+
+/* The brass line under the selected department, drawn along the join
+   between the picture and the label. */
+.sbdept-dept::after {
+  content: "";
+  grid-row: 2;
+  grid-column: 1;
+  align-self: start;
+  height: 2px;
+  background: var(--sbdept-brass);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 200ms ease;
+}
+.sbdept-dept:hover::after,
+.sbdept-dept:focus-visible::after,
+.sbdept-dept.is-active::after { transform: scaleX(1); }
+
+/* Everything else steps back. :has() carries this with no script at all;
+   the data-active attribute covers the same ground where :has() is
+   missing, and either way the section still works with neither. */
+.sbdept-grid:has(.sbdept-dept:hover) .sbdept-dept:not(:hover) .sbdept-wash,
+.sbdept-grid:has(.sbdept-dept:focus-visible) .sbdept-dept:not(:focus-visible) .sbdept-wash,
+.sbdept-grid[data-active] .sbdept-dept:not(.is-active) .sbdept-wash {
+  background: rgb(8 8 7 / 0.34);
+}
+
+.sbdept-dept:focus-visible {
+  outline: 2px solid var(--sbdept-brass);
+  outline-offset: -2px;
+}
+
+/* --- below 1024px: the same six links, as a grid ------------------------ */
+/* Each link keeps its own sixth of the same file as a background window,
+   so the cards stay crops of one photograph rather than six pictures. The
+   <img> stays in the document, read but not shown, so the scene still has
+   exactly one description.
+
+   This was a horizontal snap scroller. It showed one department at a time
+   and hid the other five behind a swipe, which is a poor trade on a page
+   whose whole point is that the six work together.
+
+   CSS Grid, not inline-block: inline-block siblings inherit the
+   whitespace between their tags, so two 50% cards do not fit on one row
+   and the last one drops. Grid has no such problem and the 1px gap over a
+   rule-coloured background draws the hairlines between cards for free. */
+@media (max-width: 1023px) {
+
+  .sbdept-photo {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .sbdept-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;                          /* the hairline between cards */
+    background: var(--sbdept-rule);
+    overflow: visible;
+  }
+
+  .sbdept-dept {
+    display: block;
+    min-width: 0;                      /* long labels must not widen a track */
+    max-width: none;
+    border-left: 0;
+    background: var(--sbdept-ink);     /* so only the 1px gap shows the rule */
+  }
+
+  .sbdept-window {
+    aspect-ratio: 1 / 1;
+    background-repeat: no-repeat;
+    /* Six panels wide, so each one is positioned on its own sixth: at
+       600% the browser's percentage positioning lands 0%, 20% ... 100%
+       exactly on the six slice boundaries. */
+    background-size: 600% auto;
+    background-position: calc(var(--sbdept-i) * 20%) center;
+    background-image: url("/static/img/departments-1200.jpg");
+    background-image: image-set(
+      url("/static/img/departments-1200.avif") type("image/avif"),
+      url("/static/img/departments-1200.webp") type("image/webp"),
+      url("/static/img/departments-1200.jpg") type("image/jpeg"));
+  }
+
+  .sbdept-body { padding: 13px 13px 15px; }
+  .sbdept-desc { margin-top: 8px; }
+
+  .sbdept-dept::after { display: none; }
+  .sbdept-dept:hover .sbdept-wash { opacity: 1; }
+}
+
+/* Wider phones and tablets take a third column; the window can afford to
+   be taller again once each card is not half a small screen. */
+@media (min-width: 620px) and (max-width: 1023px) {
+  .sbdept-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sbdept-window { aspect-ratio: 3 / 4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sbdept-wash, .sbdept-desc, .sbdept-num, .sbdept-dept::after {
+    transition: none;
+  }
+  .sbdept-grid { scroll-behavior: auto; }
+}

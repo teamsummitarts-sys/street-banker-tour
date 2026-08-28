@@ -1,0 +1,32 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Share links - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Share links</p><h1 class="to-h1" style="font-size:20px">Give outsiders exactly one thing</h1><p class="to-sub">A day sheet for the local crew, a check-in list for the door, a driver sheet, a production pack. Each link is one scope; most are one show. Optional password and expiry; revoke any time. The one exception is the band itinerary, which is the whole run on purpose — and still carries no money, no room list and no phone numbers.</p></div></div>
+
+<form method="post" action="/tours/{{ tour['id'] }}/share/new" class="to-form">
+  <div class="to-grid">
+    <label class="to-field"><span>What</span><select name="scope">{% for s in vocab['share_scopes'] %}<option value="{{ s }}">{{ scope_labels[s] }}</option>{% endfor %}</select></label>
+    <label class="to-field"><span>Show</span><select name="show_id">{% for s in shows %}<option value="{{ s['id'] }}">{{ s['date'] }} {{ s['city'] or s['venue'] }}</option>{% endfor %}</select></label>
+    <label class="to-field"><span>Hotel (rooming list only)</span><select name="lodging_id"><option value="">—</option>{% for l in lodging if lodging is defined %}<option value="{{ l['id'] }}">{{ l['property'] }} · {{ l['checkin'] }}</option>{% endfor %}</select></label>
+    {{ m.field('password', 'Password (optional)', type='text') }}
+    {{ m.field('expires', 'Expires (optional)', type='date') }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Create link</button></div>
+</form>
+
+{% if links %}
+<h2 class="to-h2">Active and past links</h2>
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Scope</th><th>Show</th><th>Link</th><th>Opens</th><th>State</th><th></th></tr></thead>
+  <tbody>{% for l in links %}<tr>
+    <td data-k="Scope">{{ scope_labels[l['scope']] if l['scope'] in scope_labels else l['scope'] }}</td>
+    <td data-k="Show">{% if l['show_id'] in show_by_id %}{{ show_by_id[l['show_id']]['date'] }} {{ show_by_id[l['show_id']]['city'] or show_by_id[l['show_id']]['venue'] }}{% else %}—{% endif %}</td>
+    <td data-k="Link">{% if not l['revoked'] and not l['expired'] %}<input class="to-input" readonly value="{{ l['url'] }}" onclick="this.select()" style="min-height:32px;padding:4px 8px;font-size:12px">{% else %}<span class="to-muted">—</span>{% endif %}{% if l['password_hash'] %}<div class="to-muted">password set</div>{% endif %}{% if l['expires'] %}<div class="to-muted">expires {{ l['expires'] }}</div>{% endif %}</td>
+    <td data-k="Opens">{{ l['access_count'] }}{% if l['last_access'] %}<div class="to-muted">{{ l['last_access'][:10] }}</div>{% endif %}</td>
+    <td data-k="State">{% if l['revoked'] %}<span class="to-chip to-chip--warn">revoked</span>{% elif l['expired'] %}<span class="to-chip">expired</span>{% else %}<span class="to-chip to-chip--ok">live</span>{% endif %}</td>
+    <td>{% if not l['revoked'] %}<form method="post" action="/tours/{{ tour['id'] }}/share/{{ l['id'] }}/revoke"><button class="to-btn to-btn--ghost to-btn--small to-btn--danger" type="submit">Revoke</button></form>{% endif %}</td>
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% endblock %}

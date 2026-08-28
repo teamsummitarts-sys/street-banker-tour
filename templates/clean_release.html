@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Clean Release Checklist - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker · Clean Release</div>
+      <h1 class="sb-h1 mt-1">Clean Release Checklist</h1>
+      <p class="mt-1 max-w-2xl text-sm text-gray-300">Rights-clean, metadata-clean, promo-ready, royalty-ready — checked against your real campaign, catalog, rollout, and press kit before the release ships.</p>
+    </div>
+    <a href="/command-center" class="sb-btn sb-btn-secondary">← Command Center</a>
+  </div>
+
+  {% if c and cat_nodes %}
+  <!-- The checklist grouped into the real release path; hover a node to
+       light up its checks below -->
+  <div class="flex flex-wrap items-center gap-1 rounded-2xl border border-white/10 bg-sb-surface-1 px-4 py-3">
+    {% for n in cat_nodes %}
+    <button type="button" data-cats="{{ n.cat_keys }}" class="cat-node flex items-center gap-2 rounded-xl border px-3 py-2 transition-colors
+      {{ 'border-sb-gold/60 bg-sb-gold/10' if n.done == n.total and n.total else 'border-amber-500/40' if n.done else 'border-white/10' }}">
+      <span class="text-sm font-black tabular-nums {{ 'text-sb-gold-bright' if n.done == n.total and n.total else 'text-amber-400' if n.done else 'text-gray-300' }}">{{ n.done }}/{{ n.total }}</span>
+      <span class="text-xs font-bold uppercase tracking-wide {{ 'text-gray-200' if n.done else 'text-gray-300' }}">{{ n.label }}</span>
+    </button>
+    {% if not loop.last %}<span class="{{ 'text-sb-gold' if n.done == n.total and n.total else 'text-gray-300' }}">→</span>{% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% include "_release_checks.html" %}
+
+  {% if resolves %}
+  <!-- Passport pull: real values from your own Track Passports, applied on click -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-5">
+    <h2 class="sb-label text-sb-gold-bright">Resolve from Track Passport</h2>
+    <p class="mt-1 text-xs text-gray-300 font-medium">These fields already live in a matching Track Passport but are blank on the catalog record the checklist reads. One click copies them over — the values shown are exactly what will be written.</p>
+    <div class="mt-3 space-y-2">
+      {% for r in resolves %}
+      <div class="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+        <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ r.title }}</span>
+        <div class="flex min-w-0 flex-wrap gap-2">
+          {% for f in r.fields %}
+          <span class="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium"><span class="text-gray-300">{{ f.label }}:</span> <span class="font-bold text-gray-200">{{ f.value }}</span></span>
+          {% endfor %}
+        </div>
+        <form method="post" action="/clean-release/resolve" class="shrink-0">
+          <input type="hidden" name="catalog_id" value="{{ r.catalog_id }}">
+          <button class="sb-btn sb-btn-secondary sb-btn-sm">Pull into catalog</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <p class="text-xs text-gray-300 font-medium">Checks derive live from your campaign, catalog metadata, rollout, and EPK. Split confirmations, PRO/MLC registration, and Content ID checks arrive with the Deal Room and Metadata Passport modules.</p>
+</div>
+
+<div class="mx-auto mt-5 max-w-[1100px]">
+  <section class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-5">
+    <div class="flex items-center justify-between">
+      <h2 class="sb-label text-sb-gold-bright">Track Passports · Clean Release</h2>
+      <a href="/tracks" class="text-xs font-bold text-sb-gold-bright hover:underline">Open Track Passports →</a>
+    </div>
+    {% if os_rows %}
+    <div class="mt-3 space-y-2">
+      {% for r in os_rows %}
+      <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3 hover:border-sb-gold/40">
+        <a href="/tracks/{{ r.t.id }}" class="min-w-0 flex-1 truncate text-sm font-bold hover:text-sb-gold-bright">{{ r.t.title }}</a>
+        <span class="text-sm font-black tabular-nums {{ 'text-red-400' if r.clean.blocked else 'text-sb-gold-bright' }}">{{ r.clean.score }}</span>
+        {% if r.clean.blocked %}<span class="rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-1 text-xs font-bold uppercase text-red-400">Blocked</span>
+        {% elif r.clean.score == 100 %}<a href="/tracks/{{ r.t.id }}/certificate" class="sb-btn sb-btn-secondary sb-btn-sm">Certificate →</a>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="mt-3 text-sm text-gray-300">No tracks in the OS spine yet — add one in Track Passports and its Clean Release score computes from the passport and lockbox.</p>
+    {% endif %}
+    <p class="mt-3 text-xs text-gray-300 font-medium">A certificate unlocks at a clean 100 — it's a timestamped record of what these checks verified, not a legal document.</p>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Hovering a category node lights up its checklist rows
+  document.querySelectorAll(".cat-node").forEach((node) => {
+    const cats = node.dataset.cats.split(" ");
+    const rows = [...document.querySelectorAll(".check-row")]
+      .filter((r) => cats.includes(r.dataset.cat));
+    node.addEventListener("mouseenter", () => rows.forEach((r) =>
+      r.classList.add("border-sb-gold", "bg-sb-gold/5")));
+    node.addEventListener("mouseleave", () => rows.forEach((r) =>
+      r.classList.remove("border-sb-gold", "bg-sb-gold/5")));
+    node.addEventListener("click", () => rows[0] &&
+      rows[0].scrollIntoView({behavior: "smooth", block: "center"}));
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Statements - Royalty Sweep{% endblock %}
+
+{% set a = analysis %}
+
+{% block content %}
+<div class="mx-auto max-w-[1200px] space-y-5">
+  <div>
+    <h1 class="sb-h1">Statements</h1>
+    <p class="mt-1 text-sm text-gray-300">Upload your distributor / PRO / MLC statement CSVs — we run real recovery analysis on your actual numbers.</p>
+  </div>
+
+  <!-- Upload -->
+  <section class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">Upload a Statement</h2>
+    <p class="mt-1 text-sm text-gray-300">CSV exports from Symphonic, DistroKid, TuneCore, ASCAP, BMI, The MLC, and most services work — we auto-detect the columns.</p>
+    {% if error %}
+    <div class="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-400">{{ error }}</div>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data" class="mt-4 flex flex-wrap items-center gap-3">
+      <input type="file" name="statement" accept=".csv,text/csv"
+             class="text-xs text-gray-300 file:mr-3 file:rounded-md file:border file:border-amber-500/30 file:bg-amber-500/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-amber-400 hover:file:bg-amber-500/20 file:border-solid file:cursor-pointer">
+      <button type="submit" class="sb-btn sb-btn-secondary">Upload &amp; Analyze</button>
+    </form>
+    {% if drop_box %}
+    <div class="mt-4 rounded-xl border border-sb-gold/30 bg-sb-gold/[0.06] p-4">
+      <div class="sb-label text-sb-gold-bright">Your statement drop-box</div>
+      <p class="mt-1 text-xs text-gray-300">Forward statement emails (or set an auto-forward rule for your distributor's emails) to this address — CSV attachments parse into your account automatically:</p>
+      <div class="mt-2 flex flex-wrap items-center gap-2">
+        <code id="drop-box-addr" class="rounded-lg bg-black/40 px-3 py-2 text-xs font-bold text-sb-gold-bright">{{ drop_box }}</code>
+        <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('drop-box-addr').textContent); this.textContent='Copied ✓'; setTimeout(() => this.textContent='Copy', 1500);" class="rounded-lg border border-white/15 px-3 py-2 text-xs font-bold text-gray-200 hover:bg-white/10">Copy</button>
+        <button type="button" id="dropbox-test-btn" class="sb-btn sb-btn-secondary sb-btn-sm">Send test statement</button>
+      </div>
+      <p id="dropbox-test-msg" class="mt-2 hidden text-xs font-medium"></p>
+      <script>
+        document.getElementById("dropbox-test-btn").addEventListener("click", async (e) => {
+          e.target.disabled = true;
+          const msg = document.getElementById("dropbox-test-msg");
+          const res = await fetch("/statements/dropbox-test", { method: "POST" });
+          const data = await res.json();
+          msg.classList.remove("hidden");
+          if (data.ok) {
+            msg.className = "mt-2 text-xs text-green-400";
+            msg.textContent = "Test statement emailed to your drop-box — it should appear under uploads within a minute. Refresh to check.";
+          } else {
+            msg.className = "mt-2 text-xs text-red-400";
+            msg.textContent = data.error || "Could not send.";
+            e.target.disabled = false;
+          }
+        });
+      </script>
+    </div>
+    {% endif %}
+    {% if uploads %}
+    <div class="mt-4 flex flex-wrap gap-2">
+      {% for u in uploads %}
+      <span class="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-gray-300 font-medium">{{ u.filename }} · {{ u.row_count }} rows · ${{ "{:,.2f}".format(u.total) }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  {% if a %}
+  <!-- Real findings -->
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Reported Earnings</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-green-400">${{ "{:,.2f}".format(a.total) }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">{{ "{:,}".format(a.row_count) }} rows · {{ a.source_count }} sources</div>
+    </div>
+    <div class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Coverage Gaps (est.)</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-sb-ink">${{ "{:,.2f}".format(a.gap_estimate_total) }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">{{ a.coverage_gaps | length }} tracks missing sources</div>
+    </div>
+    <div class="rounded-2xl border {{ 'border-red-500/20' if a.unmatched_revenue > 0 else 'border-white/5' }} bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Unmatched Revenue</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums {{ 'text-red-400' if a.unmatched_revenue > 0 else 'text-gray-300' }}">${{ "{:,.2f}".format(a.unmatched_revenue) }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">Rows with no track title</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Periods Covered</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ a.period_count }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium"><a href="/reports/royalty-report/download.csv" class="font-semibold text-amber-400 hover:underline">Download CSV ↓</a></div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <!-- By source -->
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Earnings by Source</h2>
+      <div class="mt-4 space-y-3">
+        {% set max_src = a.by_source[0].amount if a.by_source else 1 %}
+        {% for s in a.by_source %}
+        <div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="truncate text-gray-200">{{ s.source }}</span>
+            <span class="ml-2 shrink-0 font-semibold sb-num text-gray-100">${{ "{:,.2f}".format(s.amount) }}</span>
+          </div>
+          <div class="mt-1 h-1.5 rounded-full bg-white/5"><div class="h-1.5 rounded-full bg-sb-gold" style="width: {{ (s.amount / max_src * 100) if max_src else 0 }}%;"></div></div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Top tracks -->
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Top Tracks</h2>
+      <div class="mt-3 space-y-2">
+        {% for t in a.by_track %}
+        <div class="flex items-center gap-3 rounded-lg border border-white/5 bg-white/5 px-3 py-2">
+          <span class="w-5 shrink-0 text-center text-xs font-bold text-gray-300">{{ loop.index }}</span>
+          <span class="min-w-0 flex-1 truncate text-sm {{ 'italic text-gray-300' if t.title == '(no title)' else 'font-semibold text-gray-100' }}">{{ t.title }}</span>
+          <span class="shrink-0 text-xs text-gray-300 font-medium">{{ t.sources }} source{{ '' if t.sources == 1 else 's' }}</span>
+          <span class="shrink-0 text-sm font-bold sb-num text-sb-ink">${{ "{:,.2f}".format(t.amount) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <!-- Coverage gaps -->
+  <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">Coverage Gaps — Money Likely Missing</h2>
+    <p class="mt-1 text-sm text-gray-300">Tracks earning on some sources but absent from others in your own data. Estimates use each track's average per-source earnings.</p>
+    <div class="mt-4 space-y-2">
+      {% for g in a.coverage_gaps %}
+      <div class="flex flex-wrap items-center gap-3 rounded-lg border border-white/5 bg-white/5 px-3 py-2.5">
+        <span class="min-w-0 flex-1">
+          <span class="block truncate text-sm font-semibold text-gray-100">{{ g.title }}</span>
+          <span class="block text-xs text-gray-300 font-medium">Missing from: {{ g.missing_sources | join(', ') }}</span>
+        </span>
+        <span class="shrink-0 text-sm font-bold sb-num text-sb-ink">~${{ "{:,.2f}".format(g.estimated_value) }}</span>
+      </div>
+      {% endfor %}
+      {% if not a.coverage_gaps %}
+      <div class="rounded-xl border border-dashed border-white/10 py-6 text-center text-xs text-gray-300">No cross-source gaps detected in this data — clean coverage.</div>
+      {% endif %}
+    </div>
+    <p class="mt-3 text-xs text-gray-300 font-medium">Totals, sources, tracks, and unmatched revenue are computed directly from your uploads. Gap values are estimates for prioritization, not guarantees.</p>
+  </section>
+  {% else %}
+  <section class="rounded-2xl border border-dashed border-white/10 py-14 text-center">
+    <div class="text-sm font-semibold text-gray-200">No statements yet</div>
+    <p class="mx-auto mt-1 max-w-md text-xs text-gray-300">Upload your first CSV above. Export one from your distributor or PRO dashboard — Symphonic, ASCAP, BMI, and The MLC all offer CSV statements.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

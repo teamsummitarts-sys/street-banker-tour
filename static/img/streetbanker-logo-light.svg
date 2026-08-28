@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 250" role="img" aria-label=".street banker">
+  <!-- Light lockup for the near-black public header. Geometry, bracket
+       coordinates, wordmark, the period before "street", the stroke width
+       and the letter-spacing are copied from streetbanker-logo-dark.svg
+       unchanged - only the colour differs, and it is warm ivory rather
+       than pure white so it sits with the brass instead of fighting it.
+       The dark and white lockups are untouched. -->
+  <g stroke="#F2EEE6" stroke-width="18" fill="none">
+    <path d="M13 72 V13 H72"/>
+    <path d="M848 13 H907 V72"/>
+    <path d="M13 178 V237 H72"/>
+    <path d="M907 178 V237 H848"/>
+  </g>
+  <text x="460" y="158" text-anchor="middle"
+        font-family="'Segoe UI','Helvetica Neue',Helvetica,Arial,sans-serif"
+        font-size="104" font-weight="800" letter-spacing="-2"
+        fill="#F2EEE6">.street banker</text>
+</svg>

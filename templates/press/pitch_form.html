@@ -1,0 +1,91 @@
+{% set tab = 'releases' %}
+{% extends "press/_shell.html" %}
+{% block title %}Start a pitch - Press Desk{% endblock %}
+{% block press %}
+
+<div class="pd-head">
+  <div>
+    <p class="pd-eyebrow">Pitch</p>
+    <h1 class="pd-h1">Send one announcement to a chosen few</h1>
+    <p class="pd-sub">Every contact gets their own message and their own link, so an open belongs to an outlet. Contacts marked do not contact or bounced are left out even if they are ticked — that is enforced when the pitch is built, not here.</p>
+  </div>
+</div>
+
+{% if error %}<div class="pd-note pd-note--warn"><strong>{{ error }}</strong></div>{% endif %}
+
+{% if not releases %}
+<div class="pd-empty">
+  You need an announcement first.
+  <a href="/press-desk/announcements/new" style="color:var(--pd-amber)">Write one</a>.
+</div>
+{% elif not contacts %}
+<div class="pd-empty">
+  Your media list is empty.
+  <a href="/press-desk/contacts/new" style="color:var(--pd-amber)">Add a contact</a>
+  or <a href="/press-desk/contacts/import" style="color:var(--pd-amber)">import a CSV</a>.
+</div>
+{% else %}
+<form method="post" class="pd-form" action="/press-desk/pitch/new">
+
+  <div class="pd-grid">
+    <label class="pd-field" style="grid-column:1/-1"><span>Announcement</span>
+      <select name="release_id" required>
+        {% for r in releases %}<option value="{{ r.id }}">{{ r.headline or r.title }}</option>{% endfor %}
+      </select></label>
+    <label class="pd-field" style="grid-column:1/-1"><span>Subject line</span>
+      <input name="subject" value="{{ default_subject }}"></label>
+    <label class="pd-field" style="grid-column:1/-1"><span>Message</span>
+      <textarea name="body" rows="12">{{ default_body }}</textarea></label>
+  </div>
+
+  <p class="pd-sub" style="margin-top:10px">
+    These fill themselves in per contact:
+    {% for token, meaning in vocab.placeholders %}<code>{{ token }}</code> {{ meaning }}{{ ' · ' if not loop.last }}{% endfor %}.
+    Anything else in braces is left as you typed it.
+  </p>
+
+  <h2 class="pd-h2">How it goes out</h2>
+  <div class="pd-checks">
+    <label>
+      <input type="radio" name="mode" value="own_inbox" checked>
+      <span>
+        <span class="pd-who">From your own inbox</span>
+        <span class="pd-muted">The desk writes each message and hands it to you to send. The journalist sees your real address, and replies come straight back to you.</span>
+      </span>
+    </label>
+    <label {{ 'style=opacity:0.55' if not send_state.platform }}>
+      <input type="radio" name="mode" value="platform" {{ 'disabled' if not send_state.platform }}>
+      <span>
+        <span class="pd-who">From Street Banker{{ ' — unavailable' if not send_state.platform }}</span>
+        <span class="pd-muted">{% if send_state.platform %}One email per contact, sent from here.{% else %}{{ send_state.reason }} {{ send_state.detail }}{% endif %}</span>
+      </span>
+    </label>
+  </div>
+
+  <h2 class="pd-h2">Who it goes to</h2>
+  <p class="pd-sub" style="margin-bottom:10px">Up to {{ vocab.max_recipients }} per pitch. That is a brake, not a technical limit — a press list worth having is small and chosen.</p>
+  <div class="pd-checks">
+    {% for c in contacts %}
+    <label {{ 'style=opacity:0.5' if c.status != 'active' or not c.email }}>
+      <input type="checkbox" name="contact_ids" value="{{ c.id }}"
+             {{ 'disabled' if c.status != 'active' or not c.email }}>
+      <span>
+        <span class="pd-who">{{ c.name }}{% if c.outlet %} — {{ c.outlet }}{% endif %}</span>
+        <span class="pd-muted">
+          {{ c.role }}{% if c.beat %} · {{ c.beat }}{% endif %}
+          {% if not c.email %} · no email on file{% endif %}
+          {% if c.status != 'active' %} · {{ vocab.status_labels[c.status] }}{% endif %}
+        </span>
+      </span>
+    </label>
+    {% endfor %}
+  </div>
+
+  <div style="margin-top:18px" class="pd-inline">
+    <button class="pd-btn" type="submit">Prepare the messages</button>
+    <a class="pd-btn pd-btn--ghost" href="/press-desk">Cancel</a>
+  </div>
+  <p class="pd-sub" style="margin-top:8px">Nothing is sent by this button. It writes the messages so you can read them first.</p>
+</form>
+{% endif %}
+{% endblock %}

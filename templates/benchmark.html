@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Benchmark - Royalty Sweep{% endblock %}
+
+{% set bm = benchmark %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div>
+    <h1 class="sb-h1">Benchmark</h1>
+    <p class="mt-1 text-sm text-gray-300">How your catalog compares to similar-stage artists — peer group: {{ bm.summary.peer_group }}.</p>
+  </div>
+
+  <div class="grid grid-cols-3 gap-3">
+    <div class="rounded-2xl border border-green-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Ahead of Peers</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-green-400">{{ bm.summary.ahead }}/{{ bm.summary.metrics }}</div>
+    </div>
+    <div class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Behind Peers</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-sb-ink">{{ bm.summary.behind }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Metrics</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ bm.summary.metrics }}</div>
+    </div>
+  </div>
+
+  <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">You vs Peer Average</h2>
+    <div class="mt-4 space-y-4">
+      {% for m in bm.metrics %}
+      {% set you_fmt = ("${:,.2f}".format(m.you) if m.fmt == 'money' else "{:,}".format(m.you)) %}
+      {% set peer_fmt = ("${:,.2f}".format(m.peer) if m.fmt == 'money' else "{:,}".format(m.peer)) %}
+      {% set ratio = (m.you / (m.you + m.peer) * 100) if (m.you + m.peer) else 50 %}
+      <div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="font-semibold text-gray-100">{{ m.label }}</span>
+          <span class="rounded-full border px-2 py-0.5 text-xs font-semibold {{ 'border-green-500/20 bg-green-500/10 text-green-400' if m.ahead else 'border-amber-500/20 bg-amber-500/10 text-amber-400' }}">
+            {{ '+' if m.diff_pct >= 0 else '' }}{{ m.diff_pct }}% vs peers
+          </span>
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <div class="h-2.5 flex-1 overflow-hidden rounded-full bg-white/5">
+            <div class="h-2.5 rounded-full {{ 'bg-green-500' if m.ahead else 'bg-amber-500' }}" style="width: {{ ratio }}%;"></div>
+          </div>
+        </div>
+        <div class="mt-1 flex justify-between text-xs font-medium">
+          <span class="text-gray-200">You: <span class="font-semibold">{{ you_fmt }}</span></span>
+          <span class="text-gray-300">Peer avg: {{ peer_fmt }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="mt-4 text-xs text-gray-300 font-medium">Your metrics are from your catalog. Peer averages are illustrative reference points for a similar-stage artist — real peer comparisons unlock when an external data feed (Chartmetric) is connected.</p>
+  </section>
+
+  <!-- Close the gap with real tools, not sample numbers -->
+  <div class="grid gap-3 sm:grid-cols-2">
+    <a href="/money-queue" class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-4 transition-colors hover:border-sb-gold/60">
+      <div class="sb-label text-sb-gold-bright">Close the earnings gap →</div>
+      <p class="mt-1 text-xs text-gray-300">The real audit of missing mechanicals, neighboring rights, and unclaimed lanes lives in the Money Queue — built from your own statements, not peer averages.</p>
+    </a>
+    <a href="/valuation" class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-4 transition-colors hover:border-sb-gold/60">
+      <div class="sb-label text-sb-gold-bright">Your real catalog value →</div>
+      <p class="mt-1 text-xs text-gray-300">The Valuation desk computes value from your actual statement history and shows the multiple it applies — the number you'd defend in a deal.</p>
+    </a>
+  </div>
+</div>
+{% endblock %}

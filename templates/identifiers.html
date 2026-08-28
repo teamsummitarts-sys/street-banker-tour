@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Identifiers - Royalty Sweep{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1400px] space-y-5">
+
+  {% if ids_user and real_ids %}
+  <section class="rounded-2xl border border-sb-gold/40 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="sb-label text-sb-gold-bright">Your Identifiers <span class="ml-2 rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-400">REAL — auto-pulled from your catalog</span></h2>
+      <span class="text-xs sb-num text-gray-300 font-medium">{{ ids_with_isrc }}/{{ real_ids | length }} ISRC · {{ ids_with_upc }}/{{ real_ids | length }} UPC</span>
+    </div>
+    <div class="mt-3 overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead><tr class="border-b border-white/5 text-xs uppercase tracking-wide text-gray-300 font-medium">
+          <th class="py-2 pr-4 font-medium">Track</th><th class="py-2 pr-4 font-medium">ISRC</th>
+          <th class="py-2 pr-4 font-medium">UPC</th><th class="py-2 pr-4 font-medium">Label</th>
+          <th class="py-2 font-medium">Release</th></tr></thead>
+        <tbody>
+          {% for r in real_ids %}
+          <tr class="border-b border-white/5 last:border-0">
+            <td class="py-2 pr-4 font-semibold text-gray-100">{{ r.title }}<span class="ml-1 text-gray-300">{{ r.artist }}</span></td>
+            <td class="py-2 pr-4 tabular-nums {{ 'text-gray-200' if r.isrc else 'font-bold text-red-400/80' }}">{{ r.isrc or 'MISSING' }}</td>
+            <td class="py-2 pr-4 tabular-nums {{ 'text-gray-200' if r.upc else 'text-gray-300' }}">{{ r.upc or '—' }}</td>
+            <td class="py-2 pr-4 text-gray-300">{{ r.label or '—' }}</td>
+            <td class="py-2 sb-num text-gray-300">{{ r.release_date or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if ids_with_isrc < real_ids | length %}
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      <span class="text-xs text-amber-400 font-medium">{{ real_ids | length - ids_with_isrc }} track(s) missing an ISRC — royalties leak without identifiers.</span>
+      <form method="post" action="/actions/from-alert">
+        <input type="hidden" name="title" value="Resolve {{ real_ids | length - ids_with_isrc }} missing ISRC(s) in catalog">
+        <input type="hidden" name="description" value="Tracks without ISRCs cannot be matched to royalties. Check with the distributor or re-run metadata lookup.">
+        <input type="hidden" name="category" value="metadata">
+        <button class="sb-btn sb-btn-secondary sb-btn-sm">Create action</button>
+      </form>
+    </div>
+    {% endif %}
+  </section>
+  {% elif ids_user %}
+  <div class="rounded-xl border border-dashed border-sb-gold/25 px-4 py-3 text-xs text-gray-300">
+    <span class="font-bold text-sb-gold-bright">No catalog tracks yet.</span>
+    Add tracks from <a href="/discover" class="font-semibold text-sb-gold-bright underline">Discover</a> and identifiers auto-pull. Sample data below.
+  </div>
+  {% endif %}
+
+  <div>
+    <h1 class="sb-h1">Identifiers</h1>
+    <p class="mt-1 text-sm text-gray-300">ISRC, UPC, and ISWC codes are how societies match plays to money. Missing codes mean uncollected royalties.</p>
+  </div>
+
+  {% set missing_isrc = songs_summary | selectattr('song.isrc', 'none') | list | length %}
+  {% set missing_iswc = songs_summary | selectattr('song.iswc', 'none') | list | length %}
+  {% set missing_upc = songs_summary | selectattr('song.upc', 'none') | list | length %}
+
+  <div class="grid grid-cols-3 gap-3">
+    <div class="rounded-2xl border {{ 'border-red-500/20' if missing_isrc else 'border-white/5' }} bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">ISRC (recordings)</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums {{ 'text-red-400' if missing_isrc else 'text-green-400' }}">{{ (songs_summary|length) - missing_isrc }}/{{ songs_summary|length }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">{{ missing_isrc }} missing</div>
+    </div>
+    <div class="rounded-2xl border {{ 'border-red-500/20' if missing_iswc else 'border-white/5' }} bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">ISWC (works)</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums {{ 'text-red-400' if missing_iswc else 'text-green-400' }}">{{ (songs_summary|length) - missing_iswc }}/{{ songs_summary|length }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">{{ missing_iswc }} missing</div>
+    </div>
+    <div class="rounded-2xl border {{ 'border-red-500/20' if missing_upc else 'border-white/5' }} bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">UPC (releases)</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums {{ 'text-red-400' if missing_upc else 'text-green-400' }}">{{ (songs_summary|length) - missing_upc }}/{{ songs_summary|length }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">{{ missing_upc }} missing</div>
+    </div>
+  </div>
+
+  <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">Codes by Song</h2>
+    <div class="mt-4 overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b border-white/5 text-xs uppercase tracking-wide text-gray-300 font-medium">
+            <th class="py-2 pr-4 font-medium">Song</th>
+            <th class="py-2 pr-4 font-medium">ISRC</th>
+            <th class="py-2 pr-4 font-medium">ISWC</th>
+            <th class="py-2 pr-4 font-medium">UPC</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in songs_summary %}
+          {% set s = row.song %}
+          <tr class="border-b border-white/5 last:border-0">
+            <td class="py-3 pr-4 font-semibold text-gray-100">{{ s.title }}</td>
+            {% for code in [s.isrc, s.iswc, s.upc] %}
+            <td class="py-3 pr-4">
+              {% if code %}
+              <span class="font-mono text-xs text-gray-200 font-medium">{{ code }}</span>
+              {% else %}
+              <span class="rounded-full border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-400">Missing</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-3 text-xs text-gray-300 font-medium">ISRC identifies a recording, ISWC a composition, UPC a release. Registrations use these to route royalties to you.</p>
+  </section>
+</div>
+{% endblock %}

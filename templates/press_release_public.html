@@ -1,0 +1,85 @@
+{# The page a journalist opens.
+
+   Standalone: no app chrome, no sidebar, no account. Somebody who was
+   sent a link should be able to read the thing and get at the audio
+   without meeting a password field.
+
+   The URL carries a per-recipient token, which is how an open is
+   attributed to an outlet. Nothing on this page says so, and nothing
+   here identifies the reader to anyone but the artist who wrote to
+   them. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "_fonts.html" %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ release.headline or release.title }}</title>
+  {# Not indexed: an embargoed announcement turning up in a search result
+     would defeat the embargo, and a press link is for the person it was
+     sent to. #}
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  <link rel="stylesheet" href="/static/css/press-desk.css?v=2">
+</head>
+<body class="pdp-body">
+<div class="pdp">
+
+  <div class="pdp-brand">Press announcement</div>
+
+  {% if embargoed %}
+  <div class="pdp-embargo">
+    <strong>Embargoed until {{ release.embargo_until }}.</strong>
+    Please hold this until then. Everything below is final.
+  </div>
+  {% endif %}
+
+  <div class="pd-paper">
+    <span class="pd-paper-tag">{{ release.kind }}</span>
+    <h3>{{ release.headline or release.title }}</h3>
+    {% if release.subhead %}<p class="pd-paper-sub">{{ release.subhead }}</p>{% endif %}
+    {% if release.dateline %}<p class="pd-paper-meta">{{ release.dateline }}</p>{% endif %}
+    <hr>
+
+    {% for para in (release.body or '').split('\n\n') %}
+      {% if para.strip() %}<p>{{ para.strip() }}</p>{% endif %}
+    {% endfor %}
+
+    {% if release.quote %}
+    <blockquote>“{{ release.quote }}”
+      {% if release.quote_source %}<br><span class="pd-paper-meta">— {{ release.quote_source }}</span>{% endif %}
+    </blockquote>
+    {% endif %}
+
+    {% if release.release_date %}
+    <p class="pd-paper-meta">Release date: {{ release.release_date }}</p>
+    {% endif %}
+
+    {% if release.boilerplate %}<hr><p class="pd-paper-meta">{{ release.boilerplate }}</p>{% endif %}
+
+    {% if release.contact_email %}
+    <p class="pd-paper-meta">
+      Press contact: {{ release.contact_name }}
+      <a href="mailto:{{ release.contact_email }}" style="color:var(--sb-gold-deep)">{{ release.contact_email }}</a>
+    </p>
+    {% endif %}
+  </div>
+
+  {% if release.listen_url or release.epk_url %}
+  <div class="pdp-links">
+    {% if release.listen_url %}
+    <a class="pd-btn" href="{{ release.listen_url }}" target="_blank" rel="noopener noreferrer">Listen</a>
+    {% endif %}
+    {% if release.epk_url %}
+    <a class="pd-btn pd-btn--ghost" href="{{ release.epk_url }}" target="_blank" rel="noopener noreferrer">Press kit, photos and audio</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <p class="pdp-foot">
+    Sent{% if outlet.outlet %} to {{ outlet.outlet }}{% endif %} through Street Banker.
+    Reply to the address above to reach the artist directly.
+  </p>
+</div>
+</body>
+</html>

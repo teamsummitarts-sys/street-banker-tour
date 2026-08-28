@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Sync / Licensing - Royalty Sweep{% endblock %}
+
+{% set sy = sync %}
+
+{% block content %}
+<div class="mx-auto max-w-[1400px] space-y-5">
+  <div>
+    <h1 class="sb-h1">Sync / Licensing</h1>
+    <p class="mt-1 text-sm text-gray-300">License your music into film, TV, ads, games, and trailers — often the single biggest payday for an independent artist.</p>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="rounded-2xl border border-green-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Sync Income</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-green-400">${{ "{:,.0f}".format(sy.summary.sync_income) }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">From live placements</div>
+    </div>
+    <div class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Pipeline Value</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-sb-ink">${{ "{:,.0f}".format(sy.summary.pipeline_value) }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">Pending + negotiating</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Active Placements</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ sy.summary.active_placements }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Open Requests</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ sy.summary.open_requests }}</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Placements</h2>
+      <p class="mt-1 text-sm text-gray-300">Your recordings currently placed or in negotiation.</p>
+      <div class="mt-4 space-y-3">
+        {% for p in sy.placements %}
+        <div class="rounded-xl border border-white/5 bg-white/5 p-4">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div class="text-sm font-semibold text-gray-100">{{ p.project }}</div>
+              <div class="mt-0.5 text-xs text-gray-300 font-medium">"{{ p.song }}" · {{ p.licensee }}</div>
+            </div>
+            <span class="shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold {{ sy.status_tone.get(p.status, '') }}">{{ p.status }}</span>
+          </div>
+          <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-300 font-medium">
+            <span class="rounded-md border border-white/10 px-2 py-0.5">{{ p.media_type }}</span>
+            <span class="rounded-md border border-white/10 px-2 py-0.5">{{ p.territory }}</span>
+            <span class="rounded-md border border-white/10 px-2 py-0.5">{{ p.term }}</span>
+            <span class="ml-auto font-bold text-amber-400">${{ "{:,.0f}".format(p.fee) }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <div class="space-y-5">
+      <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+        <h2 class="sb-label text-gray-300">Incoming Requests</h2>
+        <p class="mt-1 text-sm text-gray-300">Supervisors asking to license your music.</p>
+        <div class="mt-3 space-y-2">
+          {% for r in sy.requests %}
+          <div class="rounded-lg border border-white/5 bg-white/5 px-3 py-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="truncate text-sm font-semibold text-gray-100">{{ r.requester }}</div>
+                <div class="text-xs text-gray-300 font-medium">"{{ r.song }}" · {{ r.media_type }}</div>
+              </div>
+              <span class="shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold {{ sy.status_tone.get(r.status, '') }}">{{ r.status }}</span>
+            </div>
+            <div class="mt-1.5 text-xs font-bold text-amber-400">${{ "{:,.0f}".format(r.offer) }} <span class="font-normal text-gray-300">offered</span></div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+        <h2 class="sb-label text-gray-300">Open Briefs</h2>
+        <p class="mt-1 text-sm text-gray-300">Sync opportunities to pitch for.</p>
+        <div class="mt-3 space-y-2">
+          {% for o in sy.opportunities %}
+          <div class="rounded-lg border border-white/5 bg-white/5 px-3 py-2.5">
+            <p class="text-xs text-gray-200">{{ o.brief }}</p>
+            <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-gray-300 font-medium">
+              <span class="rounded-md border border-white/10 px-2 py-0.5">{{ o.mood }}</span>
+              <span class="font-semibold text-amber-400">{{ o.budget }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      <p class="px-1 text-xs text-gray-300 font-medium">Placements, requests, and briefs are illustrative demo data referencing your real song titles.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

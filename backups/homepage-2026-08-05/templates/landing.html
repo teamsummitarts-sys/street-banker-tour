@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ config.nav.logo.primary | title }} · {{ config.brand }} — The Artist Back Office</title>
+  <meta name="description" content="Distribution, royalty recovery, campaign tools, and catalog intelligence built around artist ownership.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141210'/%3E%3Cpath d='M6 12l5 4 5-7 5 7 5-4v10a1 1 0 01-1 1H7a1 1 0 01-1-1z' fill='none' stroke='%23d8b25a' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#0d0c0a">
+  <link rel="apple-touch-icon" href="/static/img/icon-192.png">
+  <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=22">
+  <link rel="stylesheet" href="/static/css/artist-eq.css?v=12">
+  <link rel="stylesheet" href="/static/css/public-header.css?v=3">
+  <link rel="stylesheet" href="/static/css/hero.css?v=3">
+  <link rel="stylesheet" href="/static/css/departments.css?v=2">
+  <link rel="stylesheet" href="/static/css/artist-twin.css?v=3">
+  <link rel="stylesheet" href="/static/css/lanes.css?v=1">
+  <link rel="stylesheet" href="/static/css/creative-studio.css?v=5">
+  <link rel="stylesheet" href="/static/css/rollout.css?v=5">
+  <link rel="stylesheet" href="/static/css/sweep.css?v=2">
+  <link rel="stylesheet" href="/static/css/distribution.css?v=2">
+  <link rel="stylesheet" href="/static/css/passport.css?v=1">
+  <link rel="stylesheet" href="/static/css/closing.css?v=1">
+  <style>
+    body { font-feature-settings: "ss01"; }
+  </style>
+</head>
+<body class="min-h-screen bg-white text-[#141210] antialiased">
+
+<!-- 1. NAVIGATION -->
+{% include "partials/public_header.html" %}
+
+<main id="main">
+<div class="mx-auto max-w-6xl px-6 lg:px-10">
+
+  <!-- 2. HERO -->
+</div><!-- /reading column: the hero is full-bleed -->
+
+{% set hero = config.hero %}
+{% set img = hero.image %}
+<section class="sbhero" aria-labelledby="sbhero-title">
+  {# One photograph, two crops. The wide frame keeps the room; the tall
+     one keeps the band, because `cover` on a phone would otherwise
+     decide for itself which musician leaves the frame. #}
+  <picture>
+    <source media="(max-width: 1023px)" type="image/avif"
+            srcset="{% for w in img.tall_widths %}{{ img.tall }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+            sizes="100vw">
+    <source media="(max-width: 1023px)" type="image/webp"
+            srcset="{% for w in img.tall_widths %}{{ img.tall }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+            sizes="100vw">
+    <source media="(max-width: 1023px)" type="image/jpeg"
+            srcset="{% for w in img.tall_widths %}{{ img.tall }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+            sizes="100vw">
+    <source type="image/avif"
+            srcset="{% for w in img.wide_widths %}{{ img.wide }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+            sizes="100vw">
+    <source type="image/webp"
+            srcset="{% for w in img.wide_widths %}{{ img.wide }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+            sizes="100vw">
+    <img class="sbhero-photo" src="{{ img.wide }}-1100.jpg"
+         srcset="{% for w in img.wide_widths %}{{ img.wide }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+         sizes="100vw" width="1342" height="775"
+         fetchpriority="high" decoding="async"
+         alt="{{ img.alt }}">
+  </picture>
+  <div class="sbhero-veil" aria-hidden="true"></div>
+
+  <div class="sbhero-inner">
+    <div class="sbhero-copy">
+      <p class="sbhero-eyebrow">{{ hero.eyebrow }}</p>
+      <h1 class="sbhero-title" id="sbhero-title">
+        {% for line in hero.headline %}<span>{{ line }}</span>{% endfor %}
+      </h1>
+      <span class="sbhero-rule" aria-hidden="true"></span>
+      <p class="sbhero-support">{{ hero.support }}</p>
+      <div class="sbhero-ctas">
+        {% for cta in hero.ctas %}
+        <a class="{{ 'sbhero-cta' if cta.variant == 'primary' else 'sbhero-cta-2' }}"
+           href="{{ cta.href }}">{{ cta.label }}
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 10h11M11 6l4 4-4 4"/>
+          </svg>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# A real component, not a picture of one, and not a claim: every
+       figure on it is example data and the card says so. #}
+    <aside class="sbhero-preview" aria-label="Example of the Release Readiness panel">
+      <div class="sbhero-preview-head">
+        <span class="sbhero-preview-title">Release Readiness</span>
+        <span class="sbhero-preview-tag">Example workspace</span>
+      </div>
+      <div class="sbhero-preview-rows">
+        {% set checks = [
+          ('done', 'Metadata Passport complete'),
+          ('done', 'Splits signed by every collaborator'),
+          ('open', 'Rollout scheduled for release week'),
+          ('open', 'Royalty lanes claimed on all sources'),
+        ] %}
+        {% for state, label in checks %}
+        <div class="sbhero-preview-row">
+          {% if state == 'done' %}
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#5DBB7D"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 10.5l4 4 8-9"/>
+          </svg>
+          {% else %}
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#C9A86A"
+               stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <circle cx="10" cy="10" r="7"/><path d="M10 6.5v4"/>
+          </svg>
+          {% endif %}
+          <span>{{ label }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="sbhero-preview-foot">Sample checks from the Clean Release panel. A real account scores this from its own tracks and statements.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 3 and 4 are one dark stretch of page: the EQ console and the six
+     departments both carry their own near-black ground, so they run the
+     full width the way the hero does rather than sitting as dark cards
+     with white margins either side. The reading column resumes below. -->
+
+<!-- 3. THE ARTIST EQ — additive: a six-channel priority console.
+     Everything that moves is coded; nothing here replaces an existing
+     section. -->
+{% include "partials/artist_eq.html" %}
+
+<!-- 4. ONE SYSTEM. SIX DEPARTMENTS. — one photograph, six coded slices.
+     It displaces nothing below it. -->
+{% include "partials/departments.html" %}
+
+<!-- 5. AI ARTIST TWIN — photograph and assessment as two layers that never
+     touch. Additive: it displaces nothing below it. -->
+{% include "partials/artist_twin.html" %}
+
+<span id="platform" class="block" style="scroll-margin-top: 110px;" aria-hidden="true"></span>
+<!-- 6. THE THREE LANES — one unit, three channels. Full width like the
+     three dark bands above it: the hardware is the argument here, and it
+     cannot be the hero object from inside a narrow gutter. -->
+{% include "partials/lanes.html" %}
+
+<!-- 7. CREATIVE STUDIO — a backstage photograph and four words along its
+     bottom edge. Additive: it displaces nothing below it. -->
+{% include "partials/creative_studio.html" %}
+
+<!-- 8. ROLLOUT ENGINE — one photograph the section is made of, with the
+     copy over its darkened right side. Additive: nothing below moves. -->
+{% include "partials/rollout.html" %}
+
+<span id="royalty-sweep" class="block" style="scroll-margin-top: 110px;" aria-hidden="true"></span>
+<!-- 9. ROYALTY SWEEP — header, one archive photograph, five stages, one way
+     in. Full width like the dark run above it: the evidence table is the
+     argument, and it cannot be that from inside a narrow gutter. -->
+{% include "partials/sweep.html" %}
+
+<!-- 10. GLOBAL DISTRIBUTION — how a release is prepared, validated and
+     handed to the distribution partner. Additive: nothing below moves. -->
+{% include "partials/distribution.html" %}
+
+<!-- 11. METADATA PASSPORT + RIGHTS — one release in the middle of a floor
+     blueprint, seven connected records around it. Additive. -->
+{% include "partials/passport.html" %}
+
+<!-- 11.5 TRUST BAND — the promises made across the page, in one place. -->
+{% include "partials/trust_band.html" %}
+
+<!-- 12. CLOSING STATEMENT — the catalog as the asset. Last frame; nothing
+     after it but the footer. -->
+{% include "partials/closing.html" %}
+
+  </main>
+
+  <!-- FOOTER. Dark, because the closing frame above it fades to the same
+       ink: a pale footer would put a hard line under the last photograph.
+       Five columns, every link public. -->
+  {% set f = config.footer %}
+  <footer class="bg-[#080807] text-[#EEE8DC]">
+    <div class="mx-auto max-w-[1600px] px-5 py-14 sm:px-8 lg:px-14 lg:py-20">
+      <div class="grid gap-10 lg:grid-cols-[minmax(0,1.5fr)_repeat(5,minmax(0,1fr))] lg:gap-8">
+        <div>
+          <img src="/static/img/streetbanker-logo-light.svg" alt="{{ f.logo.primary }}" width="920" height="250" class="h-8 w-auto">
+          <div class="mt-2 text-[9px] font-semibold uppercase tracking-[0.24em] text-[#A7A198]">{{ f.logo.secondary }}</div>
+          <p class="mt-4 max-w-xs text-[12.5px] leading-relaxed text-[#A7A198]">{{ f.description }}</p>
+          {% if f.socials %}
+          <div class="mt-5 flex gap-4 text-[11px] font-semibold text-[#A7A198]">
+            {% for s in f.socials %}
+            <a href="{{ s.href }}" target="_blank" rel="noopener" class="-my-2 inline-block py-3.5 transition-colors hover:text-[#C9A86A] sm:my-0 sm:py-0">{{ s.label }}</a>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% for col in f.columns %}
+        <div>
+          <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#C9A86A]">{{ col.title }}</h2>
+          <ul class="mt-4 space-y-2.5">
+            {% for l in col.links %}
+            <li><a href="{{ l.href }}" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">{{ l.label }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-[rgb(238_232_220_/_0.08)] pt-6 text-[11px] text-[#7E786F]">
+        <span>{{ f.copyright }}</span>
+        <span>Your music. Your data. Your decisions.</span>
+      </div>
+    </div>
+  </footer>
+
+<script src="/static/js/artist-eq.js?v=8" defer></script>
+<script src="/static/js/departments.js?v=3" defer></script>
+<script src="/static/js/artist-twin.js?v=2" defer></script>
+<script src="/static/js/lanes.js?v=1" defer></script>
+<script src="/static/js/creative-studio.js?v=1" defer></script>
+<script src="/static/js/rollout.js?v=1" defer></script>
+<script src="/static/js/sweep.js?v=1" defer></script>
+<script src="/static/js/distribution.js?v=1" defer></script>
+<script src="/static/js/passport.js?v=1" defer></script>
+<script src="/static/js/closing.js?v=1" defer></script>
+</body>
+</html>

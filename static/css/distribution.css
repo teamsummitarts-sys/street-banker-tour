@@ -1,0 +1,245 @@
+/* Section 10 — Global Distribution.
+ *
+ * Centred header, one wide bench of release materials, five capabilities,
+ * the workflow, the example package, one closing block. An editorial
+ * spread rather than a grid of cards.
+ */
+
+.sbds {
+  --ds-ink: var(--sb-ground);
+  --ds-raised: var(--sb-surface-1);
+  --ds-brass: var(--sb-gold);
+  --ds-brass-lit: var(--sb-gold-bright);
+  --ds-ivory: var(--sb-ink);
+  --ds-muted: var(--sb-ink-2);
+  --ds-line: rgb(201 168 106 / 0.22);
+
+  background: var(--ds-ink);
+  color: var(--ds-ivory);
+  padding: clamp(52px, 6vw, 88px) 0 clamp(44px, 5vw, 72px);
+}
+
+/* --- header --------------------------------------------------------------- */
+/* The heading sits over the bench now, so it drops the section padding
+   and lets .sbds-over place it. Still centred. */
+.sbds-head {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0;
+  text-align: center;
+}
+
+.sbds-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  font-size: clamp(11px, 0.85vw, 13px);
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ds-brass);
+}
+.sbds-num { font-size: 1.15em; letter-spacing: 0.1em; }
+.sbds-rule { flex: 0 0 26px; height: 1px; background: var(--ds-line); }
+
+.sbds-title {
+  margin: 18px auto 0;
+  max-width: 1100px;
+  font-size: clamp(2rem, 4.2vw, 4.1rem);
+  line-height: 0.98;
+  letter-spacing: -0.015em;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--sb-ink-2);
+}
+.sbds-title span { display: block; }
+
+.sbds-support {
+  margin: 20px auto 0;
+  max-width: 720px;
+  font-size: clamp(13.5px, 1vw, 16px);
+  line-height: 1.65;
+  color: var(--ds-muted);
+}
+
+.sbds-ctas {
+  margin-top: clamp(22px, 2.6vw, 32px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.sbds-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  padding: 0 32px;
+  border: 1px solid var(--ds-brass);
+  border-radius: var(--sb-r-control);
+  color: var(--ds-brass);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+.sbds-cta svg { width: 16px; height: 16px; }
+.sbds-cta:hover { background: var(--ds-brass); color: var(--sb-surface-2); }
+
+.sbds-guide {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+  text-decoration: none;
+  border-bottom: 1px solid rgb(167 161 152 / 0.4);
+  padding-bottom: 3px;
+  transition: color 200ms ease, border-color 200ms ease;
+}
+.sbds-guide:hover { color: var(--ds-brass); border-bottom-color: var(--ds-brass); }
+
+.sbds-trust {
+  margin: 18px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+
+.sbds-cta:focus-visible, .sbds-guide:focus-visible {
+  outline: 2px solid var(--ds-brass);
+  outline-offset: 3px;
+}
+
+/* --- the bench ------------------------------------------------------------ */
+/* Picture, scrim and copy all occupy one grid cell, so the row is as tall
+   as whichever needs more room. The bench is a 3:1 band — wide enough to
+   centre a heading on at desktop, far too short at 390px — and this way
+   the photograph grows to hold the copy instead of the copy being sized
+   down to fit a band. No min-height to guess at. */
+.sbds-photo {
+  margin: 0;
+  display: grid;
+  isolation: isolate;
+}
+.sbds-photo > picture,
+.sbds-scrim,
+.sbds-over { grid-area: 1 / 1; }
+
+.sbds-photo > picture { display: block; min-width: 0; }
+
+.sbds-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1402 / 462;      /* the floor, not a cap */
+  object-fit: cover;
+  object-position: center;
+}
+
+/* --- the heading, over the bench ----------------------------------------- */
+/* Centred, per the brief. A vertical scrim rather than a box: the bench
+   is busy across its whole width, so darkening the middle band leaves the
+   road cases at the edges legible. */
+.sbds-scrim {
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom,
+      rgb(8 8 7 / 0.52) 0%,
+      rgb(8 8 7 / 0.80) 38%,
+      rgb(8 8 7 / 0.80) 62%,
+      rgb(8 8 7 / 0.52) 100%);
+}
+
+.sbds-over {
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: clamp(30px, 4.5vw, 74px) clamp(20px, 4vw, 56px);
+}
+.sbds-over .sbds-ctas { justify-content: center; }
+.sbds-over .sbds-trust { margin-left: auto; margin-right: auto; }
+
+/* --- body ----------------------------------------------------------------- */
+.sbds-body {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: clamp(26px, 3.2vw, 44px) clamp(20px, 4vw, 56px) 0;
+}
+
+.sbds-partner {
+  margin: 0 auto;
+  max-width: 76ch;
+  text-align: center;
+  font-size: clamp(12.5px, 0.92vw, 14px);
+  line-height: 1.65;
+  color: var(--ds-muted);
+}
+
+/* --- five capabilities ---------------------------------------------------- */
+.sbds-caps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: clamp(26px, 3vw, 40px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 640px) { .sbds-caps { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .sbds-caps { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1280px) { .sbds-caps { grid-template-columns: repeat(5, 1fr); } }
+
+.sbds-cap {
+  padding: 16px clamp(14px, 1.5vw, 24px);
+  border-top: 1px solid rgb(238 232 220 / 0.07);
+}
+.sbds-cap + .sbds-cap { border-left: 1px solid var(--ds-line); }
+@media (min-width: 1280px) { .sbds-cap { border-top: 0; } }
+@media (max-width: 639px) { .sbds-cap + .sbds-cap { border-left: 0; } }
+
+.sbds-cap-num {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  color: var(--ds-brass);
+  opacity: 0.7;
+}
+.sbds-cap-name {
+  display: block;
+  margin-top: 7px;
+  font-size: clamp(12.5px, 0.95vw, 14px);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ds-brass);
+  transition: color 200ms ease;
+}
+.sbds-cap-detail {
+  display: block;
+  margin-top: 9px;
+  font-size: clamp(12px, 0.86vw, 13px);
+  line-height: 1.55;
+  color: var(--ds-muted);
+  transition: color 200ms ease;
+}
+.sbds-cap:hover .sbds-cap-name { color: var(--ds-brass-lit); }
+.sbds-cap:hover .sbds-cap-detail { color: var(--ds-ivory); }
+
+/* --- small screens -------------------------------------------------------- */
+@media (max-width: 767px) {
+  .sbds-img { aspect-ratio: 740 / 422; }
+  .sbds-cap { text-align: left; }
+  .sbds-cta, .sbds-guide { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sbds-cta, .sbds-guide, .sbds-cap-name, .sbds-cap-detail { transition: none; }
+}

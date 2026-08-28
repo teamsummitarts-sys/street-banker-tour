@@ -1,0 +1,34 @@
+{% import "tour/_macros.html" as m %}
+{% if ticket_progress %}
+<div class="to-panel is-warm" style="margin-bottom:12px">
+  <div class="to-eyebrow">Tickets</div>
+  <div><b style="font-size:22px">{{ ticket_progress['sold'] }}</b> <span class="to-muted">of {{ ticket_progress['cap'] }} · {{ ticket_progress['pct'] }}%</span></div>
+  <div class="to-meter" style="margin-top:6px"><i style="width:{{ ticket_progress['pct'] }}%"></i></div>
+  <p class="to-muted" style="margin-top:6px">Counts are what you typed in — no ticketing platform is connected.</p>
+</div>
+{% endif %}
+<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/marketing" class="to-form">
+  <div class="to-eyebrow">Tickets</div>
+  <div class="to-grid">
+    {{ m.field('ticket_url', 'Ticket link', show['ticket_url'], type='url') }}
+    {{ m.field('ticket_status', 'On-sale status', show['ticket_status'], placeholder='presale / on sale / sold out') }}
+    {{ m.field('tickets_sold', 'Tickets sold', show['tickets_sold']) }}
+    {{ m.field('capacity', 'Capacity', show['capacity']) }}
+  </div>
+  <div class="to-eyebrow" style="margin-top:14px">Timeline</div>
+  <div class="to-grid">
+    {{ m.field('announce', 'Announce date', marketing['announce'] if 'announce' in marketing else '', type='date') }}
+    {{ m.field('presale', 'Presale date', marketing['presale'] if 'presale' in marketing else '', type='date') }}
+    {{ m.field('onsale', 'On-sale date', marketing['onsale'] if 'onsale' in marketing else '', type='date') }}
+  </div>
+  <div class="to-eyebrow" style="margin-top:14px">Local push</div>
+  <div class="to-grid">
+    {% for k, label in [('promo_assets','Promo assets'),('local_press','Local press'),('radio','Radio'),('influencers','Influencers'),('paid_ads','Paid ads'),('email_blast','Email blast'),('sms','SMS'),('posts_scheduled','Posts scheduled'),('street_team','Street team')] %}
+      {{ m.field(k, label, marketing[k] if k in marketing else '', placeholder='status / date / who') }}
+    {% endfor %}
+    {{ m.textarea('notes', 'Notes', marketing['notes'] if 'notes' in marketing else '', rows=2) }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Save</button>
+    <a class="to-btn to-btn--ghost" href="/press-desk">Press Desk</a>
+    <a class="to-btn to-btn--ghost" href="/links">Smart links</a></div>
+</form>

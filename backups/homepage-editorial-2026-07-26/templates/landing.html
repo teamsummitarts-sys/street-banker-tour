@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ config.nav.logo.primary | title }} · {{ config.brand }} — The Artist Back Office</title>
+  <meta name="description" content="Distribution, royalty recovery, campaign tools, and catalog intelligence built around artist ownership.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141210'/%3E%3Cpath d='M6 12l5 4 5-7 5 7 5-4v10a1 1 0 01-1 1H7a1 1 0 01-1-1z' fill='none' stroke='%23d8b25a' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#0d0c0a">
+  <link rel="apple-touch-icon" href="/static/img/icon-192.png">
+  <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-feature-settings: "ss01"; }
+  </style>
+</head>
+<body class="min-h-screen bg-[#f6f3f0] text-[#141210] antialiased">
+
+<div class="mx-auto max-w-6xl px-6 lg:px-10">
+
+  <!-- 1. NAVIGATION -->
+  <header class="flex flex-col items-center gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:py-6">
+    <a href="/" class="flex flex-col items-center leading-none sm:items-start">
+      <img src="/static/img/streetbanker-logo-dark.svg" alt="{{ config.nav.logo.primary }}" class="h-8 w-auto sm:h-9">
+      <span class="mt-1 text-[8px] font-semibold uppercase tracking-[0.3em] text-[#8a6d1f] sm:pl-1">{{ config.nav.logo.secondary }}</span>
+    </a>
+    <nav class="hidden items-center gap-9 text-[13px] font-medium text-[#4a463e] lg:flex">
+      {% for link in config.nav.links %}
+      <a href="{{ link.href }}" class="transition-colors hover:text-[#141210]">{{ link.label }}</a>
+      {% endfor %}
+    </nav>
+    <div class="flex items-center gap-4">
+      {% for a in config.nav.actions %}
+      {% if a.variant == 'primary' %}
+      <a href="{{ a.href }}" class="rounded-md bg-[#141210] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#2a251d] sm:px-5 sm:py-2.5 sm:text-[13px]">{{ a.label }}</a>
+      {% else %}
+      <a href="{{ a.href }}" class="text-[13px] font-semibold text-[#4a463e] transition-colors hover:text-[#141210]">{{ a.label }}</a>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </header>
+
+  <!-- 2. HERO -->
+  {% set hero = config.hero %}
+  <section class="grid grid-cols-1 items-center gap-10 pb-20 pt-8 sm:pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:gap-16 lg:pb-28">
+    <div class="order-1 text-center sm:text-left">
+      <div class="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#8a6d1f]">{{ hero.eyebrow }}</div>
+      <h1 class="mt-6 text-[clamp(2.75rem,9vw,4.75rem)] font-black uppercase leading-[0.92] tracking-tight">
+        {% for line in hero.headline %}<span class="block">{{ line }}</span>{% endfor %}
+      </h1>
+      <p class="mt-6 text-lg font-medium sm:text-xl">{{ hero.support }}</p>
+      <p class="mx-auto mt-4 max-w-md text-sm leading-relaxed text-[#5a544a] sm:mx-0">{{ hero.description }}</p>
+      <div class="mt-9 grid grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:gap-4">
+        {% for cta in hero.ctas %}
+        <a href="{{ cta.href }}" class="inline-flex items-center justify-center rounded-md px-7 py-3.5 text-[13px] font-bold uppercase tracking-[0.1em] transition-colors {{ 'bg-[#141210] text-white hover:bg-[#2a251d]' if cta.variant == 'primary' else 'border border-[#141210]/25 text-[#141210] hover:bg-[#141210]/5' }}">{{ cta.label }}</a>
+        {% endfor %}
+      </div>
+      <p class="mt-7 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#8a8377]">{{ hero.proof }}</p>
+    </div>
+    <figure class="order-2 overflow-hidden">
+      <img src="{{ hero.image.src }}" alt="{{ hero.image.alt }}" class="block w-full object-cover">
+    </figure>
+  </section>
+
+  <!-- 3. THE THREE LANES -->
+  {% set lanes = config.lanes %}
+  <section id="lanes" class="scroll-mt-6 border-t border-black/10 py-20 lg:py-24">
+    <div class="text-center">
+      <h2 class="text-2xl font-black uppercase tracking-tight sm:text-3xl">{{ lanes.heading }}</h2>
+      <p class="mt-3 text-sm text-[#5a544a]">{{ lanes.support }}</p>
+    </div>
+    <div class="mt-12 grid grid-cols-1 gap-10 lg:grid-cols-3 lg:gap-6">
+      {% for card in lanes.cards %}
+      <article class="flex flex-col">
+        <img src="{{ card.image }}" alt="{{ card.headline }}" class="block w-full object-cover" loading="lazy">
+        <div class="mt-6">
+          <div class="text-[10px] font-bold uppercase tracking-[0.25em] text-[#8a6d1f]">{{ card.label }}</div>
+          <h3 class="mt-3 text-xl font-black uppercase tracking-tight">{{ card.headline }}</h3>
+          <p class="mt-2.5 text-sm leading-relaxed text-[#5a544a]">{{ card.description }}</p>
+          <a href="{{ card.link.href }}" class="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold transition-colors hover:text-[#8a6d1f]">
+            {{ card.link.label }}
+            <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+          </a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<!-- 4. ROYALTY SWEEP — the one dark section -->
+{% set sweep = config.sweep %}
+<section class="bg-[#0f0e0c] py-20 text-gray-100 lg:py-28">
+  <div class="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-10">
+    <div class="text-center lg:text-left">
+      <div class="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#d8b25a]">{{ sweep.eyebrow }}</div>
+      <h2 class="mt-5 text-3xl font-black uppercase leading-[0.95] tracking-tight sm:text-4xl">
+        {% for line in sweep.headline %}<span class="block">{{ line }}</span>{% endfor %}
+      </h2>
+      <p class="mx-auto mt-5 max-w-sm text-sm leading-relaxed text-gray-400 lg:mx-0">{{ sweep.description }}</p>
+      <a href="{{ sweep.cta.href }}" class="mt-8 inline-flex items-center justify-center rounded-md bg-[#d8b25a] px-7 py-3.5 text-[13px] font-bold uppercase tracking-[0.1em] text-[#1c1302] transition-colors hover:bg-[#e6c675]">{{ sweep.cta.label }}</a>
+      <p class="mx-auto mt-5 max-w-sm text-[11px] leading-relaxed text-gray-500 lg:mx-0">{{ sweep.note }}</p>
+    </div>
+    <figure class="relative overflow-hidden rounded-lg">
+      <img src="{{ sweep.image.src }}" alt="{{ sweep.image.alt }}" class="block w-full object-cover" loading="lazy">
+      <figcaption class="absolute bottom-3 right-3 rounded border border-white/25 bg-black/70 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-gray-300">{{ sweep.demo_label }}</figcaption>
+    </figure>
+  </div>
+</section>
+
+<div class="mx-auto max-w-6xl px-6 lg:px-10">
+
+  <!-- 5. SIGNATURE TOOLS -->
+  {% set tools = config.tools %}
+  <section id="tools" class="scroll-mt-6 py-20 lg:py-24">
+    <div class="text-center">
+      <h2 class="text-2xl font-black uppercase tracking-tight sm:text-3xl">{{ tools.heading }}</h2>
+      <p class="mx-auto mt-3 max-w-lg text-sm text-[#5a544a]">{{ tools.support }}</p>
+    </div>
+    <div class="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 lg:gap-5">
+      {% for t in tools['items'] %}
+      <a href="{{ t.href }}" class="group flex flex-col items-center gap-3 rounded-lg px-3 py-6 text-center transition-colors hover:bg-white">
+        <span class="grid h-11 w-11 place-items-center rounded-full border border-[#141210]/15 transition-colors group-hover:border-[#a8862f] group-hover:text-[#8a6d1f]">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            {% for d in t.icon.split('|') if d %}<path d="{{ d }}"/>{% endfor %}
+          </svg>
+        </span>
+        <span class="text-[13px] font-semibold">{{ t.name }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<!-- Full-bleed band: the room all of it is for -->
+{% if config.band_image %}
+<figure class="w-full overflow-hidden bg-[#0f0e0c]">
+  <img src="{{ config.band_image.src }}" alt="{{ config.band_image.alt }}" class="block h-36 w-full object-cover sm:h-48 lg:h-60" loading="lazy">
+</figure>
+{% endif %}
+
+<div class="mx-auto max-w-6xl px-6 lg:px-10">
+
+  <!-- 6. FINAL CTA -->
+  {% set fin = config.final_cta %}
+  <section class="py-24 text-center lg:py-32">
+    <h2 class="text-[clamp(1.75rem,5vw,2.75rem)] font-black uppercase leading-[1.05] tracking-tight">
+      {% for line in fin.headline %}<span class="block">{{ line }}</span>{% endfor %}
+    </h2>
+    <a href="{{ fin.cta.href }}" class="mt-10 inline-flex items-center justify-center rounded-md bg-[#141210] px-9 py-4 text-[13px] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-[#2a251d]">{{ fin.cta.label }}</a>
+    <p class="mx-auto mt-6 max-w-sm text-[12px] leading-relaxed text-[#6b6459]">{{ fin.note }}</p>
+  </section>
+
+  <!-- 7. MINIMAL FOOTER -->
+  {% set f = config.footer %}
+  <footer class="border-t border-black/10 py-14">
+    <div class="grid grid-cols-2 gap-10 lg:grid-cols-[minmax(0,1.3fr)_repeat(4,minmax(0,1fr))]">
+      <div class="col-span-2 lg:col-span-1">
+        <img src="/static/img/streetbanker-logo-dark.svg" alt="{{ f.logo.primary }}" class="h-8 w-auto">
+        <div class="mt-1.5 text-[8px] font-semibold uppercase tracking-[0.3em] text-[#8a6d1f]">{{ f.logo.secondary }}</div>
+        <p class="mt-4 max-w-xs text-xs leading-relaxed text-[#6b6459]">{{ f.description }}</p>
+        <div class="mt-5 flex gap-4 text-[11px] font-semibold text-[#6b6459]">
+          {% for s in f.socials %}
+          <a href="{{ s.href }}" target="_blank" rel="noopener" class="transition-colors hover:text-[#141210]">{{ s.label }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      {% for col in f.columns %}
+      <div>
+        <div class="text-[10px] font-bold uppercase tracking-[0.2em]">{{ col.title }}</div>
+        <ul class="mt-4 space-y-2.5">
+          {% for l in col.links %}
+          <li><a href="{{ l.href }}" class="text-xs text-[#6b6459] transition-colors hover:text-[#141210]">{{ l.label }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="mt-12 border-t border-black/10 pt-6 text-[11px] text-[#8a8377]">{{ f.copyright }}</div>
+  </footer>
+</div>
+
+</body>
+</html>

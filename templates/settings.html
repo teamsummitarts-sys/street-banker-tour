@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Royalty Sweep{% endblock %}
+
+{% block content %}
+<style>
+  /* Gold switch toggles, per the settings mockup */
+  .nswitch { width: 42px; height: 23px; border-radius: var(--sb-r-pill); background: var(--sb-line-strong);
+             border: 1px solid rgba(255,255,255,0.12); position: relative;
+             transition: background 0.15s, border-color 0.15s; cursor: pointer; }
+  .nswitch::after { content: ''; position: absolute; top: 2px; left: 2px;
+                    width: 17px; height: 17px; border-radius: var(--sb-r-pill); background: var(--sb-ink-3);
+                    transition: transform 0.15s, background 0.15s; }
+  .nswitch.on { background: linear-gradient(180deg, var(--sb-gold-bright), var(--sb-gold-deep)); border-color: var(--sb-gold-deep); }
+  .nswitch.on::after { transform: translateX(19px); background: var(--sb-on-gold); }
+</style>
+
+<div class="mx-auto max-w-[1200px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Account</div>
+    <h1 class="sb-h1 mt-1">Settings</h1>
+    <p class="mt-1 text-sm text-sb-ink-2">Manage your profile, notifications, and account.</p>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div class="space-y-5">
+      {# Tutor mode. A guide, never a gate: it walks through the whole
+         desk in order, checks steps off against what the account really
+         contains, and hides or locks nothing. The choice lives in a
+         cookie, per browser, like the other preferences on this page. #}
+      <section id="tutor-mode" class="rounded-2xl border border-sb-gold/20 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 p-5">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="min-w-0 max-w-xl">
+            <h2 class="sb-label text-sb-ink-2">Tutor Mode</h2>
+            <p class="mt-1 text-sm text-gray-300">
+              A step-by-step walkthrough of the whole desk on your Command
+              Center — set up, get a release out, tell people, track the
+              money. Steps tick themselves off as the real things appear in
+              your account. It never hides or locks anything, and it stays
+              on until you turn it off. Saved on this device.
+            </p>
+          </div>
+          <form method="post" action="/tutor/toggle" class="shrink-0">
+            <input type="hidden" name="on" value="{{ '0' if request.cookies.get('sb_tutor') == '1' else '1' }}">
+            <input type="hidden" name="back" value="/settings#tutor-mode">
+            <button type="submit" class="sb-btn sb-btn-secondary sb-btn-sm">
+              {{ 'Turn off' if request.cookies.get('sb_tutor') == '1' else 'Turn on' }}
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <section id="account-profile" class="rounded-2xl border border-sb-gold/20 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 p-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="sb-label text-sb-ink-2">Account Profile</h2>
+            <p class="mt-1 text-sm text-gray-300">Your artist profile. Saved on this device.</p>
+          </div>
+          <a href="/artist-profile" class="flex items-center gap-2.5 rounded-xl border border-white/10 px-3 py-2 transition-colors hover:border-sb-gold/40" title="Your photo lives on your Artist Profile">
+            <span class="grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-sb-gold/50 text-sm font-bold text-sb-gold-bright">{{ account.initials if account else '?' }}</span>
+            <span class="text-xs font-semibold text-gray-300">Update photo →</span>
+          </a>
+        </div>
+        <form id="profile-form" class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="block text-xs text-sb-ink-2">Artist / display name
+            <input id="profile-name" type="text" required class="mt-1 w-full rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm text-gray-100 focus:border-sb-gold focus:outline-none">
+          </label>
+          <label class="block text-xs text-sb-ink-2">Email
+            <input id="profile-email" type="email" required class="mt-1 w-full rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm text-gray-100 focus:border-sb-gold focus:outline-none">
+          </label>
+          <div class="rounded-lg border border-sb-gold-deep p-0.5">
+            <div class="px-2.5 pt-1 text-xs font-bold uppercase tracking-[0.2em] text-sb-gold-bright">{{ (account.plan ~ ': Active') if account and account.plan else 'Plan' }}</div>
+            <select id="profile-plan" class="w-full rounded-md bg-transparent px-2.5 py-1.5 text-sm text-gray-100 focus:outline-none [color-scheme:dark]">
+              <option value="Free">Free</option>
+              <option value="Pro">Pro</option>
+              <option value="Label">Label</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button type="submit" class="rounded-md bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-4 py-2 text-xs font-black text-sb-on-gold transition-transform hover:scale-[1.02]">Save Profile</button>
+            <span id="profile-saved" class="ml-3 hidden self-center text-xs font-semibold text-green-400">Saved</span>
+          </div>
+        </form>
+      </section>
+
+      <section id="notification-preferences" class="rounded-2xl border border-sb-gold/20 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 p-5">
+        <h2 class="sb-label text-sb-ink-2">Notification Preferences</h2>
+        <p class="mt-1 text-sm text-gray-300">Choose what you want to be notified about. Saved on this device.</p>
+        <div id="notification-list" class="mt-4 space-y-2">
+          <div class="px-1 text-xs font-bold uppercase tracking-[0.25em] text-gray-300">Severity alerts</div>
+          {% for key, label, detail, tip in [
+            ('leak_high', 'High severity leak alerts', 'Urgent issues like sync failures or expired logins', 'A connected source stopped reporting or a login expired — money can go missing until it is fixed.'),
+            ('leak_medium', 'Medium severity leak alerts', 'Uncollected royalties above $250', 'A royalty lane shows income you have not collected yet, above $250.'),
+            ('leak_low', 'Low severity leak alerts', 'Minor or low-value issues', 'Small gaps worth batching up rather than chasing one by one.'),
+          ] %}
+          <div class="notification-row flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/30 px-3 py-2.5" data-key="{{ key }}">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 text-sm font-semibold">{{ label }}
+                <span class="cursor-help text-xs text-gray-300 font-medium" title="{{ tip }}">ⓘ</span>
+              </div>
+              <div class="text-xs text-gray-300">{{ detail }}</div>
+            </div>
+            <button type="button" class="notification-toggle-btn nswitch shrink-0" role="switch" aria-label="Toggle {{ label }}"></button>
+          </div>
+          {% endfor %}
+          <div class="px-1 pt-2 text-xs font-bold uppercase tracking-[0.25em] text-gray-300">Digests &amp; activity</div>
+          {% for key, label, detail, tip in [
+            ('weekly_summary', 'Weekly summary email', 'A recap of royalties, leaks, and catalog value', 'One email a week; everything else stays in the app.'),
+            ('payout_received', 'Payout received', 'A platform confirms a payout has landed', 'Fires when a payout actually lands, not when it is scheduled.'),
+            ('new_song_detected', 'New song detected', 'A new recording shows up in a connected catalog', 'Catches releases that appear under your name so you can claim them fast.'),
+          ] %}
+          <div class="notification-row flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/30 px-3 py-2.5" data-key="{{ key }}">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 text-sm font-semibold">{{ label }}
+                <span class="cursor-help text-xs text-gray-300 font-medium" title="{{ tip }}">ⓘ</span>
+              </div>
+              <div class="text-xs text-gray-300">{{ detail }}</div>
+            </div>
+            <button type="button" class="notification-toggle-btn nswitch shrink-0" role="switch" aria-label="Toggle {{ label }}"></button>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+
+    <div class="space-y-5">
+      <section class="rounded-2xl border border-sb-gold/20 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 p-5">
+        <h2 class="sb-label text-sb-ink-2">Manage</h2>
+        <div class="mt-3 space-y-2">
+          {% for href, label, desc, icon in [
+            ('/connections', 'Data & Connections', 'Connected royalty sources', 'M11 3L6 11h4l-1 6 5-8h-4z'),
+            ('/team', 'Team & Access', 'Collaborators & permissions', 'M7 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM13 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5z|M3 16c0-2.2 1.8-4 4-4M13 12c2.2 0 4 1.8 4 4'),
+            ('/billing', 'Billing Plan', 'Plan, usage, and invoices', 'M3 6h14v8H3z|M3 9h14M6 12h3'),
+          ] %}
+          <a href="{{ href }}" class="flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 px-3.5 py-3 transition-colors hover:border-sb-gold/40">
+            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-sb-gold/30 text-sb-gold-bright">
+              <svg class="h-[18px] w-[18px]" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                {% for d in icon.split('|') %}<path d="{{ d }}"/>{% endfor %}
+              </svg>
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-sm font-bold uppercase tracking-wide text-gray-100">{{ label }}</span>
+              <span class="block text-xs text-gray-300 font-medium">{{ desc }}</span>
+            </span>
+            <svg class="h-4 w-4 shrink-0 text-gray-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+
+      {% if can_backup %}
+      <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+        <h2 class="sb-label text-sb-gold-bright">Backup</h2>
+        <p class="mt-1 text-sm text-gray-300">Download everything — accounts, members, fans, statements, and uploads — as one zip. Keep a copy somewhere safe; a backup you don't have is a backup that doesn't exist.</p>
+        <a href="/backup" class="sb-btn sb-btn-primary mt-3">Download backup</a>
+
+        <div class="mt-4 border-t border-white/10 pt-4">
+          <h3 class="sb-label text-gray-300">Off-box copy</h3>
+          {% if backup_state.offsite_configured %}
+            <p class="mt-1 text-xs text-gray-300">Uploading to <span class="font-mono text-gray-200">{{ backup_state.target }}</span>{% if not backup_state.scheduler_ready %} — but <b>no <span class="font-mono">BACKUP_TOKEN</span> is set</b>, so nothing can trigger it on a schedule yet.{% endif %}</p>
+            {% if backup_state.last %}
+              {% if backup_state.last.ok %}
+              <p class="mt-2 text-xs text-green-400">● Last run succeeded {{ backup_state.last.at[:16].replace("T", " ") }} UTC — {{ "{:,}".format(backup_state.last.bytes) }} bytes in {{ backup_state.last.seconds }}s</p>
+              {% else %}
+              <p class="mt-2 text-xs text-red-400">● Last run <b>FAILED</b> {{ backup_state.last.at[:16].replace("T", " ") }} UTC — {{ backup_state.last.detail }}</p>
+              {% endif %}
+              <p class="text-xs text-gray-300 font-medium">{{ backup_state.last.object }}</p>
+            {% else %}
+              <p class="mt-2 text-xs text-amber-400">● Configured, but it has never run. Until it does, this is a plan rather than a backup.</p>
+            {% endif %}
+            <form method="post" action="/backup/run" class="mt-3">
+              <button class="sb-btn sb-btn-secondary sb-btn-sm">Run one now</button>
+            </form>
+          {% else %}
+            <p class="mt-1 text-xs text-gray-300">Not set up. Everything real in this app — invoices, logged hours, statements, disputes — currently lives on one disk, and the download above only happens when someone remembers to click it.</p>
+            <p class="mt-2 text-xs leading-relaxed text-gray-300 font-medium">Point it at any S3-compatible bucket (Cloudflare R2, Backblaze B2, Wasabi, S3) by setting <span class="font-mono text-gray-300">BACKUP_S3_ENDPOINT</span>, <span class="font-mono text-gray-300">BACKUP_S3_BUCKET</span>, <span class="font-mono text-gray-300">BACKUP_S3_KEY</span> and <span class="font-mono text-gray-300">BACKUP_S3_SECRET</span>, plus a <span class="font-mono text-gray-300">BACKUP_TOKEN</span> for a scheduler to present when it POSTs to <span class="font-mono text-gray-300">/backup/run</span>.</p>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+      <section class="rounded-2xl border border-sb-gold/20 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 p-5">
+        <h2 class="sb-label text-sb-ink-2">Security &amp; Access</h2>
+        <div class="mt-3 rounded-lg border border-white/10 bg-black/30 px-3 py-2.5">
+          <div class="text-xs font-bold uppercase tracking-wide text-gray-300">Current session</div>
+          <div class="mt-0.5 truncate text-xs text-gray-200" title="{{ request.user_agent.string }}">{{ request.user_agent.string | truncate(58) }}</div>
+          <div class="text-xs text-green-400 font-medium">● Active now — the only session we track</div>
+        </div>
+        <form method="post" action="/logout" class="mt-3">
+          <button type="submit" class="sb-btn sb-btn-secondary w-full">Sign out</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const PROFILE_KEY = "royaltySweep.profile";
+  const DEFAULT_PROFILE = { name: "Synthwave Surfer", email: "artist@streetbanker.io", plan: "Pro" };
+
+  function loadProfile() {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (!raw) return DEFAULT_PROFILE;
+      const p = JSON.parse(raw);
+      return p && p.name ? p : DEFAULT_PROFILE;
+    } catch (err) { return DEFAULT_PROFILE; }
+  }
+
+  function renderProfile() {
+    const profile = loadProfile();
+    document.getElementById("profile-name").value = profile.name;
+    document.getElementById("profile-email").value = profile.email;
+    document.getElementById("profile-plan").value = profile.plan;
+  }
+  renderProfile();
+
+  document.getElementById("profile-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const profile = {
+      name: document.getElementById("profile-name").value.trim(),
+      email: document.getElementById("profile-email").value.trim(),
+      plan: document.getElementById("profile-plan").value,
+    };
+    if (!profile.name || !profile.email) return;
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    const savedEl = document.getElementById("profile-saved");
+    savedEl.classList.remove("hidden");
+    setTimeout(() => savedEl.classList.add("hidden"), 2000);
+  });
+
+  const NOTIFICATIONS_KEY = "royaltySweep.notifications";
+  const DEFAULT_NOTIFICATIONS = {
+    leak_high: true, leak_medium: true, leak_low: false,
+    weekly_summary: true, payout_received: true, new_song_detected: false,
+  };
+
+  function loadNotifications() {
+    try {
+      const raw = localStorage.getItem(NOTIFICATIONS_KEY);
+      const saved = raw ? JSON.parse(raw) : {};
+      return { ...DEFAULT_NOTIFICATIONS, ...saved };
+    } catch (err) { return { ...DEFAULT_NOTIFICATIONS }; }
+  }
+
+  function renderNotificationRow(row, enabled) {
+    const btn = row.querySelector(".notification-toggle-btn");
+    btn.classList.toggle("on", !!enabled);
+    btn.setAttribute("aria-checked", enabled ? "true" : "false");
+  }
+
+  const notifications = loadNotifications();
+  document.querySelectorAll(".notification-row").forEach((row) => {
+    const key = row.dataset.key;
+    renderNotificationRow(row, notifications[key]);
+    row.querySelector(".notification-toggle-btn").addEventListener("click", () => {
+      notifications[key] = !notifications[key];
+      renderNotificationRow(row, notifications[key]);
+      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications));
+    });
+  });
+</script>
+{% endblock %}

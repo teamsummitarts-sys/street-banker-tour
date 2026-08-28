@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}{{ profile.name }} - Network{% endblock %}
+
+{% set p = profile %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl space-y-5">
+  <a href="/network" class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-300 hover:text-white">
+    <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.7 5.3a1 1 0 010 1.4L9.4 10l3.3 3.3a1 1 0 11-1.4 1.4l-4-4a1 1 0 010-1.4l4-4a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+    Back to network
+  </a>
+
+  {# The directory index says the profiles are illustrative; this page,
+     where someone actually decides to write a pitch, said nothing. It
+     shows a Verified badge, a follower count and an Available dot, then
+     offers Connect / Send a Pitch / Enquire About Shows. network_config
+     .pitch() appends to an in-memory list - nothing is delivered, and it
+     is not even per-user. Say so before the buttons, not after. #}
+  {% with kind='sample',
+          body='This profile is an example, not a real person.',
+          note='Connecting, pitching or enquiring is recorded for this session only — nothing is sent to anyone, and no one is waiting to read it.',
+          action={'href': '/network#my-network', 'label': 'Your real outreach'} %}
+    {% include 'partials/data_label.html' %}
+  {% endwith %}
+
+  <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-6">
+    <div class="flex flex-wrap items-start gap-4">
+      <span class="grid h-16 w-16 shrink-0 place-items-center rounded-full border border-amber-500/40 text-xl font-bold text-amber-400">{{ p.initials }}</span>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-2">
+          <h1 class="sb-h1">{{ p.name }}</h1>
+          {% if p.verified %}<span class="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-400">Verified</span>{% endif %}
+        </div>
+        <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-300 font-medium">
+          <span class="rounded-full border border-white/10 px-2 py-0.5 font-semibold uppercase tracking-wide text-gray-300">{{ p.role }}</span>
+          <span>{{ p.location }}</span><span class="text-gray-300">·</span><span>{{ "{:,}".format(p.followers) }} followers</span>
+          {% if p.available %}<span class="inline-flex items-center gap-1 font-semibold text-green-400"><span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>Available</span>{% endif %}
+        </div>
+        <p class="mt-2 text-sm text-gray-200">{{ p.tagline }}</p>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-wrap gap-2">
+      <button type="button" id="connect-btn" data-id="{{ p.id }}" class="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-400 transition-colors hover:bg-amber-500/20 {{ 'pointer-events-none opacity-70' if p.connection }}">
+        {{ 'Connected' if p.connection == 'Connected' else ('Request Pending' if p.connection else 'Connect') }}
+      </button>
+      <button type="button" id="pitch-btn" class="sb-btn sb-btn-secondary">Send a Pitch</button>
+      {% if p.booking %}<button type="button" id="book-btn" class="sb-btn sb-btn-secondary">Enquire About Shows</button>{% endif %}
+      {% if p.rate %}<span class="inline-flex items-center rounded-md border border-white/10 px-3 py-2 text-xs text-gray-300">Rate: {{ p.rate }}</span>{% endif %}
+    </div>
+  </section>
+
+  {% if p.shows %}
+  <section id="book" class="scroll-mt-6 rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+    <div class="flex items-center justify-between">
+      <h2 class="sb-label text-gray-300">Tour Dates</h2>
+      {% if p.booking %}<button type="button" id="book-btn-2" class="text-xs font-semibold text-amber-400 hover:underline">Tour with us →</button>{% endif %}
+    </div>
+    <div class="mt-3 space-y-2">
+      {% for s in p.shows %}
+      <div class="flex flex-wrap items-center gap-3 rounded-lg border border-white/5 bg-white/5 px-3 py-2.5">
+        <span class="w-24 shrink-0 text-sm font-bold text-amber-400">{{ s.date }}</span>
+        <span class="min-w-0 flex-1 text-sm text-gray-200">{{ s.venue }} · {{ s.city }}</span>
+        <span class="shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold {{ 'border-green-500/20 bg-green-500/10 text-green-400' if s.status == 'On sale' else ('border-red-500/20 bg-red-500/10 text-red-400' if s.status == 'Sold out' else 'border-amber-500/20 bg-amber-500/10 text-amber-400') }}">{{ s.status }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Genres</h2>
+      <div class="mt-3 flex flex-wrap gap-1.5">{% for g in p.genres %}<span class="rounded-md border border-white/10 px-2 py-0.5 text-xs text-gray-200 font-medium">{{ g }}</span>{% endfor %}</div>
+      <h2 class="sb-label mt-5 text-gray-300">Credits</h2>
+      <ul class="mt-3 space-y-1.5 text-xs text-gray-300">{% for c in p.credits %}<li class="flex gap-2"><span class="text-amber-400">•</span>{{ c }}</li>{% endfor %}</ul>
+    </section>
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Playlists</h2>
+      {% if p.playlists_full %}
+      <div class="mt-3 space-y-2">
+        {% for pl in p.playlists_full %}
+        <a href="/network/playlist/{{ pl.id }}" class="flex items-center justify-between gap-2 rounded-lg border border-white/5 bg-white/5 px-3 py-2.5 hover:border-amber-500/30">
+          <span class="min-w-0"><span class="block truncate text-sm font-semibold text-gray-100">{{ pl.name }}</span><span class="text-xs text-gray-300 font-medium">{{ "{:,}".format(pl.followers) }} followers</span></span>
+          {% if pl.accepting %}<span class="shrink-0 rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-400">Open</span>{% else %}<span class="shrink-0 text-xs text-gray-300 font-medium">Closed</span>{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="mt-3 text-xs text-gray-300">No public playlists.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+<!-- Pitch modal -->
+<div id="pitch-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
+  <div class="w-full max-w-md rounded-2xl border border-white/10 bg-sb-surface-1 p-6">
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-gray-100">Pitch to {{ p.name }}</h3>
+      <button type="button" id="pitch-close" class="text-gray-300 hover:text-white"><svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l8 8M14 6l-8 8"/></svg></button>
+    </div>
+    <div class="mt-4 space-y-3">
+      <div>
+        <label class="sb-label text-gray-300">Track</label>
+        <select id="pitch-song" class="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 focus:border-amber-500/50 focus:outline-none">
+          <option value="">— Select a track —</option>
+          {% for row in songs_summary %}<option value="{{ row.song.title }}">{{ row.song.title }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="sb-label text-gray-300">Message</label>
+        <textarea id="pitch-message" rows="3" placeholder="A short note…" class="mt-1 w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none"></textarea>
+      </div>
+      <div id="pitch-error" class="hidden text-xs font-semibold text-red-400"></div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2">
+      <button type="button" id="pitch-cancel" class="sb-btn sb-btn-secondary sb-btn-sm">Cancel</button>
+      <button type="button" id="pitch-send" class="sb-btn sb-btn-secondary sb-btn-sm">Send Pitch</button>
+    </div>
+  </div>
+</div>
+
+{% if p.booking %}
+<!-- Booking / tour enquiry modal -->
+<div id="book-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
+  <div class="w-full max-w-md rounded-2xl border border-white/10 bg-sb-surface-1 p-6">
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-gray-100">Enquire about shows — {{ p.name }}</h3>
+      <button type="button" id="book-close" class="text-gray-300 hover:text-white"><svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l8 8M14 6l-8 8"/></svg></button>
+    </div>
+    <div class="mt-4 space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="sb-label text-gray-300">City / market</label><input id="book-city" placeholder="e.g. Chicago" class="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none"></div>
+        <div><label class="sb-label text-gray-300">Target date</label><input id="book-date" type="date" class="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 focus:border-amber-500/50 focus:outline-none [color-scheme:dark]"></div>
+      </div>
+      <div><label class="sb-label text-gray-300">Details</label><textarea id="book-message" rows="3" placeholder="Venue, budget, lineup…" class="mt-1 w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none"></textarea></div>
+      <div id="book-error" class="hidden text-xs font-semibold text-red-400"></div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2">
+      <button type="button" id="book-cancel" class="sb-btn sb-btn-secondary sb-btn-sm">Cancel</button>
+      <button type="button" id="book-send" class="sb-btn sb-btn-secondary sb-btn-sm">Send Enquiry</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const PID = "{{ p.id }}";
+  const connectBtn = document.getElementById("connect-btn");
+  connectBtn.addEventListener("click", async () => {
+    if (connectBtn.classList.contains("pointer-events-none")) return;
+    connectBtn.disabled = true;
+    const res = await fetch(`/network/${PID}/connect`, { method: "POST" });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      connectBtn.textContent = "Request Pending";
+      connectBtn.classList.add("pointer-events-none", "opacity-70");
+    } else { connectBtn.disabled = false; }
+  });
+
+  const modal = document.getElementById("pitch-modal");
+  const open = () => { modal.classList.remove("hidden"); modal.classList.add("flex"); };
+  const close = () => { modal.classList.add("hidden"); modal.classList.remove("flex"); };
+  document.getElementById("pitch-btn").addEventListener("click", open);
+  document.getElementById("pitch-close").addEventListener("click", close);
+  document.getElementById("pitch-cancel").addEventListener("click", close);
+  modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+
+  document.getElementById("pitch-send").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const song = document.getElementById("pitch-song").value;
+    const message = document.getElementById("pitch-message").value.trim();
+    const err = document.getElementById("pitch-error");
+    err.classList.add("hidden");
+    if (!song && !message) { err.textContent = "Add a track or a message."; err.classList.remove("hidden"); return; }
+    btn.disabled = true; btn.textContent = "Sending...";
+    try {
+      const res = await fetch(`/network/${PID}/pitch`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ song, message }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) { btn.textContent = "Sent ✓"; setTimeout(close, 800); }
+      else { btn.disabled = false; btn.textContent = "Send Pitch"; }
+    } catch (e) { btn.disabled = false; btn.textContent = "Send Pitch"; }
+  });
+
+  // Booking / tour enquiry
+  const bookModal = document.getElementById("book-modal");
+  if (bookModal) {
+    const openB = () => { bookModal.classList.remove("hidden"); bookModal.classList.add("flex"); };
+    const closeB = () => { bookModal.classList.add("hidden"); bookModal.classList.remove("flex"); };
+    ["book-btn", "book-btn-2"].forEach((id) => { const el = document.getElementById(id); if (el) el.addEventListener("click", openB); });
+    document.getElementById("book-close").addEventListener("click", closeB);
+    document.getElementById("book-cancel").addEventListener("click", closeB);
+    bookModal.addEventListener("click", (e) => { if (e.target === bookModal) closeB(); });
+    document.getElementById("book-send").addEventListener("click", async (e) => {
+      const b = e.currentTarget;
+      const city = document.getElementById("book-city").value.trim();
+      const date = document.getElementById("book-date").value;
+      const message = document.getElementById("book-message").value.trim();
+      const err = document.getElementById("book-error");
+      err.classList.add("hidden");
+      if (!city) { err.textContent = "Add a city or market."; err.classList.remove("hidden"); return; }
+      b.disabled = true; b.textContent = "Sending...";
+      try {
+        const res = await fetch(`/network/${PID}/enquire`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ city, date, message }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) { b.textContent = "Enquiry Sent ✓"; setTimeout(closeB, 900); }
+        else { err.textContent = (data && data.error) || "Could not send."; err.classList.remove("hidden"); b.disabled = false; b.textContent = "Send Enquiry"; }
+      } catch (e) { b.disabled = false; b.textContent = "Send Enquiry"; }
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ show.artist_name }} @ {{ show.venue }} — Show Day</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+</head>
+<body class="min-h-screen bg-sb-ground text-gray-100 antialiased">
+  <main class="mx-auto flex min-h-screen w-full max-w-2xl flex-col px-5 pb-10 pt-12">
+    <div class="text-center">
+      <div class="sb-label text-sb-gold-bright">Show Day Sheet</div>
+      <h1 class="mt-2 text-3xl font-black leading-tight">{{ show.artist_name }}</h1>
+      <p class="mt-1 text-sm text-gray-300">{{ show.venue }}{% if show.city %} · {{ show.city }}{% endif %} · {{ show.date }}</p>
+    </div>
+
+    {% if schedule %}
+    <section class="mt-8 rounded-2xl border border-sb-gold-bright/25 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5">
+      <h2 class="sb-label text-sb-gold-bright">Schedule</h2>
+      <div class="mt-3 divide-y divide-white/5">
+        {% for label, value in schedule %}
+        <div class="flex items-baseline justify-between py-2">
+          <span class="text-xs font-bold uppercase tracking-wide text-gray-300">{{ label }}</span>
+          <span class="text-sm font-black">{{ value }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% set logistics = [('Day-of contact', adv.get('dayof_contact')), ('Backline', adv.get('backline')), ('Parking / load-in', adv.get('parking')), ('Hospitality', adv.get('hospitality')), ('Guest list', adv.get('guest_list')), ('Merch table', adv.get('merch_setup'))] %}
+    {% if adv.get('dayof_contact') or adv.get('backline') or adv.get('parking') or adv.get('hospitality') or adv.get('guest_list') or adv.get('merch_setup') %}
+    <section class="mt-4 rounded-2xl border border-white/10 bg-black/40 p-5">
+      <h2 class="sb-label text-sb-gold-bright">Details</h2>
+      <div class="mt-3 space-y-2.5">
+        {% for label, value in logistics %}{% if value %}
+        <div>
+          <div class="text-xs font-bold uppercase tracking-wide text-gray-300">{{ label }}</div>
+          <div class="text-sm text-gray-200">{{ value }}</div>
+        </div>
+        {% endif %}{% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="mt-4 rounded-2xl border border-white/10 bg-black/40 p-5">
+      <h2 class="sb-label text-sb-gold-bright">Stage plot &amp; input list</h2>
+      <div id="plot" class="mt-3 [&_svg]:h-auto [&_svg]:w-full"></div>
+      <p id="plot-empty" class="hidden mt-3 text-sm text-gray-300">No stage plot on file for this act yet.</p>
+    </section>
+
+    <footer class="mt-auto pt-10 text-center">
+      <a href="/" class="inline-flex items-center gap-2 opacity-60 transition-opacity hover:opacity-100">
+        <span class="sb-label text-gray-300">Powered by</span>
+        <img src="/static/img/streetbanker-logo.svg" alt="Street Banker" class="h-5 w-auto">
+      </a>
+    </footer>
+  </main>
+
+  <script src="/static/js/stageplot.js"></script>
+  <script>
+    (function () {
+      var plot = {{ plot_json | js_json }};
+      if (plot && plot.items) {
+        plot.name = plot.name || {{ show.artist_name | tojson }};
+        document.getElementById("plot").innerHTML = window.StagePlot.buildSvg(plot);
+      } else {
+        document.getElementById("plot-empty").classList.remove("hidden");
+      }
+    })();
+  </script>
+</body>
+</html>

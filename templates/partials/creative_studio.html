@@ -1,0 +1,104 @@
+{# Section 7 — Creative Studio.
+
+   The photograph is most of the argument, so the interface stays thin:
+   an eyebrow, a headline, one line, one button, and four words along the
+   bottom edge that say a sentence each when you point at them.
+
+   Two crops, chosen by the browser rather than by cropping one file on
+   the fly: the tall frame on a desktop, the close one at its own ratio
+   on a phone. Nothing in the picture carries information - every word
+   that matters is markup. #}
+
+{% set cs = creative %}
+{% set img = cs.image %}
+<section class="sbcs" id="creative-studio" aria-labelledby="sbcs-heading">
+  <div class="sbcs-inner">
+
+    <div class="sbcs-copy">
+      <p class="sbcs-eyebrow">
+        <span class="sbcs-num">{{ cs.number }}</span>
+        <span class="sbcs-rule" aria-hidden="true"></span>
+        {{ cs.eyebrow }}
+      </p>
+      <h2 class="sbcs-title" id="sbcs-heading">
+        {% for line in cs.headline %}<span>{{ line }}</span>{% endfor %}
+      </h2>
+      <p class="sbcs-support">{{ cs.support }}</p>
+
+      <div class="sbcs-ctas">
+        <a class="sbcs-cta" href="{{ cs.primary_cta.href }}">{{ cs.primary_cta.label }}
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+        </a>
+        <button type="button" class="sbcs-workflow-btn" id="sbcs-workflow-btn"
+                aria-expanded="false" aria-controls="sbcs-workflow">{{ cs.secondary_cta.label }}</button>
+      </div>
+
+      {# BRIEF → DIRECTIONS → REFINE → APPROVE → ADAPT, on request rather
+         than as a diagram nobody asked for. #}
+      <ol class="sbcs-workflow" id="sbcs-workflow" hidden>
+        {% for step, detail in cs.workflow %}
+        <li>
+          <span class="sbcs-step">{{ step }}</span>
+          <span class="sbcs-step-detail">{{ detail }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+
+      <div class="sbcs-memory">
+        <p class="sbcs-memory-title">{{ cs.memory_title }}</p>
+        <p class="sbcs-memory-copy">{{ cs.memory_copy }}</p>
+      </div>
+    </div>
+
+    <figure class="sbcs-photo">
+      <picture>
+        {# Phone: the close crop, shown at its own ratio. #}
+        <source media="(max-width: 767px)" type="image/avif"
+                srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                sizes="100vw">
+        <source media="(max-width: 767px)" type="image/webp"
+                srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                sizes="100vw">
+        <source media="(max-width: 767px)" type="image/jpeg"
+                srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                sizes="100vw">
+        {# Everything wider: the tall frame. #}
+        <source type="image/avif"
+                srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                sizes="(min-width: 1024px) 64vw, 100vw">
+        <source type="image/webp"
+                srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                sizes="(min-width: 1024px) 64vw, 100vw">
+        <img class="sbcs-img" src="{{ img.wide.stem }}-830.jpg"
+             srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+             sizes="(min-width: 1024px) 64vw, 100vw"
+             width="{{ img.wide.width }}" height="{{ img.wide.height }}"
+             alt="{{ img.alt }}" loading="lazy" decoding="async">
+      </picture>
+      <span class="sbcs-veil" aria-hidden="true"></span>
+    </figure>
+
+    {# Production credits along the bottom edge, not feature cards. #}
+    <div class="sbcs-features">
+      <ul class="sbcs-feature-row">
+        {% for f in cs.features %}
+        <li>
+          <button type="button" class="sbcs-feature" data-feature="{{ f.id }}"
+                  aria-describedby="sbcs-feature-line">{{ f.label }}</button>
+        </li>
+        {% endfor %}
+      </ul>
+      {# One line, one place, so pointing at a label never moves the row. #}
+      <p class="sbcs-feature-line" id="sbcs-feature-line" aria-live="polite">
+        <span class="sbcs-feature-text">{{ cs.features[0].line }}</span>
+      </p>
+      {# The same lines, readable with no pointer and no script. #}
+      <dl class="sbcs-feature-fallback">
+        {% for f in cs.features %}
+        <dt>{{ f.label }}</dt><dd>{{ f.line }}</dd>
+        {% endfor %}
+      </dl>
+    </div>
+  </div>
+</section>

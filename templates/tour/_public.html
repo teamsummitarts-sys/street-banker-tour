@@ -1,0 +1,22 @@
+{# Standalone frame for share-link and print pages: no app sidebar, no
+   session-dependent chrome. Share pages are read by people without an
+   account; print pages need a clean sheet. #}
+<!doctype html>
+<html lang="en">
+<head>
+  {% include "_fonts.html" %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}Street Banker{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  <link rel="stylesheet" href="/static/css/tour-os.css?v=3">
+</head>
+<body class="to-body">
+  <div class="to-public to">
+    <div class="to-brand no-print">Street Banker · TOUR</div>
+    {% block body %}{% endblock %}
+    <div class="to-public-foot no-print">{% block foot %}Shared from Street Banker. This page shows only what was shared with you.{% endblock %}</div>
+  </div>
+</body>
+</html>

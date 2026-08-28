@@ -1,0 +1,39 @@
+{% set nav = 'followups' %}
+{% extends "desk/layout.html" %}
+{% block title %}Follow-Ups{% endblock %}
+{% block main %}
+<h1 class="dk-h1">Follow-Ups</h1>
+<p class="dk-sub">Due and overdue first, then everything that is leaking momentum.</p>
+
+<h2 class="dk-h2">Due now</h2>
+{% if due %}
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr><th>Lead</th><th>Due</th><th>Owner</th><th>Reason</th><th>Status</th><th>Stage</th></tr></thead>
+  <tbody>
+  {% for f in due %}
+  <tr>
+    <td><a href="/operator-desk/leads/{{ f.id }}">{{ f.artist_name }}</a></td>
+    <td>{{ f.follow_up_date }}</td>
+    <td>{{ f.follow_up_owner or '—' }}</td>
+    <td>{{ f.follow_up_reason or '—' }}</td>
+    <td>{{ f.follow_up_status or '—' }}</td>
+    <td><span class="dk-chip">{{ f.pipeline_stage }}</span></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="dk-empty">Nothing due. Set follow-up dates on lead pages so this list stays honest.</p>
+{% endif %}
+
+<h2 class="dk-h2">Leaking momentum</h2>
+{% if warnings %}
+<ul class="dk-warnings">
+  {% for warn_lead, reason in warnings %}
+  <li><a href="/operator-desk/leads/{{ warn_lead.id }}">{{ warn_lead.artist_name }}</a> — {{ reason }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="dk-empty">Nothing flagged. Four checks run here: high-priority leads without a next follow-up, 14+ days of silence, contract stages without movement for a week, and discovery calls that never got a decision.</p>
+{% endif %}
+{% endblock %}

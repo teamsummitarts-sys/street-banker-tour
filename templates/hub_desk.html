@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}{{ hub.name }} - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1050px] space-y-6">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Hub</div>
+    <h1 class="sb-h1 mt-1">{{ hub.name }}</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">{{ hub.tagline }}</p>
+  </div>
+
+  {% if hub.key == 'launch' and desk %}
+  {% if desk.next_release %}
+  <!-- Countdown to the next real scheduled drop -->
+  <div class="rounded-2xl border {{ 'border-sb-gold/50 bg-sb-surface-2' if desk.reds == 0 else 'border-amber-500/40 bg-sb-on-gold' }} p-5">
+    <div class="flex flex-wrap items-center gap-4">
+      <div class="min-w-0 flex-1">
+        <div class="sb-label text-gray-300">Next drop</div>
+        <div class="mt-0.5 truncate text-xl font-black">{{ desk.next_release.title }}</div>
+        <div class="text-xs text-gray-300">{{ desk.next_release.release_date }} ·
+          {% if desk.reds == 0 %}<span class="font-bold text-sb-gold-bright">no red issues in your catalog</span>
+          {% else %}<span class="font-bold text-amber-400">{{ desk.reds }} red issue{{ '' if desk.reds == 1 else 's' }} open</span> — clear them before submission{% endif %}
+        </div>
+      </div>
+      <div id="drop-count" data-date="{{ desk.next_release.release_date }}" class="flex gap-3 text-center"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if desk.alerts %}
+  <!-- Blocker ticker: every line is a real unresolved item on a dated track -->
+  <div class="space-y-1.5 rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+    <div class="sb-label text-gray-300">Release blockers</div>
+    {% for a in desk.alerts %}
+    <a href="/tracks" class="flex items-center gap-2.5 text-xs hover:text-white">
+      <span class="h-2 w-2 shrink-0 rounded-full {{ 'bg-red-500' if a.level == 'red' else 'bg-amber-400' }}"></span>
+      <span class="min-w-0 flex-1 truncate text-gray-200"><span class="font-bold">{{ a.track }}</span> — {{ a.text }}</span>
+      <span class="shrink-0 sb-num text-gray-300">drops {{ a.date }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- The real order the engines feed each other -->
+  <div class="flex flex-wrap items-center gap-1 px-1 text-xs font-bold uppercase tracking-wide">
+    {% for label, href in desk.flow %}
+    <a href="{{ href }}" class="sb-btn sb-btn-secondary sb-btn-sm">{{ label }}</a>
+    {% if not loop.last %}<span class="text-sb-gold">→</span>{% endif %}
+    {% endfor %}
+    <span class="ml-2 normal-case tracking-normal text-gray-300">each stage reads the last one's real output</span>
+  </div>
+
+  <div class="flex gap-1.5 text-xs font-bold uppercase">
+    <button type="button" class="sb-btn sb-btn-secondary sb-btn-sm" data-live="">All</button>
+    <button type="button" class="desk-pill rounded-full border border-white/10 px-2.5 py-1 text-green-400 hover:border-sb-gold/40" data-live="1">Live</button>
+    <button type="button" class="sb-btn sb-btn-secondary sb-btn-sm" data-live="0">Preview</button>
+  </div>
+  {% endif %}
+
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    {% for key, href, path, label, desc in hub.modules %}
+    <a href="{{ href }}" data-live="{{ '1' if key in live_keys else '0' }}" class="desk-tile group rounded-2xl border p-4 transition-colors {{ 'border-sb-gold/30 bg-sb-surface-2 hover:border-sb-gold/60' if key in live_keys else 'border-white/10 bg-sb-surface-1 hover:border-white/20' }}">
+      <div class="flex items-center gap-3">
+        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border {{ 'border-sb-gold/40 text-sb-gold-bright' if key in live_keys else 'border-white/10 text-gray-300' }}">
+          <svg class="h-[18px] w-[18px]" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            {% for d in path.split('|') if d %}<path d="{{ d }}"/>{% endfor %}
+          </svg>
+        </span>
+        <span class="min-w-0 flex-1 truncate text-sm font-bold {{ 'text-gray-100' if key in live_keys else 'text-gray-300' }}">{{ label }}</span>
+        {% if key in live_keys %}
+        <span class="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-xs font-bold uppercase text-green-400">Live</span>
+        {% else %}
+        <span class="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-bold uppercase text-gray-300">Preview</span>
+        {% endif %}
+      </div>
+      {% if desk and key in ('qualification', 'trust-score') %}
+      {# Real score gauge — same engine as the full page #}
+      {% set score = desk.growth if key == 'qualification' else desk.trust %}
+      <div class="mt-2 flex items-center gap-3">
+        <svg viewBox="0 0 80 46" class="h-12 w-20 shrink-0">
+          <path d="M8 42 A32 32 0 0 1 72 42" fill="none" stroke="#221D18" stroke-width="7" stroke-linecap="round"/>
+          <path d="M8 42 A32 32 0 0 1 72 42" fill="none" stroke="#E8B950" stroke-width="7" stroke-linecap="round"
+                stroke-dasharray="{{ (score / 100 * 100.5) | round(1) }} 200"/>
+          <text x="40" y="40" text-anchor="middle" font-size="15" font-weight="900" fill="#E8B950">{{ score }}</text>
+        </svg>
+        <span class="text-xs leading-snug text-gray-300 font-medium">{{ desc }}</span>
+      </div>
+      {% elif desk and key == 'actions' and desk.actions %}
+      <div class="mt-2 space-y-1">
+        {% for a in desk.actions %}
+        <div class="flex items-center gap-1.5 truncate text-xs text-gray-300 font-medium">
+          <span class="h-1.5 w-1.5 shrink-0 rounded-full {{ 'bg-red-400' if a.priority == 'high' else ('bg-sb-gold-bright' if a.priority == 'medium' else 'bg-gray-600') }}"></span>
+          <span class="truncate">{{ a.title }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% elif desk and key == 'insights' and desk.insights %}
+      <div class="mt-2 space-y-1">
+        {% for i in desk.insights %}
+        <div class="truncate text-xs text-gray-300 font-medium">▸ {{ i.title }}</div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="mt-2 text-xs leading-relaxed text-gray-300">{{ desc }}</p>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+
+  <p class="text-xs text-gray-300 font-medium">Everything marked <span class="text-green-400">Live</span> runs on your real data today; <span class="text-gray-300">Preview</span> tiles show sample data until their integration lands.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Live/Preview tile filter
+  document.querySelectorAll(".desk-pill").forEach((p) => {
+    p.addEventListener("click", () => {
+      document.querySelectorAll(".desk-pill").forEach((x) =>
+        x.classList.remove("border-sb-gold", "bg-sb-gold/10"));
+      p.classList.add("border-sb-gold", "bg-sb-gold/10");
+      const want = p.dataset.live;
+      document.querySelectorAll(".desk-tile").forEach((t) => {
+        t.classList.toggle("hidden", !!want && t.dataset.live !== want);
+      });
+    });
+  });
+
+  // Countdown to the next scheduled drop (midnight UTC on release day)
+  const cd = document.getElementById("drop-count");
+  if (cd) {
+    const target = new Date(cd.dataset.date + "T00:00:00Z").getTime();
+    const cell = (v, l) => '<div><div class="text-xl font-black tabular-nums text-sb-ink">' + v +
+      '</div><div class="text-xs font-bold uppercase text-gray-300">' + l + "</div></div>";
+    const tick = () => {
+      let s = Math.max(0, Math.floor((target - Date.now()) / 1000));
+      const d = Math.floor(s / 86400); s -= d * 86400;
+      const h = Math.floor(s / 3600); s -= h * 3600;
+      const m = Math.floor(s / 60); s -= m * 60;
+      cd.innerHTML = cell(d, "days") + cell(h, "hrs") + cell(m, "min") + cell(s, "sec");
+    };
+    tick();
+    setInterval(tick, 1000);
+  }
+</script>
+{% endblock %}

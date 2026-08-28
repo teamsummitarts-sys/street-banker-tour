@@ -1,0 +1,15 @@
+{% import "tour/_macros.html" as m %}
+{% if people %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Name</th><th>Role</th><th>Category</th><th>Contact</th></tr></thead>
+  <tbody>
+  {% for p in people %}
+  <tr><td data-k="Name"><b>{{ p['name'] }}</b>{% if p['company'] %}<div class="to-muted">{{ p['company'] }}</div>{% endif %}</td><td data-k="Role">{{ p['role'] or '—' }}</td><td data-k="Category">{{ p['category'] }}</td>
+    <td data-k="Contact">{% if p['phone'] %}<a href="tel:{{ p['phone'] }}">{{ p['phone'] }}</a>{% endif %}{% if p['email'] %}<div><a href="mailto:{{ p['email'] }}">{{ p['email'] }}</a></div>{% endif %}{% if not p['phone'] and not p['email'] %}<span class="to-muted">—</span>{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+  {{ m.empty("Nobody assigned to this show", "People on the tour directory appear here when they are on every show or assigned to this one.", "/tours/" ~ tour['id'] ~ "/people", "People directory") }}
+{% endif %}
+<div class="to-bar"><a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/people">Full directory</a></div>

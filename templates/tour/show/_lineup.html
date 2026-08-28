@@ -1,0 +1,98 @@
+{% import "tour/_macros.html" as m %}
+{#- The bill for this date, and a line check for each act on it.
+
+    On a package tour the running order is the organising fact of the day -
+    load-in, line checks, changeovers and set times all hang off it, and it
+    changes show to show. It lives on the SHOW, not the tour, for that reason.
+
+    The times are edited in place, in one form, with one Save. A disclosure
+    per act put an empty row under every line and turned a five-act bill into
+    a ten-row table, which buried the one thing this panel exists to show.
+    It was also the wrong shape: an advance arrives as one email with all the
+    times in it, not five separate conversations. -#}
+<div class="to-bar">
+  <h3 class="to-eyebrow">Bill &amp; line checks</h3>
+  {% if lineup %}<span class="to-chip">{{ lineup|length }} act{{ '' if lineup|length == 1 else 's' }}</span>{% endif %}
+</div>
+
+{% if lineup_warnings %}
+  {#- Above the table. After a re-order the times can run backwards against
+      the new running order, and nobody spots that in a list sorted by order
+      with the times as plain text. -#}
+  {% for warning in lineup_warnings %}
+    <p class="to-note to-note--warn">{{ warning }}</p>
+  {% endfor %}
+{% endif %}
+
+{% if lineup %}
+  {% if can('schedule') or can('edit') %}
+  <form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/lineup/times">
+  {% endif %}
+  <table class="to-table">
+    <thead>
+      <tr><th>#</th><th>Act</th><th>Line check</th><th>Set start</th><th>Set end</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      {% for act in lineup %}
+      <tr>
+        <td>{{ act['running_order'] }}</td>
+        <td>
+          {{ act['act_name'] }}
+          {% if act['is_headliner'] %}<span class="to-chip to-chip--gold">headliner</span>{% endif %}
+        </td>
+        {% if can('schedule') or can('edit') %}
+          <td><input class="to-input" type="time" name="line_check:{{ act['id'] }}"
+                     value="{{ act['line_check'] }}" aria-label="Line check for {{ act['act_name'] }}"></td>
+          <td><input class="to-input" type="time" name="set_start:{{ act['id'] }}"
+                     value="{{ act['set_start'] }}" aria-label="Set start for {{ act['act_name'] }}"></td>
+          <td><input class="to-input" type="time" name="set_end:{{ act['id'] }}"
+                     value="{{ act['set_end'] }}" aria-label="Set end for {{ act['act_name'] }}"></td>
+          <td><input class="to-input" type="text" name="notes:{{ act['id'] }}"
+                     value="{{ act['notes'] }}" aria-label="Notes for {{ act['act_name'] }}"></td>
+        {% else %}
+          <td>{{ act['line_check'] or '—' }}</td>
+          <td>{{ act['set_start'] or '—' }}</td>
+          <td>{{ act['set_end'] or '—' }}</td>
+          <td class="to-muted">{{ act['notes'] }}</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if can('schedule') or can('edit') %}
+    <div class="to-bar" style="margin-bottom:0">
+      <button class="to-btn to-btn--small" type="submit">Save times</button>
+      <span class="to-muted" style="font-size:12px">Leave a time blank if it has not been advanced yet.</span>
+    </div>
+  </form>
+
+  <form method="post" style="margin-top:8px"
+        action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/lineup/schedule">
+    <button class="to-btn to-btn--ghost to-btn--small" type="submit">Put line checks on the day sheet</button>
+    <span class="to-muted" style="font-size:12px">Acts with no time are skipped — an un-advanced line check is not a 16:00 line check.</span>
+  </form>
+  {% endif %}
+{% else %}
+<p class="to-muted">No bill set for this date yet.</p>
+{% endif %}
+
+{% if can('schedule') or can('edit') %}
+<details style="margin-top:10px">
+  <summary class="to-muted" style="cursor:pointer">{{ 'Change the bill' if lineup else 'Set the bill' }}</summary>
+  <form method="post" class="to-form" style="margin-top:8px"
+        action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/lineup">
+    {#- One box, one act per line, opener first. A tour manager pastes the
+        running order out of an email; re-typing five acts into five fields
+        to move one of them is why people keep using a spreadsheet. -#}
+    {{ m.textarea('acts', 'One act per line, opener first',
+                  lineup | map(attribute='act_name') | join('\n'), rows=6) }}
+    {{ m.field('headliner', 'Headliner (optional)',
+               (lineup | selectattr('is_headliner') | map(attribute='act_name') | list | first) or '') }}
+    <div class="to-wide to-inline">
+      <button class="to-btn to-btn--small" type="submit">Save the bill</button>
+      <span class="to-muted" style="font-size:12px">Times already advanced stay with their act when the order changes.</span>
+    </div>
+  </form>
+</details>
+{% endif %}

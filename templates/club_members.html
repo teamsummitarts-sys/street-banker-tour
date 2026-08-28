@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Members — {{ club.name or 'Fan Club' }} · {{ artist_name }}</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+</head>
+<body class="min-h-screen bg-sb-ground text-gray-100 antialiased">
+  <main class="mx-auto flex min-h-screen w-full max-w-lg flex-col px-5 pb-10 pt-12">
+    <div class="text-center">
+      <div class="sb-label text-sb-gold-bright">{{ artist_name }}</div>
+      <h1 class="mt-2 text-3xl font-black leading-tight">{{ club.name or 'Fan Club' }}</h1>
+      <div class="mt-3 inline-flex items-center gap-2 rounded-full border border-sb-gold/40 bg-sb-gold/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-sb-gold-bright">
+        ★ Members Only
+      </div>
+    </div>
+
+    {% if mode == 'gate' %}
+    <div class="mt-8 rounded-2xl border border-white/10 bg-black/40 p-5">
+      <h2 class="text-sm font-black uppercase tracking-wide">Member access</h2>
+      <p class="mt-1.5 text-xs leading-relaxed text-gray-300">This area is for paying members. Enter the email you joined with and we'll send you a sign-in link — no password needed.</p>
+
+      {% if email_error %}
+      <p class="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs leading-relaxed text-amber-300 font-medium">Your membership checks out, but the access email couldn't be delivered from this server yet. Rejoining through checkout signs you in instantly — you won't be charged twice for an active subscription, or contact {{ artist_name }} directly.</p>
+      {% elif sent %}
+      <p class="mt-3 rounded-lg border border-green-500/25 bg-green-500/10 px-3 py-2.5 text-xs text-green-300 font-medium">If that email has an active membership, your access link is on its way. Give it a minute and check spam too.</p>
+      {% endif %}
+
+      {% if email_live %}
+      <form method="post" action="/club/{{ slug }}/members/link" class="mt-4">
+        <input name="email" type="email" required placeholder="the email you joined with"
+               class="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3.5 text-sm text-white placeholder-gray-300 focus:border-white/40 focus:outline-none">
+        <button type="submit" class="mt-2 w-full rounded-xl bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-5 py-3.5 text-sm font-black uppercase tracking-wide text-sb-on-gold transition-transform hover:scale-[1.01]">Email my access link</button>
+      </form>
+      {% else %}
+      <p class="mt-4 rounded-lg border border-white/10 bg-black/50 px-3 py-2.5 text-xs leading-relaxed text-gray-300 font-medium">Access emails aren't switched on for this server yet. If you just joined, the checkout receipt page signs you in automatically — otherwise check back soon.</p>
+      {% endif %}
+
+      <p class="mt-4 text-center text-xs text-gray-300 font-medium">Not a member yet? <a href="/club/{{ slug }}" class="font-bold text-sb-gold-bright hover:underline">Join the club</a></p>
+    </div>
+    {% else %}
+    <div class="mt-2 text-center text-xs text-gray-300 font-medium">Signed in as <span class="font-bold text-gray-200">{{ member_email }}</span></div>
+
+    <div class="mt-6 space-y-4">
+      {% for drop in drops %}
+      <article class="rounded-2xl border border-sb-gold-bright/25 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5">
+        <div class="sb-label text-gray-300">{{ drop.created[:10] }}</div>
+        <h2 class="mt-1 text-lg font-black leading-snug">{{ drop.title }}</h2>
+        {% if drop.body %}<p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-200">{{ drop.body }}</p>{% endif %}
+        {% if drop.link_url %}
+        <a href="{{ drop.link_url }}" target="_blank" rel="noopener"
+           class="mt-3 inline-block rounded-lg bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-4 py-2 text-xs font-black uppercase tracking-wide text-sb-on-gold">Open the drop ↗</a>
+        {% endif %}
+      </article>
+      {% else %}
+      <div class="rounded-2xl border border-white/10 bg-black/40 p-6 text-center">
+        <p class="text-sm text-gray-300">No drops posted yet — the moment {{ artist_name }} shares something for members, it lands right here.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <p class="mt-6 text-center text-xs text-gray-300 font-medium">Your membership renews monthly through Stripe. Cancel anytime from your Stripe receipt emails — access ends when the subscription does.</p>
+    {% endif %}
+
+    <footer class="mt-auto pt-10 text-center">
+      <a href="/" class="inline-flex items-center gap-2 opacity-60 transition-opacity hover:opacity-100">
+        <span class="sb-label text-gray-300">Powered by</span>
+        <img src="/static/img/streetbanker-logo.svg" alt="Street Banker" class="h-5 w-auto">
+      </a>
+    </footer>
+  </main>
+</body>
+</html>

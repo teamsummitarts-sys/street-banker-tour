@@ -1,0 +1,132 @@
+{% extends "signal/_shell.html" %}
+{% from "signal/_macros.html" import artist_cell, score_cell, delta, dist_pill %}
+{% block title %}Dashboard{% endblock %}
+{% block main %}
+  <div class="sg-head">
+    <div>
+      <p class="sg-eyebrow">Street Banker</p>
+      <h1 class="sg-h1">Signal</h1>
+      <p class="sg-lede">
+        Who is beginning to move, whether the movement is real, what infrastructure sits behind it,
+        and what to do next. Every number opens its own explanation; every claim about a distributor,
+        a manager or a registration carries its source.
+      </p>
+    </div>
+    <a class="sg-btn sg-btn--ghost sg-btn--small" href="/signal/ask">Ask Signal</a>
+  </div>
+
+  <div class="sg-grid" style="margin-top:18px">
+    <div class="sg-card">
+      <div class="sg-stat-label">Artists tracked</div>
+      <div class="sg-stat">{{ '{:,}'.format(counts['artists']) }}</div>
+    </div>
+    <div class="sg-card">
+      <div class="sg-stat-label">Releases observed</div>
+      <div class="sg-stat">{{ '{:,}'.format(counts['releases']) }}</div>
+    </div>
+    <div class="sg-card">
+      <div class="sg-stat-label">Evidence on file</div>
+      <div class="sg-stat">{{ '{:,}'.format(counts['evidence']) }}</div>
+    </div>
+    <div class="sg-card">
+      <div class="sg-stat-label">Handed to the desk</div>
+      <div class="sg-stat">{{ desk_links|length }}</div>
+    </div>
+  </div>
+
+  <h2 class="sg-h2">Breaking now — last 7 days</h2>
+  {% if breaking %}
+    <div class="sg-table-wrap">
+      <table class="sg-table">
+        <thead><tr>
+          <th scope="col">Artist</th><th scope="col" class="sg-num">Momentum</th>
+          <th scope="col" class="sg-num">7d</th><th scope="col">Shape</th>
+          <th scope="col">Distribution</th><th scope="col" class="sg-num">Gap</th>
+        </tr></thead>
+        <tbody>
+          {% for r in breaking %}
+            <tr>
+              <td>{{ artist_cell(r['artist']) }}</td>
+              <td class="sg-num">{{ score_cell(r['artist']['id'], 'sb_momentum', r['momentum']) }}</td>
+              <td class="sg-num">{{ delta(r['change_7d']) }}</td>
+              <td><span class="sg-pill">{{ r['shape'] }}</span></td>
+              <td>{{ dist_pill(r['distribution']) }}</td>
+              <td class="sg-num">{{ score_cell(r['artist']['id'], 'distribution_gap', r['gap'], 'hot' if r['gap'] >= 70 else '') }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:8px"><a class="sg-btn sg-btn--ghost sg-btn--small" href="/signal/breaking">Open Breaking Now</a></p>
+  {% else %}
+    <div class="sg-empty">Nothing moved materially in the last seven days.</div>
+  {% endif %}
+
+  <div class="sg-cols" style="margin-top:8px">
+    <div>
+      <h2 class="sg-h2">Widest infrastructure gaps</h2>
+      {% if gaps %}
+        <div class="sg-table-wrap">
+          <table class="sg-table">
+            <thead><tr><th scope="col">Artist</th><th scope="col">Distribution</th><th scope="col" class="sg-num">Gap</th></tr></thead>
+            <tbody>
+              {% for r in gaps %}
+                <tr>
+                  <td>{{ artist_cell(r['artist']) }}</td>
+                  <td>{{ dist_pill(r['distribution']) }}</td>
+                  <td class="sg-num">{{ score_cell(r['artist']['id'], 'distribution_gap', r['gap'], 'hot' if r['gap'] >= 70 else '') }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="sg-empty">No gaps above the bar yet.</div>
+      {% endif %}
+
+      <h2 class="sg-h2">Rights health — worth a look</h2>
+      {% if rights %}
+        <ul class="sg-list">
+          {% for r in rights %}
+            <li><a href="/signal/artist/{{ r['artist']['id'] }}?tab=rights">{{ r['artist']['canonical_name'] }}</a>
+              — Rights Health {{ r['rights'] }}. Questions to answer, not a finding of fact.</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="sg-empty">No catalogue has raised a rights question yet.</div>
+      {% endif %}
+    </div>
+
+    <div>
+      <h2 class="sg-h2">Alerts</h2>
+      {% if alerts %}
+        <ul class="sg-list">
+          {% for al in alerts %}
+            <li>
+              {% if al['artist_id'] %}<a href="/signal/artist/{{ al['artist_id'] }}">{{ al['title'] }}</a>
+              {% else %}{{ al['title'] }}{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+        <p style="margin-top:8px"><a class="sg-btn sg-btn--ghost sg-btn--small" href="/signal/alerts">All alerts</a></p>
+      {% else %}
+        <div class="sg-empty">No alerts. Set a rule on the Alerts page and Signal will watch for you.</div>
+      {% endif %}
+
+      <h2 class="sg-h2">Data freshness</h2>
+      <dl class="sg-kv">
+        {% for info in freshness %}
+          <dt>{{ info['label'] }}</dt>
+          <dd>{{ '{:,}'.format(info['rows']) }} rows
+            {% if info['stale'] %}<span class="sg-pill is-warn">stale</span>{% endif %}
+          </dd>
+        {% endfor %}
+      </dl>
+    </div>
+  </div>
+
+  <p class="sg-note">
+    Signal ranks, flags, compares and explains. It does not sign artists, send offers, or contact
+    anyone, and it does not replace A&amp;R judgement, legal counsel or a royalty professional.
+  </p>
+{% endblock %}

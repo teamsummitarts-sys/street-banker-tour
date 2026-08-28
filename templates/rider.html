@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ show.artist_name }} — Tech Rider · {{ show.venue }}</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <style>
+    @media print {
+      body { background: #fff !important; color: var(--sb-ground) !important; }
+      .card { background: #fff !important; border: 1px solid var(--sb-ink) !important; }
+      .card *, h1, h2, p, span, div { color: var(--sb-ground) !important; }
+      .gold { color: var(--sb-gold-deep) !important; }
+      .no-print { display: none !important; }
+      #plot svg { filter: invert(0.92) hue-rotate(180deg); }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-sb-ground text-gray-100 antialiased">
+  <main class="mx-auto w-full max-w-3xl px-5 pb-12 pt-10">
+
+    <div class="no-print mb-6 flex items-center justify-end">
+      <button onclick="window.print()" class="rounded-lg bg-sb-gold-bright px-4 py-2 text-xs font-black uppercase tracking-wide text-sb-on-gold hover:bg-sb-gold-bright">Print / Save as PDF</button>
+    </div>
+
+    <div class="border-b border-sb-gold/40 pb-5 text-center">
+      <div class="sb-label gold text-sb-gold-bright">Technical Rider</div>
+      <h1 class="mt-2 text-3xl font-black leading-tight">{{ show.artist_name }}</h1>
+      <p class="mt-1 text-sm text-gray-300">{{ show.venue }}{% if show.city %} · {{ show.city }}{% endif %} · {{ show.date }}</p>
+    </div>
+
+    <!-- Contacts -->
+    {% if adv.get('dayof_contact') or adv.get('contact_name') %}
+    <section class="card mt-6 rounded-2xl border border-white/10 bg-black/40 p-5">
+      <h2 class="sb-label gold text-sb-gold-bright">Contacts</h2>
+      <div class="mt-2 space-y-1 text-sm">
+        {% if adv.get('dayof_contact') %}<p><span class="text-gray-300">Day-of:</span> <span class="font-bold">{{ adv.dayof_contact }}</span></p>{% endif %}
+        {% if adv.get('contact_name') %}<p><span class="text-gray-300">Advance:</span> {{ adv.contact_name }}{% if adv.get('contact_email') %} · {{ adv.contact_email }}{% endif %}</p>{% endif %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Schedule -->
+    {% if schedule %}
+    <section class="card mt-4 rounded-2xl border border-white/10 bg-black/40 p-5">
+      <h2 class="sb-label gold text-sb-gold-bright">Schedule</h2>
+      <div class="mt-2 divide-y divide-white/5">
+        {% for label, value in schedule %}
+        <div class="flex items-baseline justify-between py-1.5">
+          <span class="text-xs font-bold uppercase tracking-wide text-gray-300">{{ label }}</span>
+          <span class="text-sm font-black">{{ value }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Stage plot + input list (the SVG carries the channel list) -->
+    <section class="card mt-4 rounded-2xl border border-white/10 bg-black/40 p-5">
+      <h2 class="sb-label gold text-sb-gold-bright">Stage plot &amp; input list</h2>
+      <div id="plot" class="mt-3 [&_svg]:h-auto [&_svg]:w-full"></div>
+      <p id="plot-empty" class="hidden mt-3 text-sm text-gray-300">No stage plot on file for this act yet — it lives in Street Banker's Stage Plot designer.</p>
+    </section>
+
+    <!-- Backline -->
+    {% if adv.get('backline') %}
+    <section class="card mt-4 rounded-2xl border border-white/10 bg-black/40 p-5">
+      <h2 class="sb-label gold text-sb-gold-bright">Backline</h2>
+      <p class="mt-2 text-sm leading-relaxed">{{ adv.backline }}</p>
+    </section>
+    {% endif %}
+
+    <!-- Lighting -->
+    {% if lights and lights.bars %}
+    <section class="card mt-4 rounded-2xl border border-white/10 bg-black/40 p-5">
+      <h2 class="sb-label gold text-sb-gold-bright">Lighting</h2>
+      <p class="mt-2 text-sm leading-relaxed">The act carries a programmed light show{% if lights.name %} ("{{ lights.name }}"){% endif %}: <span class="font-bold">{{ lights.bars }} wash bars</span> ({{ 'RGBA' if lights.chans == 4 else 'RGB' }}, {{ lights.chans }} DMX channels each, addressed outward-in in pairs) with <span class="font-bold">{{ lights.cues }} programmed cue{{ 's' if lights.cues != 1 else '' }}</span>, run from the act's own laptop over an ENTTEC DMX USB Pro. House needs: one free DMX universe (or direct feed to the bars) and a power drop stage left.</p>
+    </section>
+    {% endif %}
+
+    <!-- Logistics -->
+    {% set logi = [('Parking / load-in', adv.get('parking')), ('Hospitality', adv.get('hospitality')), ('Merch table', adv.get('merch_setup'))] %}
+    {% if adv.get('parking') or adv.get('hospitality') or adv.get('merch_setup') %}
+    <section class="card mt-4 rounded-2xl border border-white/10 bg-black/40 p-5">
+      <h2 class="sb-label gold text-sb-gold-bright">Logistics</h2>
+      <div class="mt-2 space-y-1.5 text-sm">
+        {% for label, value in logi %}{% if value %}
+        <p><span class="text-gray-300">{{ label }}:</span> {{ value }}</p>
+        {% endif %}{% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <p class="mt-6 text-center text-xs text-gray-300 font-medium">Questions on anything above? {{ 'Call the day-of contact listed at the top.' if adv.get('dayof_contact') else 'Reach the act through the booking contact.' }} This rider only lists what the act has actually entered — no boilerplate.</p>
+
+    <footer class="mt-8 pt-4 text-center">
+      <a href="/" class="no-print inline-flex items-center gap-2 opacity-60 transition-opacity hover:opacity-100">
+        <span class="sb-label text-gray-300">Powered by</span>
+        <img src="/static/img/streetbanker-logo.svg" alt="Street Banker" class="h-5 w-auto">
+      </a>
+    </footer>
+  </main>
+
+  <script src="/static/js/stageplot.js"></script>
+  <script>
+    (function () {
+      var plot = {{ plot_json | js_json }};
+      if (plot && plot.items) {
+        plot.name = plot.name || {{ show.artist_name | tojson }};
+        document.getElementById("plot").innerHTML = window.StagePlot.buildSvg(plot);
+      } else {
+        document.getElementById("plot-empty").classList.remove("hidden");
+      }
+    })();
+  </script>
+</body>
+</html>

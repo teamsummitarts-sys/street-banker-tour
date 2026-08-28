@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Growth Score - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker · Qualification</div>
+      <h1 class="sb-h1 mt-1">Growth Score</h1>
+      {% include "partials/score_trend.html" %}
+      <p class="mt-1 max-w-2xl text-sm text-gray-300">Every point is computed from your real account — campaigns, rollouts, fans, metadata, and press kit. Raise the score, unlock more reach.</p>
+    </div>
+    <a href="/artist-profile" class="sb-btn sb-btn-secondary">Artist Profile →</a>
+  </div>
+
+  <!-- Console readout -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-6 shadow-[0_0_60px_rgba(201,162,74,0.07)]">
+    <div class="flex flex-wrap items-center justify-between gap-6">
+      <div class="flex items-center gap-5">
+        <!-- Score ring: the arc is your real total -->
+        <div class="relative h-28 w-28 shrink-0">
+          <svg viewBox="0 0 100 100" class="h-full w-full -rotate-90">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#221D18" stroke-width="9"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke="{{ '#79B473' if q.total >= 75 else '#E8B950' }}" stroke-width="9" stroke-linecap="round"
+                    stroke-dasharray="{{ (q.total / 100 * 263.9) | round(1) }} 400" style="filter: drop-shadow(0 0 6px rgba(216,178,90,0.5));"/>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span id="q-total" data-total="{{ q.total }}" class="text-3xl font-black tabular-nums {{ 'text-green-400' if q.total >= 75 else 'text-sb-gold-bright' }}">{{ q.total }}</span>
+            <span class="text-xs text-gray-300 font-medium">/100</span>
+          </div>
+        </div>
+        <div>
+          <div class="sb-label text-gray-300">Street Banker Qualification Score</div>
+          <div class="mt-1 text-xs font-bold uppercase tracking-wide {{ 'text-green-400' if q.recommendation == 'High potential' else 'text-sb-gold-bright' }}">{{ q.recommendation }}</div>
+          <div id="q-whatif" class="mt-1.5 hidden text-xs font-bold text-sky-400">What-if: <span id="q-whatif-total" class="sb-num"></span>/100 with the checked work done</div>
+        </div>
+      </div>
+      {% if q.badges %}
+      <div class="flex max-w-sm flex-wrap gap-1.5">
+        {% for b in q.badges %}
+        <span class="rounded-md border border-sb-gold/40 bg-sb-gold/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-sb-gold-bright">{{ b }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <!-- VU meters per category -->
+    <div class="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+      {% for name, pts, note in q.categories %}
+      <div>
+        <div class="flex items-baseline justify-between">
+          <span class="text-xs font-bold uppercase tracking-wide text-gray-200">{{ name }}</span>
+          <span class="text-xs font-black tabular-nums {{ 'text-green-400' if pts >= 7 else ('text-sb-gold-bright' if pts >= 4 else 'text-red-400/80') }}">{{ pts }}/10</span>
+        </div>
+        <div class="mt-1 flex gap-[3px]">
+          {% for i in range(10) %}
+          <span class="h-2.5 flex-1 rounded {{ ('bg-green-500' if pts >= 7 else ('bg-sb-gold-bright' if pts >= 4 else 'bg-red-500/70')) if i < pts else 'bg-white/10' }}"></span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="grid gap-5 lg:grid-cols-2">
+    <!-- Needs work -->
+    <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">What Needs Work</h2>
+      {% if q.needs_work %}
+      <div class="mt-3 space-y-2.5">
+        {% for name, pts, note in q.needs_work %}
+        <div class="rounded-lg border border-white/5 bg-white/5 p-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-gray-100">{{ name }}</span>
+            <span class="text-xs font-bold sb-num text-sb-ink">{{ pts }}/10</span>
+          </div>
+          <div class="mt-0.5 text-xs text-gray-300 font-medium">{{ note }}</div>
+          <div class="mt-2 flex flex-wrap items-center gap-2">
+            <form method="post" action="/actions/from-alert">
+              <input type="hidden" name="title" value="Raise growth score: {{ name }}">
+              <input type="hidden" name="description" value="{{ note }}">
+              <input type="hidden" name="category" value="release">
+              <button class="sb-btn sb-btn-secondary sb-btn-sm">Create action</button>
+            </form>
+            <label class="flex cursor-pointer items-center gap-1.5 text-xs font-bold text-sky-400/90">
+              <input type="checkbox" class="whatif-box h-3 w-3 accent-sky-400" data-delta="{{ 10 - pts }}">What if done? (+{{ 10 - pts }})
+            </label>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="mt-3 text-xs text-gray-300 font-medium">The what-if total is straight arithmetic on the real scoring weights — completing the work is still the part that counts.</p>
+      {% else %}
+      <p class="mt-3 text-xs text-green-400">Every category is strong. This account is upstream-ready.</p>
+      {% endif %}
+    </section>
+
+    <!-- Unlocks -->
+    <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+      <h2 class="sb-label text-sb-gold-bright">What Your Score Unlocks</h2>
+      <div class="mt-3 space-y-2">
+        {% for label, threshold, met in q.unlocks %}
+        <div class="flex items-center gap-3 rounded-lg border {{ 'border-green-500/20 bg-green-500/[0.04]' if met else 'border-white/5 bg-white/5' }} px-3 py-2.5">
+          <span class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-black {{ 'bg-green-500/20 text-green-400' if met else 'bg-white/10 text-gray-300' }}">{{ '✓' if met else threshold }}</span>
+          <span class="text-sm font-semibold {{ 'text-gray-100' if met else 'text-gray-300' }}">{{ label }}</span>
+          {% if not met %}<span class="ml-auto text-xs font-bold uppercase text-gray-300">at {{ threshold }} · <span class="text-sb-gold-bright">{{ threshold - q.total }} pts away</span></span>
+          {% else %}<span class="ml-auto text-xs font-black uppercase tracking-wide text-green-400">♛ unlocked</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <p class="mt-3 text-xs text-gray-300 font-medium">Qualified accounts enter the Street Banker review queue for human curation — this score gets you seen, a person makes the call.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+  // What-if calculator: pure arithmetic on the real per-category weights.
+  (function () {
+    var totalEl = document.getElementById("q-total");
+    var strip = document.getElementById("q-whatif");
+    var stripTotal = document.getElementById("q-whatif-total");
+    if (!totalEl || !strip) return;
+    var base = parseInt(totalEl.dataset.total, 10) || 0;
+    function recalc() {
+      var extra = 0;
+      document.querySelectorAll(".whatif-box:checked").forEach(function (b) {
+        extra += parseInt(b.dataset.delta, 10) || 0;
+      });
+      if (extra > 0) {
+        stripTotal.textContent = Math.min(100, base + extra);
+        strip.classList.remove("hidden");
+      } else {
+        strip.classList.add("hidden");
+      }
+    }
+    document.querySelectorAll(".whatif-box").forEach(function (b) {
+      b.addEventListener("change", recalc);
+    });
+  })();
+</script>
+{% endblock %}

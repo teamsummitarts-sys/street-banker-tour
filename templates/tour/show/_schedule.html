@@ -1,0 +1,74 @@
+{% import "tour/_macros.html" as m %}
+{# The bill leads the schedule tab: on a package tour the running
+   order is what every other time on the day hangs off. #}
+{% include "tour/show/_lineup.html" %}
+
+<div class="to-split">
+  <div>
+    {% if schedule %}
+    <ul class="to-timeline">
+      {% for r in schedule %}
+      <li class="to-tl-item">
+        <div class="to-tl-time">{{ fmt_time(r['start_time']) or 'TBD' }}{% if r['end_time'] %}<small>to {{ fmt_time(r['end_time']) }}</small>{% endif %}{% if r['precision'] == 'approx' %}<small>approx</small>{% elif r['precision'] == 'tbd' %}<small>tbd</small>{% endif %}</div>
+        <div>
+          <div class="to-tl-title">{{ r['title'] }} <span class="to-chip">{{ r['category']|replace('_',' ') }}</span>{% if r['visibility'] != 'all' %} <span class="to-chip to-chip--gold">{{ r['visibility'] }}</span>{% endif %}</div>
+          {% if r['location'] %}<div class="to-tl-where">{{ r['location'] }}{% if r['address'] %} · {{ r['address'] }}{% endif %}</div>{% endif %}
+          {% if r['responsible'] %}<div class="to-tl-where">Responsible: {{ r['responsible'] }}</div>{% endif %}
+          {% if r['notes'] %}<div class="to-tl-where">{{ r['notes'] }}</div>{% endif %}
+          {% if can('schedule') or can('edit') %}
+          <details style="margin-top:6px"><summary class="to-muted" style="cursor:pointer">Edit</summary>
+            <form method="post" action="/tours/{{ tour['id'] }}/schedule/{{ r['id'] }}/edit" class="to-grid" style="margin-top:8px">
+              {{ m.field('title', 'Title', r['title']) }}
+              {{ m.select('category', 'Category', vocab['schedule_categories'], r['category']) }}
+              {{ m.field('start_time', 'Start', r['start_time'], type='time') }}
+              {{ m.field('end_time', 'End', r['end_time'], type='time') }}
+              {{ m.select('precision', 'Precision', vocab['precision'], r['precision']) }}
+              {{ m.field('location', 'Location', r['location']) }}
+              {{ m.field('responsible', 'Responsible', r['responsible']) }}
+              {{ m.select('visibility', 'Visibility', vocab['visibility'], r['visibility']) }}
+              {{ m.textarea('notes', 'Notes', r['notes'], rows=2) }}
+              <div class="to-checks to-wide">{{ m.check('confirmed', 'Confirmed', r['confirmed']) }}</div>
+              <div class="to-wide to-inline"><button class="to-btn to-btn--small" type="submit">Save</button>
+                <button class="to-btn to-btn--ghost to-btn--small to-btn--danger" type="submit" name="action" value="delete">Delete</button></div>
+            </form>
+          </details>
+          {% endif %}
+        </div>
+        <div class="to-tl-flags">{% if r['confirmed'] %}<span class="ok">confirmed</span>{% elif can('schedule') or can('edit') %}<form method="post" action="/tours/{{ tour['id'] }}/schedule/{{ r['id'] }}/edit"><input type="hidden" name="action" value="confirm"><button class="to-btn to-btn--ghost to-btn--small" type="submit">Confirm</button></form>{% else %}<span class="warn">unconfirmed</span>{% endif %}</div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      {{ m.empty("No schedule for this show yet", "Stamp the standard show day and adjust the times, copy another show's day, or add items below.") }}
+    {% endif %}
+  </div>
+
+  {% if can('schedule') or can('edit') %}
+  <aside>
+    <div class="to-bar" style="margin-top:0">
+      <form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/standard-day"><button class="to-btn to-btn--ghost to-btn--small" type="submit">Stamp standard show day</button></form>
+      <form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/copy-schedule" class="to-inline">
+        <select name="from_show_id" class="to-input" style="min-height:32px;padding:4px 8px;width:auto">{% for s in shows if s['id'] != show['id'] %}<option value="{{ s['id'] }}">{{ s['date'] }} {{ s['city'] or s['venue'] }}</option>{% endfor %}</select>
+        <button class="to-btn to-btn--ghost to-btn--small" type="submit">Copy from</button>
+      </form>
+    </div>
+    <form method="post" action="/tours/{{ tour['id'] }}/schedule/add" class="to-form">
+      <input type="hidden" name="show_id" value="{{ show['id'] }}">
+      <input type="hidden" name="day_date" value="{{ show['date'] }}">
+      <div class="to-eyebrow">Add item</div>
+      <div class="to-grid">
+        {{ m.field('title', 'Title', required=True, placeholder='Lobby call') }}
+        {{ m.select('category', 'Category', vocab['schedule_categories'], 'other') }}
+        {{ m.field('start_time', 'Start', type='time') }}
+        {{ m.field('end_time', 'End', type='time') }}
+        {{ m.select('precision', 'Precision', vocab['precision'], 'exact') }}
+        {{ m.field('location', 'Location', show['venue']) }}
+        {{ m.field('responsible', 'Responsible', placeholder='name') }}
+        {{ m.select('visibility', 'Visibility', vocab['visibility'], 'all') }}
+        {{ m.textarea('notes', 'Notes', rows=2) }}
+      </div>
+      <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Add</button></div>
+    </form>
+  </aside>
+  {% endif %}
+</div>

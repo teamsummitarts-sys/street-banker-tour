@@ -1,0 +1,12 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Search - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Search</p><h1 class="to-h1" style="font-size:20px">{% if q %}“{{ q }}”{% else %}Search this tour{% endif %}</h1></div></div>
+<form method="get" class="to-bar" style="margin-top:0"><input class="to-input" type="search" name="q" value="{{ q }}" placeholder="Venue, city, person, hotel, flight, file, guest" style="width:320px;min-height:40px" autofocus><button class="to-btn" type="submit">Search</button></form>
+{% if q and hits %}
+<div class="to-table-wrap"><table class="to-table is-stack"><tbody>
+{% for h in hits %}<tr><td data-k="Kind" style="width:110px"><span class="to-chip">{{ h['kind'] }}</span></td><td data-k="Result"><a href="{{ h['href'] }}">{{ h['label'] }}</a></td></tr>{% endfor %}
+</tbody></table></div>
+{% elif q %}{{ m.empty("Nothing matched", "Search covers shows, people, venues, schedule, hotels, travel, files and guests — within your permissions.") }}{% endif %}
+{% endblock %}

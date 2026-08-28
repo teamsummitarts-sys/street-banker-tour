@@ -1,0 +1,87 @@
+{% extends "tour/_shell.html" %}
+{% block title %}My Day - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+
+<div class="to-head">
+  <div>
+    <p class="to-eyebrow">My Day · {{ viewer['name'] }}</p>
+    <h1 class="to-h1" style="font-size:20px">{{ fmt_day(on) }}</h1>
+    <p class="to-sub">{% if show %}{{ show['city'] or '' }}{% if show['city'] %} · {% endif %}{{ show['venue'] }}{% elif day_row %}{{ day_row['kind']|replace('_',' ')|capitalize }}{% if day_row['city'] %} · {{ day_row['city'] }}{% endif %}{% else %}No show on this date.{% endif %}
+      <span class="to-muted"> · times shown in {{ tz_shown }} (now {{ fmt_time(now_local) }})</span></p>
+  </div>
+  <div class="to-inline">
+    <a class="to-btn to-btn--ghost to-btn--small" href="?date={{ prev_d }}">‹ Prev</a>
+    <a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/my-day">Today</a>
+    <a class="to-btn to-btn--ghost to-btn--small" href="?date={{ next_d }}">Next ›</a>
+  </div>
+</div>
+
+{% if nxt and nxt['item']['day_date'] == on %}
+<section class="to-next">
+  <div class="to-next-label">Next</div>
+  <div class="to-next-title">{{ nxt['title'] }}</div>
+  <div class="to-next-time">{{ nxt['when_text'] }}</div>
+  <div class="to-next-meta">{% if nxt['where'] %}<b>{{ nxt['where'] }}</b>{% endif %}</div>
+  <span class="to-next-delta">in {{ nxt['delta_text'] }}</span>
+</section>
+{% endif %}
+
+<div class="to-split">
+  <div>
+    {% if day['rows'] %}
+    <ul class="to-timeline">
+      {% for r in day['rows'] %}
+      <li class="to-tl-item {{ 'is-now' if nxt and nxt['item']['id'] == r['item']['id'] }}">
+        <div class="to-tl-time">{{ fmt_time(r['time']) or 'TBD' }}{% if r['precision'] == 'approx' %}<small>approx</small>{% endif %}</div>
+        <div>
+          <div class="to-tl-title">{{ r['title'] }}</div>
+          {% if r['where'] %}<div class="to-tl-where">{{ r['where'] }}</div>{% endif %}
+          {% if r['kind'] == 'travel' and r['item']['driver'] %}<div class="to-tl-where">Driver: {{ r['item']['driver'] }}{% if r['item']['phone'] %} · {{ r['item']['phone'] }}{% endif %}</div>{% endif %}
+          {% if r['item']['notes'] %}<div class="to-tl-where">{{ r['item']['notes'] }}</div>{% endif %}
+        </div>
+        <div class="to-tl-flags">{% if r['confirmed'] %}<span class="ok">confirmed</span>{% else %}<span class="warn">unconfirmed</span>{% endif %}</div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      {{ m.empty("Nothing on your schedule for this day", "Items appear here when they are for everyone, for you by name, or for a group you are in." ~ (" Add call times on the show's schedule." if can('schedule') else "")) }}
+    {% endif %}
+  </div>
+
+  <aside>
+    {% if day['hotel'] %}
+    <div class="to-panel is-warm">
+      <div class="to-eyebrow">Tonight's hotel</div>
+      <div style="font-weight:800;font-size:16px">{{ day['hotel']['property'] }}</div>
+      {% if day['hotel']['address'] %}<div class="to-muted">{{ day['hotel']['address'] }}{% if day['hotel']['city'] %}, {{ day['hotel']['city'] }}{% endif %}</div>{% endif %}
+      <div class="to-muted" style="margin-top:4px">Check-in {{ day['hotel']['checkin'] }}{% if day['hotel']['checkout'] %} · out {{ day['hotel']['checkout'] }}{% endif %}</div>
+      {% if day['hotel']['confirmation'] %}<div class="to-muted">Conf. {{ day['hotel']['confirmation'] }}</div>{% endif %}
+      {% if day['hotel']['wifi'] %}<div class="to-muted">Wi-Fi: {{ day['hotel']['wifi'] }}</div>{% endif %}
+      {% if day['hotel']['address'] %}<div class="to-bar" style="margin-bottom:0"><a class="to-btn to-btn--ghost to-btn--small" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query={{ (day['hotel']['address'] ~ ' ' ~ day['hotel']['city'])|urlencode }}">Directions</a></div>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if show %}
+    <div class="to-panel" style="margin-top:12px">
+      <div class="to-eyebrow">Venue</div>
+      <div style="font-weight:800">{{ show['venue'] }}</div>
+      {% if venue and venue['address'] %}<div class="to-muted">{{ venue['address'] }}, {{ venue['city'] }}</div>
+      <div class="to-bar" style="margin-bottom:0"><a class="to-btn to-btn--ghost to-btn--small" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query={{ (venue['address'] ~ ' ' ~ venue['city'])|urlencode }}">Directions</a>
+      <a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}">Show Command</a></div>
+      {% else %}<div class="to-muted">No venue address on file.</div>
+      <div class="to-bar" style="margin-bottom:0"><a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}">Show Command</a></div>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if contacts %}
+    <div class="to-panel" style="margin-top:12px">
+      <div class="to-eyebrow">Key contacts</div>
+      {% for p in contacts %}
+      <div style="padding:5px 0;border-bottom:1px solid var(--to-rule)"><b>{{ p['name'] }}</b> <span class="to-muted">{{ p['role'] or p['category'] }}</span>{% if p['phone'] %}<div class="to-muted"><a href="tel:{{ p['phone'] }}">{{ p['phone'] }}</a></div>{% endif %}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

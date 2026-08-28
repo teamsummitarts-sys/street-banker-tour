@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Billing - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-md py-16 text-center">
+  <div class="rounded-2xl border border-red-500/25 bg-sb-surface-1 p-8">
+    <div class="text-sm font-black uppercase tracking-wide text-red-400">Checkout unavailable</div>
+    <p class="mt-2 text-sm text-gray-200">{{ message }}</p>
+    <a href="/billing" class="sb-btn sb-btn-secondary sb-btn-sm mt-5">← Back to Billing</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% import "_sb.html" as sb %}
+
+{% block title %}Audio Intelligence - Street Banker{% endblock %}
+
+{% block content %}
+{#- Tone mapping is here rather than in the modules: health states are a
+    product vocabulary, and how each one LOOKS is a page decision. `ready`
+    is the only state that earns a good badge, because it is the only one
+    an adapter sets after a call actually succeeded. -#}
+{%- set state_tone = {"ready": "good", "mock": "info", "unconfigured": "idle",
+                      "degraded": "warn", "error": "crit"} -%}
+{%- set job_tone = {"completed": "good", "running": "info", "queued": "idle",
+                    "rejected": "warn", "failed": "crit", "cancelled": "idle"} -%}
+
+<div class="mx-auto max-w-[1200px] space-y-5">
+
+  <div>
+    <p class="sb-label sb-label-gold">Street Banker · Internal</p>
+    <h1 class="sb-h1 mt-1">Audio Intelligence</h1>
+    <p class="mt-2 max-w-3xl text-sm text-gray-300">
+      Which provider is actually answering, what work is in flight, what
+      arrived at the webhook, and what is past its retention date. Everything
+      on this page is measured, not declared — an adapter reports
+      <strong class="text-white">ready</strong> only after a real call to the
+      vendor has succeeded in this process.
+    </p>
+  </div>
+
+  {#- The four numbers worth seeing before anything else. `overdue` should be
+      zero; it is shown as crit when it is not, because a retention promise
+      nobody runs is a promise, not a control. -#}
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    {{ sb.kpi("Live providers",
+              health | selectattr("state", "equalto", "ready") | list | length,
+              scale="of " ~ (health | length) ~ " adapters") }}
+    {{ sb.kpi("Jobs in flight",
+              (counts.get("running", 0) + counts.get("queued", 0)),
+              scale="running or queued") }}
+    {{ sb.kpi("Failed or rejected",
+              (counts.get("failed", 0) + counts.get("rejected", 0)),
+              scale="all time",
+              value_tone="crit" if (counts.get("failed", 0)) else none) }}
+    {{ sb.kpi("Past retention", overdue, scale="awaiting destruction",
+              value_tone="crit" if overdue else "good") }}
+  </div>
+
+  <!-- Providers ------------------------------------------------------- -->
+  <section class="sb-panel p-4">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="sb-label sb-label-gold">Providers</h2>
+      <p class="text-sm text-gray-300">
+        &ldquo;Serving&rdquo; is what a job gets when it does not ask for one.
+      </p>
+    </div>
+
+    {#- One row per capability. The adapter-shaped report renders as nineteen
+        rows carrying the same sentence nine times, which buries the only
+        question worth asking: who is answering right now. -#}
+    {% call sb.table(["Capability", "Serving", "State", "Detail", "Also registered"]) %}
+      {% for row in providers %}
+        <tr>
+          <td class="whitespace-nowrap">{{ row.label }}</td>
+          <td class="whitespace-nowrap">{{ row.serving }}</td>
+          <td>{{ sb.badge(row.state, state_tone.get(row.state, "idle")) }}</td>
+          <td class="text-sm text-gray-300">{{ row.detail }}</td>
+          <td>
+            {%- for other in row.others %}
+              {{ sb.badge(other.adapter ~ " · " ~ other.state,
+                          state_tone.get(other.state, "idle"),
+                          title=other.detail) }}
+            {%- else -%}
+              <span class="text-sm text-gray-300">—</span>
+            {%- endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    {% endcall %}
+  </section>
+
+  <div class="grid gap-5 lg:grid-cols-2">
+
+    <!-- Flags --------------------------------------------------------- -->
+    <section class="sb-panel p-4">
+      <h2 class="sb-label sb-label-gold">Feature flags</h2>
+      <p class="mt-2 text-sm text-gray-300">
+        Server-side only. A flag that is not set is off, so a deployment gets
+        a new surface deliberately rather than by upgrading. Each feature
+        needs both the umbrella and its own.
+      </p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        {%- for flag in flags if flag.wired %}
+          {{ sb.badge(flag.name, "good" if flag.on else "idle") }}
+        {%- endfor %}
+      </div>
+      {%- set unwired = flags | rejectattr("wired") | list %}
+      {% if unwired %}
+        {#- Named separately. A switch that reports its own state and changes
+            nothing is worse than an absent one: an operator sets it, sees
+            "on", and concludes the feature is running. -#}
+        <p class="mt-4 text-sm text-gray-300">
+          Declared but wired to nothing — setting these changes no behaviour:
+        </p>
+        <div class="mt-2 flex flex-wrap gap-2">
+          {%- for flag in unwired %}
+            {{ sb.badge(flag.name, "warn") }}
+          {%- endfor %}
+        </div>
+      {% endif %}
+    </section>
+
+    <!-- Credentials --------------------------------------------------- -->
+    <section class="sb-panel p-4">
+      <h2 class="sb-label sb-label-gold">Credentials</h2>
+      {#- Presence only. This page says whether a key is set; it is never a
+          place to read one, and no value is passed to the template. -#}
+      <p class="mt-2 text-sm text-gray-300">
+        Whether a value is set — never what it is. Nothing here is sent to a
+        browser, and a key being present is not evidence that it works: read
+        the provider table above for that.
+      </p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        {% for secret in secrets %}
+          {{ sb.badge(secret.name, "good" if secret.set else "idle") }}
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <!-- Jobs ------------------------------------------------------------ -->
+  <section class="sb-panel p-4">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="sb-label sb-label-gold">Recent jobs</h2>
+      {{ sb.btn("Advance waiting jobs", variant="secondary", size="sm",
+                id="aa-poll") }}
+    </div>
+    <p class="mt-2 text-sm text-gray-300">
+      A <strong class="text-white">rejected</strong> job is a provider saying
+      no; it is never retried, because trying again spends money to hear the
+      same answer. A <strong class="text-white">failed</strong> one is worth
+      reading.
+    </p>
+
+    {% if jobs %}
+      {% call sb.table(["Feature", "Operation", "Provider", "Status", "Tries", "Created", "Why"]) %}
+        {% for job in jobs %}
+          <tr>
+            <td class="whitespace-nowrap">{{ job.feature_key }}</td>
+            <td class="whitespace-nowrap">{{ job.operation }}</td>
+            <td class="whitespace-nowrap">{{ job.provider }}</td>
+            <td>{{ sb.badge(job.status, job_tone.get(job.status, "idle")) }}</td>
+            <td>{{ job.attempts }}</td>
+            <td class="whitespace-nowrap text-sm text-gray-300">{{ job.created_at[:16] | replace("T", " ") }}</td>
+            <td class="text-sm text-gray-300">{{ job.error_message or "" }}</td>
+          </tr>
+        {% endfor %}
+      {% endcall %}
+    {% else %}
+      <p class="mt-3 text-sm text-gray-300">
+        No audio job has been submitted on this deployment.
+      </p>
+    {% endif %}
+  </section>
+
+  <!-- Webhooks -------------------------------------------------------- -->
+  <section class="sb-panel p-4">
+    <h2 class="sb-label sb-label-gold">Webhook deliveries</h2>
+    <p class="mt-2 text-sm text-gray-300">
+      Rejected deliveries are listed alongside accepted ones on purpose: a run
+      of bad signatures is the thing worth noticing, and a failure that only
+      exists in a log is a failure nobody sees.
+    </p>
+
+    {% if events %}
+      {% call sb.table(["Provider", "Event", "Signature", "Status", "Received", "Failure"]) %}
+        {% for event in events %}
+          <tr>
+            <td class="whitespace-nowrap">{{ event.provider }}</td>
+            <td class="whitespace-nowrap">{{ event.event_type or "—" }}</td>
+            <td>
+              {{ sb.badge("valid" if event.signature_valid else "rejected",
+                          "good" if event.signature_valid else "crit") }}
+            </td>
+            <td>{{ sb.badge(event.status, "good" if event.status == "processed"
+                            else ("crit" if event.status in ("rejected", "failed") else "idle")) }}</td>
+            <td class="whitespace-nowrap text-sm text-gray-300">{{ event.received_at[:16] | replace("T", " ") }}</td>
+            <td class="text-sm text-gray-300">{{ event.failure_reason or "" }}</td>
+          </tr>
+        {% endfor %}
+      {% endcall %}
+    {% else %}
+      <p class="mt-3 text-sm text-gray-300">Nothing has arrived at the webhook.</p>
+    {% endif %}
+  </section>
+
+  <div class="grid gap-5 lg:grid-cols-2">
+
+    <!-- Usage --------------------------------------------------------- -->
+    <section class="sb-panel p-4">
+      <h2 class="sb-label sb-label-gold">Usage</h2>
+      <p class="mt-2 text-sm text-gray-300">
+        Units, not money. Nothing here hardcodes vendor pricing, and mock jobs
+        are recorded too — a ledger with rows only when a vendor was involved
+        cannot answer what an artist actually used.
+      </p>
+      {% if usage %}
+        {% call sb.table(["Provider", "Operation", "Jobs", "In", "Out"]) %}
+          {% for row in usage %}
+            <tr>
+              <td class="whitespace-nowrap">{{ row.provider }}</td>
+              <td class="whitespace-nowrap">{{ row.operation }}</td>
+              <td>{{ row.jobs }}</td>
+              <td>{{ row.input_units | round | int }}</td>
+              <td>{{ row.output_units | round | int }}</td>
+            </tr>
+          {% endfor %}
+        {% endcall %}
+      {% else %}
+        <p class="mt-3 text-sm text-gray-300">Nothing has been consumed yet.</p>
+      {% endif %}
+    </section>
+
+    <!-- Retention ----------------------------------------------------- -->
+    <section class="sb-panel p-4">
+      <h2 class="sb-label sb-label-gold">Retention</h2>
+      <p class="mt-2 text-sm text-gray-300">
+        {% if overdue %}
+          <strong class="text-white">{{ overdue }}</strong> asset{{ "" if overdue == 1 else "s" }}
+          past the retention date and still holding audio.
+        {% else %}
+          Nothing is past its retention date.
+        {% endif %}
+        The bytes are destroyed; the row survives, because an audit trail that
+        vanishes with the audio is not an audit trail.
+      </p>
+
+      <div class="mt-3 flex flex-wrap gap-2">
+        {{ sb.btn("Preview a sweep", variant="secondary", size="sm",
+                  id="aa-sweep-dry") }}
+        {{ sb.btn("Destroy expired audio", variant="primary", size="sm",
+                  id="aa-sweep-run") }}
+      </div>
+      <p id="aa-sweep-out" class="mt-3 text-sm text-gray-300"></p>
+    </section>
+  </div>
+</div>
+
+<script>
+/* The two destructive-looking buttons behave differently on purpose: the
+   preview never passes confirm, so pressing the wrong one cannot destroy
+   anything. Only "Destroy expired audio" asks, and only after saying how
+   much it is about to remove. */
+(function () {
+  var out = document.getElementById("aa-sweep-out");
+
+  function say(text) { if (out) { out.textContent = text; } }
+
+  function post(url, body, done) {
+    fetch(url, {
+      method: "POST",
+      headers: {"Content-Type": "application/x-www-form-urlencoded"},
+      body: body || ""
+    }).then(function (r) { return r.json(); })
+      .then(done)
+      .catch(function (e) { say("Could not reach the server: " + e); });
+  }
+
+  var dry = document.getElementById("aa-sweep-dry");
+  if (dry) {
+    dry.addEventListener("click", function () {
+      say("Checking…");
+      post("/admin/audio/sweep", "", function (data) {
+        var r = (data && data.report) || {};
+        say("Would destroy " + (r.examined || 0) + " asset(s). Nothing was changed.");
+      });
+    });
+  }
+
+  var run = document.getElementById("aa-sweep-run");
+  if (run) {
+    run.addEventListener("click", function () {
+      post("/admin/audio/sweep", "", function (data) {
+        var r = (data && data.report) || {};
+        var n = r.examined || 0;
+        if (!n) { say("Nothing is past its retention date."); return; }
+        if (!window.confirm("Permanently destroy the audio for " + n +
+                            " asset(s)? The records are kept; the audio is not "
+                            + "recoverable.")) {
+          say("Left alone.");
+          return;
+        }
+        say("Destroying…");
+        post("/admin/audio/sweep", "confirm=1", function (res) {
+          var rep = (res && res.report) || {};
+          var msg = "Destroyed " + (rep.deleted || 0) + " of " + n + ".";
+          if (rep.failed) { msg += " " + rep.failed + " could not be removed and "
+                                 + "will be retried on the next sweep."; }
+          say(msg);
+        });
+      });
+    });
+  }
+
+  var poll = document.getElementById("aa-poll");
+  if (poll) {
+    poll.addEventListener("click", function () {
+      poll.disabled = true;
+      post("/admin/audio/poll", "", function (data) {
+        var moved = (data && data.advanced) || [];
+        poll.disabled = false;
+        say(moved.length ? (moved.length + " job(s) advanced. Reload to see them.")
+                         : "No job was waiting on a provider.");
+      });
+    });
+  }
+}());
+</script>
+{% endblock %}

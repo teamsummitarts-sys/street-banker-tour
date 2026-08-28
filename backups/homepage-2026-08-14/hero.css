@@ -1,0 +1,267 @@
+/* Section 2 — the homepage hero.
+ *
+ * Hand-written for the same reason the header is: the Tailwind build is
+ * checked in, and this needs exact values (a 760px floor, a 52px CTA, a
+ * gradient that reads as light falling off rather than a black box laid
+ * over a photograph). Tokens come from public-header.css, which loads
+ * first on this page; only hero-specific ones are declared here.
+ */
+
+:root {
+  --sbhero-min: 760px;
+  --sbhero-max: 900px;
+  --sbhero-copy: 46%;      /* the reserved copy column on large desktop */
+}
+
+.sbhero {
+  position: relative;
+  isolation: isolate;
+  min-height: var(--sbhero-min);
+  /* Under the sticky bar, never behind it, and never taller than a
+     laptop screen can hold in one look. */
+  height: clamp(var(--sbhero-min), calc(100svh - var(--sbh-height)), var(--sbhero-max));
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: #0d0c0b;
+}
+@media (max-width: 1023px) {
+  /* Copy first, photograph after it: on a phone the headline and the two
+     buttons are what the visitor came for, and an image above them just
+     pushes the offer below the fold. */
+  .sbhero {
+    height: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding-top: 24px;
+  }
+  .sbhero-inner { order: 1; }
+  .sbhero picture { order: 2; display: block; }
+}
+
+/* --- the photograph ------------------------------------------------- */
+.sbhero-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Right of centre: the copy sits over the room's dark left side, and
+     the drummer, the bassist and the artwork stay in frame. */
+  object-position: 68% 50%;
+  z-index: -2;
+}
+@media (min-width: 1536px) { .sbhero-photo { object-position: 60% 50%; } }
+@media (max-width: 1023px) {
+  .sbhero-photo {
+    position: relative;
+    height: clamp(320px, 58vw, 520px);
+    object-position: 50% 42%;
+    z-index: 0;
+  }
+}
+
+/* Light falling off, not a rectangle laid over a picture: two stops of
+   near-black from the left, plus a short lift at the bottom so the
+   printed sheets on the table do not fight the buttons. */
+.sbhero-veil {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg,
+      rgb(13 12 11 / 0.97) 0%,
+      rgb(13 12 11 / 0.92) 26%,
+      rgb(13 12 11 / 0.72) 45%,
+      rgb(13 12 11 / 0.28) 63%,
+      rgb(13 12 11 / 0.06) 80%,
+      rgb(13 12 11 / 0) 100%),
+    linear-gradient(0deg, rgb(13 12 11 / 0.55) 0%, rgb(13 12 11 / 0) 38%);
+}
+@media (max-width: 1023px) {
+  .sbhero-veil {
+    inset: auto 0 0 0;
+    height: 40%;
+    background: linear-gradient(0deg, rgb(13 12 11 / 0.9) 0%, rgb(13 12 11 / 0) 100%);
+  }
+}
+
+/* --- layout ---------------------------------------------------------- */
+.sbhero-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--sbh-max);
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+@media (min-width: 1024px) { .sbhero-inner { padding: 0 var(--sbh-pad); } }
+@media (max-width: 1023px) {
+  .sbhero-inner { display: block; padding-top: 28px; padding-bottom: 36px; }
+}
+
+.sbhero-copy { width: 100%; max-width: 620px; }
+@media (min-width: 1024px) {
+  .sbhero-copy { width: var(--sbhero-copy); min-width: 440px; max-width: 720px; }
+  .sbhero-title { font-size: clamp(42px, 4.2vw, 68px); }
+}
+
+.sbhero-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--sbh-brass);
+}
+
+.sbhero-title {
+  margin: 18px 0 0;
+  /* Sized against the column it sits in, not the viewport. The type
+     system here is the system sans rather than a condensed display face,
+     so "BUILD THE RELEASE." needs about 9.6x its font size in width -
+     at 6.3vw the headline wrapped to four lines inside a 38% column,
+     which the brief explicitly rules out. Two lines is the requirement;
+     the size follows from it. */
+  font-size: clamp(30px, 8.2vw, 60px);
+  line-height: 0.9;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--sbh-ivory);
+  text-wrap: balance;
+}
+.sbhero-title span { display: block; }
+
+.sbhero-rule {
+  display: block;
+  width: 112px;
+  height: 2px;
+  margin: 26px 0 0;
+  background: var(--sbh-brass);
+  opacity: 0.85;
+}
+
+.sbhero-support {
+  margin: 22px 0 0;
+  max-width: 560px;
+  font-size: clamp(16px, 1.15vw, 19px);
+  line-height: 1.6;
+  color: #E4DFD5;
+}
+
+.sbhero-ctas { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 14px; }
+
+.sbhero-cta,
+.sbhero-cta-2 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 26px;
+  border-radius: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.sbhero-cta { background: var(--sbh-brass); color: var(--sbh-ink); border: 1px solid var(--sbh-brass); }
+.sbhero-cta:hover { background: var(--sbh-brass-lit); border-color: var(--sbh-brass-lit); }
+.sbhero-cta-2 {
+  background: rgb(13 12 11 / 0.4);
+  border: 1px solid rgb(201 168 106 / 0.55);
+  color: var(--sbh-brass);
+}
+.sbhero-cta-2:hover { background: rgb(201 168 106 / 0.12); color: var(--sbh-brass-lit); }
+
+.sbhero a:focus-visible {
+  outline: 2px solid var(--sbh-brass);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@media (max-width: 640px) {
+  .sbhero-ctas { display: grid; grid-template-columns: 1fr; }
+  .sbhero-cta, .sbhero-cta-2 { width: 100%; }
+}
+
+/* --- product preview -------------------------------------------------- */
+/* Live markup, not a picture of a product: real component styling, and
+   every figure on it is labelled as an example rather than dressed up as
+   somebody's account. */
+.sbhero-preview {
+  display: none;
+  width: 320px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  align-self: flex-end;
+  margin-bottom: 6vh;
+  border: 1px solid rgb(242 238 230 / 0.14);
+  border-radius: 10px;
+  background: rgb(13 12 11 / 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 16px 18px 18px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.45);
+}
+@media (min-width: 1280px) { .sbhero-preview { display: block; } }
+
+.sbhero-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.sbhero-preview-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--sbh-ivory-muted);
+}
+.sbhero-preview-tag {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sbh-brass);
+  border: 1px solid rgb(201 168 106 / 0.4);
+  border-radius: 999px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+.sbhero-preview-rows { margin-top: 14px; display: grid; gap: 9px; }
+.sbhero-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  color: #E4DFD5;
+}
+.sbhero-preview-row svg { flex: 0 0 auto; }
+.sbhero-preview-foot {
+  margin: 14px 0 0;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--sbh-ivory-muted);
+}
+
+/* --- motion ----------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .sbhero-copy > * { animation: sbhero-rise 520ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+  .sbhero-copy > :nth-child(2) { animation-delay: 60ms; }
+  .sbhero-copy > :nth-child(3) { animation-delay: 100ms; }
+  .sbhero-copy > :nth-child(4) { animation-delay: 140ms; }
+  .sbhero-copy > :nth-child(5) { animation-delay: 190ms; }
+  .sbhero-preview { animation: sbhero-rise 620ms 240ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+}
+@keyframes sbhero-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}

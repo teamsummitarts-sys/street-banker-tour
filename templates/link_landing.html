@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ meta.title or link.title }} — {{ meta.artist }}</title>
+  <meta property="og:title" content="{{ meta.title or link.title }} — {{ meta.artist }}">
+  {% if meta.art %}<meta property="og:image" content="{{ meta.art }}">{% endif %}
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+</head>
+<body class="min-h-screen bg-sb-ground text-gray-200 antialiased">
+{% import "landing/_cards.html" as logos %}
+  <div class="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-4 py-10">
+    <div class="w-full overflow-hidden rounded-2xl border border-sb-gold/40 bg-gradient-to-b from-sb-surface-2 to-sb-ground shadow-[0_0_60px_rgba(201,162,74,0.1)]">
+      {% if meta.art %}
+      <img src="{{ meta.art }}" alt="{{ meta.title }}" class="aspect-square w-full object-cover">
+      {% endif %}
+      <div class="p-5">
+        <h1 class="text-xl font-extrabold tracking-tight text-white">{{ meta.title or link.title }}</h1>
+        {% if meta.artist %}<p class="mt-0.5 text-sm font-semibold text-sb-gold-bright">{{ meta.artist }}</p>{% endif %}
+
+        <div class="mt-5 space-y-2">
+          {% for label, logo, url in platform_links %}
+          <a href="{{ url }}" target="_blank" rel="noopener noreferrer"
+             class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 transition-colors hover:border-sb-gold/50 hover:bg-white/10">
+            {{ logos.platform_logo(logo, "h-7 w-7") }}
+            <span class="flex-1 text-sm font-semibold text-gray-100">{{ label }}</span>
+            <svg class="h-4 w-4 text-gray-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <a href="/links" class="sb-label mt-6 flex items-center gap-2 text-gray-300 transition-colors hover:text-sb-gold-bright">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A24A" stroke-width="1.6" stroke-linejoin="round"><path d="M3 8l4 3 5-6 5 6 4-3v9a1 1 0 01-1 1H4a1 1 0 01-1-1V8z"/></svg>
+      Powered by Street Banker
+    </a>
+  </div>
+</body>
+</html>

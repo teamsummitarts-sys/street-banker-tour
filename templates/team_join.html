@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Join a team - Street Banker</title>
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+</head>
+<body class="min-h-screen bg-sb-ground text-gray-200 antialiased">
+  <div class="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-4">
+    <div class="mb-8 text-center">
+      <img src="/static/img/streetbanker-logo.svg" alt="Street Banker" class="mx-auto h-16 w-auto">
+      <div class="sb-label mt-1 text-amber-500/70">Artist Infrastructure</div>
+    </div>
+
+    <div class="w-full rounded-2xl border border-white/10 bg-sb-surface-1 p-6">
+      {% if invalid %}
+      <h1 class="text-lg font-bold text-white">Invite not found</h1>
+      <p class="mt-2 text-sm text-gray-300">This invite link is invalid, already used, or was revoked. Ask the artist to send a new one.</p>
+      <a href="/login" class="mt-4 block text-center text-xs font-semibold text-amber-400 hover:underline">← Sign in</a>
+      {% else %}
+      <h1 class="text-lg font-bold text-white">Join {{ invite.owner_name }}'s team</h1>
+      <p class="mt-1 text-sm text-gray-300">You've been invited as their <span class="font-bold text-amber-400">{{ invite.role }}</span> ({{ invite.email }}).</p>
+      {% if error %}
+      <div class="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-400">{{ error }}</div>
+      {% endif %}
+      {% if has_account and not signed_in_as_invited %}
+      <div class="mt-4 space-y-3">
+        <p class="text-xs text-gray-300">This invitation belongs to an existing Street Banker account. Sign in as <strong class="text-gray-100">{{ invite.email }}</strong> before accepting it.</p>
+        <a href="/login?next={{ request.path }}" class="block w-full rounded-lg border border-amber-500/40 bg-amber-500/15 px-4 py-2.5 text-center text-sm font-semibold text-amber-400 transition-colors hover:bg-amber-500/25">Sign in to accept</a>
+      </div>
+      {% else %}
+      <form method="post" class="mt-4 space-y-3">
+        {% if not has_account %}
+        <div>
+          <label for="name" class="sb-label text-gray-300">Your name</label>
+          <input type="text" id="name" name="name" required autofocus
+                 class="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 focus:border-amber-500/50 focus:outline-none">
+        </div>
+        <div>
+          <label for="password" class="sb-label text-gray-300">Choose a password</label>
+          <input type="password" id="password" name="password" required minlength="6" autocomplete="new-password"
+                 class="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 focus:border-amber-500/50 focus:outline-none">
+        </div>
+        {% else %}
+        <p class="text-xs text-gray-300">You are signed in as {{ invite.email }}. Accepting links this account to the team.</p>
+        {% endif %}
+        <button type="submit" class="w-full rounded-lg border border-amber-500/40 bg-amber-500/15 px-4 py-2.5 text-sm font-semibold text-amber-400 transition-colors hover:bg-amber-500/25">Accept Invite</button>
+      </form>
+      {% endif %}
+      {% endif %}
+    </div>
+    <p class="mt-5 text-center text-xs text-gray-300 font-medium"><a href="/terms" class="hover:text-white">Terms</a> · <a href="/privacy" class="hover:text-white">Privacy</a></p>
+  </div>
+</body>
+</html>

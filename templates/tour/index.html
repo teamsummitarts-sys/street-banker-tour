@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}TOUR - Street Banker{% endblock %}
+{% block head_scripts %}<link rel="stylesheet" href="/static/css/tour-os.css?v=3">{% endblock %}
+{% block content %}
+{% import "tour/_macros.html" as m %}
+<div class="to">
+  <div class="to-head">
+    <div>
+      <p class="to-eyebrow">TOUR</p>
+      <h1 class="to-h1">Every date, every hotel, every call time — one place.</h1>
+      <p class="to-sub">A tour is the container: shows and off days, the schedule, travel and rooms, the people, the guest list, the money. Invite the crew with the permissions each one needs; everyone sees their own day.</p>
+    </div>
+  </div>
+
+  {% if mine %}
+  <h2 class="to-h2">Your tours</h2>
+  <div class="to-table-wrap"><table class="to-table is-stack">
+    <thead><tr><th>Tour</th><th>Dates</th><th>Shows</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for t in mine %}
+      <tr>
+        <td data-k="Tour"><a href="/tours/{{ t['id'] }}"><b>{{ t['name'] }}</b></a>{% if t['artist_name'] %}<div class="to-muted">{{ t['artist_name'] }}</div>{% endif %}</td>
+        <td data-k="Dates">{{ t['start_date'] or '—' }} → {{ t['end_date'] or '—' }}</td>
+        <td data-k="Shows">{{ t['show_count'] }}</td>
+        <td data-k="Status"><span class="to-chip to-chip--gold">{{ t['status_line'] }}</span></td>
+        <td><a class="to-btn to-btn--small" href="/tours/{{ t['id'] }}">Open</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+
+  {% if shared %}
+  <h2 class="to-h2">Tours you're on</h2>
+  <div class="to-table-wrap"><table class="to-table is-stack">
+    <thead><tr><th>Tour</th><th>Your role</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for t in shared %}
+      <tr>
+        <td data-k="Tour"><a href="/tours/{{ t['id'] }}"><b>{{ t['name'] }}</b></a>{% if t['artist_name'] %}<div class="to-muted">{{ t['artist_name'] }}</div>{% endif %}</td>
+        <td data-k="Role">{{ t['my_role']|replace('_',' ')|capitalize }}</td>
+        <td data-k="Status"><span class="to-chip to-chip--gold">{{ t['status_line'] }}</span></td>
+        <td><a class="to-btn to-btn--small" href="/tours/{{ t['id'] }}/my-day">My Day</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endif %}
+
+  {% if not mine and not shared %}
+    {{ m.empty("No tours yet", "Create one below. If you have already been invited to someone else's tour, open the link in the invitation — it lands here.") }}
+  {% endif %}
+
+  {% if can_own %}
+  <h2 class="to-h2">Start a tour</h2>
+  <form method="post" action="/tours/new" class="to-form">
+    <div class="to-grid">
+      {{ m.field('name', 'Tour name', placeholder='Fall 2026', required=True) }}
+      {{ m.field('artist_name', 'Artist', placeholder='As billed') }}
+      {{ m.field('start_date', 'First date', type='date') }}
+      {{ m.field('end_date', 'Last date', type='date') }}
+      {{ m.field('home_tz', 'Home timezone', value=tz_guess, placeholder='America/New_York') }}
+      {{ m.field('currency', 'Currency', value='USD') }}
+    </div>
+    {% if unattached %}
+    <div class="to-checks" style="margin-top:10px">
+      {{ m.check('adopt', 'Bring my ' ~ unattached|length ~ ' existing Tour Hub show(s) onto this tour', on=True) }}
+    </div>
+    {% endif %}
+    <div class="to-bar"><button class="to-btn" type="submit">Create tour</button></div>
+  </form>
+  {% if is_demo and not mine %}
+  <form method="post" action="/tours/seed-demo" class="to-bar"><button class="to-btn to-btn--ghost" type="submit">Load the example tour (demo account only)</button></form>
+  {% endif %}
+  {% else %}
+  <div class="to-note"><strong>Owning a tour needs the Artist tier.</strong> You can still open any tour you were invited to. <a href="/plan">See plans</a>.</div>
+  {% endif %}
+</div>
+{% endblock %}

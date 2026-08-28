@@ -1,0 +1,50 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Route - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Route</p><h1 class="to-h1" style="font-size:20px">The run, in order</h1><p class="to-sub">Each leg with the gap in days and, where both venues have coordinates, the straight-line distance. Drive times are not estimated here — the Directions link opens the real route. No map tiles are loaded.</p></div></div>
+{% if legs %}
+<ol class="to-route">
+  {% if first %}<li><span>{{ first['date'] }}</span><span><b>{{ first['city'] or first['venue'] }}</b> <span class="to-muted">{{ first['venue'] }}</span></span><span></span></li>{% endif %}
+  {% for l in legs %}
+  <li class="leg">{% if l['gap_days'] is not none %}{{ l['gap_days'] }} day{{ '' if l['gap_days'] == 1 else 's' }} later{% endif %}{% if l['back_to_back'] %} · <span class="to-chip to-chip--gold">back to back</span>{% endif %}{% if l['miles'] %} · ~{{ l['miles'] }} mi straight line{% endif %} · <a href="{{ l['directions'] }}" target="_blank" rel="noopener" style="color:var(--to-amber)">Directions</a></li>
+  <li><span>{{ l['to']['show']['date'] }}</span><span><b>{{ l['to']['city'] or l['to']['show']['venue'] }}</b> <span class="to-muted">{{ l['to']['show']['venue'] }}</span>{% if not l['to']['address'] %} <span class="to-chip">no address</span>{% endif %}</span><span><a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/shows/{{ l['to']['show']['id'] }}">Open</a></span></li>
+  {% endfor %}
+</ol>
+{% elif shows|length == 1 %}
+  <p class="to-sub">One show; the route starts when there is a second.</p>
+{% else %}{{ m.empty("No route yet", "Add two or more shows and the run appears here in date order.") }}{% endif %}
+{% if off_days %}<h2 class="to-h2">Off and travel days</h2><p class="to-sub">{% for d in off_days %}{{ d['date'] }} {{ d['kind'] }}{% if d['city'] %} ({{ d['city'] }}){% endif %}{{ ' · ' if not loop.last }}{% endfor %}</p>{% endif %}
+
+<h2 class="to-h2">Fuel</h2>
+<p class="to-sub">Arithmetic over figures you enter — no routing service, no guessed distances. The straight-line numbers above are <b>not</b> used here: a crow-flight total understates a real drive by roughly a fifth, and a fuel figure that quietly did that would be worse than none.</p>
+
+{% if fuel['ready'] %}
+<div class="to-cards" style="margin-top:10px">
+  <div class="to-card{{ ' is-warm' if fuel['miles_source'] == 'estimate' else '' }}">
+    <b>{{ "{:,.0f}".format(fuel['miles']) }}</b><span>Miles</span>
+    <small>{% if fuel['miles_source'] == 'routed' %}driven, all {{ fuel['legs_total'] }} legs entered
+    {%- else %}an estimate you typed{% if fuel['legs_total'] %} · {{ fuel['legs_entered'] }} of {{ fuel['legs_total'] }} drives entered{% endif %}{% endif %}</small></div>
+  <div class="to-card"><b>{{ "{:,.0f}".format(fuel['gallons']) }}</b><span>Gallons</span><small>at {{ fuel['mpg'] }} MPG</small></div>
+  <div class="to-card"><b>${{ "{:,.0f}".format(fuel['fuel_cost']) }}</b><span>Fuel</span><small>at ${{ fuel['price'] }}/gal</small></div>
+  <div class="to-card"><b>${{ "{:,.0f}".format(fuel['total']) }}</b><span>With reserve</span><small>{{ fuel['reserve_pct'] or 0 }}% on top</small></div>
+  {% if fuel['per_show'] %}<div class="to-card"><b>${{ "{:,.2f}".format(fuel['per_show']) }}</b><span>Per show</span><small>across {{ shows|length }} dates</small></div>{% endif %}
+</div>
+{% if fuel['miles_source'] == 'estimate' %}
+<p class="to-sub" style="margin-top:8px">Replace the estimate with real mileage by entering the drive on each travel leg. Until every leg has one, this stays the estimate — a part-filled route would read as a total and be short by every leg nobody entered.</p>
+{% endif %}
+{% else %}
+<p class="to-sub" style="margin-top:8px">Nothing is calculated yet. Still needed: <b>{{ fuel['missing'] | join(', ') }}</b>.</p>
+{% endif %}
+
+{% if can('travel') %}
+<form method="post" action="/tours/{{ tour['id'] }}/fuel" class="to-grid" style="margin-top:12px;align-items:end">
+  <label class="to-field"><span>Vehicle</span><input name="vehicle" class="to-input" maxlength="40" value="{{ tour['vehicle'] or '' }}" placeholder="Sprinter-class van"></label>
+  <label class="to-field"><span>MPG</span><input name="fuel_mpg" class="to-input" inputmode="decimal" maxlength="8" value="{{ tour['fuel_mpg'] or '' }}" placeholder="16"></label>
+  <label class="to-field"><span>$ / gallon</span><input name="fuel_price" class="to-input" inputmode="decimal" maxlength="8" value="{{ tour['fuel_price'] or '' }}" placeholder="3.75"></label>
+  <label class="to-field"><span>Reserve %</span><input name="fuel_reserve_pct" class="to-input" inputmode="decimal" maxlength="5" value="{{ tour['fuel_reserve_pct'] or '' }}" placeholder="10"></label>
+  <label class="to-field"><span>Estimated miles</span><input name="stated_miles" class="to-input" inputmode="decimal" maxlength="10" value="{{ tour['stated_miles'] or '' }}" placeholder="9775"></label>
+  <button class="to-btn">Save assumptions</button>
+</form>
+{% endif %}
+{% endblock %}

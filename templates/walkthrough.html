@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Walkthrough - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[860px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker</div>
+    <h1 class="sb-h1 mt-1">The Walkthrough</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Ten minutes, start to finish. Every step uses real features on your account — nothing here is staged. Steps open in a new tab so this guide keeps your place.</p>
+  </div>
+
+  <!-- Sticky continue bar -->
+  <div id="wt-bar" class="sticky top-2 z-20 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-sb-gold/40 bg-sb-on-gold p-4 shadow-lg">
+    <div class="min-w-0 flex-1">
+      <div class="sb-label text-gray-300">Your progress</div>
+      <div id="wt-continue" class="mt-0.5 truncate text-sm font-bold text-sb-gold-bright">Step 1</div>
+      <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"><div id="wt-progress" class="h-full rounded-full bg-sb-gold transition-all" style="width: 0%"></div></div>
+    </div>
+    <button id="wt-start" class="sb-btn sb-btn-primary shrink-0">▶ Start guided tour</button>
+    <button id="wt-jump" class="sb-btn sb-btn-secondary shrink-0">Checklist →</button>
+  </div>
+  <p class="text-xs text-gray-300">The guided tour puts a guide bar at the bottom of your screen and takes you page to page — it tells you what to do on each screen and waits for you. The checklist below is the same tour in overview form.</p>
+
+  {% set pro_needed = user_plan in ('artist',) %}
+  {% set steps = [
+    ('Find the money', 'Download the sample statement, upload it on Statements, then open Recovery. The engine finds $85.77 of unmatched revenue and coverage gaps automatically — each with an Open Case button.',
+     [('Download sample statement', '/walkthrough/sample-statement.csv'), ('Upload it', '/statements'), ('See the findings', '/recovery')], 'pro'),
+    ('Work the case', 'Open a case from a finding, mark it submitted, then won with a payout. Watch the Recovered total climb and the notification land.',
+     [('Recovery Cases', '/royalty-recovery/cases'), ('Notifications', '/notifications')], 'pro'),
+    ('Build the release', 'Create a Smart Link campaign: paste any Spotify track URL into Auto-Scan and watch it fill every platform, the title, and the cover art. Set a future release date, enable fan capture, publish.',
+     [('Create a campaign', '/links/new')], 'artist'),
+    ('Visit your own link', 'Open the public page — countdown, pre-save capture, tracked streaming buttons. Sign up with a test email and check the Fan CRM: consent logged, intent scored.',
+     [('Your campaigns', '/links'), ('Fan CRM', '/links/fans')], 'artist'),
+    ('Generate the rollout', 'Create a rollout connected to your campaign: paste lyrics, pick platforms, hit Generate. Dated posts across the full release arc, each with its own tracked link variant.',
+     [('Rollout Engine', '/rollout-studio/new')], 'artist'),
+    ('Put paperwork behind it', 'Generate a split agreement in the Deal Room — a signable template lands in your Documents vault and a deal appears on the board. Sign it and watch your Trust Score move.',
+     [('Deal Room', '/deal-room'), ('Trust Score', '/trust-score')], 'pro'),
+    ('Pitch it for sync', 'Create a Sync Clearance Pack with an audio file — the private link is what a music supervisor sees. Then run a lowball offer through the Deal Simulator and read the flags.',
+     [('Sync Packs', '/sync/clearance-packs'), ('Deal Simulator', '/sync/deal-simulator')], 'pro'),
+    ('Check the business', 'Revenue OS nets your statement income against logged spend. The Growth Score shows what your activity unlocks. The Executive Report packages all of it for a partner.',
+     [('Revenue OS', '/revenue-os'), ('Growth Score', '/qualification'), ('Executive Report', '/reports/executive')], 'pro'),
+    ('Run it from one screen', 'Command Center pulls every score, alert, and open action into one view — with a Fix-now link on everything. This is the operating system.',
+     [('Command Center', '/command-center')], 'artist'),
+  ] %}
+
+  <div class="space-y-3">
+    {% for title, body, links, tier in steps %}
+    {% set locked = pro_needed and tier == 'pro' %}
+    <div id="wt-step-{{ loop.index }}" data-step="{{ loop.index }}" data-title="{{ title }}" class="wt-card rounded-2xl border border-white/10 bg-sb-surface-1 p-5 transition-colors">
+      <div class="flex items-start gap-4">
+        <button type="button" data-step="{{ loop.index }}" class="wt-check grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-xl bg-sb-gold/15 text-sm font-black sb-num text-sb-ink transition-colors hover:bg-sb-gold/30" title="Mark step complete">{{ loop.index }}</button>
+        <div class="min-w-0 flex-1">
+          <h2 class="flex flex-wrap items-center gap-2 text-sm font-bold text-gray-100">{{ title }}
+            {% if locked %}<span class="rounded-full border border-white/15 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-gray-300" title="This step uses Royalty Sweep (Pro plan)">Pro plan</span>{% endif %}
+          </h2>
+          <p class="mt-1 text-xs leading-relaxed text-gray-300">{{ body }}</p>
+          <div class="mt-2.5 flex flex-wrap gap-2">
+            {% for label, href in links %}
+            <a href="{{ href }}" target="_blank" rel="noopener" class="sb-btn sb-btn-secondary sb-btn-sm">{{ label }} ↗</a>
+            {% endfor %}
+            <button type="button" data-step="{{ loop.index }}" class="wt-done sb-btn sb-btn-secondary sb-btn-sm">Done — next step ↓</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div id="wt-finished" class="hidden rounded-2xl border border-green-500/30 bg-green-500/10 p-5 text-center">
+    <div class="text-sm font-black uppercase tracking-wide text-green-400">Walkthrough complete</div>
+    <p class="mt-1 text-xs text-gray-200">You've touched every core system. Run your own release from the Command Center.</p>
+    <div class="mt-3 flex justify-center gap-2">
+      <a href="/command-center" class="sb-btn sb-btn-primary sb-btn-sm">Open Command Center</a>
+      <button id="wt-reset" class="sb-btn sb-btn-secondary sb-btn-sm">Restart tour</button>
+    </div>
+  </div>
+
+  <p class="text-xs text-gray-300 font-medium">Sample-data pages (Audience, Playlists, Stats, and other locked items) are previews of what connects when distributor and DSP data feeds arrive — they're labeled, never presented as your numbers.{% if pro_needed %} Steps marked "Pro plan" show the upgrade card on the Artist plan — that's the tier gate working, not a bug.{% endif %}</p>
+</div>
+
+<script>
+  (function () {
+    const KEY = "sb-walkthrough-done";
+    const total = document.querySelectorAll(".wt-card").length;
+    const done = new Set(JSON.parse(localStorage.getItem(KEY) || "[]"));
+
+    function firstOpen() {
+      for (let i = 1; i <= total; i++) if (!done.has(i)) return i;
+      return null;
+    }
+
+    function paint() {
+      const next = firstOpen();
+      document.querySelectorAll(".wt-card").forEach((card) => {
+        const n = parseInt(card.dataset.step, 10);
+        const check = card.querySelector(".wt-check");
+        if (done.has(n)) {
+          card.classList.add("opacity-60");
+          card.classList.remove("border-sb-gold/60");
+          check.textContent = "✓";
+          check.classList.add("bg-green-500/20", "text-green-400");
+        } else {
+          card.classList.remove("opacity-60");
+          check.textContent = n;
+          check.classList.remove("bg-green-500/20", "text-green-400");
+          card.classList.toggle("border-sb-gold/60", n === next);
+        }
+      });
+      document.getElementById("wt-progress").style.width = (done.size / total * 100) + "%";
+      const cont = document.getElementById("wt-continue");
+      const jump = document.getElementById("wt-jump");
+      const fin = document.getElementById("wt-finished");
+      if (next === null) {
+        cont.textContent = "All " + total + " steps complete";
+        jump.classList.add("hidden");
+        fin.classList.remove("hidden");
+      } else {
+        const title = document.getElementById("wt-step-" + next).dataset.title;
+        cont.textContent = "Step " + next + " of " + total + ": " + title;
+        jump.classList.remove("hidden");
+        fin.classList.add("hidden");
+      }
+    }
+
+    function save() { localStorage.setItem(KEY, JSON.stringify([...done])); }
+
+    function complete(n) {
+      done.add(n);
+      save();
+      paint();
+      const next = firstOpen();
+      if (next !== null)
+        document.getElementById("wt-step-" + next).scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    document.querySelectorAll(".wt-done").forEach((b) =>
+      b.addEventListener("click", () => complete(parseInt(b.dataset.step, 10))));
+    document.querySelectorAll(".wt-check").forEach((b) =>
+      b.addEventListener("click", () => {
+        const n = parseInt(b.dataset.step, 10);
+        if (done.has(n)) { done.delete(n); save(); paint(); } else complete(n);
+      }));
+    document.getElementById("wt-jump").addEventListener("click", () => {
+      const next = firstOpen();
+      if (next !== null)
+        document.getElementById("wt-step-" + next).scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    document.getElementById("wt-reset").addEventListener("click", () => {
+      done.clear(); save(); paint(); window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    document.getElementById("wt-start").addEventListener("click", () => window.sbStartTour());
+
+    paint();
+  })();
+</script>
+{% endblock %}

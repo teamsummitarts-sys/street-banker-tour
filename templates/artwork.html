@@ -1,0 +1,797 @@
+{% extends "base.html" %}
+
+{% block title %}Cover Studio - Street Banker{% endblock %}
+
+{% set aw = artwork %}
+
+{% block content %}
+{% set gfonts = aw.fonts | selectattr("google", "defined") | map(attribute="google") | list %}
+{% if gfonts %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?{% for g in gfonts %}family={{ g }}&{% endfor %}display=swap">
+{% endif %}
+<style>
+  .bebas { font-family: 'Bebas Neue', 'Arial Narrow', sans-serif; letter-spacing: .1em; }
+  /* Workflow plates: the rail is a real sequence — art, then type, then canvas. */
+  .plate { display: flex; align-items: baseline; gap: .75rem; }
+  .plate .no { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; line-height: 1; color: var(--sb-gold); }
+  .plate .nm { font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem; letter-spacing: .18em; color: var(--sb-ink); }
+  .plate .rule { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(201,162,74,.45), rgba(201,162,74,.05)); }
+  /* One slider language everywhere. */
+  .studio input[type="range"] { -webkit-appearance: none; appearance: none; height: 2px; border-radius: var(--sb-r-control);
+    background: rgba(239,233,220,.14); outline: none; }
+  .studio input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px; border-radius: var(--sb-r-control); background: var(--sb-gold-bright); border: 1px solid var(--sb-gold-deep);
+    cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.6); }
+  .studio input[type="range"]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--sb-gold-bright); outline-offset: 2px; }
+  .studio input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius: var(--sb-r-control);
+    background: var(--sb-gold-bright); border: 1px solid var(--sb-gold-deep); cursor: pointer; }
+  .studio input[type="range"]::-moz-range-track { height: 2px; background: rgba(239,233,220,.14); }
+  /* Registration marks: the brand brackets doing print-proof duty. */
+  .proof { position: relative; padding: 18px; }
+  .proof .mark { position: absolute; width: 22px; height: 22px; border: 0 solid var(--sb-ink); opacity: .85; }
+  .proof .tl { top: 0; left: 0; border-top-width: 3px; border-left-width: 3px; }
+  .proof .tr { top: 0; right: 0; border-top-width: 3px; border-right-width: 3px; }
+  .proof .bl { bottom: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; }
+  .proof .br { bottom: 0; right: 0; border-bottom-width: 3px; border-right-width: 3px; }
+  .slug { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 12px;
+    letter-spacing: .12em; color: rgba(239,233,220,.45); }
+  .bench { background: radial-gradient(120% 90% at 50% 0%, var(--sb-on-gold) 0%, var(--sb-ground) 65%); }
+  @media (prefers-reduced-motion: no-preference) {
+    .proof svg, .proof img { transition: opacity .2s ease; }
+  }
+</style>
+
+<div class="studio mx-auto max-w-[1400px]">
+  <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-[0.35em] text-sb-gold">Street Banker · Promote</div>
+      <h1 class="bebas mt-1 text-4xl text-sb-ink">Cover Studio</h1>
+    </div>
+    <p class="max-w-xs text-right text-xs leading-relaxed text-gray-300">Art, then type, then ship. Everything you save lands in your uploads, ready for campaigns and the press kit.</p>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+
+    <!-- ============ The proofing bench (sticky) ============ -->
+    <div class="lg:sticky lg:top-4 lg:self-start">
+      <div class="bench rounded-2xl border border-sb-gold/20 p-6 sm:p-10">
+        <div class="proof mx-auto w-full max-w-[560px]">
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+          <div id="cover-frame" class="w-full shadow-[0_30px_80px_rgba(0,0,0,0.7)]"></div>
+        </div>
+        <!-- Print slug: what this proof actually is -->
+        <div class="slug mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center uppercase">
+          <span id="slug-dims">1000 × 1000</span><span class="text-sb-gold">·</span>
+          <span id="slug-font">Grotesk</span><span class="text-sb-gold">·</span>
+          <span id="slug-src">gradient background</span><span class="text-sb-gold">·</span>
+          <span>fonts embed on export</span>
+        </div>
+      </div>
+
+      <!-- Ship it -->
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <button type="button" id="save-cover-btn" class="flex-1 rounded-xl bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-5 py-3 text-sm font-black uppercase tracking-wide text-sb-on-gold transition-transform hover:scale-[1.01] sm:flex-none">Save cover to uploads</button>
+        <button type="button" id="download-png-btn" class="rounded-xl border border-sb-gold/40 px-4 py-3 text-xs font-bold text-sb-gold-bright hover:bg-sb-gold/10">PNG</button>
+        <button type="button" id="download-svg-btn" class="rounded-xl border border-white/10 px-4 py-3 text-xs font-bold text-gray-300 hover:bg-white/5">SVG</button>
+      </div>
+      <p id="cover-save-msg" class="mt-2 hidden break-all text-xs font-medium"></p>
+        <div class="mt-2 flex items-center gap-2">
+          <button type="button" id="allfmt-btn" class="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-gray-200 hover:border-sb-gold/50 hover:text-sb-gold-bright">Preview all formats</button>
+          <button type="button" id="brand-save" class="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-gray-200 hover:border-sb-gold/50 hover:text-sb-gold-bright" title="Remembers font, palette, template, and text treatment on this device">Save brand kit</button>
+          <button type="button" id="brand-apply" class="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-gray-200 hover:border-sb-gold/50 hover:text-sb-gold-bright">Apply brand kit</button>
+        </div>
+        <div id="fmt-strip" class="mt-3 hidden grid-cols-3 gap-3"></div>
+    </div>
+
+    <!-- ============ The workflow rail ============ -->
+    <div class="space-y-6">
+
+      <!-- 01 · ART -->
+      <section class="rounded-2xl border border-sb-gold/15 bg-sb-surface-2 p-5">
+        <div class="plate"><span class="no">01</span><span class="nm">Art</span><span class="rule"></span></div>
+
+        <p class="mt-3 text-xs text-gray-300">AI Artwork — describe the cover and a real image paints onto the proof.</p>
+        <textarea id="prompt-input" rows="2" placeholder="e.g. moody midnight synthwave, neon city"
+                  class="mt-2 w-full resize-none rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-sb-ink placeholder-gray-300 focus:border-sb-gold/60 focus:outline-none"></textarea>
+        <button type="button" id="generate-btn" class="mt-2 w-full rounded-lg border border-sb-gold/40 bg-sb-gold/10 px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-sb-gold-bright transition-colors hover:bg-sb-gold/20">Generate artwork</button>
+          <button type="button" id="generate4-btn" class="rounded-lg border border-sb-gold/40 bg-sb-gold/10 px-3 py-2 text-xs font-bold text-sb-gold-bright hover:bg-sb-gold/20">4 variations</button>
+        <div id="generate-note" class="mt-2 hidden text-xs text-gray-300 font-medium"></div>
+
+        <div id="ai-grid" class="mt-3 hidden grid-cols-2 gap-2"></div>
+        <div id="ai-image-wrap" class="mt-3 hidden">
+          <div class="relative overflow-hidden rounded-xl border border-white/10">
+            <img id="ai-image" alt="Generated artwork" class="aspect-square w-full object-cover">
+            <div id="ai-loading" class="absolute inset-0 grid place-items-center bg-black/70 text-xs font-bold text-sb-gold-bright">Painting… 10–30s</div>
+          </div>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <button type="button" id="ai-save-btn" class="rounded-md bg-sb-gold/20 px-3 py-1.5 text-xs font-bold text-sb-gold-bright hover:bg-sb-gold/30" disabled>Save to My Uploads</button>
+            <button type="button" id="ai-again-btn" class="rounded-md border border-white/15 px-3 py-1.5 text-xs font-bold text-gray-200 hover:bg-white/10" disabled>Another take</button>
+            <button type="button" id="ai-remove-btn" class="hidden rounded-md border border-white/15 px-3 py-1.5 text-xs font-bold text-gray-300 hover:bg-white/10">Remove from cover</button>
+          </div>
+          <p id="ai-saved-msg" class="mt-2 hidden break-all text-xs text-green-400 font-medium"></p>
+          <div id="ai-remix-wrap" class="mt-3 hidden">
+            <label class="text-xs font-semibold uppercase tracking-[0.15em] text-gray-300">Remix — describe the change</label>
+            <div class="mt-1 flex gap-2">
+              <input id="remix-input" placeholder="e.g. make it red and gold, add rain" class="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-sb-ink placeholder-gray-300 focus:border-sb-gold/60 focus:outline-none">
+              <button type="button" id="remix-btn" class="shrink-0 rounded-md border border-sb-gold/40 bg-sb-gold/10 px-3 py-2 text-xs font-bold text-sb-gold-bright hover:bg-sb-gold/20">Remix</button>
+            </div>
+            <p class="mt-1 text-xs text-gray-300 font-medium">Re-imagines the same concept with your change — it regenerates rather than editing pixels.</p>
+          </div>
+          <p class="mt-2 text-xs text-gray-300 font-medium">Generated by Pollinations.ai — a free community model. Results vary; regenerate until it hits.</p>
+        </div>
+
+        <label class="mt-3 block cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-center text-xs font-bold text-gray-200 hover:border-sb-gold/40 hover:text-sb-gold-bright">
+          Or upload your own artwork
+          <input type="file" id="art-upload" accept=".png,.jpg,.jpeg,.webp" class="hidden">
+        </label>
+        <p id="upload-msg" class="mt-1.5 hidden text-xs font-medium"></p>
+
+        <!-- Image adjust: appears once art is on the proof -->
+        <div id="image-controls" class="mt-4 hidden border-t border-white/5 pt-4">
+          <div class="text-xs font-semibold uppercase tracking-[0.2em] text-gray-300">Fit the image</div>
+          <div class="mt-3 space-y-3">
+            <div>
+              <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Darken (for text)</span><span id="scrim-val" class="text-sb-gold-bright">28%</span></div>
+              <input type="range" id="img-scrim" min="0" max="80" value="28" class="mt-1 w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Zoom</span><span id="zoom-val" class="text-sb-gold-bright">100%</span></div>
+              <input type="range" id="img-zoom" min="100" max="250" value="100" class="mt-1 w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Pan horizontal</span><span id="panx-val" class="text-sb-gold-bright">50%</span></div>
+              <input type="range" id="img-panx" min="0" max="100" value="50" class="mt-1 w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Pan vertical</span><span id="pany-val" class="text-sb-gold-bright">50%</span></div>
+              <input type="range" id="img-pany" min="0" max="100" value="50" class="mt-1 w-full">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 · TYPE -->
+      <section class="rounded-2xl border border-sb-gold/15 bg-sb-surface-2 p-5">
+        <div class="plate"><span class="no">02</span><span class="nm">Type</span><span class="rule"></span>
+          <button type="button" id="text-reset-btn" class="text-xs font-bold uppercase tracking-wide text-gray-300 hover:text-sb-gold-bright">Reset</button>
+        </div>
+
+        <div class="mt-3">
+          <label class="text-xs font-semibold uppercase tracking-[0.15em] text-gray-300">Title <span class="normal-case text-gray-300">(use / for a line break)</span></label>
+          <input id="title-input" value="" placeholder="Your release title"
+                 class="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-sb-ink focus:border-sb-gold/60 focus:outline-none">
+        </div>
+        <div class="mt-3">
+          <label class="text-xs font-semibold uppercase tracking-[0.15em] text-gray-300">Artist</label>
+          <input id="artist-input" value="{{ aw.artist }}"
+                 class="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-sb-ink focus:border-sb-gold/60 focus:outline-none">
+          <label class="mt-2 block cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2 text-center text-xs font-bold text-gray-300 hover:border-sb-gold/40 hover:text-sb-gold-bright">
+            Upload band logo (PNG with transparency works best)
+            <input type="file" id="logo-upload" accept=".png,.jpg,.jpeg,.webp" class="hidden">
+          </label>
+          <p id="logo-msg" class="mt-1 hidden text-xs font-medium"></p>
+          <div id="logo-controls" class="mt-2 hidden space-y-3 rounded-lg border border-white/5 bg-black/20 p-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wide text-gray-300">Logo on cover</span>
+              <button type="button" id="logo-remove" class="text-xs font-bold text-gray-300 hover:text-red-400">Remove</button>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Logo size</span><span id="lsize-val" class="text-sb-gold-bright">24%</span></div>
+              <input type="range" id="logo-size" min="5" max="70" value="24" class="mt-1 w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Logo horizontal</span><span id="lx-val" class="text-sb-gold-bright">50%</span></div>
+              <input type="range" id="logo-x" min="0" max="100" value="50" class="mt-1 w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Logo vertical</span><span id="ly-val" class="text-sb-gold-bright">16%</span></div>
+              <input type="range" id="logo-y" min="0" max="100" value="16" class="mt-1 w-full">
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <label class="text-xs font-semibold uppercase tracking-[0.15em] text-gray-300">Typeface</label>
+          <select id="font-select" class="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-2 py-2 text-sm text-sb-ink focus:border-sb-gold/60 focus:outline-none">
+            {% for f in aw.fonts %}<option value="{{ f.id }}" style="font-family: {{ f.stack }};">{{ f.name }}</option>{% endfor %}
+          </select>
+        </div>
+
+        <div class="mt-3 grid grid-cols-2 gap-3">
+          <div>
+            <span class="text-xs uppercase tracking-wide text-gray-300 font-medium">Title color</span>
+            <input type="color" id="title-color" value="#ffffff" class="mt-1 h-8 w-full cursor-pointer rounded border border-white/10 bg-transparent">
+          </div>
+          <div>
+            <span class="text-xs uppercase tracking-wide text-gray-300 font-medium">Artist color</span>
+            <input type="color" id="artist-color" value="#E8B950" class="mt-1 h-8 w-full cursor-pointer rounded border border-white/10 bg-transparent">
+          </div>
+        </div>
+
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <div class="flex overflow-hidden rounded-lg border border-white/10">
+            {% for al, label in [('left', 'Left'), ('center', 'Center'), ('right', 'Right')] %}
+            <button type="button" class="align-btn px-3 py-1.5 text-xs font-bold uppercase text-gray-300 hover:text-sb-gold-bright" data-align="{{ al }}">{{ label }}</button>
+            {% endfor %}
+          </div>
+          <label class="flex cursor-pointer items-center gap-1.5 text-xs font-bold text-gray-300">
+            <input type="checkbox" id="upper-toggle" checked class="h-3.5 w-3.5 accent-sb-gold">CAPS
+          </label>
+          <select id="text-style" class="rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs font-bold text-gray-200 focus:border-sb-gold/60 focus:outline-none" title="Title treatment">
+            <option value="shadow" selected>Shadow</option>
+            <option value="neon">Neon glow</option>
+            <option value="metallic">Metallic gold</option>
+            <option value="none">Plain</option>
+          </select>
+        </div>
+
+        <div class="mt-4 space-y-3">
+          <div>
+            <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Title size</span><span id="size-val" class="text-sb-gold-bright">100%</span></div>
+            <input type="range" id="text-size" min="40" max="220" value="100" class="mt-1 w-full">
+          </div>
+          <div>
+            <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Artist size</span><span id="asize-val" class="text-sb-gold-bright">100%</span></div>
+            <input type="range" id="artist-size" min="50" max="220" value="100" class="mt-1 w-full">
+          </div>
+          <div>
+            <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Letter spacing</span><span id="ls-val" class="text-sb-gold-bright">0</span></div>
+            <input type="range" id="letter-spacing" min="0" max="24" value="0" class="mt-1 w-full">
+          </div>
+          <div>
+            <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Title horizontal</span><span id="posx-val" class="text-sb-gold-bright">—</span></div>
+            <input type="range" id="text-x" min="0" max="100" value="50" class="mt-1 w-full">
+          </div>
+          <div>
+            <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Title vertical</span><span id="posy-val" class="text-sb-gold-bright">—</span></div>
+            <input type="range" id="text-y" min="8" max="95" value="58" class="mt-1 w-full">
+          </div>
+          <div>
+            <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Artist horizontal</span><span id="ax-val" class="text-sb-gold-bright">—</span></div>
+            <input type="range" id="artist-x" min="0" max="100" value="50" class="mt-1 w-full">
+          </div>
+          <div>
+            <div class="flex justify-between text-xs uppercase tracking-wide text-gray-300 font-medium"><span>Artist vertical</span><span id="ay-val" class="text-sb-gold-bright">—</span></div>
+            <input type="range" id="artist-y" min="0" max="100" value="66" class="mt-1 w-full">
+          </div>
+        </div>
+      </section>
+
+      <!-- 03 · CANVAS -->
+      <section class="rounded-2xl border border-sb-gold/15 bg-sb-surface-2 p-5">
+        <div class="plate"><span class="no">03</span><span class="nm">Canvas</span><span class="rule"></span></div>
+
+        <div class="mt-3">
+          <label class="text-xs font-semibold uppercase tracking-[0.15em] text-gray-300">Size</label>
+          <select id="aspect-select" class="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-2 py-2 text-sm text-sb-ink focus:border-sb-gold/60 focus:outline-none">
+            {% for a in aw.aspects %}<option value="{{ a.id }}">{{ a.name }} — {{ a.w }}×{{ a.h }}</option>{% endfor %}
+          </select>
+        </div>
+
+        <div class="mt-3">
+          <label class="text-xs font-semibold uppercase tracking-[0.15em] text-gray-300">Background color <span class="normal-case text-gray-300">(when no art is placed)</span></label>
+          <div class="mt-1 flex items-center gap-2">
+            <input type="color" id="bg-color" value="#1A1714" class="h-9 w-16 cursor-pointer rounded border border-white/10 bg-transparent">
+            <button type="button" id="bg-clear" class="rounded-md border border-white/15 px-3 py-2 text-xs font-bold text-gray-300 hover:bg-white/10">Default gradient</button>
+          </div>
+        </div>
+
+
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const COLORWAYS = {{ aw.colorways | tojson }};
+  const TEMPLATES = {{ aw.templates | tojson }};
+  const FONTS = {{ aw.fonts | tojson }};
+  const ASPECTS = {{ aw.aspects | tojson }};
+
+  const state = {
+    colorway: "gold",
+    template: "minimal",
+    font: FONTS[0].id,
+    aspect: ASPECTS[0].id,
+    title: document.getElementById("title-input").value,
+    artist: document.getElementById("artist-input").value,
+    titleColor: null, artistColor: null,
+    textScale: 1, artistScale: 1, textX: null, textY: null,
+    align: null, upper: true, textStyle: "shadow", letterSpacing: 0,
+    image: null, scrim: 28, zoom: 100, panX: 50, panY: 50,
+    bgCustom: null, artistX: null, artistY: null,
+    logo: null, logoSize: 24, logoX: 50, logoY: 16,
+  };
+
+  const byId = (arr, id) => arr.find((x) => x.id === id) || arr[0];
+
+  function buildSvg(forExport) {
+    const c = byId(COLORWAYS, state.colorway);
+    const t = byId(TEMPLATES, state.template);
+    const f = byId(FONTS, state.font);
+    const a = byId(ASPECTS, state.aspect);
+    const W = a.w, H = a.h;
+    const cook = (s) => state.upper ? s.toUpperCase() : s;
+    const lines = cook(state.title || "").split("/").map(l => l.trim()).filter(Boolean).slice(0, 4);
+    const lineCount = Math.max(lines.length, 1);
+    const artist = cook(state.artist || "");
+
+    let motif = "";
+    if (t.motif === "ring") motif = `<circle cx="${W/2}" cy="${H*0.4}" r="${Math.min(W,H)*0.28}" fill="none" stroke="${c.accent}" stroke-width="6" opacity="0.55"/>`;
+    else if (t.motif === "bar") motif = `<rect x="0" y="${H*0.72}" width="${W}" height="8" fill="${c.accent}"/>`;
+    else if (t.motif === "lines") motif = `<g stroke="${c.accent}" stroke-width="5" opacity="0.5">${[0,1,2].map(i=>`<line x1="${W*0.1}" y1="${H*0.30+i*22}" x2="${W*0.42}" y2="${H*0.30+i*22}"/>`).join("")}</g>`;
+
+    const titleColor = state.titleColor || c.text;
+    const artistColor = state.artistColor || c.accent;
+    const longest = Math.max(...lines.map(l => l.length), 1);
+    const titleSize = Math.min(W, H) * (longest > 14 ? 0.085 : 0.12) * state.textScale;
+    const artistSize = titleSize * 0.32 * state.artistScale;
+    const lineGap = titleSize * 1.05;
+
+    const align = state.align || ({ center: "center", bottom: "left" }[t.align] || "left");
+    const anchor = { left: "start", center: "middle", right: "end" }[align];
+    const ax = { left: W * 0.06, center: W / 2, right: W * 0.94 }[align];
+    const cx = state.textX !== null ? W * (state.textX / 100) : ax;
+    const baseY = state.textY !== null ? H * (state.textY / 100)
+      : (t.align === "bottom" ? H * 0.84 : H * 0.55) - (lineCount - 1) * lineGap * 0.5;
+
+    let styleDefs = "", fx = "", titleFill = titleColor;
+    if (state.textStyle === "shadow") {
+      styleDefs = `<filter id="ds" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="${Math.max(2, titleSize*0.03)}" stdDeviation="${Math.max(3, titleSize*0.06)}" flood-color="black" flood-opacity="0.6"/></filter>`;
+      fx = ` filter="url(#ds)"`;
+    } else if (state.textStyle === "neon") {
+      styleDefs = `<filter id="ds" x="-60%" y="-60%" width="220%" height="220%">` +
+        `<feDropShadow dx="0" dy="0" stdDeviation="${Math.max(4, titleSize*0.10)}" flood-color="${artistColor}" flood-opacity="0.95"/>` +
+        `<feDropShadow dx="0" dy="0" stdDeviation="${Math.max(2, titleSize*0.04)}" flood-color="${artistColor}" flood-opacity="0.9"/></filter>`;
+      fx = ` filter="url(#ds)"`;
+    } else if (state.textStyle === "metallic") {
+      styleDefs = `<linearGradient id="goldtx" x1="0" y1="0" x2="0" y2="1">` +
+        `<stop offset="0" stop-color="#E8B950"/><stop offset="0.45" stop-color="#E8B950"/>` +
+        `<stop offset="0.55" stop-color="#8A6E30"/><stop offset="1" stop-color="#E8B950"/></linearGradient>` +
+        `<filter id="ds" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="${Math.max(2, titleSize*0.03)}" stdDeviation="${Math.max(3, titleSize*0.05)}" flood-color="black" flood-opacity="0.7"/></filter>`;
+      fx = ` filter="url(#ds)"`;
+      titleFill = "url(#goldtx)";
+    }
+
+    const titleEl = lines.map((line, i) =>
+      `<text x="${cx}" y="${baseY + i * lineGap}" text-anchor="${anchor}" fill="${titleFill}" font-family="${f.stack}" font-size="${titleSize}" font-weight="800" letter-spacing="${state.letterSpacing}"${fx}>${escapeXml(line)}</text>`).join("");
+    const acx = state.artistX !== null ? W * (state.artistX / 100) : cx;
+    const acy = state.artistY !== null ? H * (state.artistY / 100)
+      : baseY + (lineCount - 1) * lineGap + titleSize * 0.75;
+    const artistEl = artist
+      ? `<text x="${acx}" y="${acy}" text-anchor="${anchor}" fill="${artistColor}" font-family="${f.stack}" font-size="${artistSize}" letter-spacing="4"${fx}>${escapeXml(artist)}</text>` : "";
+    let logoEl = "";
+    if (state.logo) {
+      const box = W * state.logoSize / 100;
+      logoEl = `<image href="${state.logo}" x="${W * state.logoX / 100 - box / 2}" y="${H * state.logoY / 100 - box / 2}" width="${box}" height="${box}" preserveAspectRatio="xMidYMid meet"/>`;
+    }
+
+    let imageEl = "";
+    if (state.image) {
+      const iw = W * state.zoom / 100, ih = H * state.zoom / 100;
+      const ix = -(iw - W) * state.panX / 100, iy = -(ih - H) * state.panY / 100;
+      imageEl = `<image href="${state.image}" x="${ix}" y="${iy}" width="${iw}" height="${ih}" preserveAspectRatio="xMidYMid slice"/>` +
+        (state.scrim > 0 ? `<rect width="${W}" height="${H}" fill="black" opacity="${state.scrim / 100}"/>` : "");
+    }
+
+    const sizeAttrs = forExport
+      ? `width="${W}" height="${H}"`
+      : `style="width:100%;height:auto;display:block"`;
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" ${sizeAttrs}>
+      ${forExport && state._fontCss ? state._fontCss : ""}
+      <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="${c.from}"/><stop offset="1" stop-color="${c.to}"/>
+      </linearGradient>${styleDefs}</defs>
+      <rect width="${W}" height="${H}" fill="${state.bgCustom || 'url(#bg)'}"/>
+      ${state.image ? imageEl : (state.bgCustom ? "" : motif)}${logoEl}${titleEl}${artistEl}
+    </svg>`;
+  }
+
+  function escapeXml(s) {
+    return String(s).replace(/[<>&'"]/g, (ch) => ({ "<":"&lt;", ">":"&gt;", "&":"&amp;", "'":"&apos;", '"':"&quot;" }[ch]));
+  }
+
+  function render() {
+    document.getElementById("cover-frame").innerHTML = buildSvg(false);
+    const rm = document.getElementById("ai-remove-btn");
+    if (rm) rm.classList.toggle("hidden", !state.image);
+    document.getElementById("image-controls").classList.toggle("hidden", !state.image);
+    document.getElementById("logo-controls").classList.toggle("hidden", !state.logo);
+    document.querySelectorAll(".align-btn").forEach((b) => {
+      const active = b.dataset.align === state.align;
+      b.classList.toggle("bg-amber-500/15", active);
+      b.classList.toggle("text-amber-400", active);
+    });
+    // The print slug stays true to the proof.
+    const a = byId(ASPECTS, state.aspect);
+    document.getElementById("slug-dims").textContent = a.w + " × " + a.h;
+    document.getElementById("slug-font").textContent = byId(FONTS, state.font).name;
+    document.getElementById("slug-src").textContent = state.image ? "art placed" : "gradient background";
+  }
+
+  async function setDesignerImage(url) {
+    if (!url) { state.image = null; render(); return; }
+    try {
+      const blob = await (await fetch(url)).blob();
+      state.image = await new Promise((res) => {
+        const r = new FileReader();
+        r.onloadend = () => res(r.result);
+        r.readAsDataURL(blob);
+      });
+    } catch (e) {
+      state.image = url;   // preview still works; downloads may lose the photo
+    }
+    render();
+  }
+
+  // Wire basics
+  document.getElementById("title-input").addEventListener("input", (e) => { state.title = e.target.value; render(); });
+  document.getElementById("artist-input").addEventListener("input", (e) => { state.artist = e.target.value; render(); });
+  document.getElementById("font-select").addEventListener("change", (e) => { state.font = e.target.value; render(); });
+  document.getElementById("aspect-select").addEventListener("change", (e) => { state.aspect = e.target.value; render(); });
+
+  // Text controls
+  const slider = (id, valId, fn, suffix = "%") => document.getElementById(id).addEventListener("input", (e) => {
+    fn(+e.target.value);
+    document.getElementById(valId).textContent = e.target.value + suffix;
+    render();
+  });
+  document.getElementById("title-color").addEventListener("input", (e) => { state.titleColor = e.target.value; render(); });
+  document.getElementById("artist-color").addEventListener("input", (e) => { state.artistColor = e.target.value; render(); });
+  slider("text-size", "size-val", (v) => state.textScale = v / 100);
+  slider("artist-size", "asize-val", (v) => state.artistScale = v / 100);
+  slider("letter-spacing", "ls-val", (v) => state.letterSpacing = v, "");
+  slider("text-x", "posx-val", (v) => state.textX = v);
+  slider("text-y", "posy-val", (v) => state.textY = v);
+  document.querySelectorAll(".align-btn").forEach((b) => b.addEventListener("click", () => {
+    state.align = state.align === b.dataset.align ? null : b.dataset.align;
+    render();
+  }));
+  document.getElementById("upper-toggle").addEventListener("change", (e) => { state.upper = e.target.checked; render(); });
+  document.getElementById("text-style").addEventListener("change", (e) => { state.textStyle = e.target.value; render(); });
+
+  // Every format at once: the same composition reflowed per canvas size.
+  document.getElementById("allfmt-btn").addEventListener("click", () => {
+    const strip = document.getElementById("fmt-strip");
+    if (!strip.classList.contains("hidden")) { strip.classList.add("hidden"); strip.classList.remove("grid"); return; }
+    const keep = state.aspect;
+    strip.innerHTML = ASPECTS.map((a) => {
+      state.aspect = a.id;
+      return `<div class="min-w-0"><div class="rounded-lg border border-white/10 overflow-hidden">${buildSvg(false)}</div><div class="mt-1 text-center text-xs uppercase tracking-wide text-gray-300 font-medium">${a.name} · ${a.w}×${a.h}</div></div>`;
+    }).join("");
+    state.aspect = keep;
+    strip.classList.remove("hidden"); strip.classList.add("grid");
+  });
+
+  // Brand kit: your recurring look, saved on this device.
+  const BRAND_KEY = "sbBrandKit";
+  document.getElementById("brand-save").addEventListener("click", (e) => {
+    const kit = {font: state.font, colorway: state.colorway, template: state.template,
+                 textStyle: state.textStyle, letterSpacing: state.letterSpacing,
+                 upper: state.upper, titleColor: state.titleColor, artistColor: state.artistColor};
+    try { localStorage.setItem(BRAND_KEY, JSON.stringify(kit)); } catch (err) {}
+    e.currentTarget.textContent = "Brand kit saved ✓";
+    setTimeout(() => { document.getElementById("brand-save").textContent = "Save brand kit"; }, 1500);
+  });
+  document.getElementById("brand-apply").addEventListener("click", (e) => {
+    let kit = null;
+    try { kit = JSON.parse(localStorage.getItem(BRAND_KEY) || "null"); } catch (err) {}
+    if (!kit) { e.currentTarget.textContent = "No kit saved yet"; setTimeout(() => { document.getElementById("brand-apply").textContent = "Apply brand kit"; }, 1500); return; }
+    Object.assign(state, kit);
+    document.getElementById("font-select") && (document.getElementById("font-select").value = state.font);
+    document.getElementById("text-style").value = state.textStyle || "shadow";
+    render();
+  });
+
+  document.getElementById("text-reset-btn").addEventListener("click", () => {
+    Object.assign(state, { titleColor: null, artistColor: null, textScale: 1,
+      artistScale: 1, textX: null, textY: null, align: null, upper: true,
+      textStyle: "shadow", letterSpacing: 0, artistX: null, artistY: null });
+    document.getElementById("ax-val").textContent = "—";
+    document.getElementById("ay-val").textContent = "—";
+    document.getElementById("artist-x").value = 50;
+    document.getElementById("artist-y").value = 66;
+    document.getElementById("title-color").value = "#ffffff";
+    document.getElementById("artist-color").value = "#E8B950";
+    const resets = [["text-size", 100, "size-val", "100%"], ["artist-size", 100, "asize-val", "100%"],
+                    ["letter-spacing", 0, "ls-val", "0"], ["text-x", 50, "posx-val", "—"], ["text-y", 58, "posy-val", "—"]];
+    for (const [id, v, valId, label] of resets) {
+      document.getElementById(id).value = v;
+      document.getElementById(valId).textContent = label;
+    }
+    document.getElementById("upper-toggle").checked = true;
+    document.getElementById("text-style").value = "shadow";
+    render();
+  });
+
+  // Independent artist position + band logo + custom background
+  slider("artist-x", "ax-val", (v) => state.artistX = v);
+  slider("artist-y", "ay-val", (v) => state.artistY = v);
+  slider("logo-size", "lsize-val", (v) => state.logoSize = v);
+  slider("logo-x", "lx-val", (v) => state.logoX = v);
+  slider("logo-y", "ly-val", (v) => state.logoY = v);
+  document.getElementById("bg-color").addEventListener("input", (e) => { state.bgCustom = e.target.value; render(); });
+  document.getElementById("bg-clear").addEventListener("click", () => { state.bgCustom = null; render(); });
+  document.getElementById("logo-remove").addEventListener("click", () => { state.logo = null; render(); });
+
+  document.getElementById("logo-upload").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const msg = document.getElementById("logo-msg");
+    msg.classList.remove("hidden");
+    msg.className = "mt-1 text-xs text-gray-300";
+    msg.textContent = "Uploading logo…";
+    const fd = new FormData();
+    fd.append("art", file);
+    const res = await fetch("/artwork/upload", { method: "POST", body: fd });
+    const data = await res.json();
+    if (data.ok) {
+      const blob = await (await fetch(data.path)).blob();
+      state.logo = await new Promise((r0) => { const r = new FileReader(); r.onloadend = () => r0(r.result); r.readAsDataURL(blob); });
+      msg.className = "mt-1 text-xs text-green-400";
+      msg.textContent = "Logo on the cover ✓ — size and position it below.";
+      render();
+    } else {
+      msg.className = "mt-1 text-xs text-red-400";
+      msg.textContent = data.error || "Upload failed.";
+    }
+    e.target.value = "";
+  });
+
+  // Image controls
+  slider("img-scrim", "scrim-val", (v) => state.scrim = v);
+  slider("img-zoom", "zoom-val", (v) => state.zoom = v);
+  slider("img-panx", "panx-val", (v) => state.panX = v);
+  slider("img-pany", "pany-val", (v) => state.panY = v);
+
+  // AI artwork: real image via Pollinations + palette suggestion
+  let currentAiUrl = null, lastPrompt = null, lastSeed = null;
+  const aiWrap = document.getElementById("ai-image-wrap");
+  const aiImg = document.getElementById("ai-image");
+  const aiLoading = document.getElementById("ai-loading");
+  const aiSave = document.getElementById("ai-save-btn");
+  const aiAgain = document.getElementById("ai-again-btn");
+
+  function loadAiImage(url) {
+    currentAiUrl = url;
+    aiWrap.classList.remove("hidden");
+    aiLoading.classList.remove("hidden");
+    aiLoading.textContent = "Painting… 10–30s";
+    aiSave.disabled = true;
+    aiSave.textContent = "Save to My Uploads";
+    aiAgain.disabled = true;
+    document.getElementById("ai-saved-msg").classList.add("hidden");
+    aiImg.onload = () => { aiLoading.classList.add("hidden"); aiSave.disabled = false; aiAgain.disabled = false; setDesignerImage(url); };
+    aiImg.onerror = () => { aiLoading.textContent = "The free model is busy — try Another take."; aiAgain.disabled = false; };
+    aiImg.src = url;
+  }
+
+  async function generateArt() {
+    const btn = document.getElementById("generate-btn");
+    const note = document.getElementById("generate-note");
+    btn.disabled = true;
+    btn.textContent = "Generating...";
+    try {
+      const res = await fetch("/artwork/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: document.getElementById("prompt-input").value }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        note.textContent = data.image_url ? "" : "Describe the cover first — then a real image generates.";
+        note.classList.remove("hidden");
+        if (data.image_url) {
+          lastPrompt = document.getElementById("prompt-input").value.trim();
+          lastSeed = data.seed;
+          document.getElementById("ai-remix-wrap").classList.remove("hidden");
+          loadAiImage(data.image_url);
+        }
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Generate artwork";
+    }
+  }
+  document.getElementById("generate-btn").addEventListener("click", generateArt);
+
+  // Four takes at once: same endpoint, four seeds, pick your direction.
+  async function generateFour() {
+    const grid = document.getElementById("ai-grid");
+    const btn = document.getElementById("generate4-btn");
+    const prompt = document.getElementById("prompt-input").value;
+    if (!prompt.trim()) return;
+    btn.disabled = true; btn.textContent = "Painting 4…";
+    grid.classList.remove("hidden"); grid.classList.add("grid");
+    grid.innerHTML = "";
+    for (let i = 0; i < 4; i++) {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "aspect-square overflow-hidden rounded-lg border border-white/10 bg-black/40 text-xs text-gray-300 transition-colors hover:border-sb-gold";
+      cell.textContent = "painting…";
+      grid.appendChild(cell);
+      try {
+        const res = await fetch("/artwork/generate", {method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({prompt})});
+        const data = await res.json();
+        if (data.ok && data.image_url) {
+          const img = document.createElement("img");
+          img.className = "h-full w-full object-cover";
+          img.src = data.image_url;
+          img.onload = () => { cell.textContent = ""; cell.appendChild(img); };
+          cell.addEventListener("click", () => {
+            grid.querySelectorAll("button").forEach(b => b.classList.remove("border-sb-gold", "border-2"));
+            cell.classList.add("border-sb-gold", "border-2");
+            setDesignerImage(data.image_url);
+          });
+        } else { cell.textContent = "busy — retry"; }
+      } catch (e) { cell.textContent = "failed"; }
+    }
+    btn.disabled = false; btn.textContent = "4 variations";
+  }
+  document.getElementById("generate4-btn").addEventListener("click", generateFour);
+  aiAgain.addEventListener("click", generateArt);
+  document.getElementById("ai-remove-btn").addEventListener("click", () => setDesignerImage(null));
+
+  // Upload your own artwork straight into the designer
+  document.getElementById("art-upload").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const msg = document.getElementById("upload-msg");
+    msg.classList.remove("hidden");
+    msg.className = "mt-1.5 text-xs text-gray-300";
+    msg.textContent = "Uploading…";
+    const fd = new FormData();
+    fd.append("art", file);
+    const res = await fetch("/artwork/upload", { method: "POST", body: fd });
+    const data = await res.json();
+    if (data.ok) {
+      msg.className = "mt-1.5 text-xs text-green-400";
+      msg.textContent = "On the cover ✓ — saved to your uploads at " + data.path;
+      setDesignerImage(data.path);
+    } else {
+      msg.className = "mt-1.5 text-xs text-red-400";
+      msg.textContent = data.error || "Upload failed.";
+    }
+    e.target.value = "";
+  });
+
+  // Remix: same seed, same concept, your change appended
+  document.getElementById("remix-btn").addEventListener("click", async () => {
+    const change = document.getElementById("remix-input").value.trim();
+    if (!change || !lastPrompt) return;
+    const res = await fetch("/artwork/generate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: lastPrompt + ", " + change, seed: lastSeed }),
+    });
+    const data = await res.json();
+    if (data.ok && data.image_url) loadAiImage(data.image_url);
+  });
+
+  aiSave.addEventListener("click", async () => {
+    aiSave.disabled = true;
+    aiSave.textContent = "Saving...";
+    const res = await fetch("/artwork/save", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: currentAiUrl }),
+    });
+    const data = await res.json();
+    const msg = document.getElementById("ai-saved-msg");
+    msg.classList.remove("hidden");
+    if (data.ok) {
+      msg.textContent = "Saved ✓ — available at " + data.path + " (use it as a campaign cover or EPK asset).";
+      aiSave.textContent = "Saved ✓";
+      setDesignerImage(data.path);
+    } else {
+      msg.className = "mt-2 break-all text-xs text-red-400";
+      msg.textContent = data.error || "Could not save.";
+      aiSave.textContent = "Save to My Uploads";
+      aiSave.disabled = false;
+    }
+  });
+
+  // Font embedding for exports: fetch the woff2 once, cache as data URI.
+  const fontEmbedCache = {};
+  async function fontFaceCss() {
+    const f = byId(FONTS, state.font);
+    if (!f.google) return "";
+    if (fontEmbedCache[f.id] !== undefined) return fontEmbedCache[f.id];
+    try {
+      const css = await (await fetch("https://fonts.googleapis.com/css2?family=" + f.google + "&display=swap")).text();
+      const m = css.match(/src:\s*url\((https:[^)]+\.woff2)\)/);
+      if (!m) throw new Error("no woff2");
+      const blob = await (await fetch(m[1])).blob();
+      const dataUri = await new Promise((res) => {
+        const r = new FileReader();
+        r.onloadend = () => res(r.result);
+        r.readAsDataURL(blob);
+      });
+      const family = f.stack.match(/'([^']+)'/)[1];
+      const weight = (css.match(/font-weight:\s*(\d+)/) || [0, "400"])[1];
+      fontEmbedCache[f.id] = `<style>@font-face{font-family:'${family}';src:url(${dataUri}) format('woff2');font-weight:${weight};}</style>`;
+    } catch (e) {
+      fontEmbedCache[f.id] = "";   // export falls back to the stack's system font
+    }
+    return fontEmbedCache[f.id];
+  }
+
+  // Rasterize the current cover at export resolution.
+  async function coverPngBlob() {
+    state._fontCss = await fontFaceCss();
+    const a = byId(ASPECTS, state.aspect);
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const svgBlob = new Blob([buildSvg(true)], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(svgBlob);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = a.w; canvas.height = a.h;
+        canvas.getContext("2d").drawImage(img, 0, 0, a.w, a.h);
+        URL.revokeObjectURL(url);
+        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("raster failed")), "image/png");
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("svg load failed")); };
+      img.src = url;
+    });
+  }
+
+  // Downloads + save-to-app
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+  const safeName = () => (state.title || "cover").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "cover";
+
+  document.getElementById("download-svg-btn").addEventListener("click", async () => {
+    state._fontCss = await fontFaceCss();
+    downloadBlob(new Blob([buildSvg(true)], { type: "image/svg+xml" }), safeName() + "-cover.svg");
+  });
+
+  document.getElementById("download-png-btn").addEventListener("click", async () => {
+    try { downloadBlob(await coverPngBlob(), safeName() + "-cover.png"); } catch (e) {}
+  });
+
+  document.getElementById("save-cover-btn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const msg = document.getElementById("cover-save-msg");
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    try {
+      const blob = await coverPngBlob();
+      const fd = new FormData();
+      fd.append("file", blob, safeName() + "-cover.png");
+      fd.append("kind", "cover_art");
+      fd.append("label", (state.title || "Cover") + " — final cover");
+      const res = await fetch("/vault/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      msg.classList.remove("hidden");
+      if (data.ok) {
+        msg.className = "mt-2 break-all text-xs text-green-400";
+        msg.innerHTML = "Finished cover saved ✓ — " + data.path +
+          ' &middot; use it now: <a href="/links" class="font-bold text-sb-gold-bright underline">Smart Links</a> &middot; <a href="/epk" class="font-bold text-sb-gold-bright underline">Press Kit</a>';
+        btn.textContent = "Saved ✓";
+        setTimeout(() => { btn.textContent = "Save cover to uploads"; btn.disabled = false; }, 2000);
+        return;
+      }
+      throw new Error(data.error || "save failed");
+    } catch (err) {
+      msg.classList.remove("hidden");
+      msg.className = "mt-2 break-all text-xs text-red-400";
+      msg.textContent = "Couldn't save the cover: " + err.message;
+      btn.textContent = "Save cover to uploads";
+      btn.disabled = false;
+    }
+  });
+
+  render();
+</script>
+{% endblock %}

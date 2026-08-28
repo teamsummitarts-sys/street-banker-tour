@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Vault - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1100px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker · Asset Vault</div>
+      <h1 class="sb-h1 mt-1">The Archive Drawer</h1>
+      <p class="mt-1 max-w-2xl text-sm text-gray-300">Every creative asset across your press kit, campaigns, and rollouts — one drawer, with where each piece is working. Upload anything below to archive it directly.</p>
+    </div>
+    <div class="flex gap-2 text-sm font-semibold">
+      <a href="/epk" class="sb-btn sb-btn-secondary">+ Press assets</a>
+      <a href="/rollout-studio/new" class="sb-btn sb-btn-secondary">+ Rollout assets</a>
+    </div>
+  </div>
+
+  <!-- Direct vault upload -->
+  <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-4">
+    <form id="vault-upload-form" class="flex flex-wrap items-center gap-2">
+      <label class="cursor-pointer rounded-lg bg-sb-gold-bright px-4 py-2 text-xs font-black text-sb-on-gold hover:bg-sb-gold-bright">
+        Upload to Vault<input id="vault-file" type="file" class="hidden">
+      </label>
+      <select id="vault-kind" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white">
+        <option value="cover_art">Cover art</option>
+        <option value="master">Master bounce</option>
+        <option value="stems">Stems</option>
+        <option value="press_photo">Press photo</option>
+        <option value="video">Video / Canvas</option>
+        <option value="file" selected>Other file</option>
+      </select>
+      <input id="vault-label" placeholder="Label (e.g. Night Drive v2 final)" class="w-64 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder-gray-300">
+      <span id="vault-msg" class="text-xs text-gray-300 font-medium"></span>
+    </form>
+    <p class="mt-2 text-xs text-gray-300 font-medium">Images, audio, video, zips, and PDFs. The Rack can archive masters here directly, and the Cover Art studio files every saved cover automatically.</p>
+  </section>
+
+  {% if items %}
+  <!-- Type filters + search -->
+  <div class="flex flex-wrap items-center gap-2">
+    <input id="vault-search" placeholder="Search assets…" class="w-52 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder-gray-300">
+    <div id="vault-pills" class="flex flex-wrap gap-1.5 text-xs font-bold uppercase tracking-wide"></div>
+    <form id="vault-zip-form" method="post" action="/vault/zip" class="ml-auto">
+      <button id="vault-zip-btn" class="sb-btn sb-btn-secondary sb-btn-sm hidden">Download selected (zip)</button>
+    </form>
+  </div>
+
+  <div id="vault-grid" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    {% for a in items %}
+    <div class="vault-card overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-sb-surface-2 to-sb-ground" data-type="{{ a.type }}" data-name="{{ (a.name ~ ' ' ~ a.type) | lower }}">
+      {% if a.path and a.type not in ('Lyrics', 'Video', 'Video / Canvas', 'Master', 'Master Bounce', 'Stems', 'File', 'Other File') %}
+      {# media_url resolves both shapes: a disk path unchanged, an "r2:"
+         object to a short-lived signed URL. Resolved once so the link and
+         the thumbnail share one signature rather than signing twice. #}
+      {% set src = a.path | media_url %}
+      <a href="{{ src }}" target="_blank"><img src="{{ src }}" alt="{{ a.name }}" class="aspect-[3/2] w-full border-b border-white/5 object-cover" loading="lazy"></a>
+      {% else %}
+      <div class="grid aspect-[3/2] place-items-center border-b border-white/5 bg-black/30 text-3xl text-gray-300">{{ '♫' if a.type in ('Lyrics', 'Master', 'Master Bounce', 'Stems') else ('▶' if 'Video' in a.type else '▤') }}</div>
+      {% endif %}
+      <div class="p-3.5">
+        <div class="flex items-center justify-between gap-2">
+          <label class="flex min-w-0 items-center gap-2">
+            {% if a.path %}<input type="checkbox" class="vault-pick h-3.5 w-3.5 shrink-0 accent-sb-gold" value="{{ a.path }}">{% endif %}
+            <span class="truncate text-sm font-bold text-gray-100">{{ a.name }}</span>
+          </label>
+          <span class="shrink-0 rounded bg-sb-gold/15 px-1.5 py-0.5 text-xs font-bold uppercase text-sb-gold-bright">{{ a.type }}</span>
+        </div>
+        <div class="mt-1 text-xs text-gray-300 font-medium">{{ a.usage }}</div>
+        <div class="mt-2 flex items-center justify-between text-xs font-medium">
+          <span class="font-bold uppercase {{ 'text-green-400' if a.status in ('Public', 'Released', 'Live') else 'text-gray-300' }}">{{ a.status }}{% if a.date %} · {{ a.date }}{% endif %}</span>
+          {% if a.vid %}
+          <form method="post" action="/vault/{{ a.vid }}/delete"><button class="font-bold text-gray-300 hover:text-red-400">Remove</button></form>
+          {% else %}
+          <a href="{{ a.manage }}" class="font-bold text-sb-gold-bright hover:underline">Manage →</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-sb-gold/30 py-10 text-center">
+    <div class="text-sm font-bold text-gray-200">The drawer is empty</div>
+    <p class="mx-auto mt-1 max-w-md text-xs text-gray-300">Upload anything above, save cover art in the studio, archive a master from The Rack — everything lands here.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Direct upload
+  const vf = document.getElementById("vault-file");
+  if (vf) vf.addEventListener("change", async () => {
+    const f = vf.files[0];
+    if (!f) return;
+    const msg = document.getElementById("vault-msg");
+    msg.textContent = "Uploading…";
+    const fd = new FormData();
+    fd.append("file", f);
+    fd.append("kind", document.getElementById("vault-kind").value);
+    fd.append("label", document.getElementById("vault-label").value || f.name);
+    try {
+      const res = await fetch("/vault/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.ok) { window.location.reload(); return; }
+      msg.textContent = data.error || "Upload failed.";
+    } catch (e) { msg.textContent = "Upload failed."; }
+    vf.value = "";
+  });
+
+  // Type pills + search over the real card set
+  const cards = [...document.querySelectorAll(".vault-card")];
+  const pillWrap = document.getElementById("vault-pills");
+  let activeType = "";
+  function applyFilter() {
+    const q = (document.getElementById("vault-search").value || "").toLowerCase();
+    cards.forEach((c) => {
+      const okType = !activeType || c.dataset.type === activeType;
+      const okQ = !q || c.dataset.name.includes(q);
+      c.classList.toggle("hidden", !(okType && okQ));
+    });
+  }
+  if (pillWrap && cards.length) {
+    const types = [...new Set(cards.map((c) => c.dataset.type))];
+    const mk = (label, val) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = label;
+      b.className = "vault-pill rounded-full border border-white/10 px-2.5 py-1 text-gray-300 hover:text-white";
+      b.addEventListener("click", () => {
+        activeType = val;
+        document.querySelectorAll(".vault-pill").forEach((p) => p.classList.remove("border-amber-500/40", "bg-amber-500/15", "text-amber-400"));
+        b.classList.add("border-amber-500/40", "bg-amber-500/15", "text-amber-400");
+        applyFilter();
+      });
+      return b;
+    };
+    pillWrap.appendChild(mk("All", ""));
+    types.forEach((t) => pillWrap.appendChild(mk(t, t)));
+    pillWrap.firstChild.classList.add("border-amber-500/40", "bg-amber-500/15", "text-amber-400");
+    document.getElementById("vault-search").addEventListener("input", applyFilter);
+  }
+
+  // Batch zip: checked cards feed the POST form
+  const zipForm = document.getElementById("vault-zip-form");
+  const zipBtn = document.getElementById("vault-zip-btn");
+  function syncZip() {
+    const picked = [...document.querySelectorAll(".vault-pick:checked")];
+    zipBtn.classList.toggle("hidden", !picked.length);
+    zipBtn.textContent = "Download selected (" + picked.length + ") zip";
+    zipForm.querySelectorAll("input[name=paths]").forEach((i) => i.remove());
+    picked.forEach((p) => {
+      const i = document.createElement("input");
+      i.type = "hidden"; i.name = "paths"; i.value = p.value;
+      zipForm.appendChild(i);
+    });
+  }
+  if (zipForm) document.querySelectorAll(".vault-pick").forEach((p) => p.addEventListener("change", syncZip));
+</script>
+{% endblock %}

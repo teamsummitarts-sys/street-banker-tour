@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% import "_sb.html" as sb %}
+{% block title %}Not accepted - Street Banker{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-[760px] space-y-5">
+  <div>
+    <p class="sb-label sb-label-gold">Audio Studio</p>
+    <h1 class="sb-h1 mt-1">That was not accepted</h1>
+    <p class="mt-2 text-sm text-gray-300">{{ message }}</p>
+  </div>
+  <div>{{ sb.btn("Back to the Studio", href=url_for('audio_studio.studio'),
+                 variant="secondary") }}</div>
+</div>
+{% endblock %}

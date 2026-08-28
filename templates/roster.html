@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Label Roster - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Label Mode</div>
+    <h1 class="sb-h1 mt-1">Label Roster</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Your artists, one desk. Invite an artist and you see their real numbers — statements, fans, live links, upcoming shows — read-only, never their login.</p>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-4">
+      <div class="sb-label text-gray-300">Roster Revenue</div>
+      <div class="mt-1 text-xl font-black tabular-nums text-sb-ink">${{ "{:,.2f}".format(totals.revenue) }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Fans</div>
+      <div class="mt-1 text-xl font-black tabular-nums">{{ "{:,}".format(totals.fans) }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Live Links</div>
+      <div class="mt-1 text-xl font-black tabular-nums">{{ totals.links }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Upcoming Shows</div>
+      <div class="mt-1 text-xl font-black tabular-nums">{{ totals.shows }}</div>
+    </div>
+  </div>
+
+  <!-- Invite -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5">
+    <h2 class="sb-label text-gray-300">Add an artist</h2>
+    <form method="post" action="/roster/invite" class="mt-3 flex flex-wrap gap-2">
+      <input name="email" type="email" required placeholder="artist@email.com"
+             class="w-72 rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+      <button class="sb-btn sb-btn-primary">Invite to Roster</button>
+    </form>
+    <p class="mt-2 text-xs text-gray-300 font-medium">They accept by link and keep full control of their account — you get read-only visibility. Their join link stays listed below until they accept.</p>
+  </section>
+
+  <!-- Members -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-sb-gold">Roster</h2>
+    {% if members %}
+    <div class="mt-3 space-y-3">
+      {% for m in members %}
+      <div class="rounded-xl border border-white/10 bg-black/30 p-4">
+        {% if m.status == 'active' and m.artist_user_id %}
+        {% set st = (stats | selectattr('m.id', 'equalto', m.id) | list | first) %}
+        <div class="flex flex-wrap items-center gap-3">
+          <a href="/roster/artist/{{ m.artist_user_id }}" class="min-w-0 flex-1 truncate text-sm font-bold hover:text-sb-gold-bright">{{ m.artist_name or m.email }}</a>
+          {% if st %}
+          <span class="text-xs sb-num text-gray-300 font-medium">${{ "{:,.2f}".format(st.revenue) }}</span>
+          <span class="text-xs sb-num text-gray-300 font-medium">{{ st.fans }} fans</span>
+          <span class="text-xs sb-num text-gray-300 font-medium">{{ st.os.passport_avg }}% passport</span>
+          <span class="text-xs tabular-nums {{ 'text-red-400' if st.os.reds else 'text-gray-300' }} font-medium">{{ st.os.reds }} red</span>
+          <span class="rounded-full border border-sb-gold/40 bg-sb-gold/10 px-2 py-0.5 text-xs font-bold uppercase text-sb-gold-bright">{{ st.cert }}</span>
+          {% endif %}
+          <a href="/roster/artist/{{ m.artist_user_id }}" class="sb-btn sb-btn-secondary sb-btn-sm">Open</a>
+          <form method="post" action="/roster/{{ m.id }}/remove"><button class="sb-btn sb-btn-danger sb-btn-sm">Remove</button></form>
+        </div>
+        {% else %}
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="min-w-0 flex-1 truncate text-sm font-bold text-gray-200">{{ m.email }}</span>
+          <span class="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-amber-400">Invited</span>
+          <form method="post" action="/roster/{{ m.id }}/remove"><button class="sb-btn sb-btn-secondary sb-btn-sm">Withdraw</button></form>
+        </div>
+        <input readonly onclick="this.select()" value="{{ request.url_root.rstrip('/') }}/roster/join/{{ m.invite_token }}"
+               class="mt-2 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-xs text-sb-gold-bright focus:outline-none font-medium">
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="mt-3 text-sm text-gray-300">No artists yet. Invite the first one above — everything on this desk comes from real accounts and real data, so it starts empty on purpose.</p>
+    {% endif %}
+  </section>
+
+  {% if calendar %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex items-center justify-between">
+      <h2 class="sb-label text-sb-gold">Release Calendar</h2>
+      <a href="/roster/export.csv" class="sb-btn sb-btn-secondary sb-btn-sm">Export roster report (CSV)</a>
+    </div>
+    <div class="mt-3 divide-y divide-white/5">
+      {% for c in calendar %}
+      <div class="flex items-baseline gap-3 py-2">
+        <span class="w-24 shrink-0 text-sm font-black sb-num">{{ c.date }}</span>
+        <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ c.title }}</span>
+        <span class="shrink-0 text-xs text-gray-300 font-medium">{{ c.artist }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <div class="flex justify-end"><a href="/roster/export.csv" class="sb-btn sb-btn-secondary sb-btn-sm">Export roster report (CSV)</a></div>
+  {% endif %}
+
+  <p class="px-1 text-xs text-gray-300 font-medium">Roster numbers come from what each artist has actually connected and uploaded — statements, fans, links, shows. No estimates, no padding.</p>
+</div>
+{% endblock %}

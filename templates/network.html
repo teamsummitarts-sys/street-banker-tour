@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}Network - Royalty Sweep{% endblock %}
+
+{% set nw = network %}
+
+{% macro role_badge(role) %}
+{# Micro-icon per role so the grid scans visually #}
+{% set role_icons = {
+  'Label': 'M10 3a7 7 0 100 14 7 7 0 000-14z|M10 8a2 2 0 100 4 2 2 0 000-4z',
+  'Playlist Curator': 'M4 12v-2a6 6 0 0112 0v2|M3 12h3v5H3zM14 12h3v5h-3z',
+  'Producer': 'M5 4v12M10 4v12M15 4v12|M3 8h4M8 13h4M13 6h4',
+  'Engineer': 'M3 10h2l2-4 3 8 3-6 2 2h2',
+  'Sync Supervisor': 'M4 8h12v8H4z|M4 8l2-4 3 1-2 4M9 5l3 1-2 4M14 6l2 1-2 4',
+  'Artist': 'M8 3h4v8a2 2 0 11-4 0z|M6 9a4 4 0 008 0M10 15v2',
+  'Songwriter': 'M4 16l1-4 8-8 3 3-8 8z|M12 5l3 3',
+  'Manager': 'M4 7h12v9H4z|M8 7V5h4v2M4 11h12',
+  'A&R': 'M10 3l2 4 4 .5-3 3 .8 4.5L10 13l-3.8 2 .8-4.5-3-3 4-.5z',
+} %}
+<span class="inline-flex items-center gap-1 rounded-full border border-white/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-gray-300">
+  {%- if role in role_icons -%}
+  <svg class="h-3 w-3 shrink-0 text-sb-gold" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    {%- for d in role_icons[role].split('|') %}<path d="{{ d }}"/>{% endfor -%}
+  </svg>
+  {%- endif -%}
+  {{ role }}</span>
+{% endmacro %}
+
+{% macro verified(p) %}
+{% if p.verified %}<svg class="h-3.5 w-3.5 shrink-0 text-amber-400" viewBox="0 0 20 20" fill="currentColor" title="Verified"><path d="M10 1l2.4 1.8 3 .1 1 2.8 2.4 1.7-.9 2.9.9 2.9-2.4 1.7-1 2.8-3 .1L10 19l-2.4-1.8-3-.1-1-2.8L1.2 12.6l.9-2.9-.9-2.9 2.4-1.7 1-2.8 3-.1z"/><path d="M7 10l2 2 4-4" fill="none" stroke="#1A1714" stroke-width="1.5"/></svg>{% endif %}
+{% endmacro %}
+
+{% block content %}
+<div class="mx-auto max-w-[1400px] space-y-5">
+  <div>
+    <h1 class="sb-h1">Network</h1>
+    <p class="mt-1 text-sm text-gray-300">Find collaborators, labels, curators, and industry contacts — connect, pitch, and submit to playlists.</p>
+    {# Was an 11px gray-600 line - 2.6:1 on black, at the size the eye
+       skips. A disclosure nobody reads is not a disclosure. Same
+       component as the profile page so the two agree. #}
+    {% with kind='sample',
+            body='The directory profiles are examples, not real people.',
+            note='Your Outreach Pipeline on the My Network tab is real and private to you.' %}
+      {% include 'partials/data_label.html' %}
+    {% endwith %}
+  </div>
+
+  <!-- Stat cards double as quick-jump filters -->
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <a href="/network?tab=directory" class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5 transition-colors hover:border-white/20"><div class="sb-label text-gray-300">Contacts</div><div class="mt-2 text-2xl font-bold tabular-nums">{{ nw.summary.total }}</div></a>
+    <a href="/network?tab=directory" class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5 transition-colors hover:border-white/20"><div class="sb-label text-gray-300">Roles</div><div class="mt-2 text-2xl font-bold tabular-nums">{{ nw.summary.roles }}</div></a>
+    <a href="/network?tab=playlists" class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5 transition-colors hover:border-green-500/40"><div class="sb-label text-gray-300">Playlists Accepting</div><div class="mt-2 text-2xl font-bold tabular-nums text-green-400">{{ nw.summary.accepting }}</div></a>
+    <a href="/network?tab=my" class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5 transition-colors hover:border-amber-500/40"><div class="sb-label text-gray-300">My Connections</div><div class="mt-2 text-2xl font-bold tabular-nums text-sb-ink">{{ nw.summary.connections }}</div></a>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex flex-wrap gap-1.5 border-b border-white/5">
+    {% for t, label in [('directory','Directory'), ('playlists','Playlists'), ('shows','Shows'), ('moments','Moments'), ('my','My Network')] %}
+    <a href="/network?tab={{ t }}" class="-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition-colors {{ 'border-amber-400 text-amber-400' if nw.tab == t else 'border-transparent text-gray-300 hover:text-white' }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+
+  {% if nw.tab == 'directory' %}
+  <!-- Search + filters + sort -->
+  <form method="get" action="/network" class="flex flex-wrap items-center gap-2">
+    <input type="hidden" name="tab" value="directory">
+    <div class="flex min-w-[200px] flex-1 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 focus-within:border-amber-500/40">
+      <svg class="h-4 w-4 text-gray-300" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="9" r="5.5"/><path d="M17 17l-4-4"/></svg>
+      <input name="q" value="{{ nw.filters.q }}" placeholder="Search name, role, genre, city…" class="w-full min-w-0 bg-transparent text-sm text-gray-100 placeholder-gray-300 focus:outline-none">
+    </div>
+    <select name="role" onchange="this.form.submit()" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-200 focus:border-amber-500/50 focus:outline-none">
+      {% for r in nw.roles %}<option value="{{ r }}" {{ 'selected' if r == nw.filters.role }}>{{ 'All roles' if r == 'All' else r }}</option>{% endfor %}
+    </select>
+    <select name="genre" onchange="this.form.submit()" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-200 focus:border-amber-500/50 focus:outline-none">
+      {% for g in nw.genres %}<option value="{{ g }}" {{ 'selected' if g == nw.filters.genre }}>{{ 'All genres' if g == 'All' else g }}</option>{% endfor %}
+    </select>
+    <select name="sort" onchange="this.form.submit()" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-200 focus:border-amber-500/50 focus:outline-none">
+      {% for s in nw.sorts %}<option value="{{ s.id }}" {{ 'selected' if s.id == nw.filters.sort }}>{{ s.label }}</option>{% endfor %}
+    </select>
+  </form>
+
+  <!-- Active filter chips -->
+  {% set active_filters = [] %}
+  {% if nw.filters.q %}{% set _ = active_filters.append(('q', 'Search: ' + nw.filters.q)) %}{% endif %}
+  {% if nw.filters.role != 'All' %}{% set _ = active_filters.append(('role', 'Role: ' + nw.filters.role)) %}{% endif %}
+  {% if nw.filters.genre != 'All' %}{% set _ = active_filters.append(('genre', 'Genre: ' + nw.filters.genre)) %}{% endif %}
+  <div class="flex flex-wrap items-center gap-2 text-xs font-medium">
+    <span class="text-gray-300">{{ nw.result_count }} result{{ '' if nw.result_count == 1 else 's' }}</span>
+    {% for fkey, flabel in active_filters %}
+    {% set qs = [] %}
+    {% if nw.filters.q and fkey != 'q' %}{% set _ = qs.append('q=' + nw.filters.q) %}{% endif %}
+    {% if nw.filters.role != 'All' and fkey != 'role' %}{% set _ = qs.append('role=' + nw.filters.role) %}{% endif %}
+    {% if nw.filters.genre != 'All' and fkey != 'genre' %}{% set _ = qs.append('genre=' + nw.filters.genre) %}{% endif %}
+    <a href="/network?tab=directory{% for q in qs %}&{{ q }}{% endfor %}" class="sb-btn sb-btn-secondary">{{ flabel }} ✕</a>
+    {% endfor %}
+    {% if active_filters %}<a href="/network?tab=directory" class="font-semibold text-gray-300 hover:text-white">Clear all</a>{% endif %}
+  </div>
+
+  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    {% for p in nw.people %}
+    <div class="flex flex-col rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="flex items-start gap-3">
+        <a href="/network/{{ p.id }}" class="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border border-amber-500/40 text-sm font-bold text-amber-400">
+          {%- if p.avatar %}<img src="{{ p.avatar }}" alt="{{ p.name }}" class="h-full w-full object-cover" loading="lazy">{% else %}{{ p.initials }}{% endif -%}
+        </a>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-1.5">
+            <a href="/network/{{ p.id }}" class="truncate text-sm font-semibold text-gray-100 hover:text-amber-400">{{ p.name }}</a>
+            {{ verified(p) }}
+          </div>
+          <div class="mt-0.5 flex flex-wrap items-center gap-1.5">{{ role_badge(p.role) }}<span class="text-xs text-gray-300 font-medium">{{ p.location }}</span></div>
+        </div>
+      </div>
+      <p class="mt-3 flex-1 text-xs text-gray-300">{{ p.tagline }}</p>
+      <div class="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-gray-300 font-medium">
+        {% for g in p.genres %}<span class="rounded border border-white/10 px-1.5 py-0.5">{{ g }}</span>{% endfor %}
+      </div>
+      <div class="mt-3 flex items-center justify-between">
+        <span class="text-xs text-gray-300 font-medium">{{ "{:,}".format(p.followers) }} followers</span>
+        {% if p.available %}<span class="inline-flex items-center gap-1 text-xs font-semibold text-green-400"><span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>Available</span>{% else %}<span class="text-xs text-gray-300 font-medium">Booked</span>{% endif %}
+      </div>
+      {# CTA matches what you'd actually do with this role #}
+      {% set cta = {'Curator': 'Pitch Track', 'A&R': 'Pitch Track', 'Label': 'Submit Demo',
+                    'Engineer': 'Book / Request Quote', 'Producer': 'Book / Request Quote',
+                    'Artist': 'Connect', 'Songwriter': 'Request Co-Write',
+                    'Manager': 'Connect'}.get(p.role, 'View Profile') %}
+      <a href="/network/{{ p.id }}" class="sb-btn sb-btn-secondary sb-btn-sm mt-3 w-full">
+        {{ 'Connected' if p.connection == 'Connected' else ('Pending' if p.connection else cta) }}
+      </a>
+    </div>
+    {% endfor %}
+    {% if not nw.people %}
+    <div class="rounded-xl border border-dashed border-white/10 py-10 text-center text-xs text-gray-300 sm:col-span-2 lg:col-span-3">No contacts match those filters.</div>
+    {% endif %}
+  </div>
+
+  {% elif nw.tab == 'playlists' %}
+  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    {% for pl in nw.playlists %}
+    <a href="/network/playlist/{{ pl.id }}" class="flex flex-col rounded-2xl border border-white/5 bg-sb-surface-1 p-5 transition-colors hover:border-amber-500/30">
+      <div class="flex items-center justify-between">
+        <div class="text-sm font-semibold text-gray-100">{{ pl.name }}</div>
+        {% if pl.accepting %}<span class="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-400">Open</span>{% else %}<span class="rounded-full border border-gray-500/20 bg-gray-500/10 px-2 py-0.5 text-xs font-semibold text-gray-300">Closed</span>{% endif %}
+      </div>
+      <div class="mt-0.5 text-xs text-gray-300 font-medium">by {{ pl.curator_name }} · {{ pl.mood }}</div>
+      <p class="mt-2 flex-1 text-xs text-gray-300">{{ pl.description }}</p>
+      <div class="mt-3 flex items-center justify-between text-xs font-medium">
+        <span class="text-gray-300">{{ "{:,}".format(pl.followers) }} followers</span>
+        {% if pl.submitted %}<span class="font-semibold text-amber-400">Submitted ✓</span>{% elif pl.accepting %}<span class="font-semibold text-amber-400">Submit →</span>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% elif nw.tab == 'shows' %}
+  <!-- Shows / Tour -->
+  <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+    <div class="flex items-center justify-between">
+      <h2 class="sb-label text-gray-300">Upcoming Shows</h2>
+      <span class="text-xs text-gray-300 font-medium">Tour with us · enquire to book</span>
+    </div>
+    <div class="mt-4 space-y-2">
+      {% for s in nw.shows %}
+      <div class="flex flex-wrap items-center gap-3 rounded-xl border border-white/5 bg-white/5 px-4 py-3">
+        <div class="w-24 shrink-0 text-center">
+          <div class="text-sm font-bold text-amber-400">{{ s.date }}</div>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="text-sm font-semibold text-gray-100">{{ s.venue }} · {{ s.city }}</div>
+          <div class="text-xs text-gray-300 font-medium"><a href="/network/{{ s.profile_id }}" class="hover:text-amber-400">{{ s.owner_name }}</a> · {{ s.owner_role }}</div>
+        </div>
+        <span class="shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold {{ 'border-green-500/20 bg-green-500/10 text-green-400' if s.status == 'On sale' else ('border-red-500/20 bg-red-500/10 text-red-400' if s.status == 'Sold out' else 'border-amber-500/20 bg-amber-500/10 text-amber-400') }}">{{ s.status }}</span>
+        <a href="/network/{{ s.profile_id }}#book" class="sb-btn sb-btn-secondary sb-btn-sm shrink-0">Enquire</a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% elif nw.tab == 'moments' %}
+  <!-- Mintable Moments -->
+  <div class="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-xs text-gray-300 font-medium">
+    <span class="font-semibold text-gray-200">Mintable Moments.</span> Limited, timed drops — each watermarked and numbered. Claim one to keep a clean, owned copy before it expires. <span class="text-gray-300">(Simulated demo — no real payment. Web can't truly block screenshots; every copy is watermarked + serialized so any capture is traceable.)</span>
+  </div>
+  <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    {% for m in nw.moments %}
+    <a href="/network/moment/{{ m.id }}" class="group relative block overflow-hidden rounded-2xl border border-white/10">
+      <div class="relative aspect-[3/4]" style="background: linear-gradient(135deg, {{ m.from }}, {{ m.to }});">
+        <!-- watermark tiling -->
+        <div class="pointer-events-none absolute inset-0 flex flex-col justify-between p-3 opacity-[0.18]">
+          {% for i in range(6) %}<div class="whitespace-nowrap text-xs font-bold uppercase tracking-widest text-white">STREET BANKER · {{ m.serial }} · STREET BANKER · {{ m.serial }}</div>{% endfor %}
+        </div>
+        <div class="absolute inset-x-0 top-0 flex items-center justify-between p-3">
+          <span class="rounded-full bg-black/40 px-2 py-0.5 text-xs font-semibold text-white">#{{ m.edition_n }}/{{ m.edition_total }}</span>
+          <span class="moment-countdown rounded-full bg-black/40 px-2 py-0.5 text-xs font-semibold text-amber-300" data-expires="{{ m.expires_iso }}">—</span>
+        </div>
+        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+          <div class="text-sm font-bold text-white">{{ m.title }}</div>
+          <div class="text-xs text-gray-200 font-medium">{{ m.owner_name }} · {{ m.serial }}</div>
+        </div>
+        {% if m.claimed %}<div class="absolute right-2 bottom-14 rounded-full border border-green-400/40 bg-green-500/20 px-2 py-0.5 text-xs font-semibold text-green-300">Owned</div>{% endif %}
+      </div>
+      <div class="flex items-center justify-between bg-sb-surface-1 px-3 py-2">
+        <span class="text-xs text-gray-300 font-medium">${{ m.price }}</span>
+        <span class="text-xs font-semibold text-amber-400">{{ 'Owned' if m.claimed else 'Claim →' }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <!-- My Network -->
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+
+    <!-- Outreach Pipeline: YOUR real CRM — every row is something you entered -->
+    <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5 lg:col-span-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="sb-label text-sb-gold-bright">Outreach Pipeline</h2>
+        <span class="text-xs text-gray-300 font-medium">Your private pitch tracker — real entries only, works for anyone on or off Street Banker.</span>
+      </div>
+      <form method="post" action="/network/outreach/add" class="mt-3 flex flex-wrap gap-2">
+        <input name="contact" required placeholder="Who? (curator, label, blog, A&R…)" class="w-56 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder-gray-300">
+        <input name="role" placeholder="Role / outlet" class="w-36 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder-gray-300">
+        <select name="stage" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white">
+          {% for st in outreach_stages %}<option value="{{ st }}">{{ st | capitalize }}</option>{% endfor %}
+        </select>
+        <input name="notes" placeholder="Notes (track pitched, link, next step…)" class="min-w-[200px] flex-1 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs text-white placeholder-gray-300">
+        <button class="sb-btn sb-btn-primary sb-btn-sm">Track it</button>
+      </form>
+      {% if outreach %}
+      <div class="mt-3 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-wide text-gray-300">
+        {% for st in outreach_stages %}
+        {% set n = outreach | selectattr('stage', 'equalto', st) | list | length %}
+        {% if n %}<span class="rounded-full border {{ 'border-green-500/40 text-green-400' if st == 'accepted' else ('border-red-500/30 text-red-400' if st == 'passed' else 'border-white/10') }} px-2.5 py-1">{{ st }} · {{ n }}</span>{% endif %}
+        {% endfor %}
+      </div>
+      <div class="mt-3 space-y-2">
+        {% for o in outreach %}
+        <div class="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3 py-2">
+          <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ o.contact }}</span>
+          {% if o.role %}<span class="rounded-full border border-white/10 px-2 py-0.5 text-xs text-gray-300 font-medium">{{ o.role }}</span>{% endif %}
+          {% if o.notes %}<span class="min-w-0 max-w-[40%] truncate text-xs text-gray-300 font-medium" title="{{ o.notes }}">{{ o.notes }}</span>{% endif %}
+          <form method="post" action="/network/outreach/{{ o.id }}/stage">
+            <select name="stage" onchange="this.form.submit()" class="rounded-lg border {{ 'border-green-500/40 text-green-400' if o.stage == 'accepted' else ('border-red-500/30 text-red-400' if o.stage == 'passed' else 'border-white/15 text-gray-200') }} bg-black/40 px-2 py-1 text-xs font-medium">
+              {% for st in outreach_stages %}<option value="{{ st }}" {{ 'selected' if o.stage == st }}>{{ st | capitalize }}</option>{% endfor %}
+            </select>
+          </form>
+          <form method="post" action="/network/outreach/{{ o.id }}/delete"><button class="text-sm text-gray-300 hover:text-red-400" title="Remove">×</button></form>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="mt-3 text-xs text-gray-300 font-medium">Nothing tracked yet. Add every pitch you send — playlist, blog, label, sync — and move it through Saved → Pitched → Listened → Discussion → Accepted. This starts empty because it's yours.</p>
+      {% endif %}
+    </section>
+
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5 lg:col-span-1">
+      <h2 class="sb-label text-gray-300">Connections</h2>
+      <div class="mt-3 space-y-2">
+        {% for p in nw.my_connections %}
+        <a href="/network/{{ p.id }}" class="flex items-center gap-3 rounded-lg border border-white/5 bg-white/5 px-3 py-2 hover:border-amber-500/30">
+          <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-amber-500/40 text-xs font-bold text-amber-400">{{ p.initials }}</span>
+          <span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold text-gray-100">{{ p.name }}</span><span class="text-xs text-gray-300 font-medium">{{ p.role }}</span></span>
+          <span class="text-xs font-semibold text-amber-400">{{ p.connection }}</span>
+        </a>
+        {% endfor %}
+        {% if not nw.my_connections %}<div class="rounded-lg border border-dashed border-white/10 py-6 text-center text-xs text-gray-300">No connections yet.</div>{% endif %}
+      </div>
+    </section>
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Pitches Sent</h2>
+      <div class="mt-3 space-y-2">
+        {% for pt in nw.pitches %}
+        <div class="rounded-lg border border-white/5 bg-white/5 px-3 py-2">
+          <div class="text-sm font-semibold text-gray-100">{{ pt.name }}</div>
+          {% if pt.song %}<div class="text-xs text-gray-300 font-medium">"{{ pt.song }}"</div>{% endif %}
+          {% if pt.message %}<div class="mt-0.5 text-xs text-gray-300 font-medium">{{ pt.message }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        {% if not nw.pitches %}<div class="rounded-lg border border-dashed border-white/10 py-6 text-center text-xs text-gray-300">No pitches sent yet.</div>{% endif %}
+      </div>
+    </section>
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Playlist Submissions</h2>
+      <div class="mt-3 space-y-2">
+        {% for s in nw.submissions %}
+        <div class="flex items-center justify-between gap-2 rounded-lg border border-white/5 bg-white/5 px-3 py-2">
+          <span class="min-w-0"><span class="block truncate text-sm font-semibold text-gray-100">{{ s.playlist_name }}</span><span class="text-xs text-gray-300 font-medium">"{{ s.song }}"</span></span>
+          <span class="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-400">{{ s.status }}</span>
+        </div>
+        {% endfor %}
+        {% if not nw.submissions %}<div class="rounded-lg border border-dashed border-white/10 py-6 text-center text-xs text-gray-300">No submissions yet.</div>{% endif %}
+      </div>
+    </section>
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Booking Enquiries</h2>
+      <div class="mt-3 space-y-2">
+        {% for b in nw.my_bookings %}
+        <div class="rounded-lg border border-white/5 bg-white/5 px-3 py-2">
+          <div class="text-sm font-semibold text-gray-100">{{ b.name }}</div>
+          <div class="text-xs text-gray-300 font-medium">{{ b.city }}{% if b.date %} · {{ b.date }}{% endif %}</div>
+          {% if b.message %}<div class="mt-0.5 text-xs text-gray-300 font-medium">{{ b.message }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        {% if not nw.my_bookings %}<div class="rounded-lg border border-dashed border-white/10 py-6 text-center text-xs text-gray-300">No booking enquiries yet.</div>{% endif %}
+      </div>
+    </section>
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Owned Moments</h2>
+      <div class="mt-3 space-y-2">
+        {% for m in nw.my_moments %}
+        <a href="/network/moment/{{ m.id }}" class="flex items-center gap-3 rounded-lg border border-white/5 bg-white/5 px-3 py-2 hover:border-amber-500/30">
+          <span class="h-9 w-7 shrink-0 rounded" style="background: linear-gradient(135deg, {{ m.from }}, {{ m.to }});"></span>
+          <span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold text-gray-100">{{ m.title }}</span><span class="text-xs text-gray-300 font-medium">{{ m.serial }}</span></span>
+          <span class="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-400">Owned</span>
+        </a>
+        {% endfor %}
+        {% if not nw.my_moments %}<div class="rounded-lg border border-dashed border-white/10 py-6 text-center text-xs text-gray-300">No owned moments yet.</div>{% endif %}
+      </div>
+    </section>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function fmtCountdown(ms) {
+    if (ms <= 0) return "Expired";
+    const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
+    return h >= 1 ? h + "h " + m + "m left" : m + "m left";
+  }
+  function tickCountdowns() {
+    document.querySelectorAll(".moment-countdown").forEach((el) => {
+      const t = new Date(el.dataset.expires).getTime() - Date.now();
+      el.textContent = fmtCountdown(t);
+    });
+  }
+  tickCountdowns();
+  setInterval(tickCountdowns, 30000);
+</script>
+{% endblock %}

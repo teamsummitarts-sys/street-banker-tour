@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block head_scripts %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+
+{% block title %}Streaming Stats - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Stats</div>
+    <h1 class="sb-h1 mt-1">Streaming Stats</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Only real numbers: your live platform presence from Artist Pulse, tracked over time, plus engagement from your own smart links.</p>
+  </div>
+
+  {% if not pulse_configured %}
+  <section class="rounded-2xl border border-amber-500/30 bg-sb-surface-2 p-6">
+    <div class="sb-label text-sb-gold-bright">Not Connected</div>
+    <p class="mt-2 max-w-xl text-sm text-gray-200">Platform stats read live data with the Spotify API credentials on the server — not configured here, so nothing to show.</p>
+  </section>
+  {% elif not profile %}
+  <section class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-6">
+    <p class="text-sm text-gray-200">Pick your artist on <a href="/pulse" class="font-bold text-sb-gold-bright hover:underline">Artist Pulse</a> first — every visit after that records a daily snapshot, and this page becomes your growth history.</p>
+  </section>
+  {% else %}
+
+  <!-- Current numbers -->
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Spotify Followers</div>
+      <div class="mt-1 text-2xl font-black tabular-nums text-sb-ink">{{ "{:,}".format(pulse.followers) if pulse else "—" }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Spotify Popularity</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ pulse.popularity if pulse else "—" }}<span class="text-sm text-gray-300">/100</span></div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Deezer Fans</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ "{:,}".format(deezer.fans) if deezer else "—" }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Days Tracked</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ snapshots|length }}</div>
+    </div>
+  </div>
+
+  <!-- Growth history -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5">
+    <div class="flex items-baseline justify-between">
+      <h2 class="sb-label text-sb-gold">Follower Growth — {{ profile.artist_name }}</h2>
+      <span class="text-xs text-gray-300 font-medium">One snapshot per day, taken live from Spotify</span>
+    </div>
+    {% if snapshots|length >= 2 %}
+    <div class="mt-4 h-64"><canvas id="growth-chart"></canvas></div>
+    {% else %}
+    <p class="mt-4 text-sm text-gray-300">Tracking started {{ "today" if snapshots else "— visit Artist Pulse to record your first snapshot" }}. The growth chart draws itself once there are two or more days of history; check back tomorrow.</p>
+    {% endif %}
+  </section>
+
+  <!-- Owned engagement -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-sb-gold">Your Link Engagement — all time</h2>
+    <div class="mt-3 grid grid-cols-3 gap-3">
+      <div><div class="text-2xl font-black tabular-nums">{{ "{:,}".format(link_stats.pageviews) }}</div><div class="text-xs font-bold uppercase tracking-wide text-gray-300">Page Views</div></div>
+      <div><div class="text-2xl font-black tabular-nums">{{ "{:,}".format(link_stats.clicks) }}</div><div class="text-xs font-bold uppercase tracking-wide text-gray-300">Platform Clicks</div></div>
+      <div><div class="text-2xl font-black tabular-nums text-sb-ink">{{ "{:,}".format(link_stats.presaves) }}</div><div class="text-xs font-bold uppercase tracking-wide text-gray-300">Pre-Saves</div></div>
+    </div>
+    <p class="mt-3 text-xs text-gray-300 font-medium">Counted from your own tracked smart links — first-party data, not platform estimates.</p>
+  </section>
+
+  <p class="px-1 text-xs text-gray-300 font-medium">Per-track stream counts require distributor data feeds and are not shown until a real connection exists. Everything on this page is live or first-party.</p>
+  {% endif %}
+</div>
+
+{% if snapshots and snapshots|length >= 2 %}
+<script>
+  new Chart(document.getElementById("growth-chart"), {
+    type: "line",
+    data: {
+      labels: {{ snapshots | map(attribute="day") | list | tojson }},
+      datasets: [
+        { label: "Spotify followers", data: {{ snapshots | map(attribute="followers") | list | tojson }},
+          borderColor: "#E8B950", backgroundColor: "rgba(216,178,90,0.12)", fill: true, tension: 0.3 },
+        { label: "Deezer fans", data: {{ snapshots | map(attribute="deezer_fans") | list | tojson }},
+          borderColor: "#7FA8E8", backgroundColor: "transparent", tension: 0.3 }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#A99B84", font: { size: 10 } } } },
+      scales: {
+        x: { ticks: { color: "#91836A", font: { size: 9 } }, grid: { color: "rgba(255,255,255,0.04)" } },
+        y: { ticks: { color: "#91836A", font: { size: 9 } }, grid: { color: "rgba(255,255,255,0.06)" } }
+      }
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}

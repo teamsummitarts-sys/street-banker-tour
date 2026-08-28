@@ -1,0 +1,68 @@
+{% set nav = 'meetings' %}
+{% extends "desk/layout.html" %}
+{% block title %}Meetings{% endblock %}
+{% block main %}
+<h1 class="dk-h1">Meetings</h1>
+<p class="dk-sub">A recording becomes a transcript with speakers and timestamps. The transcript is then read for phrases that usually mean somebody committed to something, and those become suggestions for you to approve — nothing reaches a lead on its own.</p>
+
+{% if not audio_on %}
+  <p class="dk-empty" style="margin-top:16px">
+    Meeting Intelligence is switched off on this deployment. It needs
+    <code>AUDIO_INTELLIGENCE_ENABLED</code> and
+    <code>MEETING_INTELLIGENCE_ENABLED</code>.
+  </p>
+{% elif can('file_upload') %}
+<form class="dk-form" method="post" action="/operator-desk/meetings/upload" enctype="multipart/form-data" style="margin-top:16px">
+  <div class="dk-grid">
+    <label class="dk-field"><span>Recording *</span>
+      <input type="file" name="file" accept="audio/*" required></label>
+    <label class="dk-field"><span>Title</span>
+      <input type="text" name="title" placeholder="What this meeting was"></label>
+    <label class="dk-field"><span>Date</span>
+      <input type="date" name="held_on"></label>
+    <label class="dk-field"><span>Related lead</span>
+      <select name="lead_id"><option value="">—</option>
+        {% for l in leads %}<option value="{{ l.id }}">{{ l.artist_name }}</option>{% endfor %}</select></label>
+  </div>
+  {# Not a formality, and deliberately not phrased as "I agree to the terms".
+     The people on a recording did not necessarily know it would be sent to a
+     third party, and the box says exactly that. #}
+  <label class="dk-field" style="margin-top:12px;flex-direction:row;align-items:flex-start;gap:8px">
+    <input type="checkbox" name="consent" value="1" style="margin-top:3px;width:auto">
+    <span style="font-weight:400">Everyone recorded knew they were being recorded, and that it may be transcribed by a third-party provider.</span>
+  </label>
+  <div style="margin-top:12px"><button class="dk-btn" type="submit">Upload</button></div>
+  <p class="dk-sub" style="margin-top:8px">Audio files only, up to 200&nbsp;MB. Stored privately, never in the public uploads tree, and destroyed on the retention schedule in your audio policy.</p>
+</form>
+{% endif %}
+
+{% if meetings %}
+<div class="dk-table-wrap" style="margin-top:16px"><table class="dk-table">
+  <thead><tr><th>Meeting</th><th>Date</th><th>Status</th><th>To review</th><th>Approved</th><th></th></tr></thead>
+  <tbody>
+  {% for m in meetings %}
+  <tr>
+    <td>
+      <a href="/operator-desk/meetings/{{ m.id }}">{{ m.title }}</a>
+      {% if m.is_mock %}<div style="font-size:12px;color:var(--dk-faint)">demo transcript — not a real record</div>{% endif %}
+    </td>
+    <td>{{ m.held_on }}</td>
+    <td><span class="dk-chip">{{ m.status }}</span></td>
+    <td>{{ m.counts.pending }}</td>
+    <td>{{ m.counts.approved }}</td>
+    <td>
+      {% if can('delete') %}
+      <form method="post" action="/operator-desk/meetings/{{ m.id }}/delete"
+            onsubmit="return confirm('Delete this meeting and destroy its audio? Approved tasks and notes stay where they are.');">
+        <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px" type="submit">Delete</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="dk-empty" style="margin-top:16px">No meetings yet.</p>
+{% endif %}
+{% endblock %}

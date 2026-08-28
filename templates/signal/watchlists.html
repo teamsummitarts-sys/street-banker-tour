@@ -1,0 +1,41 @@
+{% extends "signal/_shell.html" %}
+{% block title %}Watchlists{% endblock %}
+{% block main %}
+  <p class="sg-eyebrow">{{ org['name'] }}</p>
+  <h1 class="sg-h1">Watchlists</h1>
+  <p class="sg-lede">
+    Private to {{ org['name'] }}. The score at the moment you started watching is kept alongside the
+    current one, so lead time is measurable rather than remembered.
+  </p>
+
+  {% if items %}
+    <div class="sg-table-wrap"><table class="sg-table">
+      <thead><tr><th scope="col">Artist</th><th scope="col">List</th><th scope="col">Added</th>
+        <th scope="col" class="sg-num">Score then</th><th scope="col">By</th><th scope="col"><span class="sg-sr">Remove</span></th></tr></thead>
+      <tbody>
+        {% for i in items %}
+          <tr>
+            <td><a class="sg-artist-name" href="/signal/artist/{{ i['artist_id'] }}">{{ i['canonical_name'] }}</a>
+              <span class="sg-artist-meta">{{ i['genre'] or 'Genre unknown' }}{% if i['city'] %} · {{ i['city'] }}{% endif %}</span></td>
+            <td><span class="sg-pill">{{ i['watchlist_name'] }}</span></td>
+            <td>{{ i['added_at'][:10] }}</td>
+            <td class="sg-num">{{ i['first_score']|round|int if i['first_score'] else '—' }}</td>
+            <td>{{ i['added_by'] }}</td>
+            <td>
+              {% if sg_can('watch') %}
+                <form method="post" action="/signal/watchlists/{{ i['id'] }}/remove">
+                  <button class="sg-btn sg-btn--ghost sg-btn--small" type="submit">Remove</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  {% else %}
+    <div class="sg-empty">
+      <b>Nothing on watch yet.</b><br>
+      Use <b>Watch</b> on any discovery board or artist page. Watched artists are what alert rules run against.
+    </div>
+  {% endif %}
+{% endblock %}

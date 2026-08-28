@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics · {{ c.title }} - Street Banker Links{% endblock %}
+
+{% macro bar_list(title, rows, total) %}
+<section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+  <h2 class="sb-label text-gray-300">{{ title }}</h2>
+  {% if rows %}
+  <div class="mt-3 space-y-2">
+    {% for label, n in rows %}
+    <div class="flex items-center gap-3">
+      <span class="w-32 shrink-0 truncate text-xs font-semibold text-gray-200">{{ label }}</span>
+      <span class="h-2 flex-1 overflow-hidden rounded-full bg-white/5"><span class="block h-full rounded-full bg-sb-gold" style="width: {{ (100 * n / (rows[0][1] or 1)) | round }}%;"></span></span>
+      <span class="w-10 shrink-0 text-right text-xs font-bold sb-num text-gray-200">{{ n }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<p class="mt-3 text-xs text-gray-300">No data yet.</p>{% endif %}
+</section>
+{% endmacro %}
+
+{% block content %}
+<div class="mx-auto max-w-[1100px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker Links · Analytics</div>
+      <h1 class="sb-h1 mt-1">{{ c.title }}</h1>
+      <p class="mt-1 text-sm text-gray-300">{{ c.artist_name }} · {{ eff_status }} · <a href="/l/{{ c.slug }}" target="_blank" class="font-semibold text-sb-gold-bright hover:underline">/l/{{ c.slug }}</a></p>
+    </div>
+    <div class="flex gap-2">
+      <a href="/links/{{ c.id }}/edit" class="sb-btn sb-btn-secondary">Edit</a>
+      <a href="/links" class="sb-btn sb-btn-secondary">← All campaigns</a>
+    </div>
+  </div>
+
+  <!-- Headline stats -->
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-6">
+    {% for label, value in [("Visits", visits), ("Service Clicks", clicks), ("CTR", ctr ~ "%"),
+                             ("Pre-saves", counts.get("presave_notify", 0)),
+                             ("Email Captures", counts.get("email_capture", 0)),
+                             ("QR Scans", counts.get("qr_scan", 0))] %}
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">{{ label }}</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums {{ 'text-sb-gold-bright' if loop.first }}">{{ value }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Funnel -->
+  <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+    <h2 class="sb-label text-sb-gold-bright">Funnel</h2>
+    <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+      {% set fans = counts.get("presave_notify", 0) + counts.get("email_capture", 0) %}
+      {% for label, n in [("Visited", visits), ("Clicked a service", clicks), ("Became a fan", fans)] %}
+      <div class="rounded-xl border border-white/10 bg-black/30 p-4">
+        <div class="text-2xl font-black tabular-nums">{{ n }}</div>
+        <div class="mt-1 text-xs font-bold uppercase tracking-wide text-gray-300">{{ label }}</div>
+        <div class="text-xs sb-num text-sb-ink font-medium">{{ (100 * n / visits) | round(1) if visits else 0 }}%</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Timeline -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">Daily Visits</h2>
+    {% if timeline %}
+    {% set peak = timeline | map(attribute=1) | max %}
+    <div class="mt-4 flex h-28 items-end gap-1.5">
+      {% for day, n in timeline %}
+      <div class="group relative flex-1 rounded-t bg-sb-gold-bright/80 transition-colors hover:bg-sb-gold-bright" style="height: {{ (100 * n / (peak or 1)) | round }}%;" title="{{ day }}: {{ n }} visits"></div>
+      {% endfor %}
+    </div>
+    <div class="mt-1 flex justify-between text-xs text-gray-300 font-medium"><span>{{ timeline[0][0] }}</span><span>{{ timeline[-1][0] }}</span></div>
+    {% else %}<p class="mt-3 text-xs text-gray-300">No visits yet — share your link.</p>{% endif %}
+  </section>
+
+  <div class="grid gap-5 lg:grid-cols-3">
+    {{ bar_list("Top Services", top_services_named, clicks) }}
+    {{ bar_list("Top Sources", top_referrers, visits) }}
+    {{ bar_list("Top UTM Sources", top_utm, visits) }}
+  </div>
+
+  <!-- Variant performance -->
+  {% if variants %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">Variant Performance</h2>
+    <table class="mt-3 w-full text-left text-sm">
+      <thead><tr class="border-b border-white/5 text-xs uppercase tracking-wide text-gray-300 font-medium">
+        <th class="py-2 pr-4 font-medium">Variant</th><th class="py-2 pr-4 text-right font-medium">Visits</th>
+        <th class="py-2 pr-4 text-right font-medium">Clicks</th><th class="py-2 text-right font-medium">Fans</th></tr></thead>
+      <tbody>
+        {% for v in variants %}
+        {% set st = vstats.get(v.id, {}) %}
+        <tr class="border-b border-white/5 last:border-0">
+          <td class="py-2.5 pr-4 font-semibold text-gray-100">{{ v.name }}</td>
+          <td class="py-2.5 pr-4 text-right sb-num text-gray-200">{{ st.get("page_view", 0) }}</td>
+          <td class="py-2.5 pr-4 text-right sb-num text-gray-200">{{ st.get("service_click", 0) }}</td>
+          <td class="py-2.5 text-right sb-num text-sb-ink">{{ st.get("email_capture", 0) + st.get("presave_notify", 0) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  <!-- Score breakdown -->
+  <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+    <div class="flex items-center justify-between">
+      <h2 class="sb-label text-sb-gold-bright">Street Banker Score</h2>
+      <span class="text-2xl font-black tabular-nums {{ 'text-green-400' if score.total >= 70 else 'text-sb-gold-bright' }}">{{ score.total }}<span class="text-sm text-gray-300">/100</span></span>
+    </div>
+    {% if score.warnings %}
+    <ul class="mt-3 space-y-1.5">
+      {% for w in score.warnings %}<li class="flex items-start gap-2 text-xs text-gray-200"><span class="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sb-gold"></span>{{ w }}</li>{% endfor %}
+    </ul>
+    {% else %}<p class="mt-2 text-xs text-green-400">All checks passed.</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

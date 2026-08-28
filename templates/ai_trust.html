@@ -1,0 +1,46 @@
+{# Five statements about how Street Banker uses AI, public and short.
+   The long version lives in the terms; this is the part an artist needs
+   before deciding whether to hand over a catalog. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How Street Banker uses AI</title>
+  <meta name="description" content="What the Artist Twin reads, what it never does with your music, and what it cannot tell you.">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-2xl px-6 py-14 lg:px-10 lg:py-20">
+  <div class="sb-label text-sb-gold">Artist control</div>
+  <h1 class="mt-4 text-[clamp(1.8rem,5vw,2.6rem)] font-medium uppercase leading-[1.02] tracking-tight">
+    How Street Banker uses AI
+  </h1>
+
+  <dl class="mt-10 space-y-8">
+    {% for title, body in points %}
+    <div class="border-t border-[rgb(201_168_106_/_0.26)] pt-6">
+      <dt class="text-base font-semibold text-sb-ink">{{ title }}</dt>
+      <dd class="mt-2 max-w-xl text-base leading-relaxed text-sb-ink-2">{{ body }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+
+  <p class="mt-10 text-xs leading-relaxed text-sb-ink-2">
+    The full terms are in the
+    <a href="/terms" class="border-b border-[rgb(201_168_106_/_0.4)] text-sb-gold hover:border-sb-gold">terms of service</a>
+    and the
+    <a href="/privacy" class="border-b border-[rgb(201_168_106_/_0.4)] text-sb-gold hover:border-sb-gold">privacy policy</a>.
+  </p>
+</main>
+
+<footer class="mx-auto max-w-2xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/#artist-twin-section" class="font-semibold hover:text-sb-ink">← Back to Street Banker</a>
+</footer>
+</body>
+</html>

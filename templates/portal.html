@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Partner Portal - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[900px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Partner Portal</div>
+    <h1 class="sb-h1 mt-1">Partner Portal</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">The artists whose teams you're on. Your role decides what you see — read-only, always.</p>
+  </div>
+
+  {% if memberships %}
+  <div class="space-y-3">
+    {% for m in memberships %}
+    <a href="/portal/{{ m.owner_id }}" class="flex items-center gap-4 rounded-2xl border border-white/10 bg-sb-surface-1 p-5 transition-colors hover:border-sb-gold/40">
+      <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-sb-gold/15 text-base font-black text-sb-gold-bright">{{ m.owner_name[0]|upper }}</span>
+      <span class="min-w-0 flex-1">
+        <span class="block truncate text-sm font-bold">{{ m.owner_name }}</span>
+        <span class="block text-xs uppercase tracking-wide text-gray-300 font-medium">Your role: {{ m.role }}</span>
+      </span>
+      <span class="shrink-0 text-xs font-bold text-sb-gold-bright">Open →</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-6">
+    <p class="text-sm text-gray-200">You're not on any artist's team yet. When an artist invites you from their Team page and you accept, their dashboard appears here.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

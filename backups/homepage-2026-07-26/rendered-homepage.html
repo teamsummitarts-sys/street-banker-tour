@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#0d0c0a">
+  <link rel="apple-touch-icon" href="/static/img/icon-192.png">
+  <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Street Banker · Royalty Sweep — The Artist Back Office</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141210'/%3E%3Cpath d='M6 12l5 4 5-7 5 7 5-4v10a1 1 0 01-1 1H7a1 1 0 01-1-1z' fill='none' stroke='%23d8b25a' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-feature-settings: "ss01"; }
+    .ink { color: #141210; }
+  </style>
+  <style>
+    /* Page ground matches the artwork's own paper tone so the images sit
+       IN the page instead of ON it; artworks fade into it at the edges. */
+    .imgblend { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
+                mask-image: linear-gradient(to bottom, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%); }
+  </style>
+</head>
+<body class="min-h-screen bg-[#f6f3f0] text-[#141210] antialiased">
+
+
+
+<div class="mx-auto max-w-7xl px-6 lg:px-10">
+
+  <!-- 1. TOP NAVIGATION -->
+  <header class="flex flex-col items-center gap-3 border-b border-black/10 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:py-5">
+    <a href="/" class="flex flex-col items-center leading-none sm:items-start">
+      <img src="/static/img/streetbanker-logo-dark.svg" alt="STREET BANKER" class="h-8 w-auto sm:h-9">
+      <span class="mt-1 text-[8px] font-semibold uppercase tracking-[0.3em] text-[#8a6d1f] sm:pl-1">ARTIST INFRASTRUCTURE</span>
+    </a>
+    <nav class="hidden items-center gap-8 text-[13px] font-medium text-[#4a463e] lg:flex">
+      
+      <a href="/overview" class="transition-colors hover:text-[#141210]">Platform</a>
+      
+      <a href="/services/distribution" class="transition-colors hover:text-[#141210]">Distribution</a>
+      
+      <a href="#services" class="transition-colors hover:text-[#141210]">Solutions</a>
+      
+      <a href="/reports" class="transition-colors hover:text-[#141210]">Resources</a>
+      
+      <a href="#infrastructure" class="transition-colors hover:text-[#141210]">Company</a>
+      
+      <a href="/billing" class="transition-colors hover:text-[#141210]">Pricing</a>
+      
+    </nav>
+    <div class="flex items-center justify-center gap-4">
+      
+      
+      <a href="/login" class="text-[13px] font-semibold text-[#4a463e] transition-colors hover:text-[#141210]">Login</a>
+      
+      
+    </div>
+  </header>
+
+  <!-- Top banner (full-width, above the hero) -->
+  
+
+  <!-- 2. HERO -->
+  
+  <section class="pt-4 sm:pt-8">
+    
+
+<figure class="relative overflow-hidden   -mx-6 sm:mx-0">
+  <img src="/static/img/sb-hero.jpg?v=3" alt="Release Music. Build Equity. — Infrastructure for the business of music: distribution, development, finance, physical, merch, and direct-to-fan systems built around artist ownership." class="block w-full h-auto  imgblend" loading="lazy">
+  
+</figure>
+
+<div class="mt-4 grid grid-cols-1 gap-2.5 sm:mt-5 sm:flex sm:flex-wrap sm:gap-3 sm:justify-center">
+
+<a href="/overview" class="inline-flex items-center justify-center gap-1.5 rounded-md px-5 py-2.5 text-sm font-semibold transition-colors bg-[#141210] text-white hover:bg-[#2a251d]">
+  Start Free Scan
+  <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+</a>
+
+
+<a href="/submit" class="inline-flex items-center justify-center gap-1.5 rounded-md px-5 py-2.5 text-sm font-semibold transition-colors border border-black/25 text-[#141210] hover:bg-black/5">
+  Distribute Your Music
+  <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+</a>
+
+
+<a href="#features" class="inline-flex items-center justify-center gap-1.5 rounded-md px-5 py-2.5 text-sm font-semibold transition-colors border border-black/25 text-[#141210] hover:bg-black/5">
+  See How It Works
+  <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+</a>
+</div>
+
+
+  </section>
+  
+
+  <!-- 4. FEATURE CARDS -->
+  <section id="features" class="scroll-mt-6 py-10">
+    
+    
+<figure class="relative overflow-hidden  -mx-6 sm:mx-0">
+  <img src="/static/img/sb-engines.jpg?v=3" alt="One Platform. Multiple Engines. — Distribution Engine, Artist Development, Asset Partnership, Direct-to-Fan, Catalog Engine, Backend Intelligence" class="block w-full h-auto imgblend" loading="lazy">
+  
+  
+  <div class="absolute inset-0 grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr));">
+    
+    <a href="/services/distribution" aria-label="Distribution Engine" title="Distribution Engine" class="block h-full w-full cursor-pointer"></a>
+    
+    <a href="/audience" aria-label="Artist Development" title="Artist Development" class="block h-full w-full cursor-pointer"></a>
+    
+    <a href="/capital" aria-label="Asset Partnership" title="Asset Partnership" class="block h-full w-full cursor-pointer"></a>
+    
+    <a href="/fan-club" aria-label="Direct-to-Fan" title="Direct-to-Fan" class="block h-full w-full cursor-pointer"></a>
+    
+    <a href="/catalog" aria-label="Catalog Engine" title="Catalog Engine" class="block h-full w-full cursor-pointer"></a>
+    
+    <a href="/insights" aria-label="Backend Intelligence" title="Backend Intelligence" class="block h-full w-full cursor-pointer"></a>
+    
+  </div>
+  
+</figure>
+
+    <div class="mt-3 grid grid-cols-2 gap-2 sm:hidden">
+      
+      <a href="/services/distribution" class="rounded-lg border border-black/15 bg-white px-3 py-2.5 text-center text-[12px] font-bold text-[#141210]">Distribution Engine</a>
+      
+      <a href="/audience" class="rounded-lg border border-black/15 bg-white px-3 py-2.5 text-center text-[12px] font-bold text-[#141210]">Artist Development</a>
+      
+      <a href="/capital" class="rounded-lg border border-black/15 bg-white px-3 py-2.5 text-center text-[12px] font-bold text-[#141210]">Asset Partnership</a>
+      
+      <a href="/fan-club" class="rounded-lg border border-black/15 bg-white px-3 py-2.5 text-center text-[12px] font-bold text-[#141210]">Direct-to-Fan</a>
+      
+      <a href="/catalog" class="rounded-lg border border-black/15 bg-white px-3 py-2.5 text-center text-[12px] font-bold text-[#141210]">Catalog Engine</a>
+      
+      <a href="/insights" class="rounded-lg border border-black/15 bg-white px-3 py-2.5 text-center text-[12px] font-bold text-[#141210]">Backend Intelligence</a>
+      
+    </div>
+    
+  </section>
+
+  <!-- 5. THREE LANES / INFRASTRUCTURE -->
+  <section id="infrastructure" class="scroll-mt-6 py-10">
+    
+    <!-- Full-width lanes graphic; each rack unit is a clickable region -->
+    <div class="w-full">
+      
+<figure class="relative overflow-hidden  -mx-6 sm:mx-0">
+  <img src="/static/img/sb-distro-lanes.jpg?v=3" alt="The Three Distro Lanes — 01 Distribution: release the record. 02 Development: build the artist. 03 Partnership: build the asset." class="block w-full h-auto imgblend" loading="lazy">
+  
+  
+  <div class="absolute inset-0 grid" style="grid-template-columns: repeat(1, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); top: 18%;">
+    
+    <a href="/royalties" aria-label="Lane 01 — Distribution" title="Lane 01 — Distribution" class="block h-full w-full cursor-pointer"></a>
+    
+    <a href="/audience" aria-label="Lane 02 — Development" title="Lane 02 — Development" class="block h-full w-full cursor-pointer"></a>
+    
+    <a href="/capital" aria-label="Lane 03 — Partnership" title="Lane 03 — Partnership" class="block h-full w-full cursor-pointer"></a>
+    
+  </div>
+  
+</figure>
+
+      <div class="mt-3 grid grid-cols-1 gap-2 sm:hidden">
+        
+        <a href="/royalties" class="rounded-lg border border-black/15 bg-white px-3 py-2.5 text-center text-[12px] font-bold text-[#141210]">Lane 01 — Distribution</a>
+        
+        <a href="/audience" class="rounded-lg border border-black/15 bg-white px-3 py-2.5 text-center text-[12px] font-bold text-[#141210]">Lane 02 — Development</a>
+        
+        <a href="/capital" class="rounded-lg border border-black/15 bg-white px-3 py-2.5 text-center text-[12px] font-bold text-[#141210]">Lane 03 — Partnership</a>
+        
+      </div>
+      <div class="mt-5 text-center">
+        <a href="/overview" class="inline-flex items-center gap-1.5 rounded-md bg-[#141210] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#2a251d]">Explore The Three Lanes</a>
+      </div>
+    </div>
+    
+  </section>
+
+  <!-- 7. PILLARS — what everything is -->
+  
+  <!-- Ownership: the record as an artist-owned system -->
+  <section class="py-10">
+    
+
+<figure class="relative overflow-hidden   -mx-6 sm:mx-0">
+  <img src="/static/img/sb-ownership.jpg?v=3" alt="From Release to Ownership. — every record can expand into a real artist-owned system: merch, fan access, licensing, royalties, catalog." class="block w-full h-auto  imgblend" loading="lazy">
+  
+</figure>
+
+<div class="mt-4 grid grid-cols-1 gap-2.5 sm:mt-5 sm:flex sm:flex-wrap sm:gap-3 sm:justify-center">
+
+<a href="/catalog" class="inline-flex items-center justify-center gap-1.5 rounded-md px-5 py-2.5 text-sm font-semibold transition-colors bg-[#141210] text-white hover:bg-[#2a251d]">
+  Open Your Catalog
+  <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+</a>
+
+
+<a href="/fan-club" class="inline-flex items-center justify-center gap-1.5 rounded-md px-5 py-2.5 text-sm font-semibold transition-colors border border-black/25 text-[#141210] hover:bg-black/5">
+  Start a Fan Club
+  <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+</a>
+</div>
+
+
+  </section>
+  
+
+  
+  <!-- Royalty Sweep: the engine, explained over its routing artwork -->
+  <section class="py-10">
+    
+    <div class="mx-auto max-w-3xl pb-8 text-center">
+      <div class="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#8a6d1f]">ROYALTY SWEEP</div>
+      <h2 class="mt-3 text-3xl font-extrabold uppercase leading-[0.95] tracking-tight sm:text-4xl">
+        <span class="block">THE RECOVERY ENGINE</span><span class="block">POWERING YOUR INFRASTRUCTURE</span>
+      </h2>
+      <p class="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-[#5a544a]">Royalty Sweep is the technology layer inside Street Banker&#39;s Distribution Lane. It scans, matches, and recovers what others miss — so you keep more of what you&#39;ve earned.</p>
+      
+      <div class="mx-auto mt-4 flex max-w-2xl flex-wrap justify-center gap-x-6 gap-y-1.5">
+        
+        <span class="flex items-baseline gap-2 text-sm text-[#42403a]"><span class="text-[#a8862f]">—</span>Full-catalog scan of DSPs, PROs &amp; societies</span>
+        
+        <span class="flex items-baseline gap-2 text-sm text-[#42403a]"><span class="text-[#a8862f]">—</span>Publishing, neighboring rights &amp; mechanicals</span>
+        
+        <span class="flex items-baseline gap-2 text-sm text-[#42403a]"><span class="text-[#a8862f]">—</span>Claims worked through to payout</span>
+        
+      </div>
+      
+    </div>
+    
+
+<figure class="relative overflow-hidden   -mx-6 sm:mx-0">
+  <img src="/static/img/sb-patchbay.jpg?v=3" alt="Patchbay — DSP, Sync, Merch, Fan Data, Catalog, and Revenue routed through one system." class="block w-full h-auto  imgblend" loading="lazy">
+  
+</figure>
+
+<div class="mt-4 grid grid-cols-1 gap-2.5 sm:mt-5 sm:flex sm:flex-wrap sm:gap-3 sm:justify-center">
+
+<a href="/recovery" class="inline-flex items-center justify-center gap-1.5 rounded-md px-5 py-2.5 text-sm font-semibold transition-colors bg-[#141210] text-white hover:bg-[#2a251d]">
+  Explore Royalty Sweep
+  <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+</a>
+
+
+<a href="/connections" class="inline-flex items-center justify-center gap-1.5 rounded-md px-5 py-2.5 text-sm font-semibold transition-colors border border-black/25 text-[#141210] hover:bg-black/5">
+  See Your Connections
+  <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+</a>
+</div>
+
+
+  </section>
+  
+
+  <section id="services" class="scroll-mt-6 py-12">
+    <div class="text-center">
+      <div class="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#8a6d1f]">SERVICES &amp; SOLUTIONS</div>
+      <h2 class="mt-2 text-2xl font-extrabold uppercase tracking-tight sm:text-3xl">BUILT FOR EVERY STAGE OF YOUR CAREER</h2>
+    </div>
+    <div class="mx-auto mt-8 grid max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      
+      <a href="/recovery" class="rounded-xl border border-black/10 bg-white p-5 transition-colors hover:border-[#a8862f]/60">
+        <div class="text-sm font-extrabold uppercase tracking-wide">Royalty Recovery</div>
+        <p class="mt-1.5 text-xs leading-relaxed text-[#6b6459]">Uncollected royalties, found and filed.</p>
+      </a>
+      
+      <a href="/catalog" class="rounded-xl border border-black/10 bg-white p-5 transition-colors hover:border-[#a8862f]/60">
+        <div class="text-sm font-extrabold uppercase tracking-wide">Catalog Management</div>
+        <p class="mt-1.5 text-xs leading-relaxed text-[#6b6459]">Organize, protect, and maximize the value of your catalog.</p>
+      </a>
+      
+      <a href="/sync" class="rounded-xl border border-black/10 bg-white p-5 transition-colors hover:border-[#a8862f]/60">
+        <div class="text-sm font-extrabold uppercase tracking-wide">Sync &amp; Licensing</div>
+        <p class="mt-1.5 text-xs leading-relaxed text-[#6b6459]">Unlock new revenue through sync and commercial use.</p>
+      </a>
+      
+      <a href="/reports" class="rounded-xl border border-black/10 bg-white p-5 transition-colors hover:border-[#a8862f]/60">
+        <div class="text-sm font-extrabold uppercase tracking-wide">Reporting &amp; Analytics</div>
+        <p class="mt-1.5 text-xs leading-relaxed text-[#6b6459]">Real-time data. Clear insights. Smarter decisions.</p>
+      </a>
+      
+      <a href="/services" class="rounded-xl border border-black/10 bg-white p-5 transition-colors hover:border-[#a8862f]/60">
+        <div class="text-sm font-extrabold uppercase tracking-wide">Infrastructure Setup</div>
+        <p class="mt-1.5 text-xs leading-relaxed text-[#6b6459]">We build your system so you can focus on your art.</p>
+      </a>
+      
+    </div>
+  </section>
+
+  <!-- 8. FOOTER -->
+  <footer class="mt-14 border-t border-black/10 py-12">
+    <div class="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))]">
+      <div>
+        <img src="/static/img/streetbanker-logo-dark.svg" alt="STREET BANKER" class="h-9 w-auto">
+        <div class="mt-1.5 text-[8px] font-semibold uppercase tracking-[0.3em] text-[#8a6d1f]">ARTIST INFRASTRUCTURE</div>
+        <p class="mt-4 max-w-xs text-xs leading-relaxed text-[#6b6459]">We build the infrastructure independent artists and labels need to release, collect, and grow — on their own terms.</p>
+        <div class="mt-4 flex gap-3 text-[11px] font-semibold text-[#6b6459]">
+          <a href="https://instagram.com/summitartsgroup" target="_blank" rel="noopener noreferrer" class="hover:text-[#141210]">Instagram</a><a href="https://x.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#141210]">X</a><a href="https://youtube.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#141210]">YouTube</a><a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#141210]">LinkedIn</a>
+        </div>
+      </div>
+      
+      <div>
+        <div class="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a8377]">Platform</div>
+        <ul class="mt-3 space-y-2 text-[13px] text-[#4a463e]">
+          <li><a href="/recovery" class="transition-colors hover:text-[#141210]">Royalty Sweep</a></li><li><a href="#infrastructure" class="transition-colors hover:text-[#141210]">Three Lanes</a></li><li><a href="#features" class="transition-colors hover:text-[#141210]">How It Works</a></li><li><a href="/connections" class="transition-colors hover:text-[#141210]">Integrations</a></li>
+        </ul>
+      </div>
+      
+      <div>
+        <div class="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a8377]">Solutions</div>
+        <ul class="mt-3 space-y-2 text-[13px] text-[#4a463e]">
+          <li><a href="/recovery" class="transition-colors hover:text-[#141210]">Royalty Recovery</a></li><li><a href="/catalog" class="transition-colors hover:text-[#141210]">Catalog Management</a></li><li><a href="/sync" class="transition-colors hover:text-[#141210]">Sync &amp; Licensing</a></li><li><a href="/stats" class="transition-colors hover:text-[#141210]">Analytics</a></li>
+        </ul>
+      </div>
+      
+      <div>
+        <div class="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a8377]">Resources</div>
+        <ul class="mt-3 space-y-2 text-[13px] text-[#4a463e]">
+          <li><a href="/reports" class="transition-colors hover:text-[#141210]">Guides</a></li><li><a href="/reports" class="transition-colors hover:text-[#141210]">Case Studies</a></li><li><a href="/reports" class="transition-colors hover:text-[#141210]">Blog</a></li><li><a href="/settings" class="transition-colors hover:text-[#141210]">Support</a></li>
+        </ul>
+      </div>
+      
+      <div>
+        <div class="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8a8377]">Company</div>
+        <ul class="mt-3 space-y-2 text-[13px] text-[#4a463e]">
+          <li><a href="/services" class="transition-colors hover:text-[#141210]">Label Services</a></li><li><a href="https://www.artiswarrecords.com" class="transition-colors hover:text-[#141210]">Shop Apparel</a></li><li><a href="/team" class="transition-colors hover:text-[#141210]">Team</a></li><li><a href="/network" class="transition-colors hover:text-[#141210]">Partners</a></li><li><a href="/submit" class="transition-colors hover:text-[#141210]">Contact</a></li>
+        </ul>
+      </div>
+      
+    </div>
+    <div class="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-black/10 pt-6 text-[11px] text-[#8a8377]">
+      <span>© 2026 Street Banker LLC. All rights reserved.</span>
+      <div class="flex gap-4">
+        <span>Terms of Service</span><span>Privacy Policy</span><span>Cookie Policy</span>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

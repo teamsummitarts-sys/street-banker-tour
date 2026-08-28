@@ -1,0 +1,162 @@
+{# Parts 2 and 3 of the consolidation: the Smart Links / Fan Intelligence
+   proof, and the Creative Studio artwork-generator proof, both in public.
+
+   Everything on this page is an example. The destination buttons do not
+   go to a platform, the fan rows are invented for illustration and
+   labelled so, and nothing here collects anything from the visitor. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Links, Fan Intelligence and Creative Studio · Street Banker</title>
+  <meta name="description" content="An example smart link, an example fan-intelligence workspace, and how the artwork generator actually works — all without an account.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+  <link rel="stylesheet" href="/static/css/product-tour.css?v=2">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-5xl px-6 py-14 lg:px-10 lg:py-20">
+
+  <div class="sb-label text-sb-gold">Street Banker · Example workspace</div>
+  <h1 class="mt-4 max-w-3xl text-[clamp(1.9rem,5vw,3rem)] font-semibold uppercase leading-[1.04] tracking-tight">
+    One door. One record of who walked through it.
+  </h1>
+
+  <!-- SMART LINK ------------------------------------------------------- -->
+  <section class="mt-14" aria-labelledby="sl-title" id="smart-link">
+    <div class="flex flex-wrap items-center gap-3">
+      <h2 id="sl-title" class="text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">Smart Links</h2>
+      <span class="sbst-chip sbst-example">Example</span>
+    </div>
+    <p class="mt-3 max-w-2xl text-base leading-relaxed text-sb-ink-2">
+      One page per release: the artwork, every place the record can be heard,
+      pre-save before release day and listen-now after it, and a separate link
+      per campaign so you can tell where somebody came from.
+    </p>
+
+    <div class="mt-8 grid gap-10 lg:grid-cols-[420px_minmax(0,1fr)]">
+      <div class="sbsl" role="group" aria-label="{{ sl.label }}">
+        <div class="sbsl-art"><span>Your artwork here</span></div>
+        <div class="px-4 pt-4">
+          <div class="sb-label text-sb-ink-2">{{ sl.artist }}</div>
+          <div class="mt-1 text-lg font-semibold text-sb-ink">{{ sl.release }}</div>
+          <div class="mt-2"><span class="sbst-chip sbst-example">{{ sl.state }}</span></div>
+        </div>
+        <ul class="sbsl-rows mt-4">
+          {# Spotify pre-save resolves against the running deployment:
+             Live only when the credentials are actually set. #}
+          {% for name, key in sl.destinations %}
+          {% set st = cap(key if key else 'spotify_presave') %}
+          <li><span>{{ name }}</span><span class="sbst-chip sbst-{{ st.status }}">{{ st.label }}</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="sb-label text-sb-ink-2">What the page can do</h3>
+        <ul class="mt-4">
+          {% for name, key in sl.capture %}
+          {% set st = cap(key) %}
+          <li class="flex items-center justify-between gap-4 border-b border-[rgb(238_232_220_/_0.07)] py-3 text-sm text-sb-ink">
+            <span>{{ name }}</span>
+            <span class="sbst-chip sbst-{{ st.status }}">{{ st.label }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        <p class="mt-5 max-w-md text-xs leading-relaxed text-sb-ink-2">{{ sl.note }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAN INTELLIGENCE -------------------------------------------------- -->
+  <section class="mt-20 border-t border-[rgb(201_168_106_/_0.22)] pt-12" aria-labelledby="fi-title" id="fans">
+    <div class="flex flex-wrap items-center gap-3">
+      <h2 id="fi-title" class="text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">Fan Intelligence</h2>
+      <span class="sbst-chip sbst-example">Example</span>
+    </div>
+    <p class="mt-4 max-w-2xl text-[clamp(1.15rem,2.4vw,1.6rem)] font-semibold leading-snug text-sb-ink">{{ fi.positioning }}</p>
+    <p class="mt-3 max-w-2xl text-base leading-relaxed text-sb-ink-2">{{ fi.body }}</p>
+
+    <div class="mt-8 overflow-x-auto">
+      <table class="sbfi">
+        <caption class="sr-only">{{ fi.label }}</caption>
+        <thead>
+          <tr><th scope="col">Signal</th><th scope="col">Example reading</th><th scope="col">Status</th></tr>
+        </thead>
+        <tbody>
+          {% for signal, reading, key in fi.rows %}
+          {% set st = cap(key) %}
+          <tr>
+            <td>{{ signal }}</td>
+            <td>{{ reading }}</td>
+            <td><span class="sbst-chip sbst-{{ st.status }}">{{ st.label }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-5 max-w-2xl text-xs leading-relaxed text-sb-ink-2">{{ fi.note }}</p>
+    <p class="mt-3 max-w-2xl text-xs font-semibold leading-relaxed text-sb-ink">{{ fi.trust }}</p>
+  </section>
+
+  <!-- CREATIVE STUDIO PROOF --------------------------------------------- -->
+  <section class="mt-20 border-t border-[rgb(201_168_106_/_0.22)] pt-12" aria-labelledby="cs-title" id="artwork">
+    <div class="flex flex-wrap items-center gap-3">
+      <h2 id="cs-title" class="text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">Creative Studio · Artwork generator</h2>
+      <span class="sbst-chip sbst-live">Live</span>
+    </div>
+    <p class="mt-3 max-w-2xl text-base leading-relaxed text-sb-ink-2">
+      Cover directions are generated from a brief you write, not chosen from a
+      template library. The five steps below are the whole workflow.
+    </p>
+
+    <ol class="mt-8 grid gap-0 sm:grid-cols-5 sm:gap-4">
+      {% for name, body in creative_steps %}
+      <li class="border-t border-[rgb(201_168_106_/_0.22)] pt-4">
+        <div class="text-xs font-bold tracking-[0.1em] text-[rgb(201_168_106_/_0.55)]">{{ "%02d"|format(loop.index) }}</div>
+        <h3 class="mt-1.5 text-sm font-semibold uppercase tracking-[0.09em] text-sb-ink">{{ name }}</h3>
+        <p class="mt-1.5 text-xs leading-relaxed text-sb-ink-2">{{ body }}</p>
+      </li>
+      {% endfor %}
+    </ol>
+
+    <h3 class="sb-label mt-12 text-sb-ink-2">What it produces</h3>
+    <ul class="mt-4 grid gap-x-8 sm:grid-cols-2">
+      {% for name, key in creative_outputs %}
+      {% set st = cap(key) %}
+      <li class="flex items-center justify-between gap-4 border-b border-[rgb(238_232_220_/_0.07)] py-3 text-sm text-sb-ink">
+        <span>{{ name }}</span>
+        <span class="sbst-chip sbst-{{ st.status }}">{{ st.label }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <div class="mt-12 border-t border-[rgb(201_168_106_/_0.22)] pt-8">
+      <h3 class="text-[clamp(1.2rem,2.6vw,1.7rem)] font-semibold uppercase tracking-tight text-sb-ink">{{ brand.title }}</h3>
+      <p class="mt-3 max-w-2xl text-base leading-relaxed text-sb-ink-2">{{ brand.body }}</p>
+      <ul class="mt-5 flex flex-wrap gap-2">
+        {% for state in brand.states %}
+        <li class="rounded-sm border border-[rgb(201_168_106_/_0.22)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-sb-ink-2">{{ state }}</li>
+        {% endfor %}
+      </ul>
+      <p class="mt-6 max-w-2xl text-xs font-semibold leading-relaxed text-sb-ink">{{ brand.trust }}</p>
+    </div>
+  </section>
+
+  <div class="mt-16 flex flex-wrap gap-3 border-t border-[rgb(201_168_106_/_0.22)] pt-10">
+    <a href="/start" class="inline-flex min-h-[52px] items-center justify-center rounded-sm bg-sb-gold px-7 text-xs font-bold uppercase tracking-[0.14em] text-sb-surface-2 transition-colors hover:bg-sb-gold-bright">Build my Street Banker</a>
+    <a href="/product-tour" class="inline-flex min-h-[52px] items-center justify-center rounded-sm border border-[rgb(238_232_220_/_0.34)] px-7 text-xs font-bold uppercase tracking-[0.14em] text-sb-ink transition-colors hover:border-sb-gold hover:text-sb-gold">Back to the full tour</a>
+  </div>
+</main>
+
+<footer class="mx-auto max-w-5xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/" class="font-semibold hover:text-sb-ink">&larr; Back to Street Banker</a>
+</footer>
+</body>
+</html>

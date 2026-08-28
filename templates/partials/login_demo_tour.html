@@ -1,0 +1,84 @@
+{# Rack B — the demo tour. Four real workspace radios choose which demo
+   account signs in. The demo password is earned: visitors leave an email
+   (/demo-access stores the lead + sets a cookie, and emails the password
+   when the mailer is configured); anyone who already has it can flip to
+   the password form. Both forms are plain POSTs - no secrets client-side. #}
+{% set known_lead = demo_lead or demo_state in ('sent', 'pending') %}
+<section class="lsr-rack" id="tour-rack" aria-labelledby="lsr-tour-h">
+  <span class="lsr-screw lsr-screw--tl" aria-hidden="true"></span>
+  <span class="lsr-screw lsr-screw--bl" aria-hidden="true"></span>
+  <span class="lsr-screw lsr-screw--tr" aria-hidden="true"></span>
+  <span class="lsr-screw lsr-screw--br" aria-hidden="true"></span>
+
+  <div class="lsr-badge" aria-hidden="true">
+    <img src="/static/img/login-icon-globe.png?v=2" alt="" loading="lazy">
+    <span>TOUR<br>THE<br>SYSTEM</span>
+  </div>
+
+  <div class="lsr-face">
+    <div class="lsr-face-head">
+      <h2 class="lsr-face-title" id="lsr-tour-h">B. TOUR STREET BANKER</h2>
+      <span class="lsr-face-rule" aria-hidden="true"></span>
+    </div>
+    <p class="lsr-face-sub">Explore the platform with a sample workspace.</p>
+
+    {# Workspace selector: real radios, one selectable at a time. Shared by
+       both forms below - the script mirrors the choice into each. #}
+    <fieldset class="lsr-workspaces">
+      <legend class="lsr-sr">Choose a sample workspace</legend>
+      {% for value, label in [('artist', 'ARTIST'), ('pro', 'PRO'), ('label', 'LABEL'), ('fan', 'FAN')] %}
+      <label class="lsr-workspace">
+        <input type="radio" name="lsr-workspace" value="{{ value }}"
+               {{ 'checked' if loop.first }}>
+        <span>{{ label }}</span>
+      </label>
+      {% endfor %}
+    </fieldset>
+
+    {% if demo_state == 'sent' %}
+    <p class="lsr-demo-note lsr-demo-note--ok" role="status">Request received - the demo password is on its way to your inbox.</p>
+    {% elif demo_state == 'pending' %}
+    <p class="lsr-demo-note lsr-demo-note--ok" role="status">Request received - we'll send your demo access shortly.</p>
+    {% elif demo_state == 'error' %}
+    <p class="lsr-demo-note lsr-demo-note--err" role="alert">That email didn't look right - try again.</p>
+    {% endif %}
+
+    {# State 1: request access (default for unknown visitors) #}
+    <form method="post" action="/demo-access" class="lsr-demo-form"
+          id="lsr-request-form" {% if known_lead %}hidden{% endif %}>
+      <input type="hidden" name="workspace" value="artist" id="lsr-request-workspace">
+      {# Honeypot - hidden from people, tempting to bots. #}
+      <div class="lsr-hp" aria-hidden="true">
+        <label>Company<input type="text" name="company" tabindex="-1" autocomplete="off"></label>
+      </div>
+      <div class="lsr-demo-row">
+        <label class="lsr-sr" for="lsr-lead-email">Email for demo access</label>
+        <input type="email" id="lsr-lead-email" name="email" required
+               autocomplete="email" placeholder="you@domain.com">
+        <button type="submit" class="lsr-gold-btn lsr-gold-btn--slim">REQUEST DEMO ACCESS</button>
+      </div>
+      <p class="lsr-demo-fine">We email you the demo password and keep your address so we can follow up about Street Banker. Nothing else.</p>
+      <button type="button" class="lsr-flip" id="lsr-have-pw">Already have the demo password?</button>
+    </form>
+
+    {# State 2: open the workspace (known leads, or anyone with the password) #}
+    {# Posts to /demo-open, not /login, and its fields are not called
+       email/password. Two forms on one page both posting credentials to
+       /login is what stops a browser offering to save the real one: the
+       password manager cannot tell which pair belongs to the account, and
+       frequently attached itself to the demo address instead. #}
+    <form method="post" action="/demo-open" class="lsr-demo-form"
+          id="lsr-open-form" {% if not known_lead %}hidden{% endif %}>
+      <input type="hidden" name="demo_workspace" value="demo-artist@streetbanker.io" id="lsr-demo-email">
+      <div class="lsr-demo-row">
+        <label class="lsr-sr" for="lsr-demo-pw">Demo password</label>
+        <input type="password" id="lsr-demo-pw" name="demo_password" required
+               autocomplete="off" placeholder="Demo password">
+        <button type="submit" class="lsr-gold-btn lsr-gold-btn--slim">OPEN SAMPLE WORKSPACE</button>
+      </div>
+      <button type="button" class="lsr-flip" id="lsr-need-pw">Need the demo password? Request access.</button>
+    </form>
+
+    <p class="lsr-demo-fine lsr-demo-fine--center">Uses illustrative sample data. No account required.</p>
+  </div>
+</section>

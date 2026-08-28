@@ -1,0 +1,45 @@
+{% extends "signal/_shell.html" %}
+{% block title %}{{ brief.title }}{% endblock %}
+{% block main %}
+  <p class="sg-eyebrow"><a href="/signal/briefs">&larr; Audio Briefs</a></p>
+  <h1 class="sg-h1">{{ brief.title }}</h1>
+  <p class="sg-lede">
+    Covering the last {{ brief.window_days }} days · {{ brief.item_count }}
+    alert{{ '' if brief.item_count == 1 else 's' }} · written by
+    {{ brief.created_by or 'someone' }}
+  </p>
+
+  {% if brief.is_mock %}
+    {# Said before the player, not after it. Somebody who presses play and
+       hears nothing needs to already know why. #}
+    <p class="sg-empty">
+      <strong>No speech provider is configured.</strong> The offline adapter
+      produced a correctly-formed but <strong>silent</strong> audio file, of
+      the length this script would take to read. It is silent on purpose:
+      a demo that played a stock voice would get mistaken for a working one.
+      The script below is real.
+    </p>
+  {% endif %}
+
+  {% if brief.audio_asset_id %}
+    <audio controls preload="none" src="/signal/briefs/{{ brief.id }}/audio"
+           style="width:100%;margin:12px 0"></audio>
+  {% elif audio_on %}
+    <form method="post" action="/signal/briefs/{{ brief.id }}/speak">
+      <button class="sg-btn" type="submit">Read this aloud</button>
+    </form>
+  {% endif %}
+
+  <h2 class="sg-h2">Script</h2>
+  <p class="sg-lede">
+    Kept alongside the audio because a recording cannot be skimmed, searched
+    or quoted, and cannot be checked against its source without listening to
+    all of it.
+  </p>
+  <pre class="sg-script">{{ brief.script }}</pre>
+
+  <form method="post" action="/signal/briefs/{{ brief.id }}/delete"
+        onsubmit="return confirm('Delete this brief and its audio?');">
+    <button class="sg-btn sg-btn--ghost sg-btn--small" type="submit">Delete</button>
+  </form>
+{% endblock %}

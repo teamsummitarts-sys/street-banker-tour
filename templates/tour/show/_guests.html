@@ -1,0 +1,65 @@
+{% import "tour/_macros.html" as m %}
+<div class="to-cards" style="margin-bottom:12px">
+  <div class="to-card is-warm"><b>{{ guests['used'] }}{% if guests['allocation'] is not none %}<span style="font-size:14px;color:var(--to-soft)"> / {{ guests['allocation'] }}</span>{% endif %}</b><span>Approved spots</span>{% if guests['over'] %}<small style="color:var(--to-warn)">Over allocation</small>{% elif guests['remaining'] is not none %}<small>{{ guests['remaining'] }} remaining</small>{% else %}<small>No allocation set</small>{% endif %}</div>
+  <div class="to-card"><b>{{ guests['pending'] }}</b><span>Pending</span></div>
+  <div class="to-card"><b>{{ guests['checked_in'] }}</b><span>Checked in</span></div>
+  <div class="to-card"><b>{{ show['guest_cutoff'] or '—' }}</b><span>Cutoff</span></div>
+  <a class="to-card" href="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/guests.csv"><b>CSV</b><span>Venue list export</span><small>approved only</small></a>
+</div>
+
+{% if can('edit') or can('guests') %}
+<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/ext" class="to-inline" style="margin-bottom:12px">
+  <label class="to-field" style="width:120px"><span>Allocation</span><input name="guest_allocation" value="{{ show['guest_allocation'] }}" inputmode="numeric"></label>
+  <label class="to-field" style="width:160px"><span>Cutoff</span><input name="guest_cutoff" value="{{ show['guest_cutoff'] }}" placeholder="Day of, 4 PM"></label>
+  <button class="to-btn to-btn--small" type="submit" style="align-self:flex-end">Save</button>
+</form>
+{% endif %}
+
+{% if guest_rows %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Name</th><th>+</th><th>Category</th><th>Requested by</th><th>Access</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for g in guest_rows %}
+  <tr>
+    <td data-k="Name"><b>{{ g['name'] }}</b>{% if g['company'] or g['title'] %}<div class="to-muted">{{ g['title'] }}{% if g['title'] and g['company'] %} · {% endif %}{{ g['company'] }}</div>{% endif %}{% if g['notes'] %}<div class="to-muted">{{ g['notes'] }}</div>{% endif %}</td>
+    <td data-k="Count">{{ g['count'] }}</td>
+    <td data-k="Category">{{ g['category'] }}</td>
+    <td data-k="Requested by">{{ g['requested_by'] or '—' }}</td>
+    <td data-k="Access">{{ g['ticket_type'] or '' }}{% if g['credentials'] %} · {{ g['credentials'] }}{% endif %}{% if g['backstage'] %} · <span class="to-chip to-chip--gold">backstage</span>{% endif %}{% if g['meet_greet'] %} · M&amp;G{% endif %}{% if g['aftershow'] %} · aftershow{% endif %}</td>
+    <td data-k="Status">{{ m.chip(g['status']) }}</td>
+    <td>
+      <form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/guests/{{ g['id'] }}" class="to-inline">
+        {% if g['status'] in ('pending','request') %}<button class="to-btn to-btn--small" type="submit" name="status" value="approved">Approve</button><button class="to-btn to-btn--ghost to-btn--small" type="submit" name="status" value="denied">Deny</button>
+        {% elif g['status'] == 'approved' %}<button class="to-btn to-btn--small" type="submit" name="status" value="checked_in">Check in</button><button class="to-btn to-btn--ghost to-btn--small" type="submit" name="status" value="no_show">No show</button>
+        {% elif g['status'] == 'checked_in' %}<button class="to-btn to-btn--ghost to-btn--small" type="submit" name="status" value="approved">Undo</button>
+        {% else %}<button class="to-btn to-btn--ghost to-btn--small" type="submit" name="status" value="pending">Reopen</button>{% endif %}
+        <button class="to-btn to-btn--ghost to-btn--small to-btn--danger" type="submit" name="action" value="delete">✕</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+  {{ m.empty("Guest list is empty", "Requests land as pending; approving past the allocation is refused, not silently allowed.") }}
+{% endif %}
+
+<h2 class="to-h2">Add a guest</h2>
+<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/guests/add" class="to-form">
+  <div class="to-grid">
+    {{ m.field('name', 'Name', required=True) }}
+    {{ m.field('count', 'Count', '1', type='number') }}
+    {{ m.select('category', 'Category', vocab['guest_categories'], 'Personal') }}
+    {{ m.select('status', 'Status', ['pending','approved','request'], 'pending') }}
+    {{ m.field('company', 'Company / outlet') }}
+    {{ m.field('title', 'Title') }}
+    {{ m.field('email', 'Email', type='email') }}
+    {{ m.field('requested_by', 'Requested by', viewer['name']) }}
+    {{ m.field('ticket_type', 'Ticket type', placeholder='GA, VIP, photo pass') }}
+    {{ m.field('credentials', 'Credential', placeholder='AAA, working, guest') }}
+    {% if contacts %}<label class="to-field"><span>From a saved contact</span><select name="linked_contact_id"><option value="">—</option>{% for c in contacts %}<option value="{{ c['id'] }}">{{ c['name'] }}{% if c['outlet'] %} · {{ c['outlet'] }}{% endif %}</option>{% endfor %}</select></label>{% endif %}
+    {{ m.textarea('notes', 'Notes', rows=2) }}
+    <div class="to-checks to-wide">{{ m.check('backstage', 'Backstage') }} {{ m.check('meet_greet', 'Meet & greet') }} {{ m.check('aftershow', 'Aftershow') }}</div>
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Add</button></div>
+</form>

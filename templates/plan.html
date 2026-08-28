@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your Street Banker plan</title>
+  <meta name="description" content="The plan your Artist EQ settings produce, with what each recommended module does.">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+</head>
+<body class="min-h-screen bg-white text-sb-surface-2 antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-3xl px-6 py-14 lg:px-10 lg:py-20">
+
+  <div class="sb-label text-sb-gold-deep">Your Street Banker plan</div>
+  <h1 class="mt-4 text-[clamp(1.9rem,5vw,2.8rem)] font-black uppercase leading-[0.98] tracking-tight">
+    {{ plan.lane.name }}
+  </h1>
+  <p class="mt-4 max-w-xl text-base leading-relaxed text-sb-line-strong">{{ plan.lane.why }}</p>
+
+  {# What produced it, in plain sight: the six numbers, and what the score
+     is and is not. #}
+  <section class="mt-8 rounded-lg border-2 border-sb-surface-2/15 bg-sb-ink p-5">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <div class="sb-label text-sb-ink-3">System readiness</div>
+        <div class="mt-1 text-4xl font-black tabular-nums">{{ plan.score }}<span class="text-lg text-sb-ink-3">/100</span></div>
+        <div class="text-sm font-bold">{{ plan.band }}</div>
+      </div>
+      <dl class="grid grid-cols-3 gap-x-6 gap-y-2 text-xs sm:grid-cols-6">
+        {% for ch in channels %}
+        <div>
+          <dt class="font-semibold uppercase tracking-wide text-sb-ink-3">{{ ch.short }}</dt>
+          <dd class="sb-num font-bold">{# subscript, not plan.values - Jinja resolves that to dict.values #}{{ "%.1f"|format(plan["values"][ch.key]) }}</dd>
+        </div>
+        {% endfor %}
+      </dl>
+    </div>
+    <p class="mt-4 text-xs leading-relaxed text-sb-line-strong">
+      That number is a weighted average of the six priorities you set, nothing more.
+      It describes where your attention is, and it does not predict a hit, a signing,
+      or money recovered. Street Banker finds missing money by reading royalty
+      statements you upload — not from this page.
+    </p>
+  </section>
+
+  <h2 class="mt-10 text-lg font-black uppercase tracking-tight">Start here</h2>
+  <ol class="mt-4 space-y-3">
+    {% for action in plan.actions %}
+    <li class="flex gap-3 rounded-md border border-sb-surface-2/10 bg-white px-4 py-3" id="{{ action.slug }}-action">
+      <span class="shrink-0 font-black text-sb-gold-deep">{{ loop.index }}</span>
+      <span class="text-sm font-semibold">{{ action.label }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  <p class="mt-3 text-xs text-sb-ink-3">Estimated setup time: <strong>{{ plan.setup_time }}</strong> — an estimate, not a quote.</p>
+
+  <h2 class="mt-10 text-lg font-black uppercase tracking-tight">The modules this points at</h2>
+  <div class="mt-4 space-y-3">
+    {% for module in plan.modules %}
+    <div class="rounded-md border border-sb-surface-2/10 bg-white px-4 py-4" id="{{ module.slug }}">
+      <div class="text-sm font-black uppercase tracking-tight">{{ module.name }}</div>
+      <p class="mt-1 text-sm leading-relaxed text-sb-line-strong">{{ module.note }}</p>
+      <p class="mt-1 text-xs uppercase tracking-wide text-sb-gold-deep">Because you weighted {{ module.channel }} highly</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="mt-10 rounded-lg bg-sb-surface-2 p-6 text-white">
+    <div class="text-sm font-black uppercase tracking-wide">Keep this plan</div>
+    <p class="mt-2 max-w-xl text-sm leading-relaxed text-gray-200">
+      An account is what lets these modules work on your own catalog: upload a
+      statement, register a track, build a rollout. Nothing above needed one —
+      you have read the plan first, which is the right order.
+    </p>
+    <div class="mt-5 flex flex-wrap gap-3">
+      <a href="/signup" class="inline-flex items-center justify-center rounded-md bg-sb-gold px-6 py-3 text-sm font-bold uppercase tracking-[0.1em] text-sb-surface-2 transition-colors hover:bg-sb-gold-bright">Create an account</a>
+      <a href="/catalog-sweep" class="inline-flex items-center justify-center rounded-md border border-white/25 px-6 py-3 text-sm font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-white/10">Run a catalog sweep first</a>
+      <a href="/#artist-eq" class="inline-flex items-center justify-center rounded-md border border-white/25 px-6 py-3 text-sm font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-white/10">Adjust the EQ</a>
+    </div>
+  </div>
+
+</main>
+
+<footer class="mx-auto max-w-3xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/" class="font-semibold hover:text-sb-surface-2">← Back to Street Banker</a>
+</footer>
+</body>
+</html>

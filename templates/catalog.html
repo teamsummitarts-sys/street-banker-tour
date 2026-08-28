@@ -1,0 +1,682 @@
+{% extends "base.html" %}
+{% import "landing/_cards.html" as logos %}
+
+{% block title %}Catalog - Royalty Sweep{% endblock %}
+
+{% set c = catalog %}
+{% set sm = c.summary %}
+
+{% set tone_cls = {
+  'green': 'border-green-500/20 bg-green-500/10 text-green-400',
+  'red':   'border-red-500/20 bg-red-500/10 text-red-400',
+  'amber': 'border-amber-500/20 bg-amber-500/10 text-amber-400',
+  'gold':  'border-amber-500/30 bg-amber-500/15 text-amber-300',
+} %}
+
+{% macro status_badge(status) %}
+{%- set tone = c.status_tone.get(status, 'gold') -%}
+<span class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold {{ tone_cls[tone] }}">{{ status }}</span>
+{% endmacro %}
+
+{% macro ring(pct, color) %}
+<div class="relative h-12 w-12 shrink-0">
+  <svg viewBox="0 0 40 40" class="h-full w-full -rotate-90">
+    <circle cx="20" cy="20" r="16" fill="none" stroke="#221D18" stroke-width="4"/>
+    <circle cx="20" cy="20" r="16" fill="none" stroke="{{ color }}" stroke-width="4" stroke-linecap="round" stroke-dasharray="100.5" stroke-dashoffset="{{ (100.5 * (1 - pct / 100)) | round(2) }}"/>
+  </svg>
+  <div class="absolute inset-0 flex items-center justify-center text-xs font-bold">{{ pct }}%</div>
+</div>
+{% endmacro %}
+
+{% block content %}
+<style>
+  /* The remove control is revealed by hover, which a touch screen cannot
+     do - so on a device with no hover it is simply always there. Keeping
+     the hover reveal for pointers keeps the grid clean where it can be. */
+  @media (hover: none) {
+    .remove-track { display: grid !important; }
+  }
+</style>
+
+<div class="mx-auto max-w-[1400px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="sb-h1">Catalog</h1>
+      <p class="mt-1 text-sm text-gray-300">Your entire catalog. Organized. Verified. Maximized.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <select id="release-filter" class="rounded-lg border border-white/10 bg-sb-surface-1 px-3 py-2 text-sm text-gray-200 focus:border-amber-500/50 focus:outline-none [color-scheme:dark]">
+        {% for r in c.release_filter_options %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+      </select>
+      <div class="flex items-center gap-2 rounded-lg border border-white/10 bg-sb-surface-1 px-3 py-2">
+        <svg class="h-4 w-4 text-gray-300" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+        <input id="catalog-search" type="text" placeholder="Search catalog..." class="w-40 bg-transparent text-sm text-gray-100 placeholder:text-gray-300 focus:outline-none">
+      </div>
+      <button type="button" id="add-release-btn" class="inline-flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-400 transition-colors hover:bg-amber-500/20">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 4a1 1 0 011 1v4h4a1 1 0 110 2h-4v4a1 1 0 11-2 0v-4H5a1 1 0 110-2h4V5a1 1 0 011-1z"/></svg>
+        Add Release
+      </button>
+    </div>
+  </div>
+
+  {% if catalog_user %}
+  <section class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-5">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h2 class="sb-label text-sb-gold-bright">My Tracks</h2>
+        <p class="mt-1 text-xs text-gray-300 font-medium">Saved to your account — pulled in from Discover. Real data, yours to keep.</p>
+      </div>
+      <a href="/discover" class="sb-btn sb-btn-secondary sb-btn-sm">+ Add from Discover</a>
+    </div>
+    {% if my_tracks %}
+    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+      {% for t in my_tracks %}
+      <div class="group overflow-hidden rounded-xl border border-white/10 bg-sb-surface-1" id="mytrack-{{ t.id }}">
+        <div class="relative aspect-square">
+          {% if t.art %}<img src="{{ t.art }}" alt="{{ t.title }}" class="h-full w-full object-cover" loading="lazy">
+          {% else %}<div class="grid h-full w-full place-items-center bg-white/5 text-2xl text-gray-300">♪</div>{% endif %}
+          <button type="button" class="remove-track absolute right-1 top-1 hidden h-9 w-9 place-items-center rounded-full bg-black/70 text-xs text-gray-200 hover:text-red-400 group-hover:grid" data-id="{{ t.id }}" aria-label="Remove {{ t.title }} from catalog" title="Remove from catalog">✕</button>
+        </div>
+        <div class="p-2">
+          <div class="truncate text-xs font-semibold text-gray-100">{{ t.title }}</div>
+          <div class="truncate text-xs text-gray-300 font-medium">{{ t.artist }}</div>
+          {% if t.meta and t.meta.isrc %}<div class="mt-0.5 truncate text-xs font-semibold tracking-wide text-sb-gold">ISRC {{ t.meta.isrc }}</div>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="mt-4 rounded-xl border border-dashed border-sb-gold/25 py-6 text-center text-xs text-gray-300">
+      Nothing saved yet — <a href="/discover" class="font-semibold text-sb-gold-bright hover:underline">search Discover</a> and hit “+ Catalog” on any track.
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <button type="button" class="metric-card rounded-2xl border border-white/5 bg-sb-surface-1 p-4 text-left transition-colors hover:border-amber-500/25" data-goto-tab="Tracks">
+      <div class="sb-label text-gray-300">Total Tracks</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ "{:,}".format(sm.total_tracks) }}</div>
+      <div class="mt-1 text-xs font-semibold text-green-400">↑ {{ sm.tracks_added_this_month }} this month</div>
+    </button>
+    <button type="button" class="metric-card rounded-2xl border border-white/5 bg-sb-surface-1 p-4 text-left transition-colors hover:border-amber-500/25" data-goto-tab="Releases">
+      <div class="sb-label text-gray-300">Total Releases</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ sm.total_releases }}</div>
+      <div class="mt-1 text-xs font-semibold text-green-400">↑ {{ sm.releases_added_this_month }} this month</div>
+    </button>
+    <button type="button" class="metric-card flex items-center justify-between rounded-2xl border border-white/5 bg-sb-surface-1 p-4 text-left transition-colors hover:border-amber-500/25" data-goto-tab="Tracks" data-set-status="Registered">
+      <div>
+        <div class="sb-label text-gray-300">Registered Tracks</div>
+        <div class="mt-2 text-2xl font-bold tabular-nums">{{ "{:,}".format(sm.registered_tracks) }}</div>
+        <div class="mt-1 text-xs text-gray-300 font-medium">{{ c.registered_pct }}% registered</div>
+      </div>
+      {{ ring(82, '#79B473') }}
+    </button>
+    <button type="button" class="metric-card flex items-center justify-between rounded-2xl border border-white/5 bg-sb-surface-1 p-4 text-left transition-colors hover:border-amber-500/25" data-goto-tab="Tracks" data-set-status="Unregistered">
+      <div>
+        <div class="sb-label text-gray-300">Unregistered Tracks</div>
+        <div class="mt-2 text-2xl font-bold tabular-nums">{{ sm.unregistered_tracks }}</div>
+        <div class="mt-1 text-xs text-gray-300 font-medium">{{ c.unregistered_pct }}% need registration</div>
+      </div>
+      {{ ring(17, '#E8B950') }}
+    </button>
+    <button type="button" class="metric-card flex items-center justify-between rounded-2xl border border-white/5 bg-sb-surface-1 p-4 text-left transition-colors hover:border-amber-500/25" data-goto-tab="Tracks" data-set-status="Missing ISRC">
+      <div>
+        <div class="sb-label text-gray-300">Total ISRCs</div>
+        <div class="mt-2 text-2xl font-bold tabular-nums">{{ "{:,}".format(sm.total_isrcs) }}</div>
+        <div class="mt-1 text-xs text-gray-300 font-medium">{{ sm.isrc_assignment_rate }}% assigned</div>
+      </div>
+      {{ ring(97, '#79B473') }}
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1">
+      <div class="flex flex-wrap items-center gap-1 border-b border-white/5 px-4">
+        {% for tab in c.tabs %}
+        <button type="button" class="catalog-tab border-b-2 px-3 py-3 text-sm font-semibold transition-colors {{ 'border-amber-400 text-amber-400' if loop.first else 'border-transparent text-gray-300 hover:text-white' }}" data-tab="{{ tab }}">{{ tab }}</button>
+        {% endfor %}
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 px-4 py-3">
+        <div class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5">
+          <svg class="h-3.5 w-3.5 text-gray-300" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg>
+          <input id="track-search" type="text" placeholder="Search tracks..." class="w-32 bg-transparent text-xs text-gray-100 placeholder:text-gray-300 focus:outline-none">
+        </div>
+        <select id="status-filter" class="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-gray-200 focus:border-amber-500/50 focus:outline-none [color-scheme:dark]">
+          {% for o in c.status_options %}<option value="{{ o }}">{{ o }}</option>{% endfor %}
+        </select>
+        <select id="genre-filter" class="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-gray-200 focus:border-amber-500/50 focus:outline-none [color-scheme:dark]">
+          {% for o in c.genre_options %}<option value="{{ o }}">{{ o }}</option>{% endfor %}
+        </select>
+        <select id="source-filter" class="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-gray-200 focus:border-amber-500/50 focus:outline-none [color-scheme:dark]">
+          {% for o in c.source_options %}<option value="{{ o }}">{{ o }}</option>{% endfor %}
+        </select>
+        <a href="/reports?type=catalog" class="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-gray-200 transition-colors hover:bg-white/5">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10M6 9l4 4 4-4M4 16h12"/></svg>
+          Export
+        </a>
+      </div>
+
+      <div id="tab-Tracks" class="tab-panel overflow-x-auto px-4 pb-4">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-white/5 text-xs uppercase tracking-wide text-gray-300 font-medium">
+              <th class="py-2 pr-4 font-medium">Track</th>
+              <th class="py-2 pr-4 font-medium">Artist</th>
+              <th class="py-2 pr-4 font-medium">Album / Release</th>
+              <th class="py-2 pr-4 font-medium">ISRC</th>
+              <th class="py-2 pr-4 font-medium">Status</th>
+              <th class="py-2 pr-4 text-right font-medium">Earnings (YTD)</th>
+              <th class="py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in c.tracks %}
+            <tr class="track-row cursor-pointer border-b border-white/5 transition-colors last:border-0 hover:bg-white/5"
+                data-kind="track" data-title="{{ t.title }}" data-artist="{{ t.artist }}" data-release="{{ t.release }}"
+                data-duration="{{ t.duration }}" data-isrc="{{ t.isrc or '' }}" data-iswc="{{ t.iswc or '' }}" data-upc="{{ t.upc or '' }}"
+                data-publisher="{{ t.publisher or '' }}" data-status="{{ t.status }}" data-genre="{{ t.genre }}"
+                data-source="{{ t.source | join(',') }}" data-earnings="{{ '%.2f'|format(t.earnings_ytd) }}"
+                data-reg="{{ t.registrations | tojson | forceescape }}">
+              <td class="py-2.5 pr-4">
+                <div class="flex items-center gap-2.5">
+                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-white/10 bg-gradient-to-br from-white/10 to-transparent text-gray-300">
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M15 3v9.5a2.5 2.5 0 11-1-2V6l-6 1.2V14a2.5 2.5 0 11-1-2V4.5z"/></svg>
+                  </span>
+                  <div class="min-w-0">
+                    <div class="truncate font-semibold text-gray-100">{{ t.title }}</div>
+                    <div class="text-xs text-gray-300 font-medium">{{ t.duration }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="py-2.5 pr-4 text-gray-300">{{ t.artist }}</td>
+              <td class="py-2.5 pr-4 text-gray-300">{{ t.release }}</td>
+              <td class="py-2.5 pr-4 font-mono text-xs text-gray-300">{{ t.isrc or '—' }}</td>
+              <td class="py-2.5 pr-4">{{ status_badge(t.status) }}</td>
+              <td class="py-2.5 pr-4 text-right font-semibold sb-num">${{ "{:,.2f}".format(t.earnings_ytd) }}</td>
+              <td class="py-2.5 text-right">
+                <button type="button" class="row-menu rounded-md px-2 py-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white" aria-label="Track actions">···</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div id="tracks-empty" class="hidden py-8 text-center text-xs text-gray-300">No tracks match these filters.</div>
+        <div class="mt-3 flex items-center justify-between text-xs text-gray-300">
+          <span>Showing 1 to {{ c.tracks | length }} of {{ "{:,}".format(sm.total_tracks) }} tracks</span>
+          <div class="flex items-center gap-1">
+            {% for pg in ['‹', '1', '2', '3', '…', '156', '›'] %}
+            <span class="rounded-md border border-white/10 px-2 py-1 {{ 'bg-amber-500/15 text-amber-400' if pg == '1' else 'text-gray-300' }}">{{ pg }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-Releases" class="tab-panel hidden overflow-x-auto px-4 pb-4">
+        {% if my_releases %}
+        <div class="mb-4 rounded-xl border border-sb-gold/30 bg-sb-surface-2 p-4">
+          <h3 class="sb-label text-sb-gold-bright">My Releases — real identifiers, auto-pulled</h3>
+          <div class="mt-3 space-y-2">
+            {% for r in my_releases %}
+            <div class="flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-sb-surface-1 p-3">
+              {% if r.art %}<img src="{{ r.art }}" alt="{{ r.title }}" class="h-12 w-12 rounded-md object-cover" loading="lazy">{% endif %}
+              <div class="min-w-0 flex-1">
+                <div class="truncate text-sm font-semibold text-gray-100">{{ r.title }}</div>
+                <div class="truncate text-xs text-gray-300 font-medium">{{ r.artist }}{% if r.label %} · {{ r.label }}{% endif %}{% if r.release_date %} · {{ r.release_date }}{% endif %}</div>
+                {% if r.writers %}<div class="truncate text-xs text-gray-300 font-medium">Written by {{ r.writers | join(', ') }}</div>{% endif %}
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5">
+                {% if r.upc %}<span class="rounded-md border border-green-500/25 bg-green-500/10 px-2 py-1 text-xs font-semibold text-green-400">UPC {{ r.upc }}</span>{% endif %}
+                {% for isrc in r.isrcs %}<span class="rounded-md border border-sb-gold/30 bg-sb-gold/10 px-2 py-1 text-xs font-semibold text-sb-gold-bright">ISRC {{ isrc }}</span>{% endfor %}
+                {% if r.genre %}<span class="rounded-md border border-white/10 px-2 py-1 text-xs text-gray-300 font-medium">{{ r.genre }}</span>{% endif %}
+                <span class="rounded-md border border-white/10 px-2 py-1 text-xs text-gray-300 font-medium">{{ r.saved_tracks }}{% if r.total_tracks %} of {{ r.total_tracks }}{% endif %} tracks saved</span>
+                {% if not r.upc and not r.isrcs %}<span class="rounded-md border border-white/10 px-2 py-1 text-xs text-gray-300 font-medium">No identifiers found yet</span>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-white/5 text-xs uppercase tracking-wide text-gray-300 font-medium">
+              <th class="py-2 pr-4 font-medium">Release</th>
+              <th class="py-2 pr-4 font-medium">Type</th>
+              <th class="py-2 pr-4 font-medium">Release Date</th>
+              <th class="py-2 pr-4 text-center font-medium">Tracks</th>
+              <th class="py-2 pr-4 font-medium">Registration</th>
+              <th class="py-2 pr-4 text-right font-medium">Earnings (YTD)</th>
+              <th class="py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in c.releases %}
+            <tr class="release-row cursor-pointer border-b border-white/5 transition-colors last:border-0 hover:bg-white/5"
+                data-kind="release" data-title="{{ r.title }}" data-artist="{{ r.artist }}" data-type="{{ r.type }}"
+                data-date="{{ r.release_date }}" data-upc="{{ r.upc }}" data-tracks="{{ r.track_count }}"
+                data-reg="{{ r.registration_rate }}" data-meta="{{ r.metadata_rate }}" data-earnings="{{ '%.2f'|format(r.earnings_ytd) }}">
+              <td class="py-3 pr-4 font-semibold text-gray-100">{{ r.title }}</td>
+              <td class="py-3 pr-4 text-gray-300">{{ r.type }}</td>
+              <td class="py-3 pr-4 text-gray-300">{{ r.release_date }}</td>
+              <td class="py-3 pr-4 text-center text-gray-300">{{ r.track_count }}</td>
+              <td class="py-3 pr-4">
+                <div class="flex items-center gap-2">
+                  <span class="h-1.5 w-20 overflow-hidden rounded-full bg-white/5"><span class="block h-full rounded-full {{ 'bg-green-500' if r.registration_rate >= 80 else 'bg-amber-500' }}" style="width: {{ r.registration_rate }}%;"></span></span>
+                  <span class="text-xs font-semibold text-gray-300">{{ r.registration_rate }}%</span>
+                </div>
+              </td>
+              <td class="py-3 pr-4 text-right font-semibold sb-num">${{ "{:,.2f}".format(r.earnings_ytd) }}</td>
+              <td class="py-3 text-right"><button type="button" class="rounded-md px-2 py-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white">···</button></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div id="tab-Songwriters" class="tab-panel hidden overflow-x-auto px-4 pb-4">
+        {% if my_writers %}
+        <div class="mb-4 rounded-xl border border-sb-gold/30 bg-sb-surface-2 p-4">
+          <h3 class="sb-label text-sb-gold-bright">My Songwriters — auto-pulled from MusicBrainz</h3>
+          <div class="mt-3 flex flex-wrap gap-2">
+            {% for w in my_writers %}
+            <span class="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-sb-surface-1 px-3 py-1.5 text-xs font-semibold text-gray-100">{{ w.name }}<span class="rounded-md bg-sb-gold/15 px-1.5 py-0.5 text-xs text-sb-gold-bright font-medium">{{ w.songs }} song{{ 's' if w.songs != 1 }}</span></span>
+            {% endfor %}
+          </div>
+          <p class="mt-2 text-xs text-gray-300 font-medium">Writer credits from the open MusicBrainz database. Splits and shares are set by you — credits here are a starting point, always verify before registering.</p>
+        </div>
+        {% endif %}
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-white/5 text-xs uppercase tracking-wide text-gray-300 font-medium">
+              <th class="py-2 pr-4 font-medium">Writer</th>
+              <th class="py-2 pr-4 text-center font-medium">Songs</th>
+              <th class="py-2 pr-4 text-right font-medium">Total Share</th>
+              <th class="py-2 pr-4 text-center font-medium">Confirmed</th>
+              <th class="py-2 pr-4 text-center font-medium">Unconfirmed</th>
+              <th class="py-2 pr-4 text-right font-medium">Earnings (YTD)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for w in c.songwriters %}
+            <tr class="border-b border-white/5 last:border-0">
+              <td class="py-3 pr-4 font-semibold text-gray-100">{{ w.name }}</td>
+              <td class="py-3 pr-4 text-center text-gray-300">{{ w.songs }}</td>
+              <td class="py-3 pr-4 text-right text-gray-300">{{ w.total_share }}%</td>
+              <td class="py-3 pr-4 text-center text-green-400">{{ w.confirmed_splits }}</td>
+              <td class="py-3 pr-4 text-center {{ 'text-amber-400' if w.unconfirmed_splits else 'text-gray-300' }}">{{ w.unconfirmed_splits }}</td>
+              <td class="py-3 pr-4 text-right font-semibold sb-num">${{ "{:,.2f}".format(w.earnings_ytd) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div id="tab-Publishers" class="tab-panel hidden overflow-x-auto px-4 pb-4">
+        {% if my_publishers %}
+        <div class="mb-4 rounded-xl border border-sb-gold/30 bg-sb-surface-2 p-4">
+          <h3 class="sb-label text-sb-gold-bright">My Publishers &amp; Labels — auto-pulled</h3>
+          <div class="mt-3 flex flex-wrap gap-2">
+            {% for p in my_publishers %}
+            <span class="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-sb-surface-1 px-3 py-1.5 text-xs font-semibold text-gray-100">{{ p.name }}<span class="rounded-md {{ 'bg-green-500/15 text-green-400' if p.kind == 'Publisher' else 'bg-sb-gold/15 text-sb-gold-bright' }} px-1.5 py-0.5 text-xs font-medium">{{ p.kind }} · {{ p.songs }}</span></span>
+            {% endfor %}
+          </div>
+          <p class="mt-2 text-xs text-gray-300 font-medium">Publishers come from MusicBrainz work credits; labels come from the release record. A distributor isn't published in open databases — for independent releases the label line above is often your distributor.</p>
+        </div>
+        {% endif %}
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-white/5 text-xs uppercase tracking-wide text-gray-300 font-medium">
+              <th class="py-2 pr-4 font-medium">Publisher</th>
+              <th class="py-2 pr-4 text-center font-medium">Songs</th>
+              <th class="py-2 pr-4 text-center font-medium">Territories</th>
+              <th class="py-2 pr-4 font-medium">PRO</th>
+              <th class="py-2 pr-4 font-medium">Registration</th>
+              <th class="py-2 pr-4 text-right font-medium">Earnings (YTD)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in c.publishers %}
+            <tr class="border-b border-white/5 last:border-0">
+              <td class="py-3 pr-4 font-semibold text-gray-100">{{ p.name }}</td>
+              <td class="py-3 pr-4 text-center text-gray-300">{{ p.songs }}</td>
+              <td class="py-3 pr-4 text-center text-gray-300">{{ p.territories }}</td>
+              <td class="py-3 pr-4 text-gray-300">{{ p.pro }}</td>
+              <td class="py-3 pr-4">{{ status_badge(p.registration_status) }}</td>
+              <td class="py-3 pr-4 text-right font-semibold sb-num">${{ "{:,.2f}".format(p.earnings_ytd) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div id="tab-Splits" class="tab-panel hidden overflow-x-auto px-4 pb-4">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-white/5 text-xs uppercase tracking-wide text-gray-300 font-medium">
+              <th class="py-2 pr-4 font-medium">Track</th>
+              <th class="py-2 pr-4 font-medium">Collaborator</th>
+              <th class="py-2 pr-4 font-medium">Role</th>
+              <th class="py-2 pr-4 text-right font-medium">Share</th>
+              <th class="py-2 pr-4 font-medium">Status</th>
+              <th class="py-2 pr-4 font-medium">Conflict</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sp in c.splits %}
+            <tr class="split-row border-b border-white/5 last:border-0" data-conflict="{{ '1' if sp.conflict else '0' }}">
+              <td class="py-3 pr-4 font-medium text-gray-100">{{ sp.track }}</td>
+              <td class="py-3 pr-4 text-gray-200">{{ sp.collaborator }}</td>
+              <td class="py-3 pr-4 text-gray-300">{{ sp.role }}</td>
+              <td class="py-3 pr-4 text-right font-semibold sb-num">{{ sp.share }}%</td>
+              <td class="py-3 pr-4">
+                <span class="rounded-full border px-2 py-0.5 text-xs font-semibold {{ 'border-green-500/20 bg-green-500/10 text-green-400' if sp.status == 'Confirmed' else 'border-amber-500/20 bg-amber-500/10 text-amber-400' }}">{{ sp.status }}</span>
+              </td>
+              <td class="py-3 pr-4 text-xs {{ 'text-red-400' if sp.conflict else 'text-gray-300' }}">{{ sp.conflict or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <aside class="space-y-4">
+      {% set h = c.health %}
+      {% set h_color = '#79B473' if h.total >= 75 else ('#E8B950' if h.total >= 50 else '#E05C4A') %}
+      <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+        <h2 class="sb-label text-gray-300">Catalog Health</h2>
+        <div class="mt-4 flex items-center gap-4">
+          <div class="relative h-24 w-24 shrink-0">
+            <svg viewBox="0 0 120 120" class="h-full w-full -rotate-90">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#221D18" stroke-width="10"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="{{ h_color }}" stroke-width="10" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="{{ (314.16 * (1 - h.total / 100)) | round(2) }}"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <div class="text-2xl font-bold tabular-nums">{{ h.total }}</div>
+              <div class="text-xs text-gray-300 font-medium">/100</div>
+            </div>
+          </div>
+          <div class="min-w-0 flex-1 space-y-1.5">
+            {% for bar in h.bars %}
+            <div class="flex items-center gap-2 text-xs font-medium">
+              <span class="w-20 shrink-0 text-gray-300">{{ bar.label }}</span>
+              <span class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5"><span class="block h-full rounded-full {{ 'bg-green-500' if bar.pct >= 75 else ('bg-amber-500' if bar.pct >= 50 else 'bg-red-500') }}" style="width: {{ bar.pct }}%;"></span></span>
+              <span class="w-8 shrink-0 text-right font-semibold text-gray-200">{{ bar.pct }}%</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="mt-3 text-center text-sm font-semibold {{ 'text-green-400' if h.total >= 75 else ('text-amber-400' if h.total >= 50 else 'text-red-400') }}">{{ h.status }}</div>
+        <a href="/recovery?focus=catalog-health" class="mt-3 block rounded-md border border-amber-500/30 bg-amber-500/10 py-2 text-center text-xs font-semibold text-amber-400 transition-colors hover:bg-amber-500/20">Improve Catalog Health</a>
+      </section>
+
+      <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+        <div class="flex items-center justify-between">
+          <h2 class="sb-label text-gray-300">Metadata Issues</h2>
+          <a href="/recovery?issue=metadata" class="text-xs font-semibold text-amber-400 hover:underline">View All</a>
+        </div>
+        <div class="mt-3 space-y-1">
+          {% for iss in c.issues %}
+          <button type="button" class="issue-row flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/5"
+                  data-tab="{{ iss.filter_tab }}" data-status="{{ iss.filter_status }}">
+            <span class="{{ 'text-red-400' if iss.severity == 'critical' else 'text-amber-400' }}">
+              <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3L2 17h16L10 3z"/><path d="M10 8v4M10 15v.5"/></svg>
+            </span>
+            <span class="min-w-0 flex-1 truncate text-xs font-semibold text-gray-200">{{ iss.title }}</span>
+            <span class="shrink-0 text-sm font-bold tabular-nums {{ 'text-red-400' if iss.severity == 'critical' else 'text-amber-400' }}">{{ iss.count }}</span>
+            <svg class="h-4 w-4 shrink-0 text-gray-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+          </button>
+          {% endfor %}
+        </div>
+      </section>
+
+      {% set cv = c.catalog_value %}
+      <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+        <h2 class="sb-label text-gray-300">Catalog Value (Estimated)</h2>
+        <div class="mt-3 flex items-end justify-between gap-2">
+          <div class="text-2xl font-bold tracking-tight tabular-nums">${{ "{:,.0f}".format(cv.estimated_value) }}</div>
+          <div class="text-xs font-semibold text-green-400">↑ {{ cv.monthly_change }}% <span class="text-gray-300">vs last month</span></div>
+        </div>
+        <div class="mt-1 text-xs text-gray-300 font-medium">Total Catalog Value</div>
+        <a href="/valuation?section=catalog-trend" class="mt-3 block">
+          <svg viewBox="0 0 260 70" class="h-16 w-full" preserveAspectRatio="none">
+            {% set vmax = cv.trend | map(attribute='value') | max %}
+            {% set vmin = cv.trend | map(attribute='value') | min %}
+            {% set pts = [] %}
+            {% for pt in cv.trend %}{% set _ = pts.append('%s,%s'|format((loop.index0 / (cv.trend|length - 1) * 258 + 1)|round(1), (66 - ((pt.value - vmin) / (vmax - vmin) * 60 if vmax > vmin else 30))|round(1))) %}{% endfor %}
+            <polyline points="{{ pts | join(' ') }}" fill="none" stroke="#E8B950" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            {% for pt in cv.trend %}<circle cx="{{ (loop.index0 / (cv.trend|length - 1) * 258 + 1)|round(1) }}" cy="{{ (66 - ((pt.value - vmin) / (vmax - vmin) * 60 if vmax > vmin else 30))|round(1) }}" r="2.5" fill="#E8B950"/>{% endfor %}
+          </svg>
+        </a>
+        <a href="/valuation" class="mt-2 block rounded-md border border-white/10 py-2 text-center text-xs font-semibold text-amber-400 transition-colors hover:bg-white/5">View Full Valuation</a>
+      </section>
+    </aside>
+  </div>
+
+  <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+    <div class="flex items-center justify-between">
+      <h2 class="sb-label text-gray-300">Recently Added</h2>
+      <button type="button" class="text-xs font-semibold text-amber-400 hover:underline" data-goto-tab="Tracks">View All</button>
+    </div>
+    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {% for item in c.recently_added %}
+      <button type="button" class="recent-item flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 p-3 text-left transition-colors hover:border-amber-500/25"
+              data-kind="{{ 'release' if item.type in ('Album', 'EP') else 'track' }}" data-title="{{ item.title }}" data-type="{{ item.type }}" data-status="{{ item.status }}">
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-white/10 bg-gradient-to-br from-white/10 to-transparent text-gray-300">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M15 3v9.5a2.5 2.5 0 11-1-2V6l-6 1.2V14a2.5 2.5 0 11-1-2V4.5z"/></svg>
+        </span>
+        <div class="min-w-0">
+          <div class="truncate text-xs font-semibold text-gray-100">{{ item.title }}</div>
+          <div class="text-xs text-gray-300 font-medium">{{ item.type }} · {{ item.date_added }}</div>
+          <div class="mt-0.5 inline-flex items-center gap-1 text-xs {{ 'text-green-400' if item.status == 'Registered' else 'text-amber-400' }} font-medium">
+            <span class="h-1.5 w-1.5 rounded-full {{ 'bg-green-500' if item.status == 'Registered' else 'bg-amber-500' }}"></span>{{ item.status }}
+          </div>
+        </div>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<div id="catalog-detail-backdrop" class="fixed inset-0 z-40 hidden bg-black/70"></div>
+<aside id="catalog-detail" class="fixed right-0 top-0 z-50 h-full w-full max-w-md translate-x-full overflow-y-auto border-l border-white/10 bg-sb-surface-1 p-6 transition-transform duration-300">
+  <div class="flex items-start justify-between">
+    <div>
+      <div id="cd-title" class="text-lg font-bold tracking-tight"></div>
+      <div id="cd-subtitle" class="mt-1 text-xs text-gray-300"></div>
+    </div>
+    <button type="button" id="cd-close" class="rounded-md border border-white/10 p-1.5 text-gray-300 transition-colors hover:bg-white/5 hover:text-white">
+      <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.3 4.3a1 1 0 011.4 0L10 8.6l4.3-4.3a1 1 0 111.4 1.4L11.4 10l4.3 4.3a1 1 0 01-1.4 1.4L10 11.4l-4.3 4.3a1 1 0 01-1.4-1.4L8.6 10 4.3 5.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+    </button>
+  </div>
+  <div id="cd-body" class="mt-5 space-y-4"></div>
+</aside>
+
+<div id="add-release-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
+  <div class="w-full max-w-md rounded-2xl border border-white/10 bg-sb-surface-1 p-6">
+    <h3 class="text-sm font-semibold tracking-tight">Add Release</h3>
+    <p class="mt-1 text-xs text-gray-300">Create a new release to organize and register its tracks.</p>
+    <form id="add-release-form" class="mt-4 space-y-3">
+      <label class="block text-xs text-gray-300">Release title
+        <input required id="ar-title" type="text" class="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 focus:border-amber-500/50 focus:outline-none">
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block text-xs text-gray-300">Type
+          <select id="ar-type" class="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 focus:border-amber-500/50 focus:outline-none [color-scheme:dark]">
+            <option>Single</option><option>EP</option><option>Album</option>
+          </select>
+        </label>
+        <label class="block text-xs text-gray-300">Release date
+          <input id="ar-date" type="date" class="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 focus:border-amber-500/50 focus:outline-none [color-scheme:dark]">
+        </label>
+      </div>
+      <div id="ar-success" class="hidden rounded-md border border-green-500/20 bg-green-500/10 px-3 py-2 text-xs text-green-400"></div>
+      <div class="flex justify-end gap-2 pt-1">
+        <button type="button" id="ar-cancel" class="rounded-md border border-white/10 px-3 py-1.5 text-xs font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white">Cancel</button>
+        <button type="submit" class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 transition-colors hover:bg-amber-500/20">Create Release</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const REG_LABELS = { pro: "PRO", mlc: "The MLC", soundexchange: "SoundExchange", youtube_content_id: "YouTube Content ID", tiktok_meta_rights: "TikTok / Meta Rights" };
+
+  function setTab(name) {
+    document.querySelectorAll(".catalog-tab").forEach((b) => {
+      const active = b.dataset.tab === name;
+      b.className = "catalog-tab border-b-2 px-3 py-3 text-sm font-semibold transition-colors " +
+        (active ? "border-amber-400 text-amber-400" : "border-transparent text-gray-300 hover:text-white");
+    });
+    document.querySelectorAll(".tab-panel").forEach((p) => p.classList.add("hidden"));
+    document.getElementById("tab-" + name).classList.remove("hidden");
+  }
+  document.querySelectorAll(".catalog-tab").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
+
+  const statusFilter = document.getElementById("status-filter");
+  const genreFilter = document.getElementById("genre-filter");
+  const sourceFilter = document.getElementById("source-filter");
+  const trackSearch = document.getElementById("track-search");
+  const catalogSearch = document.getElementById("catalog-search");
+
+  function applyTrackFilters() {
+    const st = statusFilter.value, gn = genreFilter.value, sc = sourceFilter.value;
+    const q = (trackSearch.value || catalogSearch.value || "").trim().toLowerCase();
+    let visible = 0;
+    document.querySelectorAll("#tab-Tracks .track-row").forEach((row) => {
+      let show = true;
+      if (st !== "All Statuses" && row.dataset.status !== st) show = false;
+      if (gn !== "All Genres" && row.dataset.genre !== gn) show = false;
+      if (sc !== "All Sources" && !row.dataset.source.split(",").includes(sc)) show = false;
+      if (q) {
+        const hay = (row.dataset.title + " " + row.dataset.artist + " " + row.dataset.release + " " + row.dataset.isrc + " " + row.dataset.publisher).toLowerCase();
+        if (!hay.includes(q)) show = false;
+      }
+      row.classList.toggle("hidden", !show);
+      if (show) visible++;
+    });
+    document.getElementById("tracks-empty").classList.toggle("hidden", visible > 0);
+  }
+  [statusFilter, genreFilter, sourceFilter, trackSearch, catalogSearch].forEach((el) => el.addEventListener("input", applyTrackFilters));
+
+  document.querySelectorAll(".metric-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      if (card.dataset.gotoTab) setTab(card.dataset.gotoTab);
+      if (card.dataset.setStatus) { statusFilter.value = card.dataset.setStatus; applyTrackFilters(); }
+    });
+  });
+
+  document.querySelectorAll(".issue-row").forEach((row) => {
+    row.addEventListener("click", () => {
+      setTab(row.dataset.tab);
+      if (row.dataset.tab === "Tracks" && row.dataset.status) { statusFilter.value = row.dataset.status; applyTrackFilters(); }
+      if (row.dataset.tab === "Splits") {
+        document.querySelectorAll("#tab-Splits .split-row").forEach((r) => r.classList.toggle("hidden", r.dataset.conflict !== "1"));
+      }
+    });
+  });
+
+  const releaseFilter = document.getElementById("release-filter");
+  releaseFilter.addEventListener("change", () => {
+    const val = releaseFilter.value;
+    document.querySelectorAll("#tab-Tracks .track-row").forEach((row) => {
+      row.classList.toggle("hidden", val !== "All Releases" && row.dataset.release !== val);
+    });
+  });
+
+  const drawer = document.getElementById("catalog-detail");
+  const drawerBackdrop = document.getElementById("catalog-detail-backdrop");
+  const cdBody = document.getElementById("cd-body");
+  function closeDrawer() { drawer.classList.add("translate-x-full"); drawerBackdrop.classList.add("hidden"); }
+  function openDrawer() { drawerBackdrop.classList.remove("hidden"); drawer.classList.remove("translate-x-full"); }
+
+  function fact(label, value) {
+    return '<div class="rounded-lg border border-white/5 bg-white/5 p-2.5"><div class="text-xs uppercase tracking-widest text-gray-300 font-medium">' + label + '</div><div class="mt-0.5 text-sm font-semibold">' + (value || "—") + "</div></div>";
+  }
+
+  function openTrackDrawer(row) {
+    const d = row.dataset;
+    document.getElementById("cd-title").textContent = d.title;
+    document.getElementById("cd-subtitle").textContent = d.artist + " · " + d.release + " · " + d.duration;
+    let reg = {};
+    try { reg = JSON.parse(d.reg); } catch (e) {}
+    let html = '<div class="grid grid-cols-2 gap-2">' + fact("ISRC", d.isrc) + fact("ISWC", d.iswc) + fact("UPC", d.upc) + fact("Publisher", d.publisher) + "</div>";
+    html += '<div><div class="sb-label text-gray-300">Registration</div><div class="mt-2 grid grid-cols-1 gap-1.5">';
+    Object.keys(REG_LABELS).forEach((k) => {
+      const ok = !!reg[k];
+      html += '<div class="flex items-center justify-between rounded-lg border px-3 py-1.5 text-xs ' + (ok ? "font-medium border-sb-good/15 text-sb-good" : "border-sb-crit/15 text-sb-crit") + '"><span>' + REG_LABELS[k] + "</span><span>" + (ok ? "✓ Registered" : "✕ Missing") + "</span></div>";
+    });
+    html += "</div></div>";
+    html += '<div class="rounded-lg border border-white/5 bg-white/5 p-3"><div class="text-xs uppercase tracking-widest text-gray-300 font-medium">Earnings YTD</div><div class="mt-0.5 text-xl font-bold text-amber-400">$' + Number(d.earnings).toLocaleString(undefined, {minimumFractionDigits:2}) + "</div></div>";
+    html += '<div class="grid grid-cols-2 gap-2 pt-1">' +
+      '<button class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-400">Edit Metadata</button>' +
+      '<button class="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-400">Register Track</button>' +
+      '<a href="/royalties" class="rounded-md border border-white/10 px-3 py-2 text-center text-xs font-semibold text-gray-200">View Royalties</a>' +
+      '<a href="/recovery" class="sb-btn sb-btn-secondary sb-btn-sm">Fix Issues</a></div>';
+    cdBody.innerHTML = html;
+    openDrawer();
+  }
+
+  function openReleaseDrawer(row) {
+    const d = row.dataset;
+    document.getElementById("cd-title").textContent = d.title;
+    document.getElementById("cd-subtitle").textContent = d.artist + " · " + d.type + " · " + d.date;
+    let html = '<div class="grid grid-cols-2 gap-2">' + fact("UPC", d.upc) + fact("Tracks", d.tracks) + fact("Registration", d.reg + "%") + fact("Metadata", d.meta + "%") + "</div>";
+    html += '<div class="rounded-lg border border-white/5 bg-white/5 p-3"><div class="text-xs uppercase tracking-widest text-gray-300 font-medium">Total Earnings</div><div class="mt-0.5 text-xl font-bold text-amber-400">$' + Number(d.earnings).toLocaleString(undefined, {minimumFractionDigits:2}) + "</div></div>";
+    html += '<div class="grid grid-cols-2 gap-2 pt-1">' +
+      '<button class="sb-btn sb-btn-secondary sb-btn-sm">Edit Release</button>' +
+      '<button class="sb-btn sb-btn-secondary sb-btn-sm">Add Track</button>' +
+      '<button class="sb-btn sb-btn-secondary sb-btn-sm">Register Missing</button>' +
+      '<a href="/royalties" class="sb-btn sb-btn-secondary sb-btn-sm">View Royalties</a></div>';
+    cdBody.innerHTML = html;
+    openDrawer();
+  }
+
+  document.querySelectorAll(".track-row").forEach((row) => {
+    row.addEventListener("click", (e) => { if (!e.target.closest(".row-menu")) openTrackDrawer(row); });
+  });
+  document.querySelectorAll(".release-row").forEach((row) => row.addEventListener("click", () => openReleaseDrawer(row)));
+  document.querySelectorAll(".recent-item").forEach((item) => {
+    item.addEventListener("click", () => {
+      const match = [...document.querySelectorAll(".track-row, .release-row")].find((r) => r.dataset.title === item.dataset.title);
+      if (match && match.classList.contains("release-row")) openReleaseDrawer(match);
+      else if (match) openTrackDrawer(match);
+    });
+  });
+  document.getElementById("cd-close").addEventListener("click", closeDrawer);
+  drawerBackdrop.addEventListener("click", closeDrawer);
+
+  const arModal = document.getElementById("add-release-modal");
+  function openAr() { arModal.classList.remove("hidden"); arModal.classList.add("flex"); document.getElementById("ar-title").focus(); }
+  function closeAr() { arModal.classList.add("hidden"); arModal.classList.remove("flex"); }
+  document.getElementById("add-release-btn").addEventListener("click", openAr);
+  document.getElementById("ar-cancel").addEventListener("click", closeAr);
+  arModal.addEventListener("click", (e) => { if (e.target === arModal) closeAr(); });
+  document.getElementById("add-release-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const title = document.getElementById("ar-title").value.trim();
+    if (!title) return;
+    const ok = document.getElementById("ar-success");
+    ok.textContent = '"' + title + '" created. Add tracks to start registering.';
+    ok.classList.remove("hidden");
+    setTimeout(closeAr, 1600);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!drawer.classList.contains("translate-x-full")) closeDrawer();
+    if (!arModal.classList.contains("hidden")) closeAr();
+  });
+
+  // Remove a saved track from My Tracks.
+  document.querySelectorAll(".remove-track").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const res = await fetch(`/catalog/remove/${btn.dataset.id}`, { method: "POST" });
+      const data = await res.json();
+      if (data.ok) document.getElementById(`mytrack-${btn.dataset.id}`).remove();
+    });
+  });
+</script>
+{% endblock %}

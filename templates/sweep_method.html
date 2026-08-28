@@ -1,0 +1,78 @@
+{# How Royalty Sweep works, in public: what is read, what counts as an
+   opportunity, how an estimate is arrived at, how a case is verified,
+   which steps need a person, and what happens to the data. No figures,
+   no promises. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How Royalty Sweep works · Street Banker</title>
+  <meta name="description" content="What Royalty Sweep reviews, what counts as a potential opportunity, how estimates are produced, and which steps need a person.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-3xl px-6 py-14 lg:px-10 lg:py-20">
+<span id="how" class="block" style="scroll-margin-top:90px" aria-hidden="true"></span>
+  <div class="sb-label text-sb-gold">Royalty Sweep</div>
+  <h1 class="mt-4 text-[clamp(1.9rem,5vw,2.8rem)] font-semibold uppercase leading-[1.04] tracking-tight">
+    How Royalty Sweep works
+  </h1>
+  <p class="mt-5 max-w-xl text-base leading-relaxed text-sb-ink-2">
+    Royalty Sweep looks for gaps between what your catalog says and what the
+    paperwork shows. It does not find money. It finds questions, and it keeps
+    track of the answers.
+  </p>
+
+  <dl class="mt-11 space-y-8">
+    {% for title, body in method %}
+    <div class="border-t border-[rgb(201_168_106_/_0.22)] pt-6">
+      <dt class="text-base font-semibold text-sb-ink">{{ title }}</dt>
+      <dd class="mt-2 max-w-2xl text-base leading-relaxed text-sb-ink-2">{{ body }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+
+  <h2 class="mt-14 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">Where information can come from</h2>
+  <p class="mt-3 max-w-2xl text-sm leading-relaxed text-sb-ink-2">
+    Only the first four are available today, and they work by upload. Nothing
+    below claims a live connection Street Banker does not hold.
+  </p>
+  <ul class="mt-5">
+    {% for name, status in sources %}
+    <li class="flex flex-wrap items-baseline justify-between gap-3 border-t border-white/[0.07] py-2.5">
+      <span class="text-sm text-sb-ink">{{ name }}</span>
+      <span class="text-xs uppercase tracking-[0.14em]
+                   {% if status == 'Upload Supported' %}text-sb-gold{% else %}text-sb-ink-2{% endif %}">{{ status }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <h2 class="mt-14 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">What the words mean</h2>
+  <p class="mt-3 max-w-2xl text-sm leading-relaxed text-sb-ink-2">
+    A <strong class="font-semibold text-sb-ink">potential missing income</strong> is a gap worth
+    asking about. A <strong class="font-semibold text-sb-ink">possible registration gap</strong> is a
+    work with no registration on file. An
+    <strong class="font-semibold text-sb-ink">estimated value range</strong> is arithmetic on your own
+    statements, not a prediction, and it requires verification.
+    <strong class="font-semibold text-sb-ink">Verified recovered income</strong> is the only phrase here
+    that describes money that actually arrived.
+  </p>
+
+  <div class="mt-12 flex flex-wrap gap-3">
+    <a href="/catalog-sweep" class="inline-flex min-h-[48px] items-center justify-center rounded-sm border border-sb-gold px-6 text-xs font-bold uppercase tracking-[0.14em] text-sb-gold transition-colors hover:bg-sb-gold hover:text-sb-surface-2">Run a preliminary check</a>
+    <a href="/ai" class="inline-flex min-h-[48px] items-center justify-center rounded-sm border border-[rgb(201_168_106_/_0.22)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-sb-ink transition-colors hover:border-sb-gold hover:text-sb-gold">How Street Banker uses AI</a>
+  </div>
+</main>
+
+<footer class="mx-auto max-w-3xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/#royalty-sweep" class="font-semibold hover:text-sb-ink">← Back to Street Banker</a>
+</footer>
+</body>
+</html>

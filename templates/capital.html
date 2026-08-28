@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Capital - Royalty Sweep{% endblock %}
+
+{% set cap = capital %}
+
+{% block content %}
+<div class="mx-auto max-w-[1200px] space-y-5">
+  <div>
+    <h1 class="sb-h1">Capital</h1>
+    <p class="mt-1 text-sm text-gray-300">Fund your work against your own future royalties — passes, crowdfunding, futures, and staking.</p>
+  </div>
+
+  <!-- Prominent simulated-demo banner -->
+  <div class="rounded-2xl border border-red-500/25 bg-red-500/[0.06] p-4">
+    <div class="flex items-start gap-3">
+      <svg class="mt-0.5 h-5 w-5 shrink-0 text-red-400" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 7v4M10 14v.5"/><path d="M10 3l7 13H3z"/></svg>
+      <div class="text-xs leading-relaxed text-red-300/90">
+        <span class="font-semibold text-red-300">Simulated demo — nothing here is real.</span>
+        No money is collected or paid out, no payment method is entered, and no royalties are actually assigned, transferred, or forfeited. These are illustrative concepts only, not financial products, investment offers, or wagering. Not financial advice.
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <!-- Fan Royalty Passes -->
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Fan Royalty Passes</h2>
+      <p class="mt-1 text-sm text-gray-300">Offer fans a capped-supply pass tied to <span class="text-gray-200">{{ cap.passes.share_pct }}%</span> of "{{ cap.passes.release }}" for {{ cap.passes.term_months }} months.</p>
+      <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+        <div class="rounded-lg border border-white/5 bg-white/5 p-3"><div class="text-lg font-bold tabular-nums">{{ cap.passes.sold }}/{{ cap.passes.supply }}</div><div class="text-xs uppercase tracking-wide text-gray-300 font-medium">Passes sold</div></div>
+        <div class="rounded-lg border border-white/5 bg-white/5 p-3"><div class="text-lg font-bold tabular-nums">${{ cap.passes.price_each }}</div><div class="text-xs uppercase tracking-wide text-gray-300 font-medium">Each</div></div>
+        <div class="rounded-lg border border-white/5 bg-white/5 p-3"><div class="text-lg font-bold tabular-nums text-sb-ink">${{ "{:,}".format(cap.passes.raised) }}</div><div class="text-xs uppercase tracking-wide text-gray-300 font-medium">Raised</div></div>
+      </div>
+      <div class="mt-3 h-1.5 rounded-full bg-white/5"><div class="h-1.5 rounded-full bg-sb-gold" style="width: {{ (cap.passes.sold / cap.passes.supply * 100)|round }}%;"></div></div>
+    </section>
+
+    <!-- Catalog Crowdfunding -->
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Catalog Crowdfunding</h2>
+      <p class="mt-1 text-sm text-gray-300">{{ cap.crowdfunding.title }} — repaid via {{ cap.crowdfunding.repay_pct }}% of royalties over time.</p>
+      <div class="mt-3 text-2xl font-bold tabular-nums text-sb-ink">${{ "{:,}".format(cap.crowdfunding.raised) }}<span class="text-base font-normal text-gray-300"> / ${{ "{:,}".format(cap.crowdfunding.goal) }}</span></div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">{{ cap.crowdfunding.backers }} backers · {{ cap.crowdfunding.pct }}% funded</div>
+      <div class="mt-3 h-1.5 rounded-full bg-white/5"><div class="h-1.5 rounded-full bg-sb-gold" style="width: {{ cap.crowdfunding.pct }}%;"></div></div>
+    </section>
+
+    <!-- Royalty Futures -->
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5 lg:col-span-2">
+      <h2 class="sb-label text-gray-300">Royalty Futures Marketplace</h2>
+      <p class="mt-1 text-sm text-gray-300">List a slice of your own future royalties at an asking price.</p>
+      <div class="mt-3 overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-white/5 text-xs uppercase tracking-wide text-gray-300 font-medium">
+              <th class="py-2 pr-4 font-medium">Release</th>
+              <th class="py-2 pr-4 font-medium">Share</th>
+              <th class="py-2 pr-4 font-medium">Term</th>
+              <th class="py-2 pr-4 text-right font-medium">Asking</th>
+              <th class="py-2 pr-4 text-right font-medium">Est. yield</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in cap.futures %}
+            <tr class="border-b border-white/5 last:border-0">
+              <td class="py-3 pr-4 font-semibold text-gray-100">{{ f.release }}</td>
+              <td class="py-3 pr-4 text-gray-300">{{ f.share_pct }}%</td>
+              <td class="py-3 pr-4 text-gray-300">{{ f.term_months }} mo</td>
+              <td class="py-3 pr-4 text-right font-bold sb-num text-sb-ink">${{ "{:,}".format(f.asking) }}</td>
+              <td class="py-3 pr-4 text-right text-gray-200">{{ f.yield_est }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Staking -->
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Staking Pools</h2>
+      <p class="mt-1 text-sm text-gray-300">{{ cap.staking.total_staked_pct }}% of royalties staked across {{ cap.staking.pools|length }} releases.</p>
+      <div class="mt-3 space-y-2">
+        {% for p in cap.staking.pools %}
+        <div class="flex items-center justify-between gap-2 rounded-lg border border-white/5 bg-white/5 px-3 py-2.5">
+          <span class="min-w-0 flex-1 truncate text-sm text-gray-200">{{ p.release }}</span>
+          <span class="text-xs text-gray-300 font-medium">{{ p.staked_pct }}% staked</span>
+          <span class="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-400">{{ p.apy }} APY</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Roll the Dice -->
+    <section class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Roll the Dice</h2>
+      <p class="mt-1 text-sm text-gray-300">A simulated game: stake a % of a track's royalties. Win to {{ cap.dice.multiplier }}× it for {{ cap.dice.win_days }} days, or lose the stake for {{ cap.dice.win_days }} days.</p>
+      <div class="mt-3 space-y-2">
+        <select id="dice-track" class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-200 focus:border-amber-500/50 focus:outline-none">
+          {% for t in cap.dice.tracks %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+        </select>
+        <div class="flex items-center gap-2">
+          <label class="text-xs text-gray-300">Stake</label>
+          <input id="dice-stake" type="number" min="1" max="50" value="10" class="w-16 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-center text-sm text-gray-100 focus:border-amber-500/50 focus:outline-none">
+          <span class="text-xs text-gray-300">% of royalties</span>
+          <button type="button" id="dice-roll" class="sb-btn sb-btn-secondary sb-btn-sm ml-auto">Roll</button>
+        </div>
+        <div id="dice-result" class="hidden rounded-lg border px-3 py-2.5 text-sm font-semibold"></div>
+        <p class="text-xs text-gray-300 font-medium">Simulated only — no real royalties are staked, won, or forfeited.</p>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const DICE = { multiplier: {{ cap.dice.multiplier }}, days: {{ cap.dice.win_days }} };
+  document.getElementById("dice-roll").addEventListener("click", () => {
+    const track = document.getElementById("dice-track").value;
+    const stake = Math.max(1, Math.min(50, Number(document.getElementById("dice-stake").value) || 10));
+    const win = Math.random() < 0.5;
+    const el = document.getElementById("dice-result");
+    el.classList.remove("hidden");
+    if (win) {
+      el.className = "rounded-lg border border-green-500/20 bg-green-500/10 px-3 py-2.5 text-sm font-semibold text-green-400";
+      el.textContent = "🎲 Win! (Simulated) " + stake + "% of \"" + track + "\" would " + DICE.multiplier + "× for " + DICE.days + " days.";
+    } else {
+      el.className = "rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm font-semibold text-red-400";
+      el.textContent = "🎲 Loss (Simulated) — " + stake + "% of \"" + track + "\" would pause for " + DICE.days + " days. No real royalties moved.";
+    }
+  });
+</script>
+{% endblock %}

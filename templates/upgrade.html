@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Upgrade - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[900px] space-y-6">
+  <div class="text-center">
+    <div class="sb-label text-sb-gold">Street Banker</div>
+    <h1 class="sb-h1 mt-2">This is a {{ plan_names.get(required, required) }} feature</h1>
+    <p class="mx-auto mt-2 max-w-lg text-sm text-gray-300">Your current plan is <span class="font-bold text-gray-200">{{ plan_names.get(user_plan, user_plan) }}</span>. Upgrade to unlock this section — everything you've built stays exactly where it is.</p>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    {% for key, name, price, blurb, includes in plans_list %}
+    <div class="flex flex-col rounded-2xl border {{ 'border-sb-gold/60 bg-sb-surface-2 shadow-[0_0_40px_rgba(201,162,74,0.15)]' if key == required else 'border-white/10 bg-sb-surface-1' }} p-5">
+      <div class="flex items-center justify-between">
+        <div class="text-sm font-black uppercase tracking-wide {{ 'text-sb-gold-bright' if key == required }}">{{ name }}</div>
+        {% if key == user_plan %}<span class="rounded bg-white/10 px-1.5 py-0.5 text-xs font-bold uppercase text-gray-300">Current</span>{% endif %}
+      </div>
+      <div class="mt-1 text-2xl font-black">{{ price }}</div>
+      <p class="mt-1 text-xs text-gray-300 font-medium">{{ blurb }}</p>
+      <ul class="mt-3 flex-1 space-y-1.5">
+        {% for item in includes %}
+        <li class="flex items-start gap-1.5 text-xs text-gray-200 font-medium"><span class="mt-1 h-1 w-1 shrink-0 rounded-full bg-sb-gold"></span>{{ item }}</li>
+        {% endfor %}
+      </ul>
+      {% if key != user_plan %}
+      {% set real_checkout = stripe_live and not is_demo_account and key != 'fan' %}
+      <form method="post" action="{{ '/billing/checkout' if real_checkout else '/plan/switch' }}" class="mt-4">
+        <input type="hidden" name="plan" value="{{ key }}">
+        <button class="w-full rounded-lg {{ 'bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep text-sb-on-gold' if key == required else 'border border-white/15 text-gray-200 hover:bg-white/5' }} px-4 py-2 text-xs font-bold">{{ ('Subscribe — ' + price) if real_checkout else ('Switch to ' + name) }}</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if stripe_live and not is_demo_account %}
+  <p class="text-center text-xs text-gray-300 font-medium">Checkout runs on Stripe — no payment details touch this server. Cancel anytime; your data stays either way.</p>
+  {% else %}
+  <p class="text-center text-xs text-gray-300 font-medium">Demo plan switching — no payment is taken.</p>
+  {% endif %}
+</div>
+{% endblock %}

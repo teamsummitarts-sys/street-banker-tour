@@ -1,0 +1,130 @@
+{% extends "tour/_shell.html" %}
+{% block title %}{{ tour['name'] }} - TOUR - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+
+{% if unack %}
+<div class="to-note to-note--warn">
+  <strong>{{ unack|length }} critical change{{ '' if unack|length == 1 else 's' }} waiting for your acknowledgement.</strong>
+  {% for c in unack[:3] %}<p>{{ c['entity_label'] }} — {{ c['field']|replace('_',' ') }}: {{ c['before'] or '—' }} → <b>{{ c['after'] or '—' }}</b></p>{% endfor %}
+  <p><a href="/tours/{{ tour['id'] }}/changes">Review and acknowledge</a></p>
+</div>
+{% endif %}
+
+{% if mode == 'live' %}
+  {% if nxt %}
+  <section class="to-next" aria-label="Next">
+    <div class="to-next-label">Next</div>
+    <div class="to-next-title">{{ nxt['title'] }}</div>
+    <div class="to-next-time">{{ nxt['when_text'] }}</div>
+    <div class="to-next-meta">
+      {% if nxt['where'] %}<b>{{ nxt['where'] }}</b> · {% endif %}{{ fmt_day(nxt['item']['day_date']) }}
+      {% if nxt['tz'] %} · <span class="to-muted">{{ nxt['tz'] }}</span>{% endif %}
+      {% if nxt['item']['precision'] is defined and nxt['item']['precision'] == 'approx' %} · approximate{% endif %}
+    </div>
+    <span class="to-next-delta">in {{ nxt['delta_text'] }}</span>
+    <div class="to-bar" style="margin-bottom:0">
+      <a class="to-btn to-btn--small" href="/tours/{{ tour['id'] }}/my-day">My Day</a>
+      {% if today_show %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/shows/{{ today_show['id'] }}">Tonight: {{ today_show['venue'] }}</a>{% endif %}
+      {% if hotel_tonight %}<span class="to-chip to-chip--gold">Hotel: {{ hotel_tonight['property'] }}</span>{% endif %}
+    </div>
+  </section>
+  {% else %}
+  <div class="to-note"><strong>Live, and nothing timed is coming up.</strong> Add call times on today's schedule or the next show and the next thing appears here.</div>
+  {% endif %}
+{% endif %}
+
+<div class="to-cards">
+  <a class="to-card is-warm" href="/tours/{{ tour['id'] }}/shows"><b>{{ tour_ready['pct'] }}%</b><span>Tour readiness</span><small>{{ tour_ready['shows'] }} show{{ '' if tour_ready['shows'] == 1 else 's' }} scored</small></a>
+  <a class="to-card" href="/tours/{{ tour['id'] }}/calendar"><b>{{ shows|length }}</b><span>Shows</span><small>{{ upcoming|length }} upcoming</small></a>
+  <a class="to-card" href="/tours/{{ tour['id'] }}/changes"><b>{{ changes|length }}</b><span>Important changes</span><small>last 8 shown below</small></a>
+  <a class="to-card" href="/tours/{{ tour['id'] }}/tasks"><b>{{ open_tasks|length }}</b><span>Open tasks</span></a>
+  {% if can('guests') %}<a class="to-card" href="/tours/{{ tour['id'] }}/guests"><b>{{ guests_pending }}</b><span>Guests pending</span><small>upcoming shows</small></a>{% else %}<a class="to-card" href="/tours/{{ tour['id'] }}/people"><b>{{ people_count }}</b><span>People</span></a>{% endif %}
+</div>
+
+<div class="to-split" style="margin-top:14px">
+  <div>
+    <h2 class="to-h2">Upcoming</h2>
+    {% if upcoming %}
+    <div class="to-table-wrap"><table class="to-table is-stack">
+      <thead><tr><th>Date</th><th>City</th><th>Venue</th><th>Status</th><th>Ready</th></tr></thead>
+      <tbody>
+      {% for s in upcoming %}
+      <tr>
+        <td data-k="Date"><a href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}">{{ fmt_day(s['date']) }}</a></td>
+        <td data-k="City">{{ s['city'] or '—' }}</td>
+        <td data-k="Venue">{{ s['venue'] }}</td>
+        <td data-k="Status">{{ m.chip(s['status']) }}</td>
+        <td data-k="Ready">{{ m.ready(readiness[s['id']]['pct']) }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% elif shows %}
+      {{ m.empty("No upcoming shows", "Every date on this tour is in the past. Mark the tour wrapped in Settings, or add the next run.", "/tours/" ~ tour['id'] ~ "/calendar", "Calendar") }}
+    {% else %}
+      {{ m.empty("No shows yet", "Add dates one at a time from the calendar, or import a CSV, an .ics export, or a pasted list.", "/tours/" ~ tour['id'] ~ "/import", "Import dates") }}
+    {% endif %}
+
+    <h2 class="to-h2">Needs attention</h2>
+    {% if attention %}
+    <ul class="to-check">
+      {% for a in attention %}
+      <li class="no"><span class="mark">!</span><span><a href="/tours/{{ tour['id'] }}/shows/{{ a['show']['id'] }}">{{ a['text'] }}</a><small>{{ fmt_day(a['show']['date']) }}</small></span></li>
+      {% endfor %}
+    </ul>
+    {% elif shows %}
+      <p class="to-sub">Nothing flagged. Readiness is computed from the checklists, so a clean board means the checklists are clean — not that the work is done for you.</p>
+    {% else %}
+      <p class="to-sub">Add a show and its checklist starts here.</p>
+    {% endif %}
+
+    {% if finance %}
+    <h2 class="to-h2">Money</h2>
+    <div class="to-cards">
+      <a class="to-card" href="/tours/{{ tour['id'] }}/money"><b>{{ '%.0f'|format(finance['projected_net']) }}</b><span>Projected net ({{ finance['currency'] }})</span><small>{{ finance['shows_with_numbers'] }} show{{ '' if finance['shows_with_numbers'] == 1 else 's' }} with numbers</small></a>
+      <a class="to-card" href="/tours/{{ tour['id'] }}/money"><b>{{ '%.0f'|format(finance['guarantees']) }}</b><span>Guarantees</span></a>
+      <a class="to-card" href="/tours/{{ tour['id'] }}/money"><b>{{ '%.0f'|format(finance['outstanding']) }}</b><span>Outstanding</span></a>
+      <a class="to-card" href="/tours/{{ tour['id'] }}/money"><b>{{ finance['deposits_outstanding'] }}</b><span>Deposits due</span></a>
+      <a class="to-card" href="/tours/{{ tour['id'] }}/money"><b>{{ finance['unsettled']|length }}</b><span>Unsettled</span></a>
+    </div>
+    {% endif %}
+  </div>
+
+  <aside>
+    <h2 class="to-h2">What changed</h2>
+    {% if changes %}
+      {% for c in changes %}
+      <div class="to-change">
+        <span class="sev {{ c['severity'] }}"></span>
+        <div>
+          <div><b>{{ c['entity_label'] }}</b> · {{ c['field']|replace('_',' ') }}</div>
+          <div><del>{{ c['before'] or '—' }}</del> <ins>{{ c['after'] or '—' }}</ins></div>
+          <small>{{ c['created'][:16]|replace('T',' ') }} UTC · {{ c['actor_name'] or 'system' }}{% if c['source'] != 'manual' %} · via {{ c['source'] }}{% endif %}</small>
+        </div>
+        <div>{% if c['severity'] == 'critical' and acks[c['id']] != 'acknowledged' %}<form method="post" action="/tours/{{ tour['id'] }}/changes/{{ c['id'] }}/ack"><button class="to-btn to-btn--small" type="submit">Got it</button></form>{% endif %}</div>
+      </div>
+      {% endfor %}
+      <div class="to-bar"><a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/changes">All changes</a></div>
+    {% else %}
+      <p class="to-sub">No important changes yet. Time, place and hotel edits land here with who made them.</p>
+    {% endif %}
+
+    <h2 class="to-h2">Today for you</h2>
+    {% if my_day['rows'] %}
+    <ul class="to-timeline">
+      {% for r in my_day['rows'][:6] %}
+      <li class="to-tl-item">
+        <div class="to-tl-time">{{ fmt_time(r['time']) or 'TBD' }}</div>
+        <div><div class="to-tl-title">{{ r['title'] }}</div>{% if r['where'] %}<div class="to-tl-where">{{ r['where'] }}</div>{% endif %}</div>
+        <div></div>
+      </li>
+      {% endfor %}
+    </ul>
+    <div class="to-bar"><a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/my-day">Open My Day</a></div>
+    {% else %}
+      <p class="to-sub">Nothing on your schedule today.</p>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Insights - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[900px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Insights</div>
+    <h1 class="sb-h1 mt-1">Insights</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">What a sharp manager would spot in your numbers. Every insight is computed from your real data by rules — it cites where it came from and links to the move.</p>
+  </div>
+
+  {% if not items %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-6">
+    <p class="text-sm text-gray-200">Not enough data to say anything useful yet — and we won't pretend otherwise. Upload statements, run campaigns, and link Artist Pulse; insights appear as the numbers do.</p>
+  </section>
+  {% else %}
+
+  {% set kind_style = {
+    'risk': ('border-red-500/25', 'text-red-400/90', '⚠'),
+    'money': ('border-sb-gold/40', 'text-sb-gold-bright', '$'),
+    'promo': ('border-green-500/25', 'text-green-400', '▶'),
+    'fans': ('border-sb-gold/40', 'text-sb-gold-bright', '♥'),
+    'growth': ('border-green-500/25', 'text-green-400', '↗'),
+    'hygiene': ('border-white/15', 'text-gray-200', '✓'),
+    'start': ('border-sb-gold/40', 'text-sb-gold-bright', '→'),
+  } %}
+  <div class="space-y-3">
+    {% for i in items %}
+    {% set style = kind_style.get(i.kind, kind_style['hygiene']) %}
+    <section class="rounded-2xl border {{ style[0] }} bg-sb-surface-1 p-5">
+      <div class="flex items-start gap-4">
+        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/5 text-base font-black {{ style[1] }}">{{ style[2] }}</span>
+        <div class="min-w-0 flex-1">
+          <h2 class="text-sm font-bold {{ style[1] }}">{{ i.title }}</h2>
+          <p class="mt-1 text-xs leading-relaxed text-gray-200">{{ i.body }}</p>
+          <a href="{{ i.href }}" class="sb-btn sb-btn-secondary sb-btn-sm mt-2.5">{{ i.label }} →</a>
+        </div>
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <p class="px-1 text-xs text-gray-300 font-medium">Computed by rules over your account data — not a language model, not predictions, not financial advice.</p>
+</div>
+{% endblock %}

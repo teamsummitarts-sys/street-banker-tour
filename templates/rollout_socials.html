@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Socials · {{ c.title }} - Rollout Engine{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[800px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Rollout Engine · Social Accounts</div>
+      <h1 class="sb-h1 mt-1">Publishing Connections</h1>
+      <p class="mt-1 max-w-xl text-sm text-gray-300">Manual mode works today: copy captions from the Posts page, post them yourself, and mark them posted. Auto-posting activates per platform once API credentials are connected.</p>
+    </div>
+    <a href="/rollout-studio/{{ c.id }}" class="sb-btn sb-btn-secondary">← Overview</a>
+  </div>
+
+  <div class="space-y-2">
+    {% for key, name, status in providers %}
+    <div class="flex items-center justify-between rounded-xl border {{ 'border-green-500/25 bg-green-500/[0.04]' if status == 'ready' else 'border-white/10 bg-sb-surface-1' }} px-4 py-3.5">
+      <div>
+        <div class="text-sm font-bold text-gray-100">{{ name }}</div>
+        {% if status == 'ready' %}
+        <div class="text-xs text-green-400 font-medium">Active — copy captions and assets, mark posts as posted, attribution tracks through each post's link.</div>
+        {% elif status == 'configured' %}
+        <div class="text-xs text-sb-gold-bright font-medium">Credentials detected — OAuth connection flow is next on the roadmap.</div>
+        {% else %}
+        <div class="text-xs text-gray-300 font-medium">Auto-posting requires platform API credentials and app approval. Until then, use manual mode.</div>
+        {% endif %}
+      </div>
+      <span class="shrink-0 rounded-md px-2 py-1 text-xs font-bold uppercase {{ 'bg-green-500/15 text-green-400' if status == 'ready' else ('bg-sb-gold/15 text-sb-gold-bright' if status == 'configured' else 'bg-white/10 text-gray-300') }}">{{ status }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="text-xs text-gray-300 font-medium">Platform tokens, when connected, are stored server-side and never exposed to the browser. Every publish attempt will be logged with its platform response.</p>
+</div>
+{% endblock %}

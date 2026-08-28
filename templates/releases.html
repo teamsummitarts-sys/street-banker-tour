@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Release Scheduler - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker · Releases</div>
+      <h1 class="sb-h1 mt-1">Release Scheduler</h1>
+      <p class="mt-1 max-w-2xl text-sm text-gray-300">Your real release calendar — every campaign release date and every scheduled rollout post, in one timeline.</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="/releases/calendar.ics?preset={{ preset }}" class="sb-btn sb-btn-secondary" title="One-way export — import into Google/Apple/Outlook">Export .ics</a>
+      <a href="/links/new" class="sb-btn sb-btn-primary">+ New Release</a>
+    </div>
+  </div>
+
+  {% if warnings %}
+  <!-- Lead-time warnings: pure date math against each release date -->
+  <div class="space-y-1.5 rounded-2xl border border-amber-500/30 bg-sb-on-gold p-4">
+    <div class="sb-label text-amber-400">Lead-time warnings</div>
+    {% for w in warnings %}
+    <a href="{{ w.href }}" class="flex items-center gap-2.5 text-xs hover:text-white">
+      <span class="h-2 w-2 shrink-0 rounded-full {{ 'bg-red-500' if w.level == 'red' else 'bg-amber-400' }}"></span>
+      <span class="min-w-0 flex-1 text-gray-200"><span class="font-bold">{{ w.campaign }}</span> is <span class="font-bold sb-num">{{ w.days }}</span> day{{ '' if w.days == 1 else 's' }} out — {{ w.text }}.</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Milestone overlay presets: date math from each release date, not stored events -->
+  <div class="flex flex-wrap items-center gap-1.5 text-xs font-bold uppercase">
+    <span class="tracking-[0.15em] text-gray-300">Milestones:</span>
+    <a href="?preset=off" class="rounded-full border px-2.5 py-1 {{ 'border-sb-gold bg-sb-gold/10 text-gray-200' if preset == 'off' else 'border-white/10 text-gray-300 hover:border-sb-gold/40' }}">Off</a>
+    {% for key, (label, days) in presets.items() %}
+    <a href="?preset={{ key }}" class="rounded-full border px-2.5 py-1 {{ 'border-sb-gold bg-sb-gold/10 text-gray-200' if preset == key else 'border-white/10 text-gray-300 hover:border-sb-gold/40' }}">{{ label }}</a>
+    {% endfor %}
+    <span class="ml-1 normal-case tracking-normal text-gray-300">overlays plan checkpoints computed from each release date — nothing is stored or predicted</span>
+  </div>
+
+  {% if lanes %}
+  <!-- Swimlanes: each campaign's next 90 days on one track -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex items-baseline justify-between gap-2">
+      <h2 class="sb-label text-sb-gold">Next 90 days by campaign</h2>
+      <div class="flex gap-3 text-xs font-bold uppercase text-gray-300">
+        <span><span class="mr-1 inline-block h-2 w-2 rounded-full bg-sb-gold"></span>Release</span>
+        <span><span class="mr-1 inline-block h-2 w-2 rounded-full bg-sky-400"></span>Post</span>
+        <span><span class="mr-1 inline-block h-2 w-2 rounded-full bg-sb-gold"></span>Milestone</span>
+      </div>
+    </div>
+    <div class="mt-4 space-y-3">
+      {% for lane in lanes %}
+      <div class="flex items-center gap-3">
+        <span class="w-32 shrink-0 truncate text-xs font-bold text-gray-200">{{ lane.name }}</span>
+        <div class="relative h-6 min-w-0 flex-1 rounded-full bg-black/40">
+          <span class="absolute inset-y-0 left-0 w-px bg-white/20" title="Today"></span>
+          {% for e in lane.events %}
+          <a href="{{ e.href }}" title="{{ e.date }} · {{ e.title }}"
+             class="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-black/50 transition-transform hover:scale-125
+             {{ 'bg-sb-gold-bright' if e.kind == 'release' else 'bg-sky-400' if e.kind == 'post' else 'bg-amber-500' }}"
+             style="left: calc({{ e.pct }}% - 7px);"></a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="mt-2 text-xs text-gray-300 font-medium">Left edge is today; hover a dot for its date. Dates move here when you move them on the campaign or rollout.</p>
+  </section>
+  {% endif %}
+
+  {% if not months and not past %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-6">
+    <p class="text-sm text-gray-200">Nothing scheduled yet. <a href="/links/new" class="font-bold text-sb-gold-bright hover:underline">Create a campaign</a> with a release date, or <a href="/rollout-studio/new" class="font-bold text-sb-gold-bright hover:underline">generate a rollout</a> — everything with a date lands on this calendar automatically.</p>
+  </section>
+  {% else %}
+
+  {% if months %}
+  {% for m in months %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-sb-gold">{{ m.month }}</h2>
+    <div class="mt-3 divide-y divide-white/5">
+      {% for e in m.events %}
+      <a href="{{ e.href }}" class="flex items-center gap-4 py-3 transition-colors hover:bg-white/[0.03]">
+        <span class="w-24 shrink-0 text-xs font-black tabular-nums {{ 'text-sb-gold-bright' if e.kind == 'release' else 'text-amber-400' if e.kind == 'milestone' else 'text-sky-400' }}">{{ e.date }}</span>
+        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg {{ 'bg-sb-gold/15 text-sb-gold-bright' if e.kind == 'release' else 'bg-amber-500/10 text-amber-400' if e.kind == 'milestone' else 'bg-sky-500/10 text-sky-400' }}">
+          {{ '♪' if e.kind == 'release' else '◈' if e.kind == 'milestone' else '✎' }}
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block truncate text-sm font-bold {{ 'text-sb-gold-bright' if e.kind == 'release' }}">{{ e.title }}</span>
+          <span class="block truncate text-xs text-gray-300 font-medium">{{ e.detail }}</span>
+        </span>
+        <span class="shrink-0 rounded-full border border-white/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-gray-300">{{ e.status }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+  {% else %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <p class="text-sm text-gray-300">No upcoming dates — your next release starts with a <a href="/links/new" class="font-bold text-sb-gold-bright hover:underline">new campaign</a>.</p>
+  </section>
+  {% endif %}
+
+  {% if past %}
+  <section class="rounded-2xl border border-white/10 bg-sb-ground p-5">
+    <h2 class="sb-label text-gray-300">Recently passed</h2>
+    <div class="mt-3 divide-y divide-white/5 opacity-70">
+      {% for e in past|reverse %}
+      <a href="{{ e.href }}" class="flex items-center gap-4 py-2.5 hover:opacity-100">
+        <span class="w-24 shrink-0 text-xs sb-num text-gray-300">{{ e.date }}</span>
+        <span class="min-w-0 flex-1 truncate text-xs font-bold text-gray-200">{{ e.title }}</span>
+        <span class="shrink-0 text-xs font-bold uppercase tracking-wide text-gray-300">{{ e.status }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {% endif %}
+
+  <p class="px-1 text-xs text-gray-300 font-medium">Built from your campaigns and rollout posts — change a date there and this calendar follows.</p>
+</div>
+{% endblock %}

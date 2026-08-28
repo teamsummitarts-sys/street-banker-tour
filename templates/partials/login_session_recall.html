@@ -1,0 +1,76 @@
+{# Rack A — the login form. The chassis is CSS + textures lifted from the
+   approved mock; every word, field and control is real HTML posting to the
+   existing /login handler with the existing field names. #}
+<section class="lsr-rack" aria-labelledby="lsr-session-h">
+  <span class="lsr-screw lsr-screw--tl" aria-hidden="true"></span>
+  <span class="lsr-screw lsr-screw--bl" aria-hidden="true"></span>
+  <span class="lsr-screw lsr-screw--tr" aria-hidden="true"></span>
+  <span class="lsr-screw lsr-screw--br" aria-hidden="true"></span>
+
+  <div class="lsr-badge" aria-hidden="true">
+    <img src="/static/img/login-icon-crest.png?v=2" alt="" loading="lazy">
+    <span>SESSION<br>RECALL</span>
+  </div>
+
+  <div class="lsr-face">
+    <div class="lsr-face-head">
+      <h2 class="lsr-face-title" id="lsr-session-h">A. SESSION RECALL</h2>
+      <span class="lsr-face-rule" aria-hidden="true"></span>
+      {% if error %}<span class="lsr-led lsr-led--on" title="Check the form" aria-hidden="true"></span>{% endif %}
+    </div>
+
+    {% if error %}
+    <p class="lsr-error" id="lsr-login-error" role="alert">{{ error }}</p>
+    {% endif %}
+
+    <form method="post"
+          action="/login{% if request.args.get('next') %}?next={{ request.args.get('next') | urlencode }}{% endif %}"
+          class="lsr-form" id="lsr-login-form">
+      <div class="lsr-fields">
+        <div class="lsr-field">
+          <label for="lsr-email">EMAIL</label>
+          {# "username" rather than "email": it is the token password
+             managers look for when pairing a field with a saved login. #}
+          <input type="email" id="lsr-email" name="email" required autofocus
+                 autocomplete="username" placeholder="you@domain.com"
+                 {% if error %}aria-describedby="lsr-login-error"{% endif %}>
+        </div>
+        <div class="lsr-field">
+          <label for="lsr-password">PASSWORD</label>
+          <div class="lsr-pw">
+            <input type="password" id="lsr-password" name="password" required
+                   autocomplete="current-password"
+                   {% if error %}aria-describedby="lsr-login-error"{% endif %}>
+            <button type="button" class="lsr-pw-toggle" id="lsr-pw-toggle"
+                    aria-pressed="false" aria-label="Show password">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5z"/>
+                <circle cx="10" cy="10" r="2.2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        {# Ticked by default, and the choice is remembered in this browser.
+
+           Unticked, a sign-in gets a cookie that dies when the browser
+           closes — so somebody who did not notice the box was asked to
+           sign in again every time and reasonably read that as the
+           feature being broken. Staying signed in is what every other
+           tool this sits beside does, and the box is right here to turn
+           off. The script below only overrides this when the visitor has
+           explicitly unticked it before. #}
+        <label class="lsr-remember">
+          <input type="checkbox" name="remember" value="1" id="lsr-remember" checked>
+          <span>Remember this device</span>
+        </label>
+      </div>
+
+      <div class="lsr-form-side">
+        <button type="submit" class="lsr-gold-btn" id="lsr-submit">RECALL MY DESK</button>
+        <div class="lsr-side-rule" aria-hidden="true"><span></span></div>
+        <a class="lsr-side-link" href="/forgot">Forgot password?</a>
+        <p class="lsr-side-note">New here? <a href="/signup">Build your back office.</a></p>
+      </div>
+    </form>
+  </div>
+</section>

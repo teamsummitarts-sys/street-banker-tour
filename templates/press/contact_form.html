@@ -1,0 +1,58 @@
+{% set tab = 'contacts' %}
+{% extends "press/_shell.html" %}
+{% block title %}{{ 'Edit contact' if contact else 'Add contact' }} - Press Desk{% endblock %}
+{% block press %}
+{% macro cv(key) %}{{ (contact[key] if contact and contact[key] else '') }}{% endmacro %}
+
+<div class="pd-head">
+  <div>
+    <p class="pd-eyebrow">Media list</p>
+    <h1 class="pd-h1">{{ 'Edit contact' if contact else 'Add contact' }}</h1>
+    <p class="pd-sub">{{ contact.name if contact else 'Only a name is required. The rest is what makes a pitch land: who they are, what they cover, and why you are writing to them.' }}</p>
+  </div>
+</div>
+
+{% if error %}<div class="pd-note pd-note--warn"><strong>{{ error }}</strong></div>{% endif %}
+
+<form method="post" class="pd-form"
+      action="{{ '/press-desk/contacts/' ~ contact.id ~ '/edit' if contact else '/press-desk/contacts/new' }}">
+  <div class="pd-grid">
+    <label class="pd-field"><span>Name *</span>
+      <input name="name" required value="{{ cv('name') }}"></label>
+    <label class="pd-field"><span>Outlet / show</span>
+      <input name="outlet" value="{{ cv('outlet') }}"></label>
+    <label class="pd-field"><span>Role</span>
+      <select name="role">{% for r in vocab.roles %}
+        <option {{ 'selected' if contact and contact.role == r }}>{{ r }}</option>{% endfor %}</select></label>
+    <label class="pd-field"><span>Email</span>
+      <input name="email" type="email" value="{{ cv('email') }}"></label>
+    <label class="pd-field"><span>Beat / genres they cover</span>
+      <input name="beat" value="{{ cv('beat') }}" placeholder="e.g. UK rap, new artists"></label>
+    <label class="pd-field"><span>City</span><input name="city" value="{{ cv('city') }}"></label>
+    <label class="pd-field"><span>Country</span><input name="country" value="{{ cv('country') }}"></label>
+    <label class="pd-field"><span>Website</span><input name="website" value="{{ cv('website') }}"></label>
+    <label class="pd-field"><span>Socials</span><input name="socials" value="{{ cv('socials') }}"></label>
+    <label class="pd-field"><span>Where they came from</span>
+      <input name="source" value="{{ cv('source') }}" placeholder="e.g. met at a show"></label>
+    <label class="pd-field"><span>Status</span>
+      <select name="status">{% for s in vocab.contact_statuses %}
+        <option value="{{ s }}" {{ 'selected' if contact and contact.status == s }}>{{ vocab.status_labels[s] }}</option>{% endfor %}</select></label>
+    <label class="pd-field"><span>Tags (comma separated)</span>
+      <input name="tags" value="{{ contact.tags | join(', ') if contact else '' }}"></label>
+    <label class="pd-field" style="grid-column:1/-1"><span>Notes</span>
+      <textarea name="notes" rows="4" placeholder="What they have covered before, how you know them, what they asked for last time.">{{ cv('notes') }}</textarea></label>
+  </div>
+  <div style="margin-top:16px" class="pd-inline">
+    <button class="pd-btn" type="submit">{{ 'Save changes' if contact else 'Add contact' }}</button>
+    <a class="pd-btn pd-btn--ghost" href="/press-desk/contacts">Cancel</a>
+  </div>
+</form>
+
+{% if contact %}
+<form method="post" action="/press-desk/contacts/{{ contact.id }}/delete"
+      style="margin-top:14px"
+      onsubmit="return confirm('Remove {{ contact.name }} from your media list?')">
+  <button class="pd-btn pd-btn--ghost" type="submit">Delete contact</button>
+</form>
+{% endif %}
+{% endblock %}

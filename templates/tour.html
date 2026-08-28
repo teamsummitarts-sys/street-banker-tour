@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% import "_sb.html" as sb %}
+
+{% block title %}Tour Hub - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div>
+    <p class="sb-label sb-label-gold">Street Banker · Touring</p>
+    <h1 class="sb-h1 mt-1">Tour Hub</h1>
+    <p class="mt-2 max-w-2xl text-sm text-gray-300">Every show, one pipeline: <span class="text-gray-200">hold → confirmed → advanced → played → settled</span>. Keep the status honest and nothing falls through the cracks on show day.</p>
+  </div>
+
+  <div class="grid grid-cols-3 gap-3">
+    {% if upcoming_count %}
+      {{ sb.kpi("Upcoming", value=upcoming_count, href="/tour",
+                delta=confirmed_count ~ " confirmed",
+                direction="up" if confirmed_count else "flat") }}
+    {% else %}
+      {{ sb.kpi("Upcoming", first="Add the next show — even a hold", first_href="#add-show") }}
+    {% endif %}
+    {{ sb.kpi("Confirmed", value=confirmed_count,
+              delta="of " ~ upcoming_count ~ " upcoming",
+              direction="up" if confirmed_count else "flat") }}
+    {% if next_show %}
+      {{ sb.kpi("Next show", value=next_show.date, delta=next_show.venue, href="/tour") }}
+    {% else %}
+      {{ sb.kpi("Next show", first="Nothing booked yet", first_href="#add-show") }}
+    {% endif %}
+  </div>
+
+  {% if pnl.count %}
+  <!-- Tour P&L: sums of the settlement math you already entered per show -->
+  <section class="sb-panel-raised p-5">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="sb-label sb-label-gold">Tour P&amp;L</h2>
+      <span class="text-sm text-gray-300">{{ pnl.count }} show{{ '' if pnl.count == 1 else 's' }} with settlement numbers · {{ pnl.settled }} settled — straight sums of what you entered, nothing estimated</span>
+    </div>
+    {# Money is mono and tabular so the five figures form a column you
+       can read down instead of five numbers of different widths. #}
+    <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div><div class="sb-label">Guarantees</div><div class="sb-num mt-1 text-lg font-semibold">${{ '%.2f' % pnl.guarantee }}</div></div>
+      <div><div class="sb-label">Door share</div><div class="sb-num mt-1 text-lg font-semibold">${{ '%.2f' % pnl.door_share }}</div></div>
+      <div><div class="sb-label">Merch net</div><div class="sb-num mt-1 text-lg font-semibold">${{ '%.2f' % pnl.merch_net }}</div></div>
+      <div><div class="sb-label">Expenses</div><div class="sb-num mt-1 text-lg font-semibold text-sb-crit">-${{ '%.2f' % pnl.expenses }}</div></div>
+      <div><div class="sb-label">Total walk</div><div class="sb-num mt-1 text-lg font-semibold {{ 'text-sb-good' if pnl.walk >= 0 else 'text-sb-crit' }}">${{ '%.2f' % pnl.walk }}</div></div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if flags %}
+  <!-- Travel flags: date math only — no invented drive times -->
+  {# A routing flag is a warning, so it is orange. It used to be gold,
+     which is the brand and the Save button - a warning cannot outrank a
+     button it shares a colour with. #}
+  <section class="space-y-2 rounded-lg border p-4"
+           style="border-color:var(--sb-warn-line);background:var(--sb-warn-wash)">
+    <div class="sb-label" style="color:var(--sb-warn)">Routing flags</div>
+    {% for f in flags %}
+    <div class="flex items-center gap-2.5 text-sm">
+      {{ sb.badge("same day" if f.gap == 0 else "back to back", "crit" if f.gap == 0 else "warn") }}
+      <span class="min-w-0 flex-1 text-gray-200"><span class="font-bold">{{ f.a.city }}</span> → <span class="font-bold">{{ f.b.city }}</span> {{ 'on the same day' if f.gap == 0 else 'back to back' }} ({{ f.a.date }} → {{ f.b.date }}) — check the travel time before locking both.</span>
+    </div>
+    {% endfor %}
+    <p class="text-xs text-gray-300 font-medium">Flagged from dates and city names alone — Street Banker doesn't compute drive times, so it flags the pattern instead of guessing hours.</p>
+  </section>
+  {% endif %}
+
+  {% if route | length > 1 %}
+  <!-- Route strip: the run in order, with day gaps -->
+  <div class="flex flex-wrap items-center gap-1 px-1 text-xs font-bold uppercase tracking-wide">
+    <span class="tracking-[0.15em] text-gray-300">Route:</span>
+    {% for r in route %}
+    {% if not loop.first %}<span class="text-gray-300">—{{ r.gap }}d→</span>{% endif %}
+    <a href="/tour/{{ r.show.id }}" class="sb-btn sb-btn-secondary sb-btn-sm" title="{{ r.show.date }} · {{ r.show.venue }}">{{ r.show.city or r.show.venue }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Add a show -->
+  <section id="add-show" class="sb-panel-raised p-5">
+    <h2 class="sb-label">Add a show</h2>
+    {# Real <label>s above the controls; the placeholders are examples,
+       which is all a placeholder can honestly be - it disappears the
+       moment somebody types. #}
+    <form method="post" action="/tour/add" class="mt-3 grid gap-3 sm:grid-cols-[140px_1fr_1fr]">
+      {{ sb.field("date", "Date", type="date", required=true) }}
+      {{ sb.field("venue", "Venue", placeholder="The Basement", required=true) }}
+      {{ sb.field("city", "City", placeholder="Nashville, TN") }}
+      <div class="sm:col-span-3">
+        {{ sb.field("notes", "Notes", placeholder="Contact, guarantee, who booked it — anything you'll need later.") }}
+      </div>
+      <div class="sm:col-span-3">
+        {{ sb.btn("Add show", variant="primary", type="submit") }}
+      </div>
+    </form>
+  </section>
+
+  <!-- Pipeline -->
+  <section class="sb-panel p-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h2 class="sb-label sb-label-gold">Show Pipeline</h2>
+      <span class="flex flex-wrap items-center gap-2">
+        {# A segmented view toggle is not a primary action - "Add show" is
+           the one gold fill on this page. Selected reads as secondary
+           (outlined), unselected as ghost. #}
+        {{ sb.btn("List", href="/tour", variant="secondary" if not board else "ghost", size="sm") }}
+        {{ sb.btn("Board", href="/tour?view=board", variant="secondary" if board else "ghost", size="sm") }}
+        {{ sb.btn("Stage Plot Designer →", href="/stage-plot", variant="ghost", size="sm") }}
+        {{ sb.btn("Light Studio →", href="/lights", variant="ghost", size="sm") }}
+      </span>
+    </div>
+    {# One place decides what a status looks like, so the board column
+       head, the board card and the list row cannot disagree. #}
+    {% set tone_for = {"hold": "idle", "confirmed": "info", "advanced": "info",
+                       "played": "warn", "settled": "good"} %}
+    {% if shows and board %}
+    <div class="mt-3 grid gap-3 lg:grid-cols-5">
+      {% for st in statuses %}
+      <div class="rounded-lg border border-white/10 bg-black/30 p-2.5">
+        <div class="flex items-center justify-between gap-2 px-1">
+          {{ sb.badge(st, tone_for.get(st, "idle")) }}
+          <span class="sb-num text-sm text-gray-300">{{ shows | selectattr('status', 'equalto', st) | list | length }}</span>
+        </div>
+        <div class="mt-2 space-y-2">
+          {% for s in shows if s.status == st %}
+          <div class="rounded-lg border border-white/10 bg-sb-surface-1 p-2.5">
+            <a href="/tour/{{ s.id }}" class="block truncate text-xs font-bold hover:text-sb-gold-bright">{{ s.venue }}</a>
+            <div class="truncate text-xs text-gray-300 font-medium">{{ s.date }}{% if s.city %} · {{ s.city }}{% endif %}</div>
+            {% if s.walk is not none %}<div class="sb-num mt-1 text-xs font-semibold {{ 'text-sb-good' if s.walk >= 0 else 'text-sb-crit' }}">${{ '%.2f' % s.walk }} walk</div>{% endif %}
+            <form method="post" action="/tour/{{ s.id }}/status" class="mt-1.5">
+              <select name="status" onchange="this.form.submit()" class="w-full rounded-md border border-white/10 bg-black/40 px-1.5 py-1 text-xs font-bold uppercase text-gray-200 focus:outline-none [color-scheme:dark]">
+                {% for opt in statuses %}<option value="{{ opt }}" {{ 'selected' if opt == st }}>{{ opt }}</option>{% endfor %}
+              </select>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% elif shows %}
+    {# The list view is the data table from the system: mono tabular
+       numerals right-aligned so dates and money form true columns, and
+       status as a badge rather than a coloured word. #}
+    {% call sb.table([("Date", "num"), "Venue", "Status", ("Walk", "num"), ""]) %}
+      {% for s in shows %}
+      <tr>
+        <td class="num">{{ s.date }}</td>
+        <td class="primary">
+          <a href="/tour/{{ s.id }}" class="hover:text-sb-gold-bright">{{ s.venue }}</a>
+          {% if s.city or s.notes %}<span class="block text-xs text-sb-ink-3">{{ s.city }}{% if s.notes %} · {{ s.notes }}{% endif %}</span>{% endif %}
+        </td>
+        <td>
+          <form method="post" action="/tour/{{ s.id }}/status">
+            <select name="status" onchange="this.form.submit()" class="sb-select" style="width:auto;padding:6px 10px;font-size:13px"
+                    aria-label="Status for {{ s.venue }}">
+              {% for st in statuses %}
+              <option value="{{ st }}" {{ 'selected' if st == s.status }}>{{ st }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </td>
+        <td class="num {{ 'text-sb-good' if s.walk is not none and s.walk >= 0 else ('text-sb-crit' if s.walk is not none else '') }}"
+            title="Walk-away from this show's settlement">{{ ('$%.2f' % s.walk) if s.walk is not none else '—' }}</td>
+        <td class="num">
+          <span class="flex justify-end gap-2">
+            {{ sb.btn("Advance", href="/tour/" ~ s.id, variant="secondary", size="sm") }}
+            <form method="post" action="/tour/{{ s.id }}/delete">
+              {{ sb.btn("Remove", variant="danger", size="sm", type="submit", aria_label="Remove " ~ s.venue) }}
+            </form>
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    {% endcall %}
+    {% else %}
+    <p class="mt-3 text-sm text-gray-300">No shows yet. Add the next one above — even a hold. The pipeline only works if everything's in it.</p>
+    {% endif %}
+  </section>
+
+  <p class="px-1 text-xs text-gray-300 font-medium">Statuses, honestly: <span class="text-gray-300">hold</span> = penciled in, <span class="text-gray-300">confirmed</span> = date locked, <span class="text-gray-300">advanced</span> = venue has your plot and details, <span class="text-gray-300">played</span> = done, <span class="text-gray-300">settled</span> = you got paid.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}{{ moment.title }} - Moment{% endblock %}
+
+{% set m = moment %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl space-y-5">
+  <a href="/network?tab=moments" class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-300 hover:text-white">
+    <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.7 5.3a1 1 0 010 1.4L9.4 10l3.3 3.3a1 1 0 11-1.4 1.4l-4-4a1 1 0 010-1.4l4-4a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+    All moments
+  </a>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <!-- Protected card -->
+    <div id="moment-card" class="relative select-none overflow-hidden rounded-2xl border border-white/10" oncontextmenu="return false" ondragstart="return false">
+      <div class="relative aspect-[4/5]" style="background: linear-gradient(135deg, {{ m.from }}, {{ m.to }});">
+        <!-- tiled watermark -->
+        <div class="pointer-events-none absolute inset-0 flex flex-col justify-around p-4 opacity-20">
+          {% for i in range(10) %}<div class="sb-label whitespace-nowrap text-white">STREET BANKER · {{ m.serial }} · {{ m.owner_name }} · STREET BANKER · {{ m.serial }}</div>{% endfor %}
+        </div>
+        <div class="absolute inset-x-0 top-0 flex items-center justify-between p-4">
+          <span class="rounded-full bg-black/40 px-2.5 py-1 text-xs font-semibold text-white">Edition #{{ m.edition_n }} / {{ m.edition_total }}</span>
+          <span id="countdown" data-expires="{{ m.expires_iso }}" class="rounded-full bg-black/40 px-2.5 py-1 text-xs font-semibold text-amber-300">—</span>
+        </div>
+        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-5">
+          <div class="text-lg font-bold text-white">{{ m.title }}</div>
+          <div class="mt-0.5 text-xs text-gray-200">{{ m.caption }}</div>
+          <div class="mt-1 text-xs font-mono text-gray-300 font-medium">{{ m.serial }} · {{ m.owner_name }}</div>
+        </div>
+      </div>
+      <!-- Deterrent overlay: covers the art when the tab/window loses focus -->
+      <div id="privacy-shield" class="pointer-events-none absolute inset-0 hidden flex-col items-center justify-center bg-black text-center">
+        <svg class="h-8 w-8 text-gray-300" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="9" width="10" height="8" rx="1"/><path d="M8 9V7a2 2 0 014 0v2"/></svg>
+        <div class="mt-2 text-xs font-semibold text-gray-200">Protected moment hidden</div>
+      </div>
+    </div>
+
+    <!-- Details / claim -->
+    <div class="space-y-4">
+      <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+        <div class="flex items-center gap-2">
+          <a href="/network/{{ m.owner_id }}" class="grid h-9 w-9 place-items-center rounded-full border border-amber-500/40 text-xs font-bold text-amber-400">{{ m.owner_initials }}</a>
+          <div><div class="text-sm font-semibold text-gray-100">{{ m.owner_name }}</div><div class="text-xs text-gray-300 font-medium">Moment creator</div></div>
+        </div>
+        <dl class="mt-4 space-y-1.5 text-xs font-medium">
+          <div class="flex justify-between"><dt class="text-gray-300">Serial</dt><dd class="font-mono text-gray-200">{{ m.serial }}</dd></div>
+          <div class="flex justify-between"><dt class="text-gray-300">Edition</dt><dd class="font-semibold text-gray-200">#{{ m.edition_n }} / {{ m.edition_total }}</dd></div>
+          <div class="flex justify-between"><dt class="text-gray-300">Expires in</dt><dd id="countdown-2" data-expires="{{ m.expires_iso }}" class="font-semibold text-amber-400">—</dd></div>
+          <div class="flex justify-between"><dt class="text-gray-300">Price</dt><dd class="font-semibold text-gray-200">${{ m.price }}</dd></div>
+        </dl>
+        {% if m.claimed %}
+        <div class="mt-4 rounded-lg border border-green-500/20 bg-green-500/10 px-3 py-2.5 text-center text-sm font-semibold text-green-400">Owned · {{ m.serial }}</div>
+        {% else %}
+        <button type="button" id="claim-btn" class="sb-btn sb-btn-secondary mt-4 w-full">Claim &amp; Keep — ${{ m.price }}</button>
+        <div id="claim-result" class="mt-2 hidden text-center text-xs font-semibold text-green-400"></div>
+        {% endif %}
+      </div>
+
+      <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-4">
+        <div class="sb-label text-gray-300">How it works</div>
+        <p class="mt-2 text-xs leading-relaxed text-gray-300 font-medium">This moment shows for a limited time, then disappears. Every view is <span class="text-gray-200">watermarked and serial-numbered</span>, so any screenshot is a traceable, defaced copy. Claim it to keep the clean, owned edition.</p>
+        <p class="mt-2 text-xs leading-relaxed text-gray-300 font-medium">Note: a website can't truly block screenshots — the shield here is a deterrent. The real protection is the watermark + serial. Claim is a simulated demo (no real payment).</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Live countdown
+  function fmtLeft(ms) {
+    if (ms <= 0) return "Expired";
+    const h = Math.floor(ms / 3600000), mn = Math.floor((ms % 3600000) / 60000);
+    return h >= 1 ? h + "h " + mn + "m" : mn + "m";
+  }
+  function tick() {
+    document.querySelectorAll("[data-expires]").forEach((el) => {
+      el.textContent = fmtLeft(new Date(el.dataset.expires).getTime() - Date.now());
+    });
+  }
+  tick(); setInterval(tick, 30000);
+
+  // Deterrent: hide the art when the tab/window loses focus (screen-share,
+  // app switch, preview thumbnails). Not screenshot-proof — a deterrent only.
+  const shield = document.getElementById("privacy-shield");
+  const hide = () => { shield.classList.remove("hidden"); shield.classList.add("flex"); };
+  const show = () => { shield.classList.add("hidden"); shield.classList.remove("flex"); };
+  document.addEventListener("visibilitychange", () => document.hidden ? hide() : show());
+  window.addEventListener("blur", hide);
+  window.addEventListener("focus", show);
+
+  // Claim (simulated)
+  const claimBtn = document.getElementById("claim-btn");
+  if (claimBtn) {
+    claimBtn.addEventListener("click", async () => {
+      claimBtn.disabled = true; claimBtn.textContent = "Claiming...";
+      try {
+        const res = await fetch("/network/moment/{{ m.id }}/claim", { method: "POST" });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          claimBtn.textContent = "Owned · " + data.serial;
+          claimBtn.className = "mt-4 w-full rounded-md border border-green-500/30 bg-green-500/15 px-4 py-2.5 text-sm font-semibold text-green-400";
+          const r = document.getElementById("claim-result");
+          r.textContent = "Added to your Owned Moments.";
+          r.classList.remove("hidden");
+        } else { claimBtn.disabled = false; claimBtn.textContent = "Claim & Keep"; }
+      } catch (e) { claimBtn.disabled = false; claimBtn.textContent = "Claim & Keep"; }
+    });
+  }
+</script>
+{% endblock %}

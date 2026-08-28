@@ -1,0 +1,15 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Hotels - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Hotels</p><h1 class="to-h1" style="font-size:20px">Where everyone sleeps</h1><p class="to-sub">Property, dates, confirmation, then rooms by name. Room numbers are shown to you for your own room only, unless you hold the hotel permission.</p></div></div>
+{% if edit %}
+<h2 class="to-h2">Edit hotel</h2>
+{% include "tour/_hotel_form.html" %}
+{% endif %}
+{% include "tour/_hotel_list.html" %}
+{% if can('hotel') and not edit %}
+<h2 class="to-h2">Add a hotel</h2>
+{% with edit=None %}{% include "tour/_hotel_form.html" %}{% endwith %}
+{% endif %}
+{% endblock %}

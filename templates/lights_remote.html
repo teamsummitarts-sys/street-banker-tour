@@ -1,0 +1,166 @@
+{# The Light Studio phone remote - a second operator's hands.
+
+   Standalone and deliberately tiny: this is opened on a phone in a dark
+   room, often on venue wifi. It carries BUTTONS ONLY - no cue list, no
+   show data, no audio. The laptop remains the source of truth; every
+   press is a command it chooses to act on.
+
+   The unguessable code in the URL is the authorisation, like a share
+   link, so a bandmate can pick it up without an account. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0B0A08">
+  <title>Light Studio remote</title>
+  <style>
+    :root { --ink: var(--sb-ink); --gold: var(--sb-gold-bright); --rule: rgb(255 255 255 / 0.14); }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; min-height: 100dvh; background: var(--sb-ground); color: var(--ink);
+      font: 15px/1.5 var(--sb-text);
+      padding: max(12px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; gap: 12px; -webkit-font-smoothing: antialiased; }
+    header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .eyebrow { font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--sb-ink-3); font-weight: 700; margin: 0; }
+    h1 { margin: 2px 0 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+    .link { font-size: 12px; color: var(--sb-ink-3); }
+    .link.is-on { color: var(--sb-good); }
+    .link.is-off { color: var(--sb-crit); }
+    button { font: inherit; color: inherit; border-radius: var(--sb-r-panel); border: 1px solid var(--rule);
+      background: var(--sb-surface-1); padding: 14px 10px; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+    button:active { transform: scale(0.985); }
+    button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .panic { flex: 0 0 auto; min-height: 26dvh; font-size: 26px; letter-spacing: 0.16em; text-transform: uppercase;
+      background: var(--sb-crit); border-color: var(--sb-crit); color: #fff; }
+    .panic[aria-pressed="true"] { background: var(--sb-crit); box-shadow: 0 0 0 4px rgb(239 68 68 / 0.3); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .row--three { grid-template-columns: repeat(3, 1fr); }
+    .looks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .look { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; font-size: 12px; }
+    .look i { width: 22px; height: 22px; border-radius: var(--sb-r-pill); border: 1px solid rgb(255 255 255 / 0.3); display: block; }
+    .look[aria-pressed="true"] { border-color: var(--gold); background: var(--sb-line); box-shadow: inset 0 0 0 1px var(--gold); }
+    .lab { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sb-ink-3); font-weight: 700; margin: 4px 0 0; }
+    .note { font-size: 12px; color: var(--sb-ink-3); line-height: 1.5; margin: 0; }
+    .expired { text-align: center; padding: 40px 16px; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+{% if expired %}
+  <div class="expired">
+    <p class="eyebrow">Street Banker · Light Studio</p>
+    <h1>This remote has ended</h1>
+    <p class="note" style="margin-top:10px">The pairing code is no longer active. Ask for a fresh QR code from the Light Studio.</p>
+  </div>
+{% else %}
+  <header>
+    <div>
+      <p class="eyebrow">Street Banker · Light Studio</p>
+      <h1>Remote</h1>
+    </div>
+    <span id="link" class="link">connecting…</span>
+  </header>
+
+  <button id="panic" class="panic" type="button" aria-pressed="false" aria-label="All off — kill every light now. Press again to restore.">All off</button>
+
+  <div class="row">
+    <button id="play" type="button" aria-label="Play or stop the song on the laptop">Play / Stop</button>
+    <button id="tap" type="button" aria-label="Tap tempo — tap along with the music">Tap tempo</button>
+  </div>
+
+  <p class="lab">Hold a look</p>
+  <div class="looks">
+    {% for n, name, color in looks %}
+      <button class="look" type="button" data-look="{{ n }}" aria-pressed="false"
+              aria-label="Hold {{ name }} over the whole rig — press again to release it back to the cue list">
+        <i style="background: {{ color }}"></i>
+        {{ name }}
+      </button>
+    {% endfor %}
+  </div>
+  <p class="note">A held look overrides the cue list until you press it again.</p>
+
+  <p class="lab">Setlist</p>
+  <div class="row">
+    <button id="prev" type="button" aria-label="Previous song in the setlist">‹ Previous</button>
+    <button id="next" type="button" aria-label="Next song in the setlist">Next ›</button>
+  </div>
+
+  <p class="note" style="margin-top:auto">
+    The laptop is in charge — this sends button presses, nothing else, and it cannot see or change the cue list.
+    Keep this page open. If the laptop stops answering the status above turns red.
+  </p>
+  <span id="say" class="sr" role="status" aria-live="polite"></span>
+
+  <script>
+  (function () {
+    "use strict";
+    var CODE = {{ code | tojson }};
+    var link = document.getElementById("link"), say = document.getElementById("say");
+    var panicOn = false, fails = 0;
+
+    function announce(m) { say.textContent = ""; setTimeout(function () { say.textContent = m; }, 30); }
+
+    function send(kind, value) {
+      // Every press is fire-and-forget; the laptop drains the queue. If it
+      // does not answer we say so rather than pretending the press landed.
+      return fetch("/lights/remote/" + CODE + "/cmd", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({kind: kind, value: value == null ? "" : String(value)})
+      }).then(function (r) {
+        if (!r.ok) throw new Error("refused");
+        fails = 0; link.textContent = "connected"; link.className = "link is-on";
+      }).catch(function () {
+        fails++;
+        link.textContent = fails > 2 ? "not connected" : "retrying…";
+        link.className = "link is-off";
+      });
+    }
+
+    document.getElementById("panic").addEventListener("click", function () {
+      panicOn = !panicOn;
+      this.setAttribute("aria-pressed", panicOn ? "true" : "false");
+      this.textContent = panicOn ? "Restore" : "All off";
+      send(panicOn ? "blackout" : "restore");
+      announce(panicOn ? "All off" : "Restored");
+    });
+    document.getElementById("play").addEventListener("click", function () { send("play"); announce("Play or stop"); });
+    document.getElementById("tap").addEventListener("click", function () { send("tap"); });
+    document.getElementById("next").addEventListener("click", function () { send("next"); announce("Next song"); });
+    document.getElementById("prev").addEventListener("click", function () { send("prev"); announce("Previous song"); });
+    // The laptop toggles: the same look twice releases it. Mirror that here
+    // so the button that is lit matches the rig.
+    var held = null, looks = document.querySelectorAll("[data-look]");
+    Array.prototype.forEach.call(looks, function (b) {
+      b.addEventListener("click", function () {
+        var n = b.getAttribute("data-look");
+        held = (held === n) ? null : n;
+        Array.prototype.forEach.call(looks, function (o) {
+          o.setAttribute("aria-pressed", o === b && held ? "true" : "false");
+        });
+        send("look", n);
+        announce(held ? "Holding " + b.textContent.trim() : "Released");
+      });
+    });
+
+    // A quiet keep-alive so the status is honest before the first press.
+    // "ping" is a no-op on the laptop - a tap here would move the tempo.
+    send("ping");
+    setInterval(function () {
+      fetch("/lights/remote/" + CODE + "/cmd", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({kind: "ping"})
+      }).then(function (r) {
+        if (r.ok) { link.textContent = "connected"; link.className = "link is-on"; }
+        else { link.textContent = "remote ended"; link.className = "link is-off"; }
+      }).catch(function () { link.textContent = "not connected"; link.className = "link is-off"; });
+    }, 20000);
+  })();
+  </script>
+{% endif %}
+</body>
+</html>

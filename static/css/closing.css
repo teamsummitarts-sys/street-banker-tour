@@ -1,0 +1,243 @@
+/* 11.5 + Section 12 — the trust band and the closing frame.
+ *
+ * The band is four columns of text with thin rules and nothing else. The
+ * closing section is one photograph with two sentences in its dark left
+ * third, fading into the footer rather than ending at an edge.
+ */
+
+.sbtb, .sbcl {
+  --cl-ink: var(--sb-ground);
+  --cl-brass: var(--sb-gold);
+  --cl-brass-lit: var(--sb-gold-bright);
+  --cl-ivory: var(--sb-ink);
+  --cl-muted: var(--sb-ink-2);
+  --cl-line: rgb(201 168 106 / 0.22);
+}
+
+/* --- the trust band ------------------------------------------------------- */
+.sbtb {
+  background: var(--cl-ink);
+  color: var(--cl-ivory);
+  padding: clamp(40px, 5vw, 68px) 0 clamp(36px, 4vw, 56px);
+  border-top: 1px solid rgb(238 232 220 / 0.07);
+}
+.sbtb-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 56px);
+}
+.sbtb-title {
+  margin: 0;
+  font-size: clamp(12px, 0.95vw, 14px);
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--cl-brass);
+}
+.sbtb-cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: clamp(22px, 2.6vw, 32px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 640px) { .sbtb-cols { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1100px) { .sbtb-cols { grid-template-columns: repeat(4, 1fr); } }
+
+.sbtb-cols > li {
+  padding: 16px clamp(0px, 1.6vw, 26px) 18px;
+  border-top: 1px solid rgb(238 232 220 / 0.07);
+}
+.sbtb-cols > li:first-child { padding-left: 0; }
+@media (min-width: 640px) {
+  .sbtb-cols > li + li { border-left: 1px solid var(--cl-line); }
+  .sbtb-cols > li:nth-child(3) { border-left: 0; }
+}
+@media (min-width: 1100px) {
+  .sbtb-cols > li:nth-child(3) { border-left: 1px solid var(--cl-line); }
+}
+
+.sbtb-col-title {
+  margin: 0;
+  font-size: clamp(12.5px, 0.95vw, 14px);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cl-ivory);
+}
+.sbtb-col-body {
+  margin: 9px 0 0;
+  max-width: 42ch;
+  font-size: clamp(12px, 0.88vw, 13.5px);
+  line-height: 1.6;
+  color: var(--cl-muted);
+}
+
+.sbtb-link {
+  display: inline-block;
+  margin-top: clamp(18px, 2vw, 26px);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cl-brass);
+  text-decoration: none;
+  border-bottom: 1px solid rgb(201 168 106 / 0.4);
+  padding-bottom: 3px;
+  transition: border-color 200ms ease, color 200ms ease;
+}
+.sbtb-link:hover { color: var(--cl-brass-lit); border-bottom-color: var(--cl-brass); }
+.sbtb-link:focus-visible {
+  outline: 2px solid var(--cl-brass);
+  outline-offset: 3px;
+}
+@media (max-width: 639px) { .sbtb-link { display: block; text-align: center; } }
+
+/* --- the closing frame ---------------------------------------------------- */
+.sbcl { background: var(--cl-ink); color: var(--cl-ivory); }
+.sbcl-stage { position: relative; }
+
+.sbcl-photo { display: block; }
+.sbcl-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 62% center;      /* keep the case and the trail */
+}
+
+/* Darkest through the middle for centred copy, plus a short fade at the
+   bottom so the room falls off into the footer rather than stopping at a
+   line. Two stacked gradients: the fade is drawn over the scrim. */
+.sbcl-veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgb(8 8 7 / 0) 74%, var(--cl-ink) 100%),
+    linear-gradient(to bottom,
+                    rgb(8 8 7 / 0.52) 0%,
+                    rgb(8 8 7 / 0.80) 38%,
+                    rgb(8 8 7 / 0.80) 62%,
+                    rgb(8 8 7 / 0.52) 100%);
+}
+
+.sbcl-inner {
+  position: relative;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: clamp(48px, 6vw, 84px) clamp(20px, 4vw, 56px);
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.sbcl-copy { min-width: 0; max-width: 760px; margin-inline: auto; text-align: center; }
+
+.sbcl-eyebrow {
+  margin: 0;
+  font-size: clamp(11px, 0.85vw, 13px);
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--cl-brass);
+}
+
+.sbcl-title {
+  margin: 20px 0 0;
+  font-size: clamp(2.1rem, 4.4vw, 4.4rem);
+  line-height: 1.0;
+  letter-spacing: -0.015em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--cl-ivory);
+}
+.sbcl-title span { display: block; }
+/* One word of the second line carries the accent - not the whole line. */
+.sbcl-title span:first-child em { font-style: normal; color: var(--cl-ivory); }
+.sbcl-title span:last-child em { font-style: normal; color: var(--cl-brass); }
+
+.sbcl-support {
+  margin: 22px auto 0;
+  max-width: 52ch;
+  font-size: clamp(14px, 1.05vw, 17px);
+  line-height: 1.65;
+  color: var(--cl-muted);
+}
+
+.sbcl-ctas {
+  margin-top: clamp(24px, 3vw, 34px);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+.sbcl-cta, .sbcl-cta-2 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 0 30px;
+  border-radius: var(--sb-r-control);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+}
+.sbcl-cta {
+  background: var(--cl-brass);
+  border: 1px solid var(--cl-brass);
+  color: var(--sb-surface-2);
+}
+.sbcl-cta:hover { background: var(--cl-brass-lit); border-color: var(--cl-brass-lit); }
+.sbcl-cta-2 {
+  background: transparent;
+  border: 1px solid rgb(238 232 220 / 0.34);
+  color: var(--cl-ivory);
+}
+.sbcl-cta-2:hover { border-color: var(--cl-brass); color: var(--cl-brass); }
+.sbcl-cta:focus-visible, .sbcl-cta-2:focus-visible {
+  outline: 2px solid var(--cl-brass);
+  outline-offset: 3px;
+}
+
+.sbcl-trust {
+  margin: 20px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+/* --- desktop -------------------------------------------------------------- */
+@media (min-width: 1024px) {
+  .sbcl-stage { min-height: clamp(760px, 50vw, 900px); }
+  .sbcl-photo { position: absolute; inset: 0; }
+  .sbcl-inner { align-items: center; justify-items: center; min-height: inherit; }
+  .sbcl-copy { width: 100%; }
+}
+
+/* --- tablet and phone ----------------------------------------------------- */
+/* The copy goes above the picture rather than over it: a tight crop with
+   text on top loses either the road case or the words. */
+@media (max-width: 1023px) {
+  .sbcl-stage { display: flex; flex-direction: column; }
+  .sbcl-inner { order: 1; padding-bottom: clamp(28px, 4vw, 40px); }
+  .sbcl-photo { order: 2; position: relative; }
+  .sbcl-veil {
+    inset: auto 0 0 0;
+    height: 30%;
+    background: linear-gradient(to bottom, rgb(8 8 7 / 0) 0%, var(--cl-ink) 100%);
+  }
+  .sbcl-img { aspect-ratio: 1070 / 781; }
+  .sbcl-copy { max-width: none; }
+}
+@media (max-width: 640px) {
+  .sbcl-cta, .sbcl-cta-2 { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sbcl-cta, .sbcl-cta-2, .sbtb-link { transition: none; }
+}

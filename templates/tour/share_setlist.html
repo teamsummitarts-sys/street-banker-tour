@@ -1,0 +1,12 @@
+{% extends "tour/_public.html" %}
+{% block title %}Set list · {{ show['venue'] }}{% endblock %}
+{% block body %}
+{% if setlists %}{% for setlist in setlists %}
+<div class="to-paper" style="font-size:20px;margin-bottom:12px">
+  <span class="tag">{{ tour['name'] }} · {{ show['city'] or show['venue'] }} · {{ show['date'] }}</span>
+  <h2 style="font-size:18px">{{ setlist['name'] }}</h2>
+  <ol style="margin:10px 0 0 24px;line-height:1.5">{% for s in setlist['songs'] if s['section'] == 'main' %}<li><b>{{ s['title'] }}</b>{% if s['duration'] %} <span class="meta">{{ s['duration'] }}</span>{% endif %}</li>{% endfor %}</ol>
+  {% set enc = setlist['songs']|selectattr('section','equalto','encore')|list %}{% if enc %}<h3 style="margin-top:14px;font-size:14px">Encore</h3><ol style="margin:4px 0 0 24px">{% for s in enc %}<li><b>{{ s['title'] }}</b></li>{% endfor %}</ol>{% endif %}
+</div>
+{% endfor %}{% else %}<div class="to-empty">No set list for this show yet.</div>{% endif %}
+{% endblock %}

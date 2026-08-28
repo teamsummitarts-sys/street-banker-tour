@@ -1,0 +1,95 @@
+{% set tab = 'releases' %}
+{% extends "press/_shell.html" %}
+{% block title %}Pitch - Press Desk{% endblock %}
+{% block press %}
+
+<div class="pd-head">
+  <div>
+    <p class="pd-eyebrow">Pitch · {{ pitch.status }}</p>
+    <h1 class="pd-h1">{{ release.headline or release.title if release else 'Pitch' }}</h1>
+    <p class="pd-sub">{{ recipients | length }} message{{ '' if recipients | length == 1 else 's' }} prepared, each with its own link. Opens below are per contact, not a total.</p>
+  </div>
+  {% if pitch.mode == 'platform' and send_state.platform and pitch.status != 'sent' %}
+  <form method="post" action="/press-desk/pitch/{{ pitch.id }}/send"
+        onsubmit="return confirm('Send {{ recipients | length }} separate emails now?')">
+    <button class="pd-btn" type="submit">Send all {{ recipients | length }}</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if skipped %}
+<div class="pd-note pd-note--warn">
+  <strong>{{ skipped | length }} contact{{ '' if skipped | length == 1 else 's' }} left out.</strong>
+  <ul style="margin:8px 0 0 18px;color:var(--pd-soft);font-size:12.5px;line-height:1.7">
+    {% for who, why in skipped %}<li>{{ who ~ ' — ' if who }}{{ why }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% if pitch.mode == 'own_inbox' %}
+<div class="pd-note">
+  <strong>These are yours to send.</strong>
+  <p>Each message is written out below with that contact's own tracked link in it. Copy one, send it from your own email, then mark it sent — the link keeps working and still reports back when they open it.</p>
+</div>
+{% elif not send_state.platform %}
+<div class="pd-note pd-note--warn">
+  <strong>This pitch was set to send from Street Banker, which is off.</strong>
+  <p>{{ send_state.reason }} {{ send_state.detail }} The prepared messages below are unaffected — send them from your own inbox and mark them as you go.</p>
+</div>
+{% endif %}
+
+<div class="pd-table-wrap"><table class="pd-table">
+  <thead><tr><th>Contact</th><th>Outlet</th><th>Status</th><th>Opens</th><th>Their link</th><th>Mark as</th></tr></thead>
+  <tbody>
+  {% for r in recipients %}
+  <tr>
+    <td>{{ r.contact_name or '—' }}<div class="pd-muted">{{ r.email or 'no email' }}</div></td>
+    <td>{{ r.outlet or '—' }}</td>
+    <td><span class="pd-chip {{ 'pd-chip--ok' if r.status in ('opened','replied','covered') }} {{ 'pd-chip--warn' if r.status in ('failed','passed') }}">{{ vocab.recipient_labels[r.status] }}</span></td>
+    <td>{% if r.open_count %}{{ r.open_count }}<div class="pd-muted">{{ r.last_opened[:10] }}</div>{% else %}<span class="pd-muted">—</span>{% endif %}</td>
+    <td><a href="/press/{{ r.token }}" target="_blank" rel="noopener noreferrer">/press/{{ r.token[:8] }}…</a></td>
+    <td>
+      <form class="pd-inline" method="post" action="/press-desk/recipients/{{ r.id }}/status">
+        <input type="hidden" name="back" value="/press-desk/pitch/{{ pitch.id }}">
+        <select class="pd-mini" name="status">
+          {% for s in vocab.recipient_statuses %}
+          <option value="{{ s }}" {{ 'selected' if r.status == s }}>{{ vocab.recipient_labels[s] }}</option>{% endfor %}
+        </select>
+        <button class="pd-btn pd-btn--ghost pd-btn--small" type="submit">Set</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+<h2 class="pd-h2">The messages</h2>
+{% for r in recipients %}
+<details style="margin-bottom:10px">
+  <summary style="cursor:pointer;padding:9px 12px;border:1px solid var(--pd-rule);border-radius:var(--sb-r-panel);font-size:13px">
+    {{ r.contact_name }}{% if r.outlet %} — {{ r.outlet }}{% endif %}
+    <span class="pd-muted">· {{ r.email or 'no email' }}</span>
+  </summary>
+  <div style="padding:10px 0 0">
+    <p class="pd-muted" style="margin:0 0 6px"><strong>Subject:</strong> {{ r.subject }}</p>
+    <div class="pd-paper pd-paper--message">{{ r.body }}</div>
+    {% if r.email %}
+    <p style="margin-top:8px">
+      <a class="pd-btn pd-btn--ghost pd-btn--small"
+         href="mailto:{{ r.email }}?subject={{ r.subject | urlencode }}&body={{ r.body | urlencode }}">Open in my email</a>
+      <form class="pd-inline" method="post" action="/press-desk/recipients/{{ r.id }}/status">
+        <input type="hidden" name="back" value="/press-desk/pitch/{{ pitch.id }}">
+        <input type="hidden" name="status" value="sent">
+        <button class="pd-btn pd-btn--ghost pd-btn--small" type="submit">Mark sent</button>
+      </form>
+    </p>
+    {% endif %}
+  </div>
+</details>
+{% endfor %}
+
+<form method="post" action="/press-desk/pitch/{{ pitch.id }}/delete" style="margin-top:18px"
+      onsubmit="return confirm('Delete this pitch and its tracking?')">
+  <button class="pd-btn pd-btn--ghost" type="submit">Delete pitch</button>
+</form>
+{% endblock %}

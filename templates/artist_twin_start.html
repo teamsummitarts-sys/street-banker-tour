@@ -1,0 +1,85 @@
+{# The public Artist Twin entry: pick what you are working on, see the
+   route Street Banker would take and what it would need to read. No
+   account, no upload, no claim that anything has been analyzed - an
+   account is offered at the end, once there is something to save. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Start your Artist Twin · Street Banker</title>
+  <meta name="description" content="Pick what you are working on and see how the Artist Twin would approach it, before creating an account.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-3xl px-6 py-14 lg:px-10 lg:py-20">
+
+  <div class="sb-label text-sb-gold">AI Artist Twin</div>
+  <h1 class="mt-4 text-[clamp(1.8rem,5vw,2.6rem)] font-medium uppercase leading-[1.02] tracking-tight">
+    What are you working on?
+  </h1>
+  <p class="mt-4 max-w-xl text-base leading-relaxed text-sb-ink-2">
+    Pick one. You will see the route the Artist Twin would take and what it
+    would need to read to be useful. Nothing has been analyzed yet — there is
+    nothing to analyze until you add something.
+  </p>
+
+  <form method="get" class="mt-8 flex flex-wrap gap-2.5">
+    {% for goal in goals %}
+    <button type="submit" name="goal" value="{{ goal.id }}"
+            class="rounded-sm border px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.09em] transition-colors
+                   {% if selected and selected.id == goal.id %}border-sb-gold bg-sb-gold text-sb-surface-2{% else %}border-[rgb(201_168_106_/_0.26)] text-sb-ink hover:border-sb-gold hover:text-sb-gold{% endif %}"
+            {% if selected and selected.id == goal.id %}aria-current="true"{% endif %}>
+      {{ goal.label }}
+    </button>
+    {% endfor %}
+  </form>
+
+  {% if selected %}
+  <section class="mt-10 rounded border border-[rgb(201_168_106_/_0.26)] bg-sb-surface-1" aria-labelledby="route-heading">
+    <p class="border-b border-white/[0.08] px-5 py-3 text-xs font-semibold uppercase tracking-[0.22em] text-sb-ink-2">
+      Preliminary route — {{ selected.label }}
+    </p>
+    <div class="px-5 py-5">
+      <h2 class="text-sm font-semibold uppercase tracking-[0.16em] text-sb-gold" id="route-heading">Where it would start</h2>
+      <ol class="mt-3 space-y-2.5">
+        {% for step in selected.route %}
+        <li class="flex gap-3 text-sm leading-relaxed text-sb-ink">
+          <span class="shrink-0 font-semibold text-sb-gold">{{ loop.index }}</span>
+          <span>{{ step }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+      <h2 class="mt-6 text-sm font-semibold uppercase tracking-[0.16em] text-sb-gold">What it would read</h2>
+      <p class="mt-2 text-sm leading-relaxed text-sb-ink-2">{{ selected.reads }}.</p>
+      <p class="mt-5 border-t border-white/[0.08] pt-4 text-xs leading-relaxed text-sb-ink-2">
+        This is the shape of the work, not an assessment of your catalog. The
+        Artist Twin has read nothing about you — it starts when you add
+        something for it to read.
+      </p>
+    </div>
+  </section>
+
+  <div class="mt-8 flex flex-wrap gap-3">
+    <a href="/signup" class="inline-flex min-h-[46px] items-center justify-center rounded-sm bg-sb-gold px-6 text-xs font-bold uppercase tracking-[0.1em] text-sb-surface-2 transition-colors hover:bg-sb-gold-bright">Create an account to save this</a>
+    <a href="/catalog-sweep" class="inline-flex min-h-[46px] items-center justify-center rounded-sm border border-[rgb(201_168_106_/_0.26)] px-6 text-xs font-bold uppercase tracking-[0.1em] text-sb-ink transition-colors hover:border-sb-gold hover:text-sb-gold">Run a free catalog sweep first</a>
+  </div>
+  {% endif %}
+
+  <p class="mt-10 text-xs leading-relaxed text-sb-ink-2">
+    Your Artist Twin supports your decisions. It does not replace your judgment.
+    <a href="/ai" class="border-b border-[rgb(201_168_106_/_0.4)] text-sb-gold hover:border-sb-gold">How Street Banker uses AI</a>
+  </p>
+</main>
+
+<footer class="mx-auto max-w-3xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/#artist-twin-section" class="font-semibold hover:text-sb-ink">← Back to Street Banker</a>
+</footer>
+</body>
+</html>

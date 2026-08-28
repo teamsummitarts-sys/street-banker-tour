@@ -1,0 +1,145 @@
+/* The public product tour, the smart-link example and the status chips.
+ *
+ * The chips are the site-wide capability status system: Live, Example,
+ * Partner delivered, Integration ready, Coming soon, Requires
+ * verification. Colour is never the only signal - each chip carries its
+ * own word, so the meaning survives a greyscale print and a colour-blind
+ * reader.
+ */
+
+.sbst-key, .sbst-step, .sbsl {
+  --st-brass: var(--sb-gold);
+  --st-ivory: var(--sb-ink);
+  --st-muted: var(--sb-ink-2);
+  --st-line: rgb(201 168 106 / 0.22);
+}
+
+.sbst-key {
+  border: 1px solid rgb(238 232 220 / 0.1);
+  border-radius: var(--sb-r-control);
+  padding: 16px 18px;
+}
+
+/* --- the status chip ------------------------------------------------------ */
+.sbst-chip {
+  display: inline-block;
+  padding: 3px 9px 4px;
+  border-radius: var(--sb-r-control);
+  border: 1px solid currentColor;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.sbst-live              { color: var(--sb-good); }
+.sbst-example           { color: var(--st-brass); }
+.sbst-partner           { color: var(--sb-info); }
+.sbst-integration-ready { color: var(--sb-warn); }
+.sbst-coming-soon       { color: var(--sb-ink-3); }
+.sbst-verify            { color: var(--sb-warn); }
+
+/* --- one tour step -------------------------------------------------------- */
+.sbst-step {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 0 8px;
+  padding: 26px 0;
+  border-top: 1px solid rgb(238 232 220 / 0.08);
+  scroll-margin-top: 90px;
+}
+.sbst-step:first-child { border-top: 1px solid var(--st-line); }
+.sbst-num {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgb(201 168 106 / 0.55);
+  font-variant-numeric: tabular-nums;
+  padding-top: 2px;
+}
+@media (max-width: 520px) {
+  .sbst-step { grid-template-columns: 1fr; gap: 6px; }
+}
+
+.sbst-link {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--st-brass);
+  text-decoration: none;
+  border-bottom: 1px solid rgb(201 168 106 / 0.4);
+  padding-bottom: 3px;
+  transition: color 200ms ease, border-color 200ms ease;
+}
+.sbst-link:hover { color: var(--sb-gold-bright); border-bottom-color: var(--st-brass); }
+.sbst-link:focus-visible { outline: 2px solid var(--st-brass); outline-offset: 3px; }
+
+/* --- the example smart link ---------------------------------------------- */
+/* Shaped like the real thing - cover, title, a stack of destination rows -
+   so a visitor can see what a release page looks like before making one. */
+.sbsl {
+  max-width: 420px;
+  border: 1px solid var(--st-line);
+  border-radius: var(--sb-r-control);
+  overflow: hidden;
+  background: var(--sb-surface-1);
+}
+.sbsl-art {
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(120% 90% at 30% 20%, rgb(201 168 106 / 0.16), transparent 60%),
+    var(--sb-surface-2);
+  border-bottom: 1px solid var(--st-line);
+}
+.sbsl-art span {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgb(201 168 106 / 0.7);
+}
+.sbsl-rows { list-style: none; margin: 0; padding: 0; }
+.sbsl-rows > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 16px;
+  border-top: 1px solid rgb(238 232 220 / 0.07);
+  font-size: 13.5px;
+  color: var(--st-ivory);
+}
+.sbsl-rows > li:first-child { border-top: 0; }
+
+/* --- the fan-intelligence table ------------------------------------------ */
+.sbfi { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.sbfi th, .sbfi td {
+  text-align: left;
+  padding: 12px 14px 12px 0;
+  border-bottom: 1px solid rgb(238 232 220 / 0.07);
+  vertical-align: top;
+}
+.sbfi th {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--st-brass);
+  border-bottom-color: var(--st-line);
+}
+.sbfi td:first-child { color: var(--st-ivory); font-weight: 600; }
+.sbfi td { color: var(--st-muted); }
+@media (max-width: 620px) {
+  .sbfi, .sbfi tbody, .sbfi tr, .sbfi td { display: block; width: 100%; }
+  .sbfi thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .sbfi tr { padding: 14px 0; border-bottom: 1px solid rgb(238 232 220 / 0.07); }
+  .sbfi td { border: 0; padding: 2px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sbst-link { transition: none; }
+}

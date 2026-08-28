@@ -1,0 +1,62 @@
+{% extends "signal/_shell.html" %}
+{% block title %}Alerts{% endblock %}
+{% block main %}
+  <p class="sg-eyebrow">{{ org['name'] }}</p>
+  <h1 class="sg-h1">Alerts</h1>
+  <p class="sg-lede">
+    Rules run against the artists {{ org['name'] }} is watching — its rules, its watchlist, nobody
+    else's. Delivery is in-app; email and Slack become available once those credentials are configured.
+  </p>
+
+  {% if sg_can('alert_edit') %}
+    <form class="sg-rail" method="post" action="/signal/alerts/rules">
+      <label class="sg-field"><span>Name</span><input class="sg-input" name="name" required maxlength="120" placeholder="High gap on a watched artist"></label>
+      <label class="sg-field"><span>When</span>
+        <select class="sg-select" name="trigger_kind">
+          {% for key, label in triggers %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="sg-field"><span>Threshold</span><input class="sg-input" name="threshold" type="number" min="0" max="100" value="70"></label>
+      <button class="sg-btn" type="submit">Add rule</button>
+    </form>
+  {% endif %}
+
+  {% if rules %}
+    <h2 class="sg-h2">Rules</h2>
+    <div class="sg-table-wrap"><table class="sg-table">
+      <thead><tr><th scope="col">Rule</th><th scope="col">Trigger</th><th scope="col" class="sg-num">Threshold</th><th scope="col"><span class="sg-sr">Delete</span></th></tr></thead>
+      <tbody>
+        {% for r in rules %}
+          <tr>
+            <td><b>{{ r['name'] }}</b></td>
+            <td>{{ r['trigger_kind']|replace('_', ' ') }}</td>
+            <td class="sg-num">{{ r['threshold']|round|int }}</td>
+            <td>{% if sg_can('alert_edit') %}
+              <form method="post" action="/signal/alerts/rules/{{ r['id'] }}/delete">
+                <button class="sg-btn sg-btn--ghost sg-btn--small" type="submit">Delete</button>
+              </form>{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  {% endif %}
+
+  <h2 class="sg-h2">Recent</h2>
+  {% if alerts %}
+    <div class="sg-table-wrap"><table class="sg-table">
+      <thead><tr><th scope="col">When</th><th scope="col">Alert</th><th scope="col">Severity</th></tr></thead>
+      <tbody>
+        {% for al in alerts %}
+          <tr>
+            <td>{{ al['created_at'][:16]|replace('T', ' ') }}</td>
+            <td>{% if al['artist_id'] %}<a href="/signal/artist/{{ al['artist_id'] }}">{{ al['title'] }}</a>{% else %}{{ al['title'] }}{% endif %}
+              {% if al['body'] %}<span class="sg-artist-meta">{{ al['body'] }}</span>{% endif %}</td>
+            <td><span class="sg-pill{{ ' is-warn' if al['severity'] == 'high' else '' }}">{{ al['severity'] }}</span></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  {% else %}
+    <div class="sg-empty">No alerts yet. Add a rule above and watch some artists — nothing fires against an empty watchlist.</div>
+  {% endif %}
+{% endblock %}

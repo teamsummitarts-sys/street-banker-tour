@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% import "board/_macros.html" as m %}
+{% block title %}Edit listing - Street Banker{% endblock %}
+{% block head_scripts %}<link rel="stylesheet" href="/static/css/board.css?v=2">{% endblock %}
+{% block content %}
+<div class="tb" style="max-width:900px">
+  <p class="tb-eyebrow"><a href="/tour-board" style="text-decoration:none">Team-Up Board</a> · edit</p>
+  <div class="tb-head"><div><h1 class="tb-h1" style="font-size:18px">Edit listing</h1>
+    {% if l['parse_flag'] %}<p class="tb-lede">Some fields from the old free-text version couldn't be read automatically ({{ l['parse_flag'] }}) — set them here and the listing shows up in filters.</p>{% endif %}</div></div>
+  <form method="post" action="/tour-board/{{ l['id'] }}/edit" accept-charset="utf-8" class="tb-pane is-warm">
+    <div class="tb-form">
+      <label class="tb-field"><span>I am</span><input value="{{ l['kind_label'] }}" disabled></label>
+      <label class="tb-field" style="grid-column: span 2"><span>Headline</span><input name="title" required maxlength="120" value="{{ l['title'] }}"></label>
+      {{ m.listing_fields(regions, genre_opts, {'region_text': l['region_text'] or l['region'], 'region_code': l['region_code'], 'window_start': l['window_start'], 'window_end': l['window_end'], 'genres': l['genres'], 'draw_min': l['draw_min'], 'draw_max': l['draw_max'], 'details': l['details'], 'genre_text': ''}, prefix='e-') }}
+      <div class="tb-wide" style="display:flex;gap:10px;flex-wrap:wrap"><button class="tb-btn tb-btn--fill" type="submit">Save</button><a class="tb-btn tb-btn--ghost" href="/tour-board/{{ l['id'] }}">Cancel</a></div>
+    </div>
+  </form>
+</div>
+<script src="/static/js/board.js?v=1" defer></script>
+{% endblock %}

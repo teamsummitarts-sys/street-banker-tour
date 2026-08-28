@@ -1,0 +1,94 @@
+{% set tab = 'desk' %}
+{% extends "press/_shell.html" %}
+{% block title %}Press Desk - Street Banker{% endblock %}
+{% block press %}
+
+<div class="pd-head">
+  <div>
+    <p class="pd-eyebrow">Press Desk</p>
+    <h1 class="pd-h1">Who you told, who read it, who wrote about it.</h1>
+    <p class="pd-sub">Your media list, your announcements, and one tracked link per contact — so an open belongs to an outlet instead of disappearing into a total.</p>
+  </div>
+</div>
+
+{% if not send_state.platform %}
+<div class="pd-note">
+  <strong>Sending from Street Banker is off.</strong> {{ send_state.reason }}
+  <p>{{ send_state.detail }}</p>
+</div>
+{% endif %}
+
+<div class="pd-cards">
+  <a class="pd-card" href="/press-desk/contacts"><b>{{ stats.contacts }}</b><span>Active contacts</span></a>
+  <a class="pd-card" href="/press-desk/announcements"><b>{{ stats.releases }}</b><span>Announcements</span></a>
+  <a class="pd-card" href="/press-desk"><b>{{ stats.pitched }}</b><span>Pitches out</span></a>
+  <a class="pd-card" href="/press-desk"><b>{{ stats.opened }}</b><span>Opened</span></a>
+  <a class="pd-card" href="/press-desk"><b>{{ stats.replied }}</b><span>Replied</span></a>
+  <a class="pd-card" href="/press-desk/coverage"><b>{{ stats.coverage }}</b><span>Coverage logged</span></a>
+</div>
+
+{% if follow_ups %}
+<h2 class="pd-h2">Worth a follow-up</h2>
+<p class="pd-sub" style="margin-bottom:10px">Sent a week or more ago with no reply logged. Chasing once is normal; chasing twice is not.</p>
+<div class="pd-table-wrap"><table class="pd-table">
+  <thead><tr><th>Contact</th><th>Outlet</th><th>Announcement</th><th>Sent</th><th>Opens</th><th></th></tr></thead>
+  <tbody>
+  {% for f in follow_ups %}
+  <tr>
+    <td>{{ f.contact_name or '—' }}</td>
+    <td>{{ f.outlet or '—' }}</td>
+    <td>{{ f.release_title or '—' }}</td>
+    <td class="pd-muted">{{ f.sent_at[:10] }}</td>
+    <td>{% if f.open_count %}<span class="pd-chip pd-chip--ok">{{ f.open_count }}</span>{% else %}<span class="pd-chip">never opened</span>{% endif %}</td>
+    <td><a class="pd-btn pd-btn--ghost pd-btn--small" href="/press-desk/pitch/{{ f.pitch_id }}">Open pitch</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+
+<h2 class="pd-h2">Recent pitches</h2>
+{% if pitches %}
+<div class="pd-table-wrap"><table class="pd-table">
+  <thead><tr><th>Announcement</th><th>Recipients</th><th>Opened</th><th>Status</th><th>Started</th><th></th></tr></thead>
+  <tbody>
+  {% for p in pitches %}
+  <tr>
+    <td><a href="/press-desk/pitch/{{ p.id }}">{{ p.release_headline or p.release_title or 'Untitled' }}</a></td>
+    <td>{{ p.recipients }}</td>
+    <td>{{ p.opens }}</td>
+    <td><span class="pd-chip {{ 'pd-chip--gold' if p.status == 'sent' }}">{{ p.status }}</span></td>
+    <td class="pd-muted">{{ p.created[:10] }}</td>
+    <td><a class="pd-btn pd-btn--ghost pd-btn--small" href="/press-desk/pitch/{{ p.id }}">Track</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<div class="pd-empty">
+  No pitches yet. Add the writers and outlets you actually know to the
+  <a href="/press-desk/contacts" style="color:var(--pd-amber)">media list</a>,
+  write an <a href="/press-desk/announcements" style="color:var(--pd-amber)">announcement</a>,
+  then send it to them.
+</div>
+{% endif %}
+
+<h2 class="pd-h2">Coverage</h2>
+{% if coverage %}
+<div class="pd-table-wrap"><table class="pd-table">
+  <thead><tr><th>Outlet</th><th>Headline</th><th>Kind</th><th>Published</th></tr></thead>
+  <tbody>
+  {% for c in coverage %}
+  <tr>
+    <td>{{ c.outlet }}</td>
+    <td>{% if c.url %}<a href="{{ c.url }}" target="_blank" rel="noopener noreferrer">{{ c.headline or c.url }}</a>{% else %}{{ c.headline or '—' }}{% endif %}</td>
+    <td><span class="pd-chip">{{ c.kind }}</span></td>
+    <td class="pd-muted">{{ c.published_on or '—' }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<div class="pd-empty">Nothing logged yet. When something runs, <a href="/press-desk/coverage" style="color:var(--pd-amber)">record it</a> — the quotes you collect here are the ones your press kit can use.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Street Banker{% endblock %}
+
+{% set kind_tone = {'fan': 'bg-green-500/15 text-green-400',
+                    'campaign': 'bg-sb-gold/15 text-sb-gold-bright',
+                    'rollout': 'bg-sb-gold/15 text-sb-gold-bright',
+                    'recovery': 'bg-red-500/15 text-red-400',
+                    'statement': 'bg-white/10 text-gray-300'} %}
+
+{% block content %}
+<div class="mx-auto max-w-[860px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker</div>
+    <h1 class="sb-h1 mt-1">Notifications</h1>
+    <p class="mt-1 max-w-xl text-sm text-gray-300">Real events from your account — fans captured, campaigns going live, rollouts generated, and recovery findings. Viewing this page clears the badge.</p>
+  </div>
+
+  {% if items %}
+  <div class="space-y-2">
+    {% for n in items %}
+    <a href="{{ n.link or '#' }}" class="flex items-start gap-3 rounded-xl border {{ 'border-sb-gold/30 bg-sb-surface-2' if not n.is_read else 'border-white/5 bg-sb-surface-1 opacity-75' }} p-4 transition-colors hover:border-sb-gold/50">
+      <span class="mt-0.5 shrink-0 rounded-md px-2 py-1 text-xs font-bold uppercase {{ kind_tone.get(n.kind, 'bg-white/10 text-gray-300') }}">{{ n.kind }}</span>
+      <span class="min-w-0 flex-1">
+        <span class="block text-sm font-semibold text-gray-100">{{ n.title }}</span>
+        {% if n.body %}<span class="block text-xs text-gray-300">{{ n.body }}</span>{% endif %}
+      </span>
+      <span class="shrink-0 text-xs sb-num text-gray-300 font-medium">{{ n.created[:16].replace('T', ' ') }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-sb-gold/30 py-12 text-center">
+    <div class="text-sm font-bold text-gray-200">Quiet for now</div>
+    <p class="mx-auto mt-1 max-w-md text-xs text-gray-300">Notifications land here when real things happen: a fan signs up on your link, a campaign goes live, a rollout is generated, or a statement upload finds money.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

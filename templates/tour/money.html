@@ -1,0 +1,56 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Money - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Tour financials · {{ finance['currency'] }}</p><h1 class="to-h1" style="font-size:20px">{{ finance['shows_with_numbers'] }} of {{ shows|length }} shows have numbers</h1><p class="to-sub">Every figure below is arithmetic on what was entered per show. Shows with nothing entered are excluded — they are not counted as zero.</p></div>
+  <div class="to-inline"><a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/money.csv">CSV</a> <a class="to-btn to-btn--ghost to-btn--small" href="/money-queue">Money Queue</a></div></div>
+
+<div class="to-cards">
+  <div class="to-card is-warm"><b>{{ '%.0f'|format(finance['projected_net']) }}</b><span>Projected net</span><small>avg {{ '%.0f'|format(finance['avg_net']) }} / show</small></div>
+  <div class="to-card"><b>{{ '%.0f'|format(finance['projected_gross']) }}</b><span>Projected gross</span><small>guarantees {{ '%.0f'|format(finance['guarantees']) }}{% if finance['projected_backend'] %} · backend {{ '%.0f'|format(finance['projected_backend']) }}{% endif %}</small></div>
+  <div class="to-card"><b>{{ '%.0f'|format(finance['expenses']) }}</b><span>Expenses</span></div>
+  <div class="to-card"><b>{{ '%.0f'|format(finance['collected']) }}</b><span>Collected</span><small>outstanding {{ '%.0f'|format(finance['outstanding']) }}</small></div>
+  <div class="to-card"><b>{{ finance['deposits_outstanding'] }}</b><span>Deposits due</span><small>{{ finance['unsettled']|length }} unsettled</small></div>
+</div>
+
+<h2 class="to-h2">By show</h2>
+{% if finance['rows'] %}
+<div class="to-table-wrap"><table class="to-table">
+  <thead><tr><th>Date</th><th>Show</th><th>Deal</th><th class="to-num">Guarantee</th><th class="to-num">Earned</th><th class="to-num">Merch</th><th class="to-num">Expenses</th><th class="to-num">Est. net</th><th class="to-num">Outstanding</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for r in finance['rows'] %}{% set s = r['show'] %}
+  <tr>
+    <td>{{ s['date'] }}</td><td><a href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}?tab=money">{{ s['city'] or s['venue'] }}</a></td><td>{{ r['deal']|replace('_',' ') }}</td>
+    {% if r['has_numbers'] %}
+    <td class="to-num">{{ '%.0f'|format(r['guarantee']) }}</td><td class="to-num">{{ '%.0f'|format(r['earned']) }}</td><td class="to-num">{{ '%.0f'|format(r['merch_net']) }}</td><td class="to-num">{{ '%.0f'|format(r['expenses']) }}</td><td class="to-num"><b>{{ '%.0f'|format(r['estimated_net']) }}</b></td><td class="to-num">{{ '%.0f'|format(r['outstanding']) }}{% if r['deposit_outstanding'] %} <span class="to-chip to-chip--warn">deposit</span>{% endif %}</td>
+    {% else %}<td colspan="6" class="to-muted">no numbers entered</td>{% endif %}
+    <td>{{ m.chip(s['settlement_status'] or 'open') }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% if finance['best'] %}<p class="to-sub">Best: {{ finance['best']['show']['city'] or finance['best']['show']['venue'] }} ({{ '%.0f'|format(finance['best']['estimated_net']) }}). Worst: {{ finance['worst']['show']['city'] or finance['worst']['show']['venue'] }} ({{ '%.0f'|format(finance['worst']['estimated_net']) }}).</p>{% endif %}
+{% else %}{{ m.empty("No shows yet", "Money is entered per show.") }}{% endif %}
+
+<h2 class="to-h2">Expense ledger</h2>
+{% if expenses %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Date</th><th>Show</th><th>Vendor</th><th>Category</th><th class="to-num">Amount</th><th>Receipt</th><th></th></tr></thead>
+  <tbody>{% for e in expenses %}<tr><td data-k="Date">{{ e['spend_date'] or '—' }}</td><td data-k="Show">{% if e['show_id'] and e['show_id'] in show_by_id %}{{ show_by_id[e['show_id']]['city'] or show_by_id[e['show_id']]['venue'] }}{% else %}<span class="to-muted">tour</span>{% endif %}</td><td data-k="Vendor">{{ e['vendor'] or '—' }}</td><td data-k="Category">{{ e['category'] }}</td><td data-k="Amount" class="to-num">{{ e['amount'] }}</td><td data-k="Receipt">{% if e['receipt_file_id'] %}<a href="/tours/{{ tour['id'] }}/files/{{ e['receipt_file_id'] }}/download">receipt</a>{% else %}—{% endif %}</td>
+    <td><form method="post" action="/tours/{{ tour['id'] }}/expenses/{{ e['id'] }}/delete"><button class="to-btn to-btn--ghost to-btn--small to-btn--danger" type="submit">✕</button></form></td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p class="to-sub">No expenses logged.</p>{% endif %}
+<form method="post" action="/tours/{{ tour['id'] }}/expenses/add" enctype="multipart/form-data" class="to-form" style="margin-top:10px">
+  <div class="to-grid">
+    <label class="to-field"><span>Show</span><select name="show_id"><option value="">Tour-level</option>{% for s in shows %}<option value="{{ s['id'] }}">{{ s['date'] }} {{ s['city'] or s['venue'] }}</option>{% endfor %}</select></label>
+    {{ m.field('vendor', 'Vendor') }}
+    {{ m.select('category', 'Category', vocab['expense_categories'], 'other') }}
+    {{ m.field('amount', 'Amount', required=True) }}
+    {{ m.field('tax', 'Tax') }}
+    {{ m.field('spend_date', 'Date', type='date') }}
+    <label class="to-field"><span>Receipt</span><input type="file" name="receipt" accept="image/*,.pdf"></label>
+    {{ m.textarea('notes', 'Notes', rows=1) }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Add expense</button></div>
+</form>
+{% endblock %}

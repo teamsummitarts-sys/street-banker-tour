@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Registration - Royalty Sweep{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1400px] space-y-5">
+  <div>
+    <h1 class="sb-h1">Registration Wizard</h1>
+    <p class="mt-1 text-sm text-gray-300">Register each song with every rights body so no collection channel is left open.</p>
+  </div>
+
+  {% set fully = registration_wizards | selectattr('completion_pct', 'equalto', 100) | list | length %}
+  <div class="grid grid-cols-3 gap-3">
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Songs</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ registration_wizards | length }}</div>
+    </div>
+    <div class="rounded-2xl border border-green-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Fully Registered</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-green-400">{{ fully }}</div>
+    </div>
+    <div class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Rights Bodies</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ wizard_targets | length }}</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    {% for w in registration_wizards %}
+    <section class="reg-card rounded-2xl border border-white/5 bg-sb-surface-1 p-5" data-song-id="{{ w.song_id }}">
+      <div class="flex items-center justify-between gap-2">
+        <h2 class="font-semibold text-gray-100">{{ w.song_title }}</h2>
+        <span class="reg-pct text-sm font-bold tabular-nums {{ 'text-green-400' if w.completion_pct == 100 else 'text-amber-400' }}">{{ w.completion_pct }}%</span>
+      </div>
+      <div class="mt-2 h-1.5 rounded-full bg-white/5"><div class="reg-bar h-1.5 rounded-full {{ 'bg-green-500' if w.completion_pct == 100 else 'bg-amber-500' }}" style="width: {{ w.completion_pct }}%;"></div></div>
+      <div class="reg-targets mt-4 space-y-1.5">
+        {% for target in wizard_targets %}
+        <div class="reg-target flex items-center justify-between gap-2" data-target="{{ target }}">
+          <div class="flex items-center gap-2 text-xs">
+            <svg class="reg-check h-4 w-4 shrink-0 {{ 'text-green-400' if w.status[target] else 'text-gray-300' }}" viewBox="0 0 20 20" fill="{{ 'currentColor' if w.status[target] else 'none' }}" stroke="currentColor" stroke-width="1.6">
+              {% if w.status[target] %}<path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7 7a1 1 0 01-1.4 0l-3-3a1 1 0 111.4-1.4L9 11.6l6.3-6.3a1 1 0 011.4 0z" clip-rule="evenodd"/>{% else %}<circle cx="10" cy="10" r="7"/>{% endif %}
+            </svg>
+            <span class="{{ 'text-gray-300' if w.status[target] else 'text-gray-200' }}">{{ wizard_target_labels[target] }}</span>
+          </div>
+          {% if not w.status[target] %}
+          <button type="button" class="reg-complete-btn sb-btn sb-btn-secondary sb-btn-sm shrink-0">Register</button>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll(".reg-complete-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const targetRow = btn.closest(".reg-target");
+      const card = btn.closest(".reg-card");
+      const songId = card.dataset.songId;
+      const target = targetRow.dataset.target;
+      btn.disabled = true;
+      btn.textContent = "...";
+      try {
+        const res = await fetch(`/songs/${songId}/registration-wizard/${target}/complete`, { method: "POST" });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          const w = data.wizard;
+          // Update this row to registered state.
+          const check = targetRow.querySelector(".reg-check");
+          check.setAttribute("fill", "currentColor");
+          check.classList.remove("text-gray-300");
+          check.classList.add("text-green-400");
+          check.innerHTML = '<path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7 7a1 1 0 01-1.4 0l-3-3a1 1 0 111.4-1.4L9 11.6l6.3-6.3a1 1 0 011.4 0z" clip-rule="evenodd"/>';
+          targetRow.querySelector("span").className = "text-gray-300";
+          btn.remove();
+          // Update the card's progress.
+          const pctEl = card.querySelector(".reg-pct");
+          const barEl = card.querySelector(".reg-bar");
+          pctEl.textContent = w.completion_pct + "%";
+          barEl.style.width = w.completion_pct + "%";
+          if (w.completion_pct === 100) {
+            pctEl.className = "reg-pct text-sm font-bold tabular-nums text-green-400";
+            barEl.className = "reg-bar h-1.5 rounded-full bg-green-500";
+          }
+          flashHighlight(targetRow);
+        } else {
+          btn.disabled = false;
+          btn.textContent = "Register";
+        }
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = "Register";
+      }
+    });
+  });
+</script>
+{% endblock %}

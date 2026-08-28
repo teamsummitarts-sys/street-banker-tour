@@ -1,0 +1,21 @@
+{# 11.5 — the compact trust band.
+
+   Four columns of text between the last product section and the closing
+   frame. No photograph, no icons, no cards: every promise the rest of
+   the homepage makes, gathered where it can be read at a glance. #}
+
+{% set cl = closing %}
+<section class="sbtb" id="artist-control" aria-labelledby="sbtb-heading">
+  <div class="sbtb-inner">
+    <h2 class="sbtb-title" id="sbtb-heading">{{ cl.band_title }}</h2>
+    <ul class="sbtb-cols">
+      {% for title, body in cl.band %}
+      <li>
+        <p class="sbtb-col-title">{{ title }}</p>
+        <p class="sbtb-col-body">{{ body }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    <a class="sbtb-link" href="{{ cl.band_link.href }}">{{ cl.band_link.label }}</a>
+  </div>
+</section>

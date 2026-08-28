@@ -1,0 +1,16 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Travel - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Travel</p><h1 class="to-h1" style="font-size:20px">Flights, ground, bus, rail</h1><p class="to-sub">Who is on each leg, when it leaves, in which timezone. Confirmation numbers need the travel permission.</p></div>
+  <div class="to-inline">{% if can('travel') %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/travel.csv">Manifest CSV</a>{% endif %}</div></div>
+{% if edit %}
+<h2 class="to-h2">Edit leg</h2>
+{% include "tour/_travel_form.html" %}
+{% endif %}
+{% include "tour/_travel_list.html" %}
+{% if can('travel') and not edit %}
+<h2 class="to-h2">Add a leg</h2>
+{% with edit=None %}{% include "tour/_travel_form.html" %}{% endwith %}
+{% endif %}
+{% endblock %}

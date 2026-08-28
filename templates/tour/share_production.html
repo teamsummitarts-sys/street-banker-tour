@@ -1,0 +1,16 @@
+{% extends "tour/_public.html" %}
+{% block title %}Production pack · {{ show['venue'] }}{% endblock %}
+{% block body %}
+<div class="to-paper">
+  <span class="tag">Production pack · {{ tour['name'] }}</span>
+  <h2 style="font-size:20px">{{ fmt_day(show['date']) }} — {{ show['venue'] }}{% if show['city'] %}, {{ show['city'] }}{% endif %}</h2>
+  {% if venue %}<p class="meta">{{ venue['address'] }}{% if venue['stage'] %} · Stage {{ venue['stage'] }}{% endif %}{% if venue['loading'] %} · Loading {{ venue['loading'] }}{% endif %}</p>{% endif %}
+  <h3 style="margin-top:14px">Times</h3>
+  {% if schedule %}<table><tbody>{% for r in schedule %}<tr><td style="width:90px"><b>{{ fmt_time(r['start_time']) or 'TBD' }}</b></td><td>{{ r['title'] }}</td></tr>{% endfor %}</tbody></table>{% else %}<p class="meta">No times entered.</p>{% endif %}
+  <h3 style="margin-top:14px">Production advance</h3>
+  <table><tbody>{% for a in advance %}<tr><td style="width:40%"><b>{{ a['label'] }}</b></td><td>{{ a['value'] or '—' }}</td><td class="meta">{{ a['status']|replace('na','n/a') }}</td></tr>{% endfor %}</tbody></table>
+  <h3 style="margin-top:14px">Files</h3>
+  {% if files %}<ul style="margin:4px 0 0 18px">{% for f in files %}<li><a href="/tour-share/{{ token }}/file/{{ f['id'] }}">{{ f['file_name'] }}</a> <span class="meta">{{ f['category']|replace('_',' ') }}</span></li>{% endfor %}</ul>{% else %}<p class="meta">No files attached to this pack.</p>{% endif %}
+</div>
+{% endblock %}
+{% block foot %}Production pack — advance, plot and tech files only.{% endblock %}

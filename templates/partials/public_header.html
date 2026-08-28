@@ -1,0 +1,72 @@
+{# The public header. One component, config-driven from landing_config's
+   `nav` block, used by every public page that wants it.
+
+   Structure follows the approved reference: brand lockup left, product
+   navigation centred, Log in and the catalog-sweep CTA right. Nothing is
+   an image except the logo, which is the existing vector with the light
+   fill - the "THE ARTIST / OPERATING SYSTEM" descriptor beside it is live
+   text so it scales, translates and reads to a screen reader.
+
+   Takes `nav` if a page passes one, otherwise reads landing_config
+   through the public_nav() global. #}
+{% set nav = nav or public_nav() %}
+<a class="sbh-skip" href="#main">Skip to content</a>
+
+<header class="sbh" id="sb-header" data-scrolled="false">
+  <div class="sbh-inner">
+    <a class="sbh-brand" href="/" aria-label="Street Banker — home">
+      <img class="sbh-logo" src="/static/img/streetbanker-logo-light.svg"
+           alt="Street Banker" width="920" height="250">
+      <span class="sbh-rule" aria-hidden="true"></span>
+      <span class="sbh-descriptor">The Artist<br>Operating System</span>
+    </a>
+
+    <nav class="sbh-nav" aria-label="Product">
+      {% for link in nav.links %}
+      <a class="sbh-link" href="{{ link.href }}"
+         {% if link.href.startswith('#') %}data-section="{{ link.href[1:] }}"{% endif %}>{{ link.label }}</a>
+      {% endfor %}
+    </nav>
+
+    <div class="sbh-right">
+      <a class="sbh-login" href="{{ nav.login.href }}">{{ nav.login.label }}</a>
+      <a class="sbh-cta" href="{{ nav.cta.href }}">
+        <span class="sbh-cta-full">{{ nav.cta.label }}</span>
+        <span class="sbh-cta-short">{{ nav.cta.short }}</span>
+      </a>
+      <button type="button" class="sbh-burger" id="sb-header-burger"
+              aria-expanded="false" aria-controls="sb-header-drawer"
+              aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 5h14M3 10h14M3 15h14"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+{# The drawer lives outside the sticky bar so its backdrop can cover the
+   page without inheriting the header's stacking context. #}
+<div class="sbh-drawer" id="sb-header-drawer" hidden role="dialog" aria-modal="true"
+     aria-label="Street Banker menu">
+  <div class="sbh-panel">
+    <div class="sbh-panel-head">
+      <img class="sbh-logo" src="/static/img/streetbanker-logo-light.svg"
+           alt="Street Banker" style="width: 140px;">
+      <button type="button" class="sbh-close" id="sb-header-close" aria-label="Close menu">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <path d="M5 5l10 10M15 5L5 15"/>
+        </svg>
+      </button>
+    </div>
+    {% for link in nav.drawer_links %}
+    <a class="sbh-drawer-link" href="{{ link.href }}">{{ link.label }}</a>
+    {% endfor %}
+    <a class="sbh-drawer-link" href="{{ nav.login.href }}">{{ nav.login.label }}</a>
+    <a class="sbh-drawer-cta" href="{{ nav.cta.href }}">{{ nav.cta.label }}</a>
+  </div>
+</div>
+
+<script src="/static/js/public-header.js?v=4" defer></script>

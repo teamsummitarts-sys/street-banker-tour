@@ -1,0 +1,54 @@
+{% extends "signal/_shell.html" %}
+{% from "signal/_macros.html" import board_table %}
+{% block title %}Ask Signal{% endblock %}
+{% block main %}
+  <p class="sg-eyebrow">Search</p>
+  <h1 class="sg-h1">Ask Signal</h1>
+  <p class="sg-lede">
+    Describe what you are looking for. Signal converts it into structured filters and shows you
+    exactly which ones it applied — and says plainly when it cannot support part of a request rather
+    than dropping it quietly.
+  </p>
+
+  <form class="sg-rail" method="get">
+    <label class="sg-field" style="flex:1 1 380px">
+      <span>Your search</span>
+      <input class="sg-input sg-input--wide" name="q" value="{{ q }}"
+             placeholder="independent alternative artists growing more than 20% over 28 days">
+    </label>
+    <button class="sg-btn" type="submit">Search</button>
+  </form>
+
+  {% if not q %}
+    <h2 class="sg-h2">Try</h2>
+    <ul class="sg-list">
+      {% for ex in examples %}<li><a href="/signal/ask?q={{ ex|urlencode }}">{{ ex }}</a></li>{% endfor %}
+    </ul>
+  {% else %}
+    <h2 class="sg-h2">Interpreted as</h2>
+    {% if filters %}
+      <p class="sg-inline">
+        {% for name, v in filters.items() %}
+          <span class="sg-pill is-gold">{{ name|replace('_', ' ') }}: {{ v }}</span>
+        {% endfor %}
+      </p>
+    {% else %}
+      <p>No filter could be read from that. Nothing was guessed.</p>
+    {% endif %}
+
+    {% if unsupported %}
+      <div class="sg-banner">
+        <b>Part of that request cannot be answered here.</b>
+        <ul class="sg-list">{% for u in unsupported %}<li>{{ u }}</li>{% endfor %}</ul>
+        Those filters were <b>not</b> applied — the results below ignore them, rather than pretending to honour them.
+      </div>
+    {% endif %}
+
+    {% if rows %}
+      <h2 class="sg-h2">{{ rows|length }} result{{ '' if rows|length == 1 else 's' }}</h2>
+      {{ board_table(rows, sg_can) }}
+    {% elif filters %}
+      <div class="sg-empty">Nothing matched every filter that was applied.</div>
+    {% endif %}
+  {% endif %}
+{% endblock %}

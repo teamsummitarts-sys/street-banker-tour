@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block head_scripts %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+{% import "landing/_cards.html" as logos %}
+
+{% block title %}Royalties - Royalty Sweep{% endblock %}
+
+{% block content %}
+{% set ov = royalties_overview %}
+{% set s = ov.summary %}
+{% set tmax = (earnings_trend | map(attribute=1) | max) if earnings_trend else 1 %}
+
+<div class="mx-auto max-w-6xl space-y-6">
+
+  {% set band_mode = 'royalties' %}
+  {% include "_real_royalty_band.html" %}
+
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h1 class="sb-h1">Royalties</h1>
+      <p class="mt-1 text-sm text-gray-300">Track every royalty stream in one place.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="flex items-center gap-2 rounded-lg border border-white/10 bg-sb-surface-1 px-3 py-2 text-sm text-gray-200">
+        <svg class="h-4 w-4 text-gray-300" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2v3M13 2v3"/></svg>
+        <select id="royalties-range" class="bg-transparent font-medium focus:outline-none [color-scheme:dark]">
+          <option>This month</option>
+          <option>Last 3 months</option>
+          <option>Last 6 months</option>
+        </select>
+      </div>
+      <select id="platform-filter" class="rounded-lg border border-white/10 bg-sb-surface-1 px-3 py-2 text-sm text-gray-200 focus:border-amber-500/50 focus:outline-none [color-scheme:dark]">
+        <option value="all">All Platforms</option>
+        {% for row in ov.by_source %}
+        <option value="{{ row.name }}">{{ row.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" id="export-btn" class="inline-flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-400 transition-colors hover:bg-amber-500/20">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10M6 9l4 4 4-4"/><path d="M4 16h12"/></svg>
+        Export
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Total Royalties</div>
+      <div class="mt-3 flex items-end justify-between gap-2">
+        <div>
+          <div class="text-2xl font-bold tracking-tight tabular-nums">${{ "{:,.2f}".format(s.total_royalties) }}</div>
+          <div class="mt-1 text-xs font-semibold {{ 'text-green-400' if s.total_change >= 0 else 'text-red-400' }}">{{ '↑' if s.total_change >= 0 else '↓' }} {{ "%.1f"|format(s.total_change|abs) }}% <span class="text-gray-300">vs last month</span></div>
+        </div>
+        <svg viewBox="0 0 80 32" class="h-8 w-20 shrink-0" preserveAspectRatio="none">
+          {% set pts = [] %}
+          {% for _, v in earnings_trend %}{% set _ = pts.append('%s,%s'|format((loop.index0 / (earnings_trend|length - 1) * 80)|round(1), (32 - (v / tmax * 28) - 2)|round(1))) %}{% endfor %}
+          <polyline points="{{ pts | join(' ') }}" fill="none" stroke="#E8B950" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Payouts Received</div>
+      <div class="mt-3 flex items-center justify-between gap-2">
+        <div>
+          <div class="text-2xl font-bold tracking-tight tabular-nums">${{ "{:,.2f}".format(s.payouts_received) }}</div>
+          <div class="mt-1 text-xs font-semibold {{ 'text-green-400' if s.payouts_change >= 0 else 'text-red-400' }}">{{ '↑' if s.payouts_change >= 0 else '↓' }} {{ "%.1f"|format(s.payouts_change|abs) }}% <span class="text-gray-300">vs last month</span></div>
+        </div>
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-green-500/30 text-green-400">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><path d="M10 6v8M8 8a2 2 0 012-1.5c1 0 2 .6 2 1.5s-1 1.3-2 1.3-2 .5-2 1.4.9 1.4 2 1.4a2 2 0 002-1" stroke-linecap="round"/></svg>
+        </span>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Pending Payouts</div>
+      <div class="mt-3 flex items-center justify-between gap-2">
+        <div>
+          <div class="text-2xl font-bold tracking-tight tabular-nums">${{ "{:,.2f}".format(s.pending_payouts) }}</div>
+          <div class="mt-1 text-xs text-amber-400">{{ s.pending_count }} upcoming</div>
+        </div>
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-amber-500/30 text-amber-400">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2" stroke-linecap="round"/></svg>
+        </span>
+      </div>
+    </div>
+
+    <a href="/connections" class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5 transition-colors hover:border-amber-500/25">
+      <div class="sb-label text-gray-300">Platforms Connected</div>
+      <div class="mt-3 flex items-center justify-between gap-2">
+        <div class="text-2xl font-bold tracking-tight tabular-nums">{{ s.sources_connected }} / {{ s.total_sources }}</div>
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-green-500/30 text-green-400">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 11a3 3 0 004 0l2-2a3 3 0 00-4-4l-1 1M12 9a3 3 0 00-4 0l-2 2a3 3 0 004 4l1-1"/></svg>
+        </span>
+      </div>
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <section id="royalties-by-source" class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Royalties by Source</h2>
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-white/5 text-xs uppercase tracking-wide text-gray-300 font-medium">
+              <th class="pb-2 font-medium">Source</th>
+              <th class="pb-2 text-right font-medium">Earned</th>
+              <th class="pb-2 text-right font-medium">Change</th>
+              <th class="pb-2 pl-6 font-medium">% of Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in ov.by_source %}
+            <tr class="source-row border-b border-white/5 last:border-0" data-source="{{ row.name }}">
+              <td class="py-2.5">
+                <div class="flex items-center gap-2.5">
+                  {{ logos.platform_logo(row.logo, 'h-7 w-7') }}
+                  <span class="font-semibold text-gray-100">{{ row.name }}</span>
+                </div>
+              </td>
+              <td class="py-2.5 text-right font-semibold sb-num">${{ "{:,.2f}".format(row.earned) }}</td>
+              <td class="py-2.5 text-right text-xs font-semibold {{ 'text-green-400' if row.change_pct >= 0 else 'text-red-400' }} tabular-nums">{{ '↑' if row.change_pct >= 0 else '↓' }} {{ "%.1f"|format(row.change_pct|abs) }}%</td>
+              <td class="py-2.5 pl-6">
+                <div class="flex items-center gap-2">
+                  <span class="hidden h-1.5 flex-1 overflow-hidden rounded-full bg-white/5 sm:block">
+                    <span class="block h-full rounded-full bg-green-500" style="width: {{ row.pct_of_total }}%;"></span>
+                  </span>
+                  <span class="w-8 shrink-0 text-right text-xs font-semibold text-gray-300">{{ row.pct_of_total }}%</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <a href="/connections" class="mt-4 block rounded-md border border-white/10 py-2.5 text-center text-xs font-semibold text-amber-400 transition-colors hover:bg-white/5">View All Sources</a>
+    </section>
+
+    <section id="earnings-trend" class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="flex items-center justify-between">
+        <h2 class="sb-label text-gray-300">Earnings Trend</h2>
+      </div>
+      <div class="mt-3"><canvas id="royaltiesChart" height="150"></canvas></div>
+      <div class="mt-4 grid grid-cols-3 gap-2 border-t border-white/5 pt-4 text-center">
+        <div>
+          <div class="text-lg font-bold tabular-nums">${{ "{:,.2f}".format(ov.this_month) }}</div>
+          <div class="text-xs uppercase tracking-widest text-gray-300 font-medium">Total this month</div>
+        </div>
+        <div>
+          <div class="text-lg font-bold tabular-nums">${{ "{:,.2f}".format(ov.last_month) }}</div>
+          <div class="text-xs uppercase tracking-widest text-gray-300 font-medium">Last month</div>
+        </div>
+        <div>
+          <div class="text-lg font-bold {{ 'text-green-400' if ov.growth >= 0 else 'text-red-400' }} tabular-nums">{{ '↑' if ov.growth >= 0 else '↓' }} {{ "%.1f"|format(ov.growth|abs) }}%</div>
+          <div class="text-xs uppercase tracking-widest text-gray-300 font-medium">Growth</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section id="payout-calendar" class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+    <div class="flex items-center justify-between">
+      <h2 class="sb-label text-gray-300">Payout Calendar</h2>
+      <div class="flex items-center gap-4">
+        <span class="text-xs text-gray-300 font-medium">Upcoming total <span class="font-semibold text-amber-400">${{ "%.2f"|format(upcoming_payout_total) }}</span></span>
+        <a href="/reports" class="inline-flex items-center gap-1 text-xs font-semibold text-amber-400 hover:underline">View Full Calendar
+          <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {% for p in payout_calendar[:6] %}
+      {% set confirmed = p.status in ('Paid', 'Processing') %}
+      <div class="rounded-xl border border-white/5 bg-white/5 p-3">
+        <div class="flex items-center gap-2">
+          {{ logos.platform_logo(logo_key(p.source), 'h-6 w-6') }}
+          <span class="truncate text-xs font-semibold text-gray-100">{{ p.source }}</span>
+        </div>
+        <div class="mt-2 text-xs uppercase tracking-widest text-gray-300 font-medium">{{ 'Distribution Window' if p.status == 'Processing' else 'Estimated Payout' }}</div>
+        <div class="mt-0.5 text-xs text-gray-300">{{ p.pay_date.strftime('%b %d, %Y') }}</div>
+        <div class="mt-1 text-sm font-bold sb-num">${{ "{:,.2f}".format(p.amount) }}</div>
+        <span class="mt-2 inline-block rounded-full border px-2 py-0.5 text-xs font-semibold {{ 'border-green-500/30 text-green-400' if confirmed else 'border-amber-500/30 text-amber-400' }}">{{ 'Confirmed' if confirmed else 'Estimated' }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const royaltiesTrend = {{ earnings_trend | tojson }};
+
+  new Chart(document.getElementById("royaltiesChart"), {
+    type: "line",
+    data: {
+      labels: royaltiesTrend.map((p) => p[0]),
+      datasets: [{
+        data: royaltiesTrend.map((p) => p[1]),
+        borderColor: "#E8B950",
+        backgroundColor: "rgba(234,179,8,0.08)",
+        fill: true, tension: 0.35, pointBackgroundColor: "#E8B950", pointRadius: 3,
+      }],
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: "#91836A", font: { size: 10 } }, grid: { color: "rgba(255,255,255,0.04)" } },
+        y: {
+          ticks: { color: "#91836A", font: { size: 10 }, callback: (v) => v >= 1000 ? "$" + (v/1000).toFixed(v % 1000 ? 1 : 0) + "K" : "$" + v },
+          grid: { color: "rgba(255,255,255,0.04)" },
+        },
+      },
+    },
+  });
+
+  document.getElementById("platform-filter").addEventListener("change", (e) => {
+    const val = e.target.value;
+    document.querySelectorAll(".source-row").forEach((row) => {
+      row.classList.toggle("hidden", val !== "all" && row.dataset.source !== val);
+    });
+  });
+
+  document.getElementById("export-btn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = "Exporting...";
+    try {
+      const res = await fetch("/reports/royalty-report/generate", { method: "POST" });
+      const data = await res.json();
+      btn.textContent = data.ok ? "Exported ✓" : "Export";
+    } catch (err) {
+      btn.textContent = "Export";
+    }
+    setTimeout(() => { btn.innerHTML = original; btn.disabled = false; }, 1800);
+  });
+</script>
+{% endblock %}

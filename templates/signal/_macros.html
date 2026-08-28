@@ -1,0 +1,96 @@
+{# Shared pieces. Every score is a link to its own explanation - a number
+   with no way to see how it was built is not shippable here. #}
+
+{% macro score_cell(artist_id, key, value, tone='') %}
+  <a class="sg-score" href="/signal/artist/{{ artist_id }}/score/{{ key }}"
+     title="How this score was built">
+    <span>
+      <span class="sg-score-v">{{ value }}</span>
+      <span class="sg-bar{{ ' is-hot' if tone == 'hot' else (' is-ok' if tone == 'ok' else '') }}"><i style="width:{{ value }}%"></i></span>
+    </span>
+  </a>
+{% endmacro %}
+
+{% macro delta(v) %}
+  {% if v is none %}
+    <span class="sg-delta flat" title="Not enough history to measure">—</span>
+  {% else %}
+    <span class="sg-delta {{ 'up' if v > 0.5 else ('down' if v < -0.5 else 'flat') }}">{{ '+' if v > 0 else '' }}{{ v }}%</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro artist_cell(a) %}
+  <div class="sg-artist-cell">
+    <a class="sg-artist-name" href="/signal/artist/{{ a['id'] }}">{{ a['canonical_name'] }}</a>
+    <span class="sg-artist-meta">
+      {{ a['genre'] or 'Genre unknown' }}
+      {%- if a['city'] %} · {{ a['city'] }}{% endif %}
+      {%- if a['monthly_listeners'] %} · {{ '{:,}'.format(a['monthly_listeners']) }} listeners{% endif %}
+    </span>
+  </div>
+{% endmacro %}
+
+{% macro dist_pill(d) %}
+  {% set cls = d['classification'] if d and d['classification'] else 'Unknown' %}
+  <span class="sg-pill{{ ' is-gold' if cls in ('DIY / Self-Service', 'Artist-Owned Distribution') else '' }}"
+        title="{{ d['name'] or 'No distributor identified' }}{% if d and d['consistency'] is defined %} · {{ d['recent_matching'] }} of {{ d['recent_of'] }} recent releases match{% endif %}">{{ cls }}</span>
+{% endmacro %}
+
+{% macro board_table(rows, sg_can, show_gap=True) %}
+  <div class="sg-table-wrap">
+    <table class="sg-table">
+      <thead>
+        <tr>
+          <th scope="col">Artist</th>
+          <th scope="col" class="sg-num">SB Momentum</th>
+          <th scope="col" class="sg-num">7d</th>
+          <th scope="col" class="sg-num">28d</th>
+          <th scope="col">Shape</th>
+          {% if show_gap %}<th scope="col" class="sg-num">Dist. gap</th>{% endif %}
+          <th scope="col" class="sg-num">Rights</th>
+          <th scope="col">Distribution</th>
+          <th scope="col">Risk</th>
+          <th scope="col"><span class="sg-sr">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ artist_cell(r['artist']) }}</td>
+            <td class="sg-num">{{ score_cell(r['artist']['id'], 'sb_momentum', r['momentum']) }}</td>
+            <td class="sg-num">{{ delta(r['change_7d']) }}</td>
+            <td class="sg-num">{{ delta(r['change_28d']) }}</td>
+            <td><span class="sg-pill">{{ r['shape'] or '—' }}</span></td>
+            {% if show_gap %}
+              <td class="sg-num">{{ score_cell(r['artist']['id'], 'distribution_gap', r['gap'], 'hot' if r['gap'] >= 70 else '') }}</td>
+            {% endif %}
+            <td class="sg-num">{{ score_cell(r['artist']['id'], 'rights_health', r['rights'], 'hot' if r['rights'] < 60 else 'ok') }}</td>
+            <td>{{ dist_pill(r['distribution']) }}</td>
+            <td>
+              <span class="sg-pill{{ ' is-warn' if r['anomaly'] != 'Low risk' else '' }}">{{ r['anomaly'] }}</span>
+            </td>
+            <td>
+              <span class="sg-inline">
+                {% if r['on_desk'] %}
+                  <span class="sg-pill is-ok">On desk</span>
+                {% elif sg_can('push_to_desk') %}
+                  <form method="post" action="/signal/artist/{{ r['artist']['id'] }}/operator-desk">
+                    <button class="sg-btn sg-btn--small" type="submit">→ Desk</button>
+                  </form>
+                {% endif %}
+                {% if not r['watched'] and sg_can('watch') %}
+                  <form method="post" action="/signal/artist/{{ r['artist']['id'] }}/watch">
+                    <input type="hidden" name="next" value="{{ here }}">
+                    <button class="sg-btn sg-btn--ghost sg-btn--small" type="submit">Watch</button>
+                  </form>
+                {% elif r['watched'] %}
+                  <span class="sg-pill is-gold">Watching</span>
+                {% endif %}
+              </span>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endmacro %}

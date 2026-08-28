@@ -1,0 +1,32 @@
+/* Page-level guard against sideways scroll.
+ *
+ * The homepage has three deliberate horizontal carousels — the lanes
+ * rack, the departments strip and the Creative Studio label row. Each
+ * one lives inside its own `overflow-x: auto` rail, so it scrolls itself
+ * and not the document. That is the intended affordance and this file
+ * does not touch it.
+ *
+ * What this does is make the failure mode impossible: if any element
+ * anywhere ever escapes its container — a long unbroken URL, a wide
+ * table, an absolutely positioned child, a future section built in a
+ * hurry — the document still cannot scroll sideways.
+ *
+ * `clip` rather than `hidden` on purpose. `overflow: hidden` turns the
+ * root into a scroll container, which silently breaks `position: sticky`
+ * further down the page. `clip` does not create a scroll container, so
+ * sticky headers keep working and inner scrollers keep scrolling.
+ * Safari below 16 does not support it and simply goes unguarded, which
+ * is the correct way to fail here: nothing is worse than it was.
+ */
+
+html {
+  overflow-x: clip;
+}
+
+/* Belt and braces for the one case `clip` alone does not cover: a child
+   with a negative margin wider than the viewport. Costs nothing when
+   nothing overflows. */
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beat licence — {{ licence.beat_title }}</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+</head>
+<body class="min-h-screen bg-sb-ground text-gray-100 antialiased">
+  <main class="mx-auto w-full max-w-2xl px-5 py-12">
+    <div class="sb-label text-sb-gold">Beat licence</div>
+    <h1 class="sb-h1 mt-2">{{ licence.beat_title }}</h1>
+    <p class="mt-2 text-sm text-gray-200">
+      From {{ licence.producer_name }}{% if licence.bpm %} · {{ licence.bpm }} BPM{% endif %}{% if licence.song_key %} · {{ licence.song_key }}{% endif %}
+    </p>
+
+    {% if licence.status == 'revoked' %}
+    <div class="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-4">
+      <div class="text-sm font-black uppercase text-red-400">This licence was revoked</div>
+      <p class="mt-1 text-xs text-gray-200">It can no longer be signed here. Speak to {{ licence.producer_name }} before using the beat.</p>
+    </div>
+    {% elif licence.status == 'signed' %}
+    <div class="mt-6 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-4">
+      <div class="text-sm font-black uppercase text-green-400">{{ 'Signed — you are done' if just_signed else 'Signed' }}</div>
+      <p class="mt-1 text-xs text-gray-200">
+        Signed by {{ licence.signed_by }}{% if licence.signed_at %} on {{ licence.signed_at[:10] }}{% endif %}.
+        Keep this link — it is your copy of the terms.
+      </p>
+    </div>
+    {% endif %}
+
+    <section class="mt-6 rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-sb-gold">Terms</h2>
+      <dl class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div><dt class="sb-label text-gray-200">Licence</dt>
+          <dd class="mt-1 text-sm font-bold text-gray-100">{{ type_label }}</dd></div>
+        <div><dt class="sb-label text-gray-200">Fee</dt>
+          <dd class="mt-1 text-sm font-bold sb-num text-sb-gold-bright">${{ "{:,.2f}".format(licence.fee) }}</dd></div>
+        <div><dt class="sb-label text-gray-200">Territory</dt>
+          <dd class="mt-1 text-sm font-bold text-gray-100">{{ licence.territory }}</dd></div>
+        <div><dt class="sb-label text-gray-200">Term</dt>
+          <dd class="mt-1 text-sm font-bold text-gray-100">{{ licence.term or 'Not specified' }}</dd></div>
+        <div><dt class="sb-label text-gray-200">Producer split</dt>
+          <dd class="mt-1 text-sm font-bold sb-num text-gray-100">{{ licence.producer_split | round | int }}%</dd></div>
+        <div><dt class="sb-label text-gray-200">Licensee</dt>
+          <dd class="mt-1 text-sm font-bold text-gray-100">{{ licence.licensee_name or licence.licensee_email }}</dd></div>
+      </dl>
+      {% if licence.terms %}
+      <p class="mt-4 whitespace-pre-line border-t border-white/10 pt-4 text-sm leading-relaxed text-gray-100">{{ licence.terms }}</p>
+      {% endif %}
+    </section>
+
+    {% if licence.status not in ('signed', 'revoked') %}
+    <form method="post" class="mt-6 rounded-2xl border border-sb-gold/40 bg-sb-surface-2 p-5">
+      <h2 class="sb-label text-sb-gold-bright">Sign it</h2>
+      <p class="mt-2 text-xs text-gray-200">
+        Typing your name records that you accepted these terms, with the date.
+        It can only be done once, and both sides keep this page.
+      </p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <input name="signed_by" required placeholder="Your full name"
+               class="min-w-0 flex-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none">
+        <button class="rounded-lg bg-gradient-to-b from-sb-gold-bright to-sb-gold-deep px-5 py-2.5 text-xs font-black uppercase tracking-wide text-sb-on-gold">Sign licence</button>
+      </div>
+    </form>
+    {% endif %}
+
+    <p class="mt-8 border-t border-white/10 pt-5 text-xs text-gray-200">
+      This records an agreement between two people and is not legal advice.
+      Street Banker stores it and shows both sides the same copy.
+    </p>
+  </main>
+</body>
+</html>

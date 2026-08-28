@@ -1,0 +1,66 @@
+{% import "tour/_macros.html" as m %}
+<div class="to-cards" style="margin-bottom:12px">
+  <div class="to-card is-warm"><b>{{ '%.0f'|format(money['earned']) }}</b><span>Earned ({{ tour['currency'] }})</span><small>{{ money['deal']|replace('_',' ') }}{% if money['backend'] %} · backend {{ '%.0f'|format(money['backend']) }}{% endif %}</small></div>
+  <div class="to-card"><b>{{ '%.0f'|format(money['merch_net']) }}</b><span>Merch net</span></div>
+  <div class="to-card"><b>{{ '%.0f'|format(money['expenses']) }}</b><span>Expenses</span></div>
+  <div class="to-card"><b>{{ '%.0f'|format(money['estimated_net']) }}</b><span>Estimated net</span>{% if money['actual_net'] is not none %}<small>actual {{ '%.0f'|format(money['actual_net']) }}</small>{% endif %}</div>
+  <div class="to-card"><b>{{ '%.0f'|format(money['outstanding']) }}</b><span>Outstanding</span>{% if money['deposit_outstanding'] %}<small style="color:var(--to-warn)">deposit due</small>{% endif %}</div>
+</div>
+{% if not money['has_numbers'] %}<div class="to-note"><strong>No money entered for this show.</strong> The cards read zero because nothing has been typed in — not because the show is worth nothing.</div>{% endif %}
+
+<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/money" class="to-form">
+  <div class="to-eyebrow">Deal</div>
+  <div class="to-grid">
+    {{ m.select('deal_type', 'Deal type', vocab['deal_types'], show['deal_type'] or 'flat') }}
+    {{ m.field('guarantee', 'Guarantee', show['guarantee']) }}
+    {{ m.field('backend_pct', 'Backend %', show['backend_pct']) }}
+    {{ m.field('bonus', 'Bonus', show['bonus']) }}
+    {{ m.field('deposit_required', 'Deposit required', show['deposit_required']) }}
+    {{ m.field('deposit_received', 'Deposit received', show['deposit_received']) }}
+    {{ m.field('deposit_date', 'Deposit date', show['deposit_date'], type='date') }}
+    {{ m.field('currency', 'Currency', show['currency'] or tour['currency']) }}
+  </div>
+  <div class="to-eyebrow" style="margin-top:14px">Night of</div>
+  <div class="to-grid">
+    {{ m.field('ticket_gross', 'Ticket gross', show['ticket_gross']) }}
+    {{ m.field('adjusted_gross', 'Adjusted gross', show['adjusted_gross']) }}
+    {{ m.field('vip_gross', 'VIP gross', show['vip_gross']) }}
+    {{ m.field('merch_gross', 'Merch gross', show['merch_gross']) }}
+    {{ m.field('venue_merch_cut', 'Venue merch %', show['venue_merch_cut']) }}
+    {{ m.field('production_expenses', 'Production expenses', show['production_expenses']) }}
+    {{ m.field('local_expenses', 'Local expenses', show['local_expenses']) }}
+    {{ m.field('travel_allocation', 'Travel allocation', show['travel_allocation']) }}
+    {{ m.field('promoter_expenses', 'Promoter expenses', show['promoter_expenses']) }}
+  </div>
+  <div class="to-eyebrow" style="margin-top:14px">Settlement</div>
+  <div class="to-grid">
+    {{ m.field('settlement_amount', 'Settlement amount', show['settlement_amount']) }}
+    {{ m.field('collected', 'Collected', show['collected']) }}
+    {{ m.select('settlement_status', 'Status', vocab['settlement_statuses'], show['settlement_status'] or 'open') }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Save money</button> <a class="to-btn to-btn--ghost" href="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/settlement-summary" target="_blank" rel="noopener">Settlement summary</a> <a class="to-btn to-btn--ghost" href="/tour/{{ show['id'] }}">Classic settlement sheet</a></div>
+</form>
+
+<h2 class="to-h2">Expenses & receipts</h2>
+{% if expenses %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th class="to-num">Amount</th><th>Receipt</th><th></th></tr></thead>
+  <tbody>{% for e in expenses %}<tr><td data-k="Date">{{ e['spend_date'] or '—' }}</td><td data-k="Vendor">{{ e['vendor'] or '—' }}{% if e['notes'] %}<div class="to-muted">{{ e['notes'] }}</div>{% endif %}</td><td data-k="Category">{{ e['category'] }}</td><td data-k="Amount" class="to-num">{{ e['amount'] }}{% if e['tax'] %} <span class="to-muted">+{{ e['tax'] }} tax</span>{% endif %}</td>
+    <td data-k="Receipt">{% if e['receipt_file_id'] %}<a href="/tours/{{ tour['id'] }}/files/{{ e['receipt_file_id'] }}/download">receipt</a>{% else %}—{% endif %}</td>
+    <td><form method="post" action="/tours/{{ tour['id'] }}/expenses/{{ e['id'] }}/delete"><button class="to-btn to-btn--ghost to-btn--small to-btn--danger" type="submit">✕</button></form></td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<p class="to-sub">No expenses logged against this show.</p>{% endif %}
+<form method="post" action="/tours/{{ tour['id'] }}/expenses/add" enctype="multipart/form-data" class="to-form" style="margin-top:10px">
+  <input type="hidden" name="show_id" value="{{ show['id'] }}">
+  <div class="to-grid">
+    {{ m.field('vendor', 'Vendor') }}
+    {{ m.select('category', 'Category', vocab['expense_categories'], 'other') }}
+    {{ m.field('amount', 'Amount', required=True) }}
+    {{ m.field('tax', 'Tax') }}
+    {{ m.field('spend_date', 'Date', show['date'], type='date') }}
+    <label class="to-field"><span>Receipt (photo or PDF)</span><input type="file" name="receipt" accept="image/*,.pdf"></label>
+    {{ m.textarea('notes', 'Notes', rows=1) }}
+  </div>
+  <p class="to-sub">A receipt photo is stored as the receipt; the amount and vendor are what you type — there is no OCR guessing them.</p>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Add expense</button></div>
+</form>

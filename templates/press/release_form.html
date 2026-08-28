@@ -1,0 +1,96 @@
+{% set tab = 'releases' %}
+{% extends "press/_shell.html" %}
+{% block title %}{{ 'Edit announcement' if release else 'New announcement' }} - Press Desk{% endblock %}
+{% block press %}
+{% macro rv(key) %}{{ (release[key] if release and release[key] else '') }}{% endmacro %}
+
+<div class="pd-head">
+  <div>
+    <p class="pd-eyebrow">Announcement</p>
+    <h1 class="pd-h1">{{ release.headline or release.title if release else 'Write an announcement' }}</h1>
+    <p class="pd-sub">Write it as news, not as an advert: what happened, when, and where to hear it. The preview underneath is what a journalist sees when they open your link.</p>
+  </div>
+</div>
+
+{% if release and embargoed %}
+<div class="pd-note pd-note--warn">
+  <strong>Under embargo until {{ release.embargo_until }}.</strong>
+  <p>The page still opens — an embargo asks a journalist to hold the story, it does not hide it — but it says so at the top, clearly.</p>
+</div>
+{% endif %}
+
+<form method="post" class="pd-form"
+      action="{{ '/press-desk/announcements/' ~ release.id if release else '/press-desk/announcements/new' }}">
+  <div class="pd-grid">
+    <label class="pd-field"><span>Internal title *</span>
+      <input name="title" required value="{{ rv('title') }}" placeholder="What you call it in here"></label>
+    <label class="pd-field"><span>Kind</span>
+      <select name="kind">{% for k in vocab.kinds %}
+        <option {{ 'selected' if release and release.kind == k }}>{{ k }}</option>{% endfor %}</select></label>
+    <label class="pd-field" style="grid-column:1/-1"><span>Headline</span>
+      <input name="headline" value="{{ rv('headline') }}"
+             placeholder="{{ artist_name or 'Artist' }} announces …"></label>
+    <label class="pd-field" style="grid-column:1/-1"><span>Subhead</span>
+      <input name="subhead" value="{{ rv('subhead') }}" placeholder="One line of context"></label>
+    <label class="pd-field"><span>Dateline</span>
+      <input name="dateline" value="{{ rv('dateline') }}" placeholder="London, 14 August 2026"></label>
+    <label class="pd-field"><span>Release date</span>
+      <input name="release_date" type="date" value="{{ rv('release_date') }}"></label>
+    <label class="pd-field"><span>Embargo until</span>
+      <input name="embargo_until" type="date" value="{{ rv('embargo_until') }}"></label>
+    <label class="pd-field"><span>Listen / watch link</span>
+      <input name="listen_url" value="{{ rv('listen_url') }}" placeholder="Your smart link"></label>
+    <label class="pd-field"><span>Press kit link</span>
+      <input name="epk_url" value="{{ rv('epk_url') }}" placeholder="Your EPK or pitch link"></label>
+    <label class="pd-field"><span>Press contact name</span>
+      <input name="contact_name" value="{{ rv('contact_name') }}"></label>
+    <label class="pd-field"><span>Press contact email</span>
+      <input name="contact_email" type="email" value="{{ rv('contact_email') }}"></label>
+    <label class="pd-field"><span>Status</span>
+      <select name="status">
+        <option value="draft" {{ 'selected' if release and release.status == 'draft' }}>Draft</option>
+        <option value="ready" {{ 'selected' if release and release.status == 'ready' }}>Ready to pitch</option>
+        <option value="sent" {{ 'selected' if release and release.status == 'sent' }}>Sent</option>
+      </select></label>
+
+    <label class="pd-field" style="grid-column:1/-1"><span>The announcement</span>
+      <textarea name="body" rows="9" placeholder="What happened, in the order a stranger needs it. First paragraph: the news. Second: the detail. Third: what it sounds like or why it matters.">{{ rv('body') }}</textarea></label>
+    <label class="pd-field" style="grid-column:1/-1"><span>Quote</span>
+      <textarea name="quote" rows="3" placeholder="Something you would actually say out loud.">{{ rv('quote') }}</textarea></label>
+    <label class="pd-field"><span>Quote from</span>
+      <input name="quote_source" value="{{ rv('quote_source') }}" placeholder="{{ artist_name or 'Artist name' }}"></label>
+    <label class="pd-field" style="grid-column:1/-1"><span>Boilerplate</span>
+      <textarea name="boilerplate" rows="3" placeholder="The standing two lines about you that go at the bottom of every announcement.">{{ rv('boilerplate') }}</textarea></label>
+  </div>
+  <div style="margin-top:16px" class="pd-inline">
+    <button class="pd-btn" type="submit">{{ 'Save' if release else 'Create' }}</button>
+    <a class="pd-btn pd-btn--ghost" href="/press-desk/announcements">Back</a>
+    {% if release %}<a class="pd-btn pd-btn--ghost" href="/press-desk/pitch/new">Pitch this</a>{% endif %}
+  </div>
+</form>
+
+{% if release %}
+<h2 class="pd-h2">Preview</h2>
+<div class="pd-paper">
+  <span class="pd-paper-tag">{{ release.kind }}{% if release.embargo_until %} · Embargoed until {{ release.embargo_until }}{% endif %}</span>
+  <h3>{{ release.headline or release.title }}</h3>
+  {% if release.subhead %}<p class="pd-paper-sub">{{ release.subhead }}</p>{% endif %}
+  {% if release.dateline %}<p class="pd-paper-meta">{{ release.dateline }}</p>{% endif %}
+  <hr>
+  {% for para in (release.body or '').split('\n\n') %}{% if para.strip() %}<p>{{ para.strip() }}</p>{% endif %}{% endfor %}
+  {% if release.quote %}
+  <blockquote>“{{ release.quote }}”{% if release.quote_source %}<br><span class="pd-paper-meta">— {{ release.quote_source }}</span>{% endif %}</blockquote>
+  {% endif %}
+  {% if release.boilerplate %}<hr><p class="pd-paper-meta">{{ release.boilerplate }}</p>{% endif %}
+  {% if release.contact_email %}
+  <p class="pd-paper-meta">Press contact: {{ release.contact_name }} — {{ release.contact_email }}</p>
+  {% endif %}
+</div>
+
+<form method="post" action="/press-desk/announcements/{{ release.id }}/delete"
+      style="margin-top:14px"
+      onsubmit="return confirm('Delete this announcement and any pitches built from it?')">
+  <button class="pd-btn pd-btn--ghost" type="submit">Delete announcement</button>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% import "landing/_cards.html" as logos %}
+
+{% block title %}Smart Links - Royalty Sweep{% endblock %}
+
+{% set ld = links_data %}
+
+{% block content %}
+<div class="mx-auto max-w-[1400px] space-y-5">
+
+  <!-- ===== Street Banker Links: campaign engine ===== -->
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker Links</div>
+      <h1 class="sb-h1 mt-1">Music Link Campaigns</h1>
+      <p class="mt-1 max-w-2xl text-sm text-gray-300">One link that turns attention into pre-saves, streams, and fan data you own — not just a redirect.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/links/fans" class="sb-btn sb-btn-secondary">Fan CRM</a>
+      <a href="/links/new" class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-4 py-2 text-sm font-bold text-sb-on-gold shadow-[0_4px_18px_rgba(216,178,90,0.3)] hover:scale-[1.02]">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>
+        Create Music Link
+      </a>
+    </div>
+  </div>
+
+  {% if not links_user %}
+  <div class="rounded-2xl border border-sb-gold/30 bg-sb-gold/[0.05] p-5 text-sm text-gray-200">
+    <span class="font-bold text-sb-gold-bright">Sign in to build campaigns.</span>
+    Campaigns come with a fan-facing landing page, pre-save countdown, email capture, QR codes, variants, and analytics.
+    <a href="/login?next=/links" class="ml-2 font-semibold text-sb-gold-bright underline">Sign in</a>
+  </div>
+  {% elif ml_campaigns %}
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    {% for c in ml_campaigns %}
+    <div class="overflow-hidden rounded-2xl border border-white/10 bg-sb-surface-1">
+      <div class="flex gap-4 p-4">
+        {% if c.cover_url %}
+        <img src="{{ c.cover_url }}" alt="{{ c.title }}" class="h-20 w-20 shrink-0 rounded-lg object-cover">
+        {% else %}
+        <div class="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-white/5 text-2xl text-gray-300">♪</div>
+        {% endif %}
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center justify-between gap-2">
+            <div class="truncate text-sm font-bold text-gray-100">{{ c.title }}</div>
+            <span class="shrink-0 rounded-md px-2 py-0.5 text-xs font-bold uppercase {{ 'bg-green-500/15 text-green-400' if c.status_tone == 'green' else ('bg-sb-gold/15 text-sb-gold-bright' if c.status_tone == 'gold' else 'bg-white/10 text-gray-300') }}">{{ c.eff_status }}</span>
+          </div>
+          <div class="truncate text-xs text-gray-300 font-medium">{{ c.artist_name }} · {{ c.release_type }}{% if c.release_date %} · {{ c.release_date }}{% endif %}</div>
+          <div class="mt-1.5 flex items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wide text-gray-300">SB Score</span>
+            <span class="h-1.5 w-16 overflow-hidden rounded-full bg-white/10"><span class="block h-full rounded-full {{ 'bg-green-500' if c.score >= 70 else ('bg-sb-gold-bright' if c.score >= 40 else 'bg-red-500/70') }}" style="width: {{ c.score }}%;"></span></span>
+            <span class="text-xs font-bold tabular-nums {{ 'text-green-400' if c.score >= 70 else 'text-sb-gold-bright' }}">{{ c.score }}</span>
+          </div>
+          <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sb-num text-gray-300 font-medium">
+            <span>{{ c.visits }} visits</span><span>{{ c.clicks }} clicks</span><span>{{ c.ctr }}% CTR</span><span>{{ c.presaves + c.captures }} fans</span>
+            {# 7-day traffic sparkline — real page views from the click log #}
+            <svg viewBox="0 0 70 20" class="ml-auto h-5 w-[70px] shrink-0" role="img" aria-label="7-day visits">
+              <polyline fill="none" stroke="{{ '#E8B950' if c.spark | sum else '#3A3226' }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                points="{% for n in c.spark %}{{ loop.index0 * 11 + 2 }},{{ (17 - (n / c.spark_max * 14)) | round(1) }} {% endfor %}"/>
+              <title>Visits, last 7 days: {{ c.spark | join(' · ') }}</title>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between border-t border-white/5 bg-black/20 px-4 py-2 text-xs font-semibold">
+        <span class="flex gap-3">
+          <a href="/l/{{ c.slug }}" target="_blank" class="text-sb-gold-bright hover:underline">View</a>
+          <a href="/links/{{ c.id }}/edit" class="text-gray-200 hover:text-white">Edit</a>
+          <a href="/links/{{ c.id }}/analytics" class="text-gray-200 hover:text-white">Analytics</a>
+          <a href="/links/{{ c.id }}/variants" class="text-gray-200 hover:text-white">Variants</a>
+          <a href="/links/{{ c.id }}/qr.svg" target="_blank" class="text-gray-200 hover:text-white">QR</a>
+        </span>
+        <button type="button" class="copy-campaign-link text-gray-300 hover:text-sb-gold-bright" data-slug="{{ c.slug }}">Copy link</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-sb-gold/30 py-10 text-center">
+    <div class="text-sm font-bold text-gray-200">No campaigns yet</div>
+    <p class="mx-auto mt-1 max-w-md text-xs text-gray-300">Build your first music link: landing page, streaming buttons, pre-save countdown, email capture, QR code, and analytics — all from one URL.</p>
+    <a href="/links/new" class="sb-btn sb-btn-secondary mt-4">Create your first campaign</a>
+  </div>
+  {% endif %}
+
+  <div class="flex flex-wrap items-end justify-between gap-4 border-t border-white/10 pt-5">
+    <div>
+      <h1 class="sb-h1">Quick Smart Links</h1>
+      <p class="mt-1 text-sm text-gray-300">One link per release that sends fans to every platform — with click tracking.</p>
+    </div>
+    <button type="button" id="new-link-btn" class="inline-flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-400 transition-colors hover:bg-amber-500/20">
+      <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>
+      Create Smart Link
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Active Links</div>
+      <div id="kpi-links" class="mt-2 text-2xl font-bold tabular-nums text-sb-ink">{{ ld.summary.total_links }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Total Clicks</div>
+      <div id="kpi-clicks" class="mt-2 text-2xl font-bold tabular-nums">{{ "{:,}".format(ld.summary.total_clicks) }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Top Performer</div>
+      <div class="mt-2 truncate text-lg font-bold">{{ ld.summary.top_title }}</div>
+      <div class="text-xs text-gray-300 font-medium">{{ "{:,}".format(ld.summary.top_clicks) }} clicks</div>
+    </div>
+  </div>
+
+  {% if real_links %}
+  <section class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">Live Links <span class="ml-1 rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-400">REAL — clicks tracked</span></h2>
+    <div class="mt-4 space-y-3">
+      {% for link in real_links %}
+      <div class="flex flex-wrap items-center gap-4 rounded-xl border border-white/5 bg-white/5 px-4 py-3">
+        {% if link.meta and link.meta.art %}<img src="{{ link.meta.art }}" alt="" class="h-10 w-10 shrink-0 rounded object-cover">{% endif %}
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="truncate text-sm font-semibold text-gray-100">{{ link.title }}</span>
+            {% if link.meta and link.meta.links %}<span class="shrink-0 rounded-full border border-sb-gold/50 bg-sb-gold/10 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-sb-gold-bright">Universal · {{ link.meta.links | length }} platforms</span>{% endif %}
+          </div>
+          <a href="/l/{{ link.slug }}" target="_blank" rel="noopener noreferrer" class="truncate text-xs text-amber-400/90 hover:underline">{{ request.host_url.rstrip('/') }}/l/{{ link.slug }}</a>
+        </div>
+        <div class="shrink-0 text-right">
+          <div class="text-sm font-bold sb-num text-sb-ink">{{ "{:,}".format(link.clicks) }}</div>
+          <div class="text-xs text-gray-300 font-medium">real clicks</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="mt-3 text-xs text-gray-300 font-medium">These links actually redirect (to a live Spotify search for the track) and every visit is counted.</p>
+  </section>
+  {% endif %}
+
+  <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">Your Links <span class="ml-1 text-xs font-semibold text-gray-300">demo examples</span></h2>
+    <div id="links-list" class="mt-4 space-y-3">
+      {% for link in ld.links %}
+      <div class="link-card flex flex-wrap items-center gap-4 rounded-xl border border-white/5 bg-white/5 px-4 py-3">
+        <div class="min-w-0 flex-1">
+          <div class="truncate text-sm font-semibold text-gray-100">{{ link.title }}</div>
+          <div class="mt-0.5 flex items-center gap-2">
+            <span class="link-url truncate text-xs text-amber-400/90">{{ link.url }}</span>
+            <button type="button" class="copy-link-btn -m-2 shrink-0 p-2 text-gray-300 transition-colors hover:text-white" data-url="{{ link.url }}" aria-label="Copy link">
+              <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="7" width="9" height="9" rx="1.5"/><path d="M4 13V5a1 1 0 011-1h8"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="flex shrink-0 items-center gap-1.5">
+          {% for p in link.platform_logos %}{{ logos.platform_logo(p.logo, "h-6 w-6") }}{% endfor %}
+        </div>
+        <div class="shrink-0 text-right">
+          <div class="text-sm font-bold sb-num text-sb-ink">{{ "{:,}".format(link.clicks) }}</div>
+          <div class="text-xs text-gray-300 font-medium">clicks</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div id="links-empty" class="{{ 'hidden' if ld.links else '' }} mt-4 rounded-xl border border-dashed border-white/10 py-8 text-center text-xs text-gray-300">
+      No smart links yet. Create your first one.
+    </div>
+  </section>
+</div>
+
+<!-- Hidden logo templates, keyed for cloning into newly created links -->
+<div id="logo-templates" class="hidden">
+  {% for p in ld.platforms %}
+  <span data-logo-key="{{ logo_key(p) }}">{{ logos.platform_logo(logo_key(p), "h-6 w-6") }}</span>
+  {% endfor %}
+</div>
+
+<!-- Create Smart Link modal -->
+<div id="link-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
+  <div class="w-full max-w-md rounded-2xl border border-white/10 bg-sb-surface-1 p-6">
+    <div class="flex items-center justify-between">
+      <h3 class="text-sm font-semibold text-gray-100">Create Smart Link</h3>
+      <button type="button" id="link-modal-close" class="text-gray-300 hover:text-white" aria-label="Close">
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l8 8M14 6l-8 8"/></svg>
+      </button>
+    </div>
+    <div class="mt-4">
+      <label class="sb-label text-gray-300">Release Title</label>
+      <input id="link-title-input" placeholder="e.g. Midnight Drive"
+             class="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none">
+    </div>
+    <div class="mt-3">
+      <label class="sb-label text-sb-gold-bright">Track URL — makes it universal (optional)</label>
+      <input id="link-source-url" placeholder="Paste a Spotify / Apple Music / YouTube link"
+             class="mt-1 w-full rounded-lg border border-sb-gold/40 bg-white/5 px-3 py-2 text-sm text-gray-100 placeholder-gray-300 focus:border-sb-gold/80 focus:outline-none">
+      <p class="mt-1 text-xs text-gray-300 font-medium">We'll find your track on every platform and build a one-page link hub for fans.</p>
+    </div>
+    <div class="mt-4">
+      <label class="sb-label text-gray-300">Platforms</label>
+      <div class="mt-2 grid grid-cols-2 gap-2">
+        {% for p in ld.platforms %}
+        <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-200">
+          <input type="checkbox" class="link-platform-cb h-3.5 w-3.5 accent-amber-500" value="{{ p }}" checked>
+          {{ p }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div id="link-modal-error" class="mt-3 hidden text-xs font-semibold text-red-400"></div>
+    <div class="mt-5 flex justify-end gap-2">
+      <button type="button" id="link-modal-cancel" class="sb-btn sb-btn-secondary sb-btn-sm">Cancel</button>
+      <button type="button" id="link-modal-create" class="sb-btn sb-btn-secondary sb-btn-sm">Create Link</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const modal = document.getElementById("link-modal");
+  const openModal = () => { modal.classList.remove("hidden"); modal.classList.add("flex"); };
+  const closeModal = () => { modal.classList.add("hidden"); modal.classList.remove("flex"); };
+  document.getElementById("new-link-btn").addEventListener("click", openModal);
+  document.getElementById("link-modal-close").addEventListener("click", closeModal);
+  document.getElementById("link-modal-cancel").addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+
+  async function copyUrl(url, btn) {
+    try { await navigator.clipboard.writeText(url); } catch (e) {}
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<svg class="h-3.5 w-3.5 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7 7a1 1 0 01-1.4 0l-3-3a1 1 0 111.4-1.4L9 11.6l6.3-6.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>';
+    setTimeout(() => { btn.innerHTML = orig; }, 1400);
+  }
+  function bindCopy(scope) {
+    scope.querySelectorAll(".copy-link-btn").forEach((btn) => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => copyUrl(btn.dataset.url, btn));
+    });
+  }
+  bindCopy(document);
+
+  // Clone a server-rendered platform-logo tile from the hidden template set.
+  function logoMarkup(logoKey) {
+    const found = document.querySelector('#logo-templates [data-logo-key="' + logoKey + '"]');
+    return found ? found.innerHTML : '';
+  }
+
+  document.getElementById("link-modal-create").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const title = document.getElementById("link-title-input").value.trim();
+    const source_url = document.getElementById("link-source-url").value.trim();
+    const platforms = Array.from(document.querySelectorAll(".link-platform-cb:checked")).map((c) => c.value);
+    const errEl = document.getElementById("link-modal-error");
+    errEl.classList.add("hidden");
+    if (!title || !platforms.length) {
+      errEl.textContent = "Enter a title and select at least one platform.";
+      errEl.classList.remove("hidden");
+      return;
+    }
+    btn.disabled = true; btn.textContent = "Creating...";
+    try {
+      const res = await fetch("/links/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, platforms, source_url }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        prependLink(data.link);
+        closeModal();
+        document.getElementById("link-title-input").value = "";
+      } else {
+        errEl.textContent = data.error || "Could not create link.";
+        errEl.classList.remove("hidden");
+      }
+    } finally {
+      btn.disabled = false; btn.textContent = "Create Link";
+    }
+  });
+
+  function prependLink(link) {
+    document.getElementById("links-empty").classList.add("hidden");
+    const logosHtml = link.platform_logos.map((p) => logoMarkup(p.logo)).join("");
+    const card = document.createElement("div");
+    card.className = "link-card flex flex-wrap items-center gap-4 rounded-xl border border-white/5 bg-white/5 px-4 py-3";
+    card.innerHTML =
+      '<div class="min-w-0 flex-1">' +
+        '<div class="truncate text-sm font-semibold text-gray-100">' + escapeHtml(link.title) + "</div>" +
+        '<div class="mt-0.5 flex items-center gap-2">' +
+          '<span class="link-url truncate text-xs text-amber-400/90">' + escapeHtml(link.url) + "</span>" +
+          '<button type="button" class="copy-link-btn -m-2 shrink-0 p-2 text-gray-300 transition-colors hover:text-white" data-url="' + escapeHtml(link.url) + '" aria-label="Copy link"><svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="7" width="9" height="9" rx="1.5"/><path d="M4 13V5a1 1 0 011-1h8"/></svg></button>' +
+        "</div>" +
+      "</div>" +
+      '<div class="flex shrink-0 items-center gap-1.5">' + logosHtml + "</div>" +
+      '<div class="shrink-0 text-right"><div class="text-sm font-bold sb-num text-sb-ink">' + link.clicks.toLocaleString() + '</div><div class="text-xs text-gray-300 font-medium">clicks</div></div>';
+    document.getElementById("links-list").prepend(card);
+    bindCopy(card);
+    flashHighlight(card);
+    const kpi = document.getElementById("kpi-links");
+    kpi.textContent = String(Number(kpi.textContent) + 1);
+  }
+
+  // Campaign cards: copy the public link.
+  document.querySelectorAll(".copy-campaign-link").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const url = window.location.origin + "/l/" + btn.dataset.slug;
+      try { await navigator.clipboard.writeText(url); } catch (e) {}
+      btn.textContent = "Copied ✓";
+      setTimeout(() => { btn.textContent = "Copy link"; }, 1500);
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% set nav = 'meetings' %}
+{% extends "desk/layout.html" %}
+{% block title %}{{ meeting.title }}{% endblock %}
+{% block main %}
+<p class="dk-sub"><a href="/operator-desk/meetings">&larr; Meetings</a></p>
+<h1 class="dk-h1">{{ meeting.title }}</h1>
+<p class="dk-sub">
+  {{ meeting.held_on }} · added by {{ meeting.created_by or 'someone' }} ·
+  <span class="dk-chip">{{ meeting.status }}</span>
+  {% if not meeting.consent_recorded %}
+    · <strong>no recording consent was recorded</strong>
+  {% endif %}
+</p>
+
+{% if meeting.is_mock %}
+  {# Said plainly and near the top. A fictional transcript that reads as a
+     real one is the single most dangerous thing this page could show. #}
+  <p class="dk-empty" style="margin-top:12px">
+    <strong>This is a demo transcript.</strong> No provider is configured, so
+    the offline mock produced fictional dialogue. It is not a record of
+    anything that was said, and nothing here should be relied on.
+  </p>
+{% endif %}
+
+{% if not meeting.transcript_id %}
+  <div style="margin-top:16px">
+    {% if meeting.status == 'refused' %}
+      <p class="dk-empty">Transcription was refused. The reason was shown when it was attempted; the audio policy or a feature flag is the usual cause.</p>
+    {% elif meeting.job_id %}
+      <p class="dk-empty">Transcription is running. Reload this page to check — it settles as soon as the provider answers.</p>
+    {% elif can('file_upload') and audio_on %}
+      <form method="post" action="/operator-desk/meetings/{{ meeting.id }}/transcribe">
+        <button class="dk-btn" type="submit">Transcribe this recording</button>
+        <p class="dk-sub" style="margin-top:8px">Charged per minute of audio by the provider. Pressing it twice will not transcribe twice.</p>
+      </form>
+    {% else %}
+      <p class="dk-empty">Not transcribed.</p>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% if candidates %}
+<h2 class="dk-h1" style="font-size:18px;margin-top:24px">To review</h2>
+<p class="dk-sub">
+  These were matched on <strong>phrasing</strong>, not understanding — the tool
+  does not know what the meeting meant. Every one shows the sentence it came
+  from so you can check it against the transcript. Approving is what writes a
+  task or a note, under your name.
+</p>
+
+<div class="dk-table-wrap" style="margin-top:12px"><table class="dk-table">
+  <thead><tr><th>What was said</th><th>Why it was picked</th><th>At</th><th></th></tr></thead>
+  <tbody>
+  {% for c in candidates %}
+  <tr{% if c.status != 'pending' %} style="opacity:.55"{% endif %}>
+    <td>
+      {{ c.text }}
+      <div style="font-size:12px;color:var(--dk-faint)">
+        {{ c.speaker or 'unidentified speaker' }}
+      </div>
+    </td>
+    <td>
+      <span class="dk-chip">{{ c.kind }}</span>
+      <div style="font-size:12px;color:var(--dk-faint)">{{ c.matched_on }}</div>
+    </td>
+    <td>{{ '%d:%02d'|format((c.start_ms // 60000), ((c.start_ms // 1000) % 60)) }}</td>
+    <td>
+      {% if c.status == 'pending' and can('note_add') %}
+        <form method="post" action="/operator-desk/meetings/candidates/{{ c.id }}/decide"
+              style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="dk-btn" style="min-height:26px;padding:0 10px;font-size:12px"
+                  name="action" value="task" type="submit">Make a task</button>
+          <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px"
+                  name="action" value="note" type="submit"
+                  {% if not meeting.lead_id %}title="This meeting is not attached to a lead, so a note has nowhere to go."{% endif %}>Save as a note</button>
+          <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px"
+                  name="action" value="dismiss" type="submit">Dismiss</button>
+        </form>
+      {% else %}
+        <span class="dk-chip">{{ c.status }}{% if c.promoted_kind %} · {{ c.promoted_kind }}{% endif %}</span>
+        {% if c.decided_by %}<div style="font-size:12px;color:var(--dk-faint)">by {{ c.decided_by }}</div>{% endif %}
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% elif meeting.transcript_id %}
+  <p class="dk-empty" style="margin-top:16px">Nothing in this transcript matched a commitment phrase. That does not mean nothing was decided — read the transcript.</p>
+{% endif %}
+
+{% if transcript %}
+<h2 class="dk-h1" style="font-size:18px;margin-top:24px">Transcript</h2>
+<p class="dk-sub">
+  {{ transcript.segments|length }} segments
+  {% if transcript.language %}· {{ transcript.language }}{% endif %}
+  {% if transcript.is_mock %}· <strong>fictional</strong>{% endif %}
+</p>
+<div class="dk-table-wrap" style="margin-top:12px"><table class="dk-table">
+  <thead><tr><th style="width:90px">At</th><th style="width:140px">Speaker</th><th>Said</th></tr></thead>
+  <tbody>
+  {% for s in transcript.segments %}
+  <tr>
+    <td>{{ '%d:%02d'|format((s.start_ms // 60000), ((s.start_ms // 1000) % 60)) }}</td>
+    <td>{{ s.speaker_key or '—' }}</td>
+    <td>{{ s.text }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+{% endblock %}

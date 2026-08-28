@@ -1,0 +1,29 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Exports - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Exports</p><h1 class="to-h1" style="font-size:20px">Paper, when paper is what's needed</h1><p class="to-sub">Print views open on ivory and print clean (use your browser's Save as PDF). CSVs open in a spreadsheet. Every export respects your permissions — what you cannot see is not in the file.</p></div></div>
+<div class="to-cards">
+  <a class="to-card" href="/tours/{{ tour['id'] }}/itinerary" target="_blank" rel="noopener"><b>Itinerary</b><span>Print · every day</span></a>
+  <a class="to-card" href="/tours/{{ tour['id'] }}/itinerary.csv"><b>Itinerary</b><span>CSV</span></a>
+  <a class="to-card" href="/tours/{{ tour['id'] }}/calendar.ics"><b>Calendar</b><span>.ics feed file</span></a>
+  {% if can('people') %}<a class="to-card" href="/tours/{{ tour['id'] }}/people.csv"><b>Personnel</b><span>CSV</span></a>{% endif %}
+  {% if can('travel') %}<a class="to-card" href="/tours/{{ tour['id'] }}/travel.csv"><b>Travel manifest</b><span>CSV</span></a>{% endif %}
+  {% if can('financials') %}<a class="to-card" href="/tours/{{ tour['id'] }}/money.csv"><b>Tour financials</b><span>CSV</span></a>{% endif %}
+</div>
+<h2 class="to-h2">Per show</h2>
+{% if shows %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <tbody>{% for s in shows %}<tr><td data-k="Show">{{ s['date'] }} · {{ s['city'] or s['venue'] }}</td>
+    <td><div class="to-inline">
+      <a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}/day-sheet" target="_blank" rel="noopener">Day sheet</a>
+      {% if can('guests') %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}/guests.csv">Guest list CSV</a>{% endif %}
+      {% if can('financials') %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}/settlement-summary" target="_blank" rel="noopener">Settlement summary</a>{% endif %}
+    </div></td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% if can('hotel') and lodging %}
+<h2 class="to-h2">Rooming lists</h2>
+<div class="to-inline">{% for l in lodging %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/hotels/{{ l['id'] }}/rooming" target="_blank" rel="noopener">{{ l['property'] }} · {{ l['checkin'] }}</a>{% endfor %}</div>
+{% endif %}
+{% endblock %}

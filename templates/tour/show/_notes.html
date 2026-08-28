@@ -1,0 +1,10 @@
+{% import "tour/_macros.html" as m %}
+{% if can('edit') %}
+<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/notes" class="to-form">
+  {{ m.textarea('notes', 'Show notes (everyone on the tour can read these)', show['notes'], rows=10) }}
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Save notes</button></div>
+</form>
+{% else %}
+<div class="to-panel" style="white-space:pre-line">{{ show['notes'] or 'No notes for this show.' }}</div>
+{% endif %}
+<p class="to-sub" style="margin-top:10px">Post-show: log what went well and what did not here; the day sheet for the next visit to this room starts from the venue record.</p>

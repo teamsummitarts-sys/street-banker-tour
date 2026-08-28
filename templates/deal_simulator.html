@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Sync Deal Simulator - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Royalty Sweep · Sync Engine</div>
+    <h1 class="sb-h1 mt-1">Deal Simulator</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Paste the terms of a sync offer and see where it sits against market ranges — with the risk flags a lawyer would circle first.</p>
+  </div>
+
+  <div class="grid gap-5 lg:grid-cols-[380px_1fr]">
+    <!-- Offer input -->
+    <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+      <h2 class="sb-label text-sb-gold-bright">The Offer</h2>
+      {% set field = 'mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 [color-scheme:dark] focus:border-amber-500/50 focus:outline-none' %}
+      <form method="post" class="mt-3 space-y-3">
+        <div><label class="sb-label text-gray-300">Offered fee (USD, 0 if gratis)</label>
+          <input name="fee" type="number" step="1" min="0" value="{{ inp.get('fee', '') }}" class="{{ field }}"></div>
+        <div><label class="sb-label text-gray-300">Media type</label>
+          <select name="media" class="{{ field }}">
+            {% for k, label, r in sim.MEDIA_TYPES %}<option value="{{ k }}" {{ 'selected' if inp.get('media') == k }}>{{ label }}</option>{% endfor %}
+          </select></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="sb-label text-gray-300">Term</label>
+            <select name="term" class="{{ field }}">
+              {% for k, label in sim.TERMS %}<option value="{{ k }}" {{ 'selected' if inp.get('term') == k }}>{{ label }}</option>{% endfor %}
+            </select></div>
+          <div><label class="sb-label text-gray-300">Territory</label>
+            <select name="territory" class="{{ field }}">
+              {% for k, label in sim.TERRITORIES %}<option value="{{ k }}" {{ 'selected' if inp.get('territory') == k }}>{{ label }}</option>{% endfor %}
+            </select></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          {% for name, label in [('exclusive', 'Exclusive'), ('all_media', 'All media'), ('mfn', 'MFN clause'), ('buyout', 'Buyout language')] %}
+          <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-gray-200">
+            <input type="checkbox" name="{{ name }}" value="1" class="h-4 w-4 accent-sb-gold" {{ 'checked' if inp.get(name) }}>{{ label }}
+          </label>
+          {% endfor %}
+        </div>
+        <button class="w-full rounded-lg bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-4 py-2.5 text-sm font-bold text-sb-on-gold hover:scale-[1.01]">Run Simulation</button>
+      </form>
+    </section>
+
+    <!-- Analysis -->
+    <div class="space-y-5">
+      {% if result %}
+      <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+        <h2 class="sb-label text-gray-300">Market Range — {{ result.media_label }}</h2>
+        <div class="mt-3 flex items-baseline gap-3">
+          <span class="text-3xl font-black tabular-nums text-sb-ink">${{ "{:,}".format(result.quote_low) }}–{{ "{:,}".format(result.quote_high) }}</span>
+          <span class="rounded-md px-2 py-1 text-xs font-bold uppercase {{ 'bg-red-500/15 text-red-400' if result.position in ('below', 'no_offer') else ('bg-green-500/15 text-green-400' if result.position == 'within' else 'bg-blue-500/15 text-blue-400') }}">
+            {{ 'No fee offered' if result.position == 'no_offer' else ('Offer is below range' if result.position == 'below' else ('Within range' if result.position == 'within' else 'Above range — take the win')) }}
+          </span>
+        </div>
+        <p class="mt-2 text-xs text-gray-300 font-medium">Indicative independent-catalog ranges adjusted for term, territory, exclusivity, and media scope. Estimates only.</p>
+      </section>
+
+      {% if result.flags %}
+      <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+        <h2 class="sb-label text-sb-gold-bright">Risk Flags</h2>
+        <div class="mt-3 space-y-2">
+          {% for severity, text in result.flags %}
+          <div class="flex items-start gap-2.5 rounded-lg border border-white/5 bg-black/30 p-3">
+            <span class="mt-1 h-2 w-2 shrink-0 rounded-full {{ 'bg-red-500' if severity == 'high' else ('bg-amber-500' if severity == 'medium' else 'bg-blue-400') }}"></span>
+            <p class="text-xs leading-relaxed text-gray-200">{{ text }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if result.counteroffer %}
+      <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+        <div class="flex items-center justify-between">
+          <h2 class="sb-label text-gray-300">Counteroffer Draft</h2>
+          <button type="button" id="copy-counter" class="sb-btn sb-btn-secondary sb-btn-sm">Copy</button>
+        </div>
+        <p id="counter-text" class="mt-3 rounded-lg border border-white/5 bg-black/30 p-4 text-sm leading-relaxed text-gray-200">{{ result.counteroffer }}</p>
+      </section>
+      {% endif %}
+      {% else %}
+      <div class="rounded-2xl border border-dashed border-white/10 py-14 text-center text-xs text-gray-300">Enter the offer terms and run the simulation — range, flags, and a counteroffer draft land here.</div>
+      {% endif %}
+
+      <p class="text-xs text-gray-300 font-medium">Workflow support only — not legal or financial advice. Have an attorney review any sync agreement before signing.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const copyBtn = document.getElementById("copy-counter");
+  if (copyBtn) copyBtn.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(document.getElementById("counter-text").textContent.trim()); } catch (e) {}
+    copyBtn.textContent = "Copied ✓"; setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+  });
+</script>
+{% endblock %}

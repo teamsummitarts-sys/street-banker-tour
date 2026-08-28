@@ -1,0 +1,355 @@
+/* Section 9 — Royalty Sweep.
+ *
+ * Header, photograph, five stages, one way in - stacked and centred, so
+ * it reads differently from the two picture-and-column sections above it.
+ * The archive table is the dominant object; nothing here is a card, a
+ * chart or a dashboard.
+ */
+
+.sbsw {
+  --sw-ink: var(--sb-ground);
+  --sw-raised: var(--sb-surface-1);
+  --sw-brass: var(--sb-gold);
+  --sw-brass-lit: var(--sb-gold-bright);
+  --sw-ivory: var(--sb-ink);
+  --sw-muted: var(--sb-ink-2);
+  --sw-line: rgb(201 168 106 / 0.22);
+
+  background: var(--sw-ink);
+  color: var(--sw-ivory);
+  padding: clamp(48px, 6vw, 84px) 0 clamp(40px, 5vw, 68px);
+}
+
+/* --- header --------------------------------------------------------------- */
+/* The heading is over the archive table now, so it drops the section
+   padding and lets .sbsw-over place it. Still centred. */
+.sbsw-head {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0;
+  text-align: center;
+}
+
+.sbsw-eyebrow {
+  margin: 0;
+  font-size: clamp(11px, 0.85vw, 13px);
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--sw-brass);
+}
+
+.sbsw-title {
+  margin: 18px auto 0;
+  max-width: 26ch;
+  font-size: clamp(1.9rem, 3.5vw, 3.5rem);
+  line-height: 1.04;
+  letter-spacing: -0.005em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--sw-ivory);
+}
+.sbsw-title span { display: inline; }
+@media (min-width: 1180px) {
+  /* One line on a wide screen, two below it - the break is the layout's
+     to make, so the words are not split by a fixed <br>. */
+  .sbsw-title { max-width: 30ch; }
+}
+
+.sbsw-support {
+  margin: 18px auto 0;
+  max-width: 62ch;
+  font-size: clamp(13.5px, 1vw, 16px);
+  line-height: 1.65;
+  color: var(--sw-muted);
+}
+
+/* --- the photograph ------------------------------------------------------- */
+/* Picture, scrim and copy share one grid cell, so the row is as tall as
+   whichever needs more room. The table is a 3:1 band — enough to centre a
+   heading on at desktop, nowhere near enough at 390px — so the
+   photograph grows to hold the copy rather than the copy shrinking to
+   fit the band. Same construction as Section 10. */
+.sbsw-photo {
+  margin: 0;
+  display: grid;
+  isolation: isolate;
+}
+.sbsw-photo > picture,
+.sbsw-scrim,
+.sbsw-over { grid-area: 1 / 1; }
+.sbsw-photo > picture { display: block; min-width: 0; }
+
+.sbsw-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1672 / 555;      /* the floor, not a cap */
+  object-fit: cover;
+  object-position: center;
+}
+
+/* --- the workflow --------------------------------------------------------- */
+/* --- the heading, over the archive table --------------------------------- */
+/* A vertical scrim, darkest through the middle. The table is covered
+   edge to edge with tapes and documents, so darkening the centre band
+   keeps the objects at the edges readable. */
+.sbsw-scrim {
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom,
+      rgb(8 8 7 / 0.50) 0%,
+      rgb(8 8 7 / 0.80) 38%,
+      rgb(8 8 7 / 0.80) 62%,
+      rgb(8 8 7 / 0.50) 100%);
+}
+
+.sbsw-over {
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: clamp(30px, 4.5vw, 74px) clamp(20px, 4vw, 56px);
+}
+.sbsw-over-cta { margin-top: clamp(18px, 2.2vw, 28px); }
+.sbsw-over .sbsw-trust {
+  margin: clamp(16px, 2vw, 24px) auto 0;
+  max-width: 62ch;
+}
+
+.sbsw-foot {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: clamp(26px, 3.4vw, 44px) clamp(20px, 4vw, 56px) 0;
+}
+
+.sbsw-flow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 640px) { .sbsw-flow { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 900px) { .sbsw-flow { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1180px) { .sbsw-flow { grid-template-columns: repeat(5, 1fr); } }
+
+.sbsw-stage {
+  padding: 16px clamp(14px, 1.6vw, 26px);
+  text-align: center;
+  border-top: 1px solid rgb(238 232 220 / 0.07);
+}
+.sbsw-stage + .sbsw-stage { border-left: 1px solid var(--sw-line); }
+@media (min-width: 1180px) {
+  .sbsw-stage { border-top: 0; }
+}
+
+.sbsw-num {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  color: var(--sw-brass);
+  opacity: 0.7;
+}
+.sbsw-stage-name {
+  display: block;
+  margin-top: 7px;
+  font-size: clamp(13px, 1vw, 15px);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sw-brass);
+  transition: color 200ms ease;
+}
+.sbsw-stage-detail {
+  display: block;
+  margin: 9px auto 0;
+  max-width: 34ch;
+  font-size: clamp(12px, 0.88vw, 13.5px);
+  line-height: 1.55;
+  color: var(--sw-muted);
+  transition: color 200ms ease;
+}
+.sbsw-stage:hover .sbsw-stage-name,
+.sbsw-stage:focus-within .sbsw-stage-name { color: var(--sw-brass-lit); }
+.sbsw-stage:hover .sbsw-stage-detail,
+.sbsw-stage:focus-within .sbsw-stage-detail { color: var(--sw-ivory); }
+
+/* --- the way in ----------------------------------------------------------- */
+.sbsw-ctas {
+  /* The primary sits on its own line so it is centred on the section
+     rather than centred as half of a pair. */
+  margin-top: clamp(26px, 3vw, 40px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.sbsw-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 54px;
+  padding: 0 34px;
+  border: 1px solid var(--sw-brass);
+  border-radius: var(--sb-r-control);
+  background: transparent;
+  color: var(--sw-brass);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+.sbsw-cta svg { width: 16px; height: 16px; }
+.sbsw-cta:hover { background: var(--sw-brass); color: var(--sb-surface-2); }
+
+.sbsw-example-btn {
+  background: none;
+  border: 0;
+  padding: 6px 0;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sw-muted);
+  cursor: pointer;
+  border-bottom: 1px solid rgb(167 161 152 / 0.4);
+  transition: color 200ms ease, border-color 200ms ease;
+}
+.sbsw-example-btn:hover { color: var(--sw-brass); border-bottom-color: var(--sw-brass); }
+
+.sbsw-cta:focus-visible, .sbsw-example-btn:focus-visible, .sbsw-method:focus-visible {
+  outline: 2px solid var(--sw-brass);
+  outline-offset: 3px;
+}
+
+/* --- trust ---------------------------------------------------------------- */
+.sbsw-trust {
+  margin: clamp(20px, 2.4vw, 28px) auto 0;
+  max-width: 64ch;
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--sw-muted);
+}
+.sbsw-trust-line {
+  display: block;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sw-ivory);
+}
+.sbsw-trust-copy { display: block; margin-top: 6px; }
+.sbsw-method {
+  display: inline-block;
+  margin-top: 6px;
+  color: var(--sw-brass);
+  text-decoration: none;
+  border-bottom: 1px solid rgb(201 168 106 / 0.4);
+}
+.sbsw-method:hover { border-bottom-color: var(--sw-brass); }
+
+/* --- the example case ----------------------------------------------------- */
+.sbsw-example {
+  margin: clamp(22px, 2.6vw, 32px) auto 0;
+  max-width: 720px;
+  border: 1px solid var(--sw-line);
+  border-radius: var(--sb-r-control);
+  background: var(--sw-raised);
+  padding: 16px 18px 18px;
+  text-align: left;
+}
+.sbsw-example-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.sbsw-example-tag {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--sw-brass);
+}
+.sbsw-example-status {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sw-muted);
+}
+
+.sbsw-example-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0;
+}
+@media (min-width: 620px) {
+  .sbsw-example-fields { grid-template-columns: 168px minmax(0, 1fr); }
+}
+.sbsw-example-fields dt {
+  padding: 8px 0 0;
+  border-top: 1px solid rgb(238 232 220 / 0.07);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sw-brass);
+}
+.sbsw-example-fields dd {
+  margin: 0;
+  padding: 8px 0 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--sw-ivory);
+}
+@media (min-width: 620px) {
+  .sbsw-example-fields dd { border-top: 1px solid rgb(238 232 220 / 0.07); }
+}
+.sbsw-example-fields ul { margin: 0; padding: 0; list-style: none; }
+.sbsw-example-fields li {
+  position: relative;
+  padding-left: 15px;
+  color: var(--sw-muted);
+}
+.sbsw-example-fields li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.62em;
+  width: 6px; height: 1px;
+  background: var(--sw-brass);
+}
+.sbsw-example-note {
+  margin: 14px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--sw-muted);
+}
+
+/* --- small screens -------------------------------------------------------- */
+@media (max-width: 767px) {
+  .sbsw-img { aspect-ratio: 860 / 465; }
+  .sbsw-stage { text-align: left; }
+  .sbsw-stage-detail { margin-left: 0; }
+  .sbsw-cta { width: 100%; justify-content: center; padding: 0 20px; }
+}
+@media (max-width: 639px) {
+  .sbsw-stage + .sbsw-stage { border-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sbsw-cta, .sbsw-example-btn, .sbsw-stage-name, .sbsw-stage-detail {
+    transition: none;
+  }
+}

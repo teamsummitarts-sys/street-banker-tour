@@ -1,0 +1,113 @@
+{# Section 5 — the AI Artist Twin.
+
+   Two layers that never touch: a photograph on the left, and on the
+   right an assessment built from artist_twin_config.py. Nothing in the
+   panel is drawn into the picture, and nothing in the picture claims to
+   be data.
+
+   The rows are native <details>, so they open with no script at all and
+   the keyboard behaviour comes from the platform. The component script
+   only closes the others and keeps aria-expanded honest. #}
+
+{% set twin = artist_twin %}
+{% set img = twin.image %}
+<section class="sbtw" id="artist-twin-section" aria-labelledby="sbtw-heading">
+  <div class="sbtw-inner">
+
+    <figure class="sbtw-photo">
+      <picture>
+        <source type="image/avif"
+                srcset="{% for w in img.widths %}{{ img.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                sizes="(min-width: 1180px) 55vw, 100vw">
+        <source type="image/webp"
+                srcset="{% for w in img.widths %}{{ img.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                sizes="(min-width: 1180px) 55vw, 100vw">
+        <img src="{{ img.stem }}-700.jpg"
+             srcset="{% for w in img.widths %}{{ img.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+             sizes="(min-width: 1180px) 55vw, 100vw"
+             width="{{ img.width }}" height="{{ img.height }}"
+             alt="{{ img.alt }}" loading="lazy" decoding="async">
+      </picture>
+    </figure>
+
+    <div class="sbtw-panel">
+      <p class="sbtw-eyebrow">{{ twin.eyebrow }}</p>
+      <h2 class="sbtw-title" id="sbtw-heading">
+        {% for line in twin.headline %}<span>{{ line }}</span>{% endfor %}
+      </h2>
+      <p class="sbtw-support">{{ twin.support }}</p>
+
+      <div class="sbtw-card">
+        <p class="sbtw-example" id="sbtw-example">{{ twin.example_label }}</p>
+
+        <ul class="sbtw-rows" aria-labelledby="sbtw-example">
+          {% for row in twin.assessment %}
+          <li>
+            <details class="sbtw-row" id="sbtw-{{ row.id }}" data-row="{{ row.id }}">
+              <summary class="sbtw-summary" aria-expanded="false">
+                <span class="sbtw-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    {% for d in row.icon.split('|') if d %}<path d="{{ d }}"/>{% endfor %}
+                  </svg>
+                </span>
+                <span class="sbtw-text">
+                  <span class="sbtw-row-title">{{ row.title }}</span>
+                  <span class="sbtw-row-summary">{{ row.summary }}</span>
+                </span>
+                {# The word is the status; the dot only repeats it. #}
+                <span class="sbtw-status sbtw-status--{{ row.tone }}">
+                  <span class="sbtw-dot" aria-hidden="true"></span>{{ row.status }}
+                </span>
+                <span class="sbtw-chev" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5l6 5.5-6 5.5"/></svg>
+                </span>
+              </summary>
+
+              <div class="sbtw-detail">
+                <dl>
+                  <dt>What the Twin observed</dt>
+                  <dd>{{ row.observation }}</dd>
+                  <dt>Why it matters</dt>
+                  <dd>{{ row.why }}</dd>
+                  <dt>Confidence</dt>
+                  <dd>{{ row.confidence }}</dd>
+                  <dt>Missing inputs</dt>
+                  <dd>{{ row.missing }}</dd>
+                  <dt>Recommended action</dt>
+                  <dd>{{ row.action }}</dd>
+                </dl>
+              </div>
+            </details>
+          </li>
+          {% endfor %}
+        </ul>
+
+        <div class="sbtw-sources">
+          <p class="sbtw-sources-label" id="sbtw-based-on">Based on</p>
+          <ul aria-labelledby="sbtw-based-on">
+            {% for source in twin.sources %}
+            <li class="sbtw-source sbtw-source--{{ source.state | lower | replace(' ', '-') }}">
+              <span class="sbtw-source-dot" aria-hidden="true"></span>
+              <span class="sbtw-source-name">{{ source.name }}</span>
+              <span class="sbtw-source-state">{{ source.state }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <div class="sbtw-ctas">
+        <a class="sbtw-cta" href="{{ twin.primary_cta.href }}">{{ twin.primary_cta.label }}</a>
+        <button type="button" class="sbtw-cta-2" id="sbtw-explain"
+                aria-controls="sbtw-{{ twin.assessment[2].id }}">{{ twin.secondary_cta.label }}</button>
+      </div>
+
+      <p class="sbtw-microcopy">
+        {{ twin.microcopy }}
+        <a class="sbtw-trust" href="{{ twin.trust_link.href }}">{{ twin.trust_link.label }}</a>
+      </p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,722 @@
+{% extends "base.html" %}
+{% import "landing/_cards.html" as logos %}
+
+{% block title %}Press Kit - Street Banker{% endblock %}
+
+{% set e = epk %}
+
+{% block content %}
+<div id="press-office" class="mx-auto max-w-[1300px] overflow-hidden rounded-2xl bg-sb-ink text-sb-surface-2 shadow-[0_0_60px_rgba(201,162,74,0.1)]">
+
+  <!-- ===== Press Office top bar ===== -->
+  <div class="sticky top-0 z-30 border-b border-sb-surface-2/10 bg-white/95 px-6 py-3 backdrop-blur">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <div class="sb-label">Street Banker <span class="text-sb-gold-deep">— Press Office</span></div>
+        <div class="text-xs font-semibold text-sb-surface-2/50">EPK Builder</div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        {% if user %}
+        <div class="mr-1 flex overflow-hidden rounded-lg border border-sb-surface-2/20 text-xs font-bold">
+          <button type="button" id="mode-edit" class="bg-sb-surface-2 px-3 py-1.5 text-white">Edit</button>
+          <button type="button" id="mode-preview" class="px-3 py-1.5 hover:bg-sb-surface-2/5">Preview</button>
+        </div>
+        <button type="button" id="topbar-save" class="sb-btn sb-btn-primary sb-btn-sm">Save Draft</button>
+        {% if epk_public_url %}
+        <button type="button" id="copy-link-btn" data-link="{{ request.url_root.rstrip('/') }}{{ epk_public_url }}" class="rounded-lg border border-sb-surface-2/20 px-3 py-1.5 text-xs font-bold hover:bg-sb-surface-2/5">Copy Public Link</button>
+        {% endif %}
+        {% endif %}
+        <button type="button" onclick="window.print()" class="rounded-lg bg-sb-surface-2 px-4 py-1.5 text-xs font-bold text-white hover:bg-sb-surface-2/85">Export PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="epk-layout" class="grid grid-cols-1 gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_330px]">
+
+    <!-- ===== The press kit document (white editorial one-sheet) ===== -->
+    <div id="epk-document" class="rounded-xl border border-sb-surface-2/10 bg-white p-8 shadow-sm">
+
+      {% if e.logo_path %}
+      <div class="flex justify-center pb-6">
+        <img src="{{ e.logo_path }}" alt="{{ e.name }} logo" class="max-h-16 w-auto max-w-[260px] object-contain">
+      </div>
+      {% endif %}
+
+      <!-- Hero -->
+      <header class="flex flex-col gap-6 border-b-2 border-sb-surface-2 pb-8 sm:flex-row sm:items-center">
+        {% if e.photo %}
+        <img id="epk-photo" src="{{ e.photo | media_url }}" alt="{{ e.name }}" class="h-32 w-32 shrink-0 rounded-2xl object-cover shadow-md">
+        {% else %}
+        <span id="epk-photo-fallback" class="grid h-32 w-32 shrink-0 place-items-center rounded-2xl bg-sb-surface-2 text-4xl font-black text-sb-ink">{{ e.initials }}</span>
+        {% endif %}
+        <div class="min-w-0 flex-1">
+          <div class="sb-label text-sb-gold-deep">Official Press Kit</div>
+          <h2 class="mt-1 text-3xl font-black uppercase tracking-tight sm:text-4xl">{{ e.name }}</h2>
+          {# An empty kit says it is empty. It used to say "Synthwave-driven
+             pop for late-night drives" to every artist who had written
+             nothing. #}
+          <p class="mt-2 text-base leading-snug {{ 'text-sb-surface-2/80' if e.profile.tagline else 'text-sb-surface-2/40 italic' }}">
+            {{ e.profile.tagline or 'No tagline yet — add one in the editor.' }}</p>
+          <div class="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
+            {% if e.profile.location %}<span class="rounded-full bg-sb-surface-2 px-3 py-1 text-white">{{ e.profile.location }}</span>{% endif %}
+            {% for g in e.profile.genres %}<span class="rounded-full border border-sb-surface-2/20 px-3 py-1">{{ g }}</span>{% endfor %}
+          </div>
+        </div>
+      </header>
+
+      <!-- Stats -->
+      <section data-section="stats" class="{{ '' if e.sections_on.stats else 'hidden' }} grid grid-cols-2 gap-px border-b border-sb-surface-2/10 bg-sb-surface-2/10 sm:grid-cols-4">
+        {% for s in e.stats %}
+        <div class="bg-white px-2 py-5 text-center">
+          <div class="text-2xl font-black tabular-nums">{{ s.value }}</div>
+          <div class="sb-label mt-1 text-sb-gold-deep">{{ s.label }}</div>
+          <div class="text-xs text-sb-surface-2/50 font-medium">{{ s.sub }}</div>
+        </div>
+        {% endfor %}
+      </section>
+      {# epk_config already computes stats_are_real - it flips true only
+         when the figures come from the artist's own statements or tracks.
+         The template was ignoring it, so demo career numbers rendered
+         identically to earned ones. #}
+      {% if not e.stats_are_real %}
+      <p class="border-b border-sb-surface-2/10 bg-amber-100 px-4 py-2 text-center text-xs font-semibold text-sb-gold-deep">
+        Sample figures — not your catalog. Upload a royalty statement or add tracks and these switch to your real numbers.
+      </p>
+      {% endif %}
+
+      {# Same order as the published sheet: sound before story.
+         An editor that previews the sections in a different order
+         than the page it publishes is lying to the artist. #}
+      <!-- Top tracks -->
+      <section data-section="tracks" class="{{ '' if e.sections_on.tracks else 'hidden' }} border-b border-sb-surface-2/10 py-7">
+        <h3 class="sb-label text-sb-gold-deep">Top Tracks</h3>
+        <ol class="mt-4 space-y-2">
+          {% for t in e.top_tracks %}
+          <li class="flex items-baseline justify-between gap-4 border-b border-sb-surface-2/5 pb-2 last:border-0">
+            <span class="flex min-w-0 items-baseline gap-3 font-semibold"><span class="w-5 shrink-0 text-right text-sm sb-num text-sb-gold-deep">{{ loop.index }}</span><span class="truncate">{{ t.title }}</span></span>
+            <span class="shrink-0 text-sm sb-num text-sb-surface-2/60">{{ t.streams_compact }} streams</span>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      <!-- Bio -->
+      <section data-section="bio" class="{{ '' if e.sections_on.bio else 'hidden' }} border-b border-sb-surface-2/10 py-7">
+        <h3 class="sb-label text-sb-gold-deep">Biography</h3>
+        <p class="mt-3 max-w-2xl text-base leading-relaxed text-sb-surface-2/85">{{ e.profile.bio }}</p>
+        <p class="mt-2 text-xs text-sb-surface-2/55">Strongest platform: <span class="font-bold text-sb-surface-2">{{ e.top_platform }}</span></p>
+      </section>
+
+      <!-- Press -->
+      <section data-section="press" class="{{ '' if e.sections_on.press else 'hidden' }} border-b border-sb-surface-2/10 py-7">
+        <h3 class="sb-label text-sb-gold-deep">Press</h3>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+          {% for q in e.profile.press %}
+          <blockquote class="border-l-2 border-sb-gold-deep pl-4">
+            <p class="text-base font-medium leading-snug">“{{ q.quote }}”</p>
+            <footer class="mt-2 text-xs font-bold uppercase tracking-wide text-sb-surface-2/50">— {{ q.source }}</footer>
+          </blockquote>
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- Tour dates (live from Bandsintown) -->
+      <section data-section="tour" class="{{ '' if e.sections_on.tour else 'hidden' }} border-b border-sb-surface-2/10 py-7">
+        <h3 class="sb-label text-sb-gold-deep">Tour Dates</h3>
+        {% if e.tour_dates %}
+        <div class="mt-4 divide-y divide-sb-surface-2/10">
+          {% for ev in e.tour_dates %}
+          <div class="flex items-center justify-between gap-3 py-2.5">
+            <div>
+              <div class="text-sm font-bold">{{ ev.venue }}</div>
+              <div class="text-xs text-sb-surface-2/55 font-medium">{{ ev.location }}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs font-bold sb-num">{{ ev.date }}</div>
+              {% if ev.tickets %}<a href="{{ ev.tickets }}" target="_blank" rel="noopener" class="text-xs font-bold uppercase tracking-wide text-sb-gold-deep hover:underline">Tickets ↗</a>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% elif not bandsintown_configured %}
+        <p class="mt-3 text-xs text-sb-surface-2/50">Live tour dates connect through Bandsintown — not enabled on this server yet.</p>
+        {% elif not e.bandsintown_artist %}
+        <p class="mt-3 text-xs text-sb-surface-2/50">Add your Bandsintown artist name in the editor and upcoming shows appear here automatically.</p>
+        {% else %}
+        <p class="mt-3 text-xs text-sb-surface-2/50">No upcoming shows found on Bandsintown for “{{ e.bandsintown_artist }}”. Dates you announce there show up here automatically.</p>
+        {% endif %}
+      </section>
+
+      <!-- Media assets -->
+      <section data-section="media" class="border-b border-sb-surface-2/10 py-7 {{ '' if e.sections_on.media else 'hidden' }}">
+        <h3 class="sb-label text-sb-gold-deep">Media Assets</h3>
+        {% if e.assets or e.video_url %}
+        <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {% for a in e.assets %}
+          <a href="{{ a.path | media_url }}" download class="group block overflow-hidden rounded-xl border border-sb-surface-2/15">
+            <img src="{{ a.path | media_url }}" alt="{{ a.label }}" class="aspect-square w-full object-cover transition-transform group-hover:scale-105">
+            <div class="flex items-center justify-between px-2.5 py-2 text-xs font-bold"><span>{{ a.label }}</span><span class="text-sb-gold-deep">↓</span></div>
+          </a>
+          {% endfor %}
+        </div>
+        {% if e.video_thumb %}
+        <a href="{{ e.video_url }}" target="_blank" rel="noopener" class="group relative mt-4 block aspect-video overflow-hidden rounded-xl border border-sb-surface-2/15">
+          <img src="{{ e.video_thumb }}" alt="Artist video" class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]">
+          <span class="absolute inset-0 grid place-items-center bg-black/25">
+            <span class="grid h-14 w-14 place-items-center rounded-full bg-white/90 shadow-lg"><svg class="h-6 w-6 translate-x-0.5 text-sb-surface-2" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4l10 6-10 6z"/></svg></span>
+          </span>
+        </a>
+        {% elif e.video_url %}
+        <a href="{{ e.video_url }}" target="_blank" rel="noopener" class="mt-4 inline-block rounded-lg border border-sb-surface-2/20 px-4 py-2 text-xs font-bold hover:bg-sb-surface-2/5">Watch video ↗</a>
+        {% endif %}
+        {% else %}
+        <p class="mt-3 text-xs text-sb-surface-2/50">No assets uploaded yet — add press photos, a logo, and cover art in the Media Assets panel.</p>
+        {% endif %}
+      </section>
+
+      <!-- Contact -->
+      <section data-section="contact" class="{{ '' if e.sections_on.contact else 'hidden' }} pt-7">
+        <h3 class="sb-label text-sb-gold-deep">Contact</h3>
+        <div class="mt-4 grid gap-3 sm:grid-cols-3">
+          {% for label, value in [('Booking', e.profile.contact.booking), ('Press', e.profile.contact.press), ('Management', e.profile.contact.management)] %}
+          <div class="rounded-xl border border-sb-surface-2/15 bg-sb-ink p-4">
+            <div class="sb-label text-sb-gold-deep">{{ label }}</div>
+            <div class="mt-1 break-all text-xs font-semibold">{{ value }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+          {% for soc in e.profile.socials %}
+          <span class="inline-flex items-center gap-2 rounded-full border border-sb-surface-2/15 bg-white px-3 py-1.5">
+            {{ logos.platform_logo(soc.logo, "h-4 w-4") }}
+            <span class="text-xs font-semibold">{{ soc.handle }}</span>
+          </span>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== Right rail: sections + editor ===== -->
+    <div id="epk-rail" class="space-y-5">
+      <section class="rounded-xl border border-sb-surface-2/10 bg-white p-5 shadow-sm">
+        <h2 class="sb-label text-sb-surface-2/60">Press Kit Sections</h2>
+        <div class="mt-3 space-y-2">
+          {% for sec in e.sections %}
+          <div class="flex items-center justify-between gap-2 rounded-lg border border-sb-surface-2/10 bg-sb-ink px-3 py-2.5">
+            <button type="button" class="section-jump min-w-0 flex-1 text-left" data-section="{{ sec.key }}">
+              <span class="block truncate text-sm font-semibold">{{ sec.label }}</span>
+              <span class="section-status text-xs font-bold uppercase tracking-wide {{ 'text-green-700' if sec.status == 'Complete' else ('text-sb-surface-2/40' if sec.status == 'Hidden' else 'text-amber-700') }}">{{ sec.status }}</span>
+            </button>
+            <input type="checkbox" class="section-toggle h-4 w-4 shrink-0 accent-sb-gold-deep" data-section="{{ sec.key }}" {{ 'checked' if sec.on }} title="Show on public EPK">
+          </div>
+          {% endfor %}
+        </div>
+        {% if user %}<p class="mt-2 text-xs text-sb-surface-2/45 font-medium">Unchecked sections are hidden from your public EPK and PDF. Saved with your draft.</p>{% endif %}
+      </section>
+
+      {% if user %}
+      <section class="rounded-xl border border-sb-gold-deep/40 bg-white p-5 shadow-sm">
+        <h2 class="sb-label flex items-center justify-between text-sb-gold-deep">
+          Customize
+          <span id="save-state" class="text-xs font-semibold normal-case tracking-normal text-sb-surface-2/45">{{ 'Saved' if e.customized else '' }}</span>
+        </h2>
+
+        {% if epk_public_url %}
+        <div class="mt-3 rounded-lg border border-sb-gold-deep/30 bg-sb-gold-deep/[0.07] p-3">
+          <label class="sb-label text-sb-gold-deep">Public link — share with press &amp; promoters</label>
+          <input id="public-link" readonly value="{{ request.url_root.rstrip('/') }}{{ epk_public_url }}" class="mt-1.5 w-full rounded-md border border-sb-surface-2/15 bg-white px-2 py-1.5 text-xs text-sb-surface-2/75 focus:outline-none font-medium">
+          <a href="{{ epk_public_url }}" target="_blank" rel="noopener" class="mt-1.5 inline-block text-xs font-bold text-sb-gold-deep hover:underline">View public page ↗</a>
+        </div>
+        <div class="mt-2 rounded-lg border border-sb-gold-deep/30 bg-sb-gold-deep/[0.07] p-3">
+          <label class="sb-label text-sb-gold-deep">Artist Hub — your link-in-bio</label>
+          <input readonly value="{{ request.url_root.rstrip('/') }}{{ epk_public_url.replace('/epk/', '/@') }}" onclick="this.select()" class="mt-1.5 w-full rounded-md border border-sb-surface-2/15 bg-white px-2 py-1.5 text-xs text-sb-surface-2/75 focus:outline-none font-medium">
+          <p class="mt-1 text-xs text-sb-surface-2/55 font-medium">One page with your live links, fan club, shows, and merch — put it in every bio.</p>
+          <a href="{{ epk_public_url.replace('/epk/', '/@') }}" target="_blank" rel="noopener" class="mt-1 inline-block text-xs font-bold text-sb-gold-deep hover:underline">View Artist Hub ↗</a>
+        </div>
+
+        <!-- Private pitch link: gated, logged, expiring -->
+        <div class="mt-2 rounded-lg border border-sb-surface-2/70 bg-sb-surface-2 p-3 text-white">
+          <div class="flex items-center justify-between gap-2">
+            <label class="sb-label text-sb-gold-bright">Private pitch link</label>
+            {% if pitch_share %}
+            <span class="text-xs text-white/60 font-medium"><span class="font-black sb-num text-sb-ink">{{ pitch_stats.views }}</span> open{{ '' if pitch_stats.views == 1 else 's' }}{% if pitch_stats.last_view %} · last {{ pitch_stats.last_view[:16].replace('T', ' ') }} UTC{% endif %}</span>
+            {% endif %}
+          </div>
+          <p class="mt-1 text-xs leading-snug text-white/55 font-medium">For unreleased pitches: same press kit plus a private listening room from your Vault. Opens and first-plays are logged — never how long anyone stayed.</p>
+          {% if pitch_share %}
+          <input readonly value="{{ request.url_root.rstrip('/') }}/pitch/{{ pitch_share.token }}" onclick="this.select()" class="mt-2 w-full rounded-md border border-white/20 bg-black/40 px-2 py-1.5 text-xs text-white/80 focus:outline-none font-medium">
+          {% if pitch_stats.plays %}
+          <div class="mt-1.5 space-y-0.5">
+            {% for label, n in pitch_stats.plays %}
+            <div class="flex justify-between text-xs font-medium"><span class="truncate text-white/70">▸ {{ label }}</span><span class="shrink-0 font-black sb-num text-sb-ink">{{ n }} play{{ '' if n == 1 else 's' }}</span></div>
+            {% endfor %}
+          </div>
+          {% elif pitch_share.audio %}
+          <p class="mt-1 text-xs text-white/45 font-medium">No plays logged yet.</p>
+          {% endif %}
+          {% endif %}
+          <form method="post" action="/epk/share" class="mt-2 space-y-2">
+            <div class="grid grid-cols-2 gap-2">
+              <input name="pin" inputmode="numeric" value="{{ pitch_share.pin if pitch_share else '' }}" placeholder="PIN (optional)" class="rounded-md border border-white/20 bg-black/40 px-2 py-1.5 text-xs text-white placeholder-white/35 focus:outline-none font-medium">
+              <input name="expires" type="date" value="{{ pitch_share.expires if pitch_share else '' }}" title="Link stops working after this date" class="rounded-md border border-white/20 bg-black/40 px-2 py-1.5 text-xs text-white focus:outline-none [color-scheme:dark] font-medium">
+            </div>
+            {% if vault_audio %}
+            <div class="flex flex-wrap gap-1.5">
+              {% set picked = (pitch_share.audio | map(attribute='path') | list) if pitch_share else [] %}
+              {% for v in vault_audio %}
+              <label class="flex cursor-pointer items-center gap-1.5 rounded-md border border-white/20 px-2 py-1 text-xs text-white/80 font-medium">
+                <input type="checkbox" name="audio" value="{{ v.id }}" {{ 'checked' if v.path in picked }} class="h-3 w-3 accent-sb-gold-bright">{{ v.label or v.path.split('/')[-1] }}
+              </label>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-xs text-white/45 font-medium">No audio in your Vault yet — archive a master from The Rack or upload one to offer private listening.</p>
+            {% endif %}
+            <div class="flex flex-wrap gap-1.5">
+              <button name="action" value="save" class="sb-btn sb-btn-primary sb-btn-sm">{{ 'Save' if pitch_share else 'Create pitch link' }}</button>
+              {% if pitch_share %}
+              <button name="action" value="regenerate" onclick="return confirm('Old pitch link stops working immediately. Continue?')" class="sb-btn sb-btn-secondary sb-btn-sm">New link</button>
+              <button name="action" value="disable" onclick="return confirm('Disable the pitch link? Its open and play log is deleted.')" class="sb-btn sb-btn-danger sb-btn-sm">Disable</button>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+
+        <!-- Device preview: the real public page at device widths -->
+        <div class="mt-2 rounded-lg border border-sb-surface-2/15 bg-sb-ink p-3">
+          <div class="flex items-center justify-between gap-2">
+            <label class="sb-label text-sb-surface-2/55">Device preview — the real page</label>
+            <div class="flex gap-1">
+              <button type="button" id="dev-mobile" class="sb-btn sb-btn-primary sb-btn-sm">Mobile</button>
+              <button type="button" id="dev-desktop" class="rounded border border-sb-surface-2/20 px-2 py-0.5 text-xs font-bold text-sb-surface-2/60">Desktop ↗</button>
+            </div>
+          </div>
+          <div id="dev-frame-wrap" class="mt-2 hidden overflow-hidden rounded-xl border-4 border-sb-surface-2 bg-black">
+            <iframe id="dev-frame" title="Mobile preview of your public EPK" class="border-0" style="width: 375px; height: 640px; transform: scale(0.76); transform-origin: top left; margin-bottom: -154px;"></iframe>
+          </div>
+          <p class="mt-1.5 text-xs text-sb-surface-2/45 font-medium">Loads your actual public EPK — save first, then preview.</p>
+        </div>
+        {% endif %}
+
+        <div class="mt-3">
+          <label class="sb-label text-sb-surface-2/55">Artist photo</label>
+          <input type="file" id="photo-input" accept=".png,.jpg,.jpeg,.webp"
+                 class="mt-1 w-full text-xs text-sb-surface-2/60 file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-solid file:border-sb-gold-deep/50 file:bg-sb-gold-deep/10 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-sb-gold-deep">
+          <div id="photo-error" class="mt-1 hidden text-xs font-semibold text-red-600"></div>
+        </div>
+
+        {% set field = 'mt-1 w-full rounded-lg border border-sb-surface-2/15 bg-sb-ink px-3 py-2 text-sm text-sb-surface-2 placeholder-sb-surface-2/35 focus:border-sb-gold-deep focus:outline-none' %}
+        <div class="mt-4 space-y-3">
+          <details open class="rounded-lg border border-sb-surface-2/10 bg-white p-3">
+          <summary class="sb-label cursor-pointer select-none text-sb-gold-deep marker:text-sb-gold-deep">1 · Identity</summary>
+          <div class="mt-2 space-y-3">
+          {# Placeholders, not values. They show the shape of a good answer
+             and vanish on typing; they are never submitted, so pressing
+             Save Draft on an untouched form saves nothing. Values here
+             would be saved as the artist's own words. #}
+          <div><label class="sb-label text-sb-surface-2/55">Tagline</label>
+            <input id="f-tagline" value="{{ e.profile.tagline }}" placeholder="One line on what you sound like" class="{{ field }}"></div>
+          <div><label class="sb-label text-sb-surface-2/55">Bio</label>
+            <textarea id="f-bio" rows="5" placeholder="Two or three sentences a journalist could lift straight into a piece. What you make, how you release it, what you have done so far." class="{{ field }} resize-none">{{ e.profile.bio }}</textarea></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="sb-label text-sb-surface-2/55">Location</label>
+              <input id="f-location" value="{{ e.profile.location }}" placeholder="City, Country" class="{{ field }}"></div>
+            <div><label class="sb-label text-sb-surface-2/55">Genres (comma-sep)</label>
+              <input id="f-genres" value="{{ e.profile.genres | join(', ') }}" placeholder="Two or three, most specific first" class="{{ field }}"></div>
+          </div>
+          </div>
+          </details>
+
+          <details class="rounded-lg border border-sb-surface-2/10 bg-white p-3">
+          <summary class="sb-label cursor-pointer select-none text-sb-gold-deep marker:text-sb-gold-deep">2 · Socials &amp; Contact</summary>
+          <div>
+            <label class="sb-label mt-2 block text-sb-surface-2/55">Socials</label>
+            <div class="mt-1 grid grid-cols-2 gap-2">
+              {% for key, ph in [('instagram','Instagram @'), ('tiktok','TikTok @'), ('youtube','YouTube'), ('spotify','Spotify')] %}
+              <input id="f-soc-{{ key }}" value="{{ e.social_handles[key] }}" placeholder="{{ ph }}" class="rounded-lg border border-sb-surface-2/15 bg-sb-ink px-3 py-2 text-xs text-sb-surface-2 placeholder-sb-surface-2/35 focus:border-sb-gold-deep focus:outline-none">
+              {% endfor %}
+            </div>
+          </div>
+
+          <div>
+            <label class="sb-label text-sb-surface-2/55">Contact</label>
+            <div class="mt-1 space-y-2">
+              {% for key, ph in [('booking','Booking email'), ('press','Press email'), ('management','Management')] %}
+              <input id="f-con-{{ key }}" value="{{ e.profile.contact[key] }}" placeholder="{{ ph }}" class="w-full rounded-lg border border-sb-surface-2/15 bg-sb-ink px-3 py-2 text-xs text-sb-surface-2 placeholder-sb-surface-2/35 focus:border-sb-gold-deep focus:outline-none">
+              {% endfor %}
+            </div>
+          </div>
+          </details>
+
+          <details class="rounded-lg border border-sb-surface-2/10 bg-white p-3">
+          <summary class="sb-label cursor-pointer select-none text-sb-gold-deep marker:text-sb-gold-deep">3 · Press</summary>
+          <div>
+            <label class="sb-label mt-2 block text-sb-surface-2/55">Press quotes</label>
+            {% for i in range(2) %}
+            {% set q = e.profile.press[i] if e.profile.press | length > i else {'quote': '', 'source': '', 'url': ''} %}
+            <div class="mt-1 grid grid-cols-[minmax(0,1fr)_100px] gap-2">
+              <input id="f-q{{ i }}" value="{{ q.quote }}" placeholder="Quote" class="rounded-lg border border-sb-surface-2/15 bg-sb-ink px-3 py-2 text-xs text-sb-surface-2 placeholder-sb-surface-2/35 focus:border-sb-gold-deep focus:outline-none">
+              <input id="f-s{{ i }}" value="{{ q.source }}" placeholder="Source" class="rounded-lg border border-sb-surface-2/15 bg-sb-ink px-3 py-2 text-xs text-sb-surface-2 placeholder-sb-surface-2/35 focus:border-sb-gold-deep focus:outline-none">
+              <input type="hidden" id="f-u{{ i }}" value="{{ q.url or '' }}">
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Press finder: pull real coverage from the web -->
+          <div class="rounded-lg border border-sb-gold-deep/30 bg-sb-gold-deep/[0.06] p-3">
+            <label class="sb-label text-sb-gold-deep">Find press on the web</label>
+            <div class="mt-1.5 flex gap-2">
+              <input id="press-query" value="{{ e.name }}" placeholder="Artist or release name" class="w-full rounded-md border border-sb-surface-2/15 bg-white px-2.5 py-1.5 text-xs text-sb-surface-2 focus:border-sb-gold-deep focus:outline-none">
+              <button type="button" id="press-search-btn" class="shrink-0 rounded-md bg-sb-surface-2 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.1em] text-white hover:bg-sb-surface-2/85">Search</button>
+            </div>
+            <div id="press-results" class="mt-2 hidden max-h-56 space-y-1.5 overflow-y-auto"></div>
+            <p class="mt-1.5 text-xs text-sb-surface-2/45 font-medium">Live news coverage — click “Use” to drop a headline into a quote slot, then edit it down and save.</p>
+          </div>
+          </details>
+
+          <!-- Cover color -->
+          <div>
+            <label class="sb-label text-sb-surface-2/55">Cover color</label>
+            <div class="mt-1.5 flex items-center gap-2">
+              {% for c in ['#1A1714', '#14100A', '#14100A', '#14100A', '#7FA8E8', '#14100A'] %}
+              <button type="button" class="bg-swatch h-7 w-7 rounded-md border {{ 'border-sb-gold-deep ring-1 ring-sb-gold-deep' if e.bg_color == c else 'border-sb-surface-2/20' }}" style="background-color: {{ c }};" data-color="{{ c }}" title="{{ c }}"></button>
+              {% endfor %}
+              <input type="color" id="f-bg" value="{{ e.bg_color }}" class="h-7 w-9 cursor-pointer rounded-md border border-sb-surface-2/20 bg-transparent p-0.5" title="Custom color">
+            </div>
+            <p class="mt-1 text-xs text-sb-surface-2/45 font-medium">Sets the cover of your public EPK. Dark colors keep the name readable.</p>
+          </div>
+
+          <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-sb-surface-2/15 bg-sb-surface-2 px-3 py-2.5">
+            <input type="checkbox" id="f-show-sweep" {{ 'checked' if e.show_sweep }} class="h-4 w-4 accent-sb-gold-bright">
+            <span class="text-xs font-bold text-white">Show Royalty Sweep stats on public EPK</span>
+          </label>
+
+          <button type="button" id="save-btn" class="w-full rounded-lg bg-sb-surface-2 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-sb-surface-2/85">Save My EPK</button>
+          <div id="save-error" class="hidden text-xs font-semibold text-red-600"></div>
+        </div>
+      </section>
+
+      <!-- Media assets manager -->
+      <section class="rounded-xl border border-sb-surface-2/10 bg-white p-5 shadow-sm">
+        <h2 class="sb-label text-sb-surface-2/60">Media Assets</h2>
+        <div class="mt-3 space-y-2">
+          {% set asset_map = {} %}
+          {% for a in epk.assets %}{% if asset_map.update({a.kind: a}) %}{% endif %}{% endfor %}
+          {% for kind, label in asset_kinds %}
+          {% set a = asset_map.get(kind) %}
+          <div class="asset-block flex items-center gap-3 rounded-lg border border-sb-surface-2/10 bg-sb-ink p-2.5" data-kind="{{ kind }}">
+            {% if a %}
+            <img src="{{ a.path | media_url }}" alt="{{ label }}" class="asset-thumb h-11 w-11 shrink-0 rounded-md object-cover">
+            {% else %}
+            <span class="asset-thumb grid h-11 w-11 shrink-0 place-items-center rounded-md border border-dashed border-sb-surface-2/25 text-sb-surface-2/30">+</span>
+            {% endif %}
+            <div class="min-w-0 flex-1">
+              <div class="text-xs font-bold">{{ label }}</div>
+              <div class="asset-status text-xs font-bold uppercase tracking-wide {{ 'text-green-700' if a else 'text-amber-700' }}">{{ 'Uploaded' if a else 'Missing' }}</div>
+            </div>
+            <label class="flex shrink-0 cursor-pointer items-center gap-1 text-xs font-bold uppercase text-sb-surface-2/50" title="Show on public EPK">
+              <input type="checkbox" class="asset-public h-3.5 w-3.5 accent-sb-gold-deep" data-kind="{{ kind }}" {{ 'checked' if (a and a.public) or not a }}>Public
+            </label>
+            {% if vault_images %}
+            <select class="asset-vault w-24 shrink-0 rounded-md border border-sb-surface-2/15 bg-white px-1 py-1.5 text-xs text-sb-surface-2/70 focus:outline-none font-medium" data-kind="{{ kind }}" title="Use an image from your Vault">
+              <option value="">Vault…</option>
+              {% for v in vault_images %}<option value="{{ v.id }}">{{ v.label or v.path.split('/')[-1] }}</option>{% endfor %}
+            </select>
+            {% endif %}
+            <label class="shrink-0 cursor-pointer rounded-md border border-sb-gold-deep/50 bg-sb-gold-deep/10 px-2.5 py-1.5 text-xs font-bold text-sb-gold-deep hover:bg-sb-gold-deep/20">
+              {{ 'Replace' if a else 'Upload' }}
+              <input type="file" class="asset-input hidden" data-kind="{{ kind }}" accept=".png,.jpg,.jpeg,.webp">
+            </label>
+          </div>
+          {% endfor %}
+          <div>
+            <label class="sb-label text-sb-surface-2/55">Video URL (YouTube)</label>
+            <input id="f-video" value="{{ epk.video_url }}" placeholder="https://youtube.com/watch?v=..." class="mt-1 w-full rounded-lg border border-sb-surface-2/15 bg-sb-ink px-3 py-2 text-xs text-sb-surface-2 placeholder-sb-surface-2/35 focus:border-sb-gold-deep focus:outline-none">
+            <img id="video-thumb" src="{{ epk.video_thumb or '' }}" alt="Video thumbnail" class="mt-2 {{ '' if epk.video_thumb else 'hidden' }} aspect-video w-full rounded-md border border-sb-surface-2/15 object-cover">
+          </div>
+          <div>
+            <label class="sb-label text-sb-surface-2/55">Merch Store URL (Shopify or any store)</label>
+            <input id="f-store" value="{{ epk.store_url }}" placeholder="https://your-store.myshopify.com" class="mt-1 w-full rounded-lg border border-sb-surface-2/15 bg-sb-ink px-3 py-2 text-xs text-sb-surface-2 placeholder-sb-surface-2/35 focus:border-sb-gold-deep focus:outline-none">
+          </div>
+          <div>
+            <label class="sb-label text-sb-surface-2/55">Featured Merch (up to 4 — name, price, product link)</label>
+            {% for i in range(4) %}
+            {% set item = epk.merch[i] if epk.merch|length > i else None %}
+            <div class="mt-1.5 grid grid-cols-[1fr_72px_1fr] gap-1.5">
+              <input id="f-m{{ i }}-title" value="{{ item.title if item else '' }}" placeholder="Tee, vinyl, hoodie…" class="rounded-lg border border-sb-surface-2/15 bg-sb-ink px-2.5 py-1.5 text-xs text-sb-surface-2 placeholder-sb-surface-2/35 focus:border-sb-gold-deep focus:outline-none">
+              <input id="f-m{{ i }}-price" value="{{ item.price if item else '' }}" placeholder="$30" class="rounded-lg border border-sb-surface-2/15 bg-sb-ink px-2.5 py-1.5 text-xs text-sb-surface-2 placeholder-sb-surface-2/35 focus:border-sb-gold-deep focus:outline-none">
+              <input id="f-m{{ i }}-url" value="{{ item.url if item else '' }}" placeholder="https://…/products/…" class="rounded-lg border border-sb-surface-2/15 bg-sb-ink px-2.5 py-1.5 text-xs text-sb-surface-2 placeholder-sb-surface-2/35 focus:border-sb-gold-deep focus:outline-none">
+            </div>
+            {% endfor %}
+          </div>
+          <div>
+            <label class="sb-label text-sb-surface-2/55">Bandsintown Artist Name</label>
+            <input id="f-bandsintown" value="{{ epk.bandsintown_artist }}" placeholder="Exact name on Bandsintown" {{ 'disabled' if not bandsintown_configured }} class="mt-1 w-full rounded-lg border border-sb-surface-2/15 bg-sb-ink px-3 py-2 text-xs text-sb-surface-2 placeholder-sb-surface-2/35 focus:border-sb-gold-deep focus:outline-none disabled:opacity-50">
+            <p class="mt-1 text-xs text-sb-surface-2/45 font-medium">{{ 'Upcoming shows from your Bandsintown profile appear in the Tour Dates section automatically.' if bandsintown_configured else 'Live tour dates connect through Bandsintown — not enabled on this server yet.' }}</p>
+          </div>
+          <div id="asset-error" class="hidden text-xs font-semibold text-red-600"></div>
+          <p class="text-xs text-sb-surface-2/45 font-medium">Public assets appear as downloads on your EPK, bundled into the press-kit ZIP. Video saves with your draft.</p>
+        </div>
+      </section>
+      {% else %}
+      <section class="rounded-xl border border-sb-gold-deep/40 bg-white p-5 text-center shadow-sm">
+        <div class="text-sm font-black uppercase tracking-wide">Make it yours</div>
+        <p class="mx-auto mt-1 max-w-[240px] text-xs leading-relaxed text-sb-surface-2/65">Sign in to edit your bio, upload a photo, and save your own press kit.</p>
+        <div class="mt-4 flex justify-center gap-2">
+          <a href="/login?next=/epk" class="rounded-lg bg-sb-surface-2 px-4 py-2 text-xs font-bold text-white hover:bg-sb-surface-2/85">Sign In</a>
+          <a href="/signup" class="rounded-lg border border-sb-surface-2/20 px-4 py-2 text-xs font-bold hover:bg-sb-surface-2/5">Create Account</a>
+        </div>
+      </section>
+      {% endif %}
+
+      <p class="px-1 text-xs text-sb-surface-2/50 font-medium">Stats and top tracks come from the catalog. Export PDF prints the document exactly as toggled.</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Preview mode: hide every editing control, keep only the one-sheet. */
+  #press-office.preview-mode #epk-rail { display: none; }
+  #press-office.preview-mode #epk-layout { grid-template-columns: minmax(0, 1fr); max-width: 900px; margin: 0 auto; }
+  @media print {
+    body * { visibility: hidden; }
+    #epk-document, #epk-document * { visibility: visible; }
+    #epk-document { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Section toggles (work for everyone, print respects them)
+  document.querySelectorAll(".section-toggle").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const el = document.querySelector('#epk-document [data-section="' + cb.dataset.section + '"]');
+      if (el) el.classList.toggle("hidden", !cb.checked);
+    });
+  });
+
+  // Rail: click a section name to scroll the document to it.
+  document.querySelectorAll(".section-jump").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const el = document.querySelector('#epk-document [data-section="' + btn.dataset.section + '"]');
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  {% if user %}
+  // Edit / Preview mode
+  const office = document.getElementById("press-office");
+  const modeEdit = document.getElementById("mode-edit");
+  const modePreview = document.getElementById("mode-preview");
+  function setMode(preview) {
+    office.classList.toggle("preview-mode", preview);
+    modePreview.className = preview ? "bg-sb-surface-2 px-3 py-1.5 text-white" : "px-3 py-1.5 hover:bg-sb-surface-2/5";
+    modeEdit.className = preview ? "px-3 py-1.5 hover:bg-sb-surface-2/5" : "bg-sb-surface-2 px-3 py-1.5 text-white";
+  }
+  modeEdit.addEventListener("click", () => setMode(false));
+  modePreview.addEventListener("click", () => setMode(true));
+
+  // Photo upload — saves immediately
+  document.getElementById("photo-input").addEventListener("change", async (e) => {
+    const f = e.target.files[0];
+    const err = document.getElementById("photo-error");
+    err.classList.add("hidden");
+    if (!f) return;
+    const fd = new FormData();
+    fd.append("photo", f);
+    const res = await fetch("/epk/photo", { method: "POST", body: fd });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      const existing = document.getElementById("epk-photo");
+      if (existing) { existing.src = data.photo + "?t=" + Date.now(); }
+      else {
+        const fb = document.getElementById("epk-photo-fallback");
+        const img = document.createElement("img");
+        img.id = "epk-photo"; img.src = data.photo + "?t=" + Date.now();
+        img.className = "h-32 w-32 shrink-0 rounded-2xl object-cover shadow-md";
+        fb.replaceWith(img);
+      }
+    } else { err.textContent = data.error || "Upload failed."; err.classList.remove("hidden"); }
+  });
+
+  // Save profile
+  document.getElementById("save-btn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const err = document.getElementById("save-error");
+    err.classList.add("hidden");
+    btn.disabled = true; btn.textContent = "Saving...";
+    const v = (id) => document.getElementById(id).value;
+    const payload = {
+      tagline: v("f-tagline"), bio: v("f-bio"), location: v("f-location"), genres: v("f-genres"),
+      socials: { instagram: v("f-soc-instagram"), tiktok: v("f-soc-tiktok"), youtube: v("f-soc-youtube"), spotify: v("f-soc-spotify") },
+      contact: { booking: v("f-con-booking"), press: v("f-con-press"), management: v("f-con-management") },
+      press: [ { quote: v("f-q0"), source: v("f-s0"), url: v("f-u0") }, { quote: v("f-q1"), source: v("f-s1"), url: v("f-u1") } ],
+      show_sweep: document.getElementById("f-show-sweep").checked,
+      video_url: v("f-video"),
+      bandsintown_artist: v("f-bandsintown"),
+      store_url: v("f-store"),
+      merch: [0, 1, 2, 3].map((i) => ({ title: v("f-m" + i + "-title"), price: v("f-m" + i + "-price"), url: v("f-m" + i + "-url") })),
+      bg_color: v("f-bg"),
+      sections_off: [...document.querySelectorAll(".section-toggle:not(:checked)")].map((cb) => cb.dataset.section),
+    };
+    try {
+      const res = await fetch("/epk/save", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) { btn.textContent = "Saved ✓"; setTimeout(() => window.location.reload(), 600); }
+      else { err.textContent = data.error || "Could not save."; err.classList.remove("hidden"); btn.disabled = false; btn.textContent = "Save My EPK"; }
+    } catch (ex) { btn.disabled = false; btn.textContent = "Save My EPK"; }
+  });
+
+  // Media asset uploads — save immediately, update the block in place.
+  document.querySelectorAll(".asset-input").forEach((input) => {
+    input.addEventListener("change", async () => {
+      const f = input.files[0];
+      const err = document.getElementById("asset-error");
+      err.classList.add("hidden");
+      if (!f) return;
+      const fd = new FormData();
+      fd.append("asset", f);
+      const res = await fetch("/epk/asset/" + input.dataset.kind, { method: "POST", body: fd });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        const block = input.closest(".asset-block");
+        const img = document.createElement("img");
+        img.src = data.path + "?t=" + Date.now();
+        img.className = "asset-thumb h-11 w-11 shrink-0 rounded-md object-cover";
+        block.querySelector(".asset-thumb").replaceWith(img);
+        const status = block.querySelector(".asset-status");
+        status.textContent = "Uploaded";
+        status.className = "asset-status text-xs font-bold uppercase tracking-wide text-green-700";
+        input.parentElement.firstChild.textContent = "Replace";
+      } else { err.textContent = data.error || "Upload failed."; err.classList.remove("hidden"); }
+    });
+  });
+
+  // Per-asset public visibility.
+  document.querySelectorAll(".asset-public").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      fetch("/epk/asset/" + cb.dataset.kind + "/visibility", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ public: cb.checked }),
+      });
+    });
+  });
+
+  // Vault picker: point an asset slot at an image already in the Vault.
+  document.querySelectorAll(".asset-vault").forEach((sel) => {
+    sel.addEventListener("change", async () => {
+      if (!sel.value) return;
+      const res = await fetch("/epk/asset/" + sel.dataset.kind + "/from-vault", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vault_id: sel.value }),
+      });
+      const data = await res.json();
+      const block = sel.closest(".asset-block");
+      if (data.ok) {
+        const thumb = block.querySelector(".asset-thumb");
+        const img = document.createElement("img");
+        img.src = data.path; img.className = "asset-thumb h-11 w-11 shrink-0 rounded-md object-cover";
+        thumb.replaceWith(img);
+        const st = block.querySelector(".asset-status");
+        st.textContent = "From Vault"; st.className = "asset-status text-xs font-bold uppercase tracking-wide text-green-700";
+      }
+      sel.value = "";
+    });
+  });
+
+  // Device preview: the REAL public page in a phone width / desktop window.
+  const devWrap = document.getElementById("dev-frame-wrap");
+  if (devWrap) {
+    const devFrame = document.getElementById("dev-frame");
+    const publicPath = {{ epk_public_url | tojson }};
+    document.getElementById("dev-mobile").addEventListener("click", () => {
+      devWrap.classList.toggle("hidden");
+      if (!devWrap.classList.contains("hidden") && !devFrame.src) devFrame.src = publicPath;
+    });
+    document.getElementById("dev-desktop").addEventListener("click", () => {
+      window.open(publicPath, "epkDesktopPreview", "width=1280,height=800");
+    });
+  }
+
+  // Cover color swatches set the picker.
+  document.querySelectorAll(".bg-swatch").forEach((sw) => {
+    sw.addEventListener("click", () => {
+      document.getElementById("f-bg").value = sw.dataset.color;
+      document.querySelectorAll(".bg-swatch").forEach((s) => s.classList.remove("border-sb-gold-deep", "ring-1", "ring-sb-gold-deep"));
+      sw.classList.add("border-sb-gold-deep", "ring-1", "ring-sb-gold-deep");
+    });
+  });
+
+  // Live video thumbnail preview as the URL is typed.
+  const videoInput = document.getElementById("f-video");
+  videoInput.addEventListener("input", () => {
+    const m = videoInput.value.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+    const thumb = document.getElementById("video-thumb");
+    if (m) { thumb.src = "https://img.youtube.com/vi/" + m[1] + "/hqdefault.jpg"; thumb.classList.remove("hidden"); }
+    else { thumb.classList.add("hidden"); }
+  });
+
+  // Press finder: search live coverage, click Use to fill a quote slot.
+  async function searchPress() {
+    const btn = document.getElementById("press-search-btn");
+    const box = document.getElementById("press-results");
+    btn.disabled = true; btn.textContent = "...";
+    try {
+      const res = await fetch("/epk/press/search?q=" + encodeURIComponent(document.getElementById("press-query").value));
+      const data = await res.json();
+      box.classList.remove("hidden");
+      box.innerHTML = "";
+      if (!data.results || !data.results.length) {
+        box.innerHTML = '<div class="py-2 text-xs text-sb-surface-2/50 font-medium">No coverage found — try another spelling or a release title.</div>';
+      }
+      (data.results || []).forEach((r) => {
+        const row = document.createElement("div");
+        row.className = "flex items-center gap-2 rounded-md border border-sb-surface-2/10 bg-white p-2";
+        const info = document.createElement("div");
+        info.className = "min-w-0 flex-1";
+        info.innerHTML = '<div class="truncate text-xs font-semibold text-sb-surface-2"></div><div class="truncate text-xs text-sb-surface-2/50 font-medium"></div>';
+        info.children[0].textContent = r.title;
+        info.children[1].textContent = r.source + (r.date ? " · " + r.date : "");
+        const use = document.createElement("button");
+        use.type = "button";
+        use.className = "shrink-0 rounded-md border border-sb-gold-deep/50 bg-sb-gold-deep/10 px-2 py-1 text-xs font-bold uppercase text-sb-gold-deep hover:bg-sb-gold-deep/25";
+        use.textContent = "Use";
+        use.addEventListener("click", () => {
+          const slot = !document.getElementById("f-q0").value ? 0 : 1;
+          document.getElementById("f-q" + slot).value = r.title;
+          document.getElementById("f-s" + slot).value = r.source;
+          document.getElementById("f-u" + slot).value = r.url || "";
+          use.textContent = "✓";
+          document.getElementById("f-q" + slot).scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+        row.append(info, use);
+        box.appendChild(row);
+      });
+    } finally { btn.disabled = false; btn.textContent = "Search"; }
+  }
+  document.getElementById("press-search-btn").addEventListener("click", searchPress);
+  document.getElementById("press-query").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); searchPress(); } });
+
+  // Top bar Save Draft mirrors the rail save button.
+  const topSave = document.getElementById("topbar-save");
+  if (topSave) topSave.addEventListener("click", () => document.getElementById("save-btn").click());
+
+  // Copy the public press-kit link.
+  const copyBtn = document.getElementById("copy-link-btn");
+  if (copyBtn) copyBtn.addEventListener("click", async () => {
+    const link = copyBtn.dataset.link;
+    try { await navigator.clipboard.writeText(link); }
+    catch (ex) {
+      const input = document.getElementById("public-link");
+      if (input) { input.select(); document.execCommand("copy"); }
+    }
+    copyBtn.textContent = "Copied ✓";
+    setTimeout(() => { copyBtn.textContent = "Copy Public Link"; }, 1500);
+  });
+  {% endif %}
+</script>
+{% endblock %}

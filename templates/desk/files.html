@@ -1,0 +1,42 @@
+{% set nav = 'files' %}
+{% extends "desk/layout.html" %}
+{% block title %}Files{% endblock %}
+{% block main %}
+<h1 class="dk-h1">Files</h1>
+<p class="dk-sub">Contracts, statements, screenshots, press kits. Stored privately — downloads only work from inside the Desk.</p>
+
+{% if can('file_upload') %}
+<form class="dk-form" method="post" action="/operator-desk/files/upload" enctype="multipart/form-data">
+  <input type="hidden" name="back" value="/operator-desk/files">
+  <div class="dk-grid">
+    <label class="dk-field"><span>File *</span><input type="file" name="file" required></label>
+    <label class="dk-field"><span>Category</span>
+      <select name="category">{% for c in vocab.file_categories %}<option>{{ c }}</option>{% endfor %}</select></label>
+    <label class="dk-field"><span>Related lead</span>
+      <select name="lead_id"><option value="">—</option>
+        {% for l in leads %}<option value="{{ l.id }}">{{ l.artist_name }}</option>{% endfor %}</select></label>
+  </div>
+  <div style="margin-top:12px"><button class="dk-btn" type="submit">Upload</button></div>
+</form>
+{% endif %}
+
+{% if files %}
+<div class="dk-table-wrap" style="margin-top:16px"><table class="dk-table">
+  <thead><tr><th>File</th><th>Category</th><th>Lead</th><th>Uploaded by</th><th>Date</th><th></th></tr></thead>
+  <tbody>
+  {% for f in files %}
+  <tr>
+    <td>{{ f.file_name }}{% if f.file_type %}<div style="font-size:12px;color:var(--dk-faint)">{{ f.file_type }}</div>{% endif %}</td>
+    <td><span class="dk-chip">{{ f.category }}</span></td>
+    <td>{% if f.lead_id %}<a href="/operator-desk/leads/{{ f.lead_id }}">{{ f.artist_name or 'Lead' }}</a>{% else %}—{% endif %}</td>
+    <td>{{ f.uploaded_by }}</td>
+    <td>{{ f.created_at[:10] }}</td>
+    <td><a class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px" href="/operator-desk/files/{{ f.id }}/download">Download</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="dk-empty" style="margin-top:16px">No files yet.</p>
+{% endif %}
+{% endblock %}

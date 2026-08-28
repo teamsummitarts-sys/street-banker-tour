@@ -1,0 +1,6 @@
+{% import "tour/_macros.html" as m %}
+{% with rows=lodging %}{% include "tour/_hotel_list.html" %}{% endwith %}
+{% if can('hotel') %}
+<h2 class="to-h2">Add a hotel for this show</h2>
+{% with show_id=show['id'], checkin=show['date'] %}{% include "tour/_hotel_form.html" %}{% endwith %}
+{% endif %}

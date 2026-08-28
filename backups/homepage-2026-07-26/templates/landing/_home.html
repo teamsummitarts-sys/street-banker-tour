@@ -1,0 +1,241 @@
+{# Home-page component macros: hardware motifs + reusable cards/rows.
+   Kept separate from the page shell so the homepage is composed from
+   small, reusable pieces rather than one giant template. #}
+{% import "landing/_cards.html" as c %}
+
+{# ---- Reusable CTA button ---- #}
+{% macro cta_button(btn) %}
+{% set styles = {
+  'primary': 'bg-[#141210] text-white hover:bg-[#2a251d]',
+  'gold': 'bg-[#d8b25a] text-[#1c1302] hover:bg-[#e6c675]',
+  'outline-dark': 'border border-black/25 text-[#141210] hover:bg-black/5',
+  'outline-light': 'border border-white/25 text-white hover:bg-white/10',
+} %}
+<a href="{{ btn.href }}" class="inline-flex items-center justify-center gap-1.5 rounded-md px-5 py-2.5 text-sm font-semibold transition-colors {{ styles.get(btn.variant, styles['primary']) }}">
+  {{ btn.label }}
+  <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+</a>
+{% endmacro %}
+
+{# ---- Image panel: buttons stay OUTSIDE the image (buttons_below) or
+   overlaid ONLY in a chosen empty zone with a readable scrim. Never over
+   the focal subject. ---- #}
+{% macro image_panel(img) %}
+{% set pos = {
+  'bottom-left': 'inset-x-0 bottom-0 items-start text-left bg-gradient-to-t from-black/70 via-black/30 to-transparent',
+  'bottom-right': 'inset-x-0 bottom-0 items-end text-right bg-gradient-to-t from-black/70 via-black/30 to-transparent',
+  'top-left': 'inset-x-0 top-0 items-start text-left bg-gradient-to-b from-black/70 via-black/30 to-transparent',
+  'center': 'inset-0 items-center justify-center text-center bg-black/40',
+} %}
+<figure class="relative overflow-hidden {{ 'h-full' if img.height_class else '' }} {{ '' if img.bare else 'rounded-xl border border-black/10' }} {{ '-mx-6 sm:mx-0' if img.fullbleed }}">
+  <img src="{{ img.src }}" alt="{{ img.alt }}" class="block w-full {{ img.height_class or 'h-auto' }} {{ 'object-cover' if img.height_class else '' }} {{ 'imgblend' if img.blend }}" loading="lazy">
+  {% if img.overlay %}
+  <figcaption class="absolute flex flex-col gap-3 p-5 sm:p-7 {{ pos.get(img.overlay.position, pos['bottom-left']) }}">
+    {% if img.overlay.heading %}<div class="max-w-md text-2xl font-extrabold uppercase leading-tight tracking-tight text-white drop-shadow">{{ img.overlay.heading }}</div>{% endif %}
+    {% if img.overlay.subtext %}<div class="max-w-md text-sm text-gray-200 drop-shadow">{{ img.overlay.subtext }}</div>{% endif %}
+    {% if img.overlay.buttons %}<div class="flex flex-wrap gap-3">{% for b in img.overlay.buttons %}{{ cta_button(b) }}{% endfor %}</div>{% endif %}
+  </figcaption>
+  {% endif %}
+</figure>
+{% if img.buttons_below %}
+<div class="mt-4 grid grid-cols-1 gap-2.5 sm:mt-5 sm:flex sm:flex-wrap sm:gap-3 {{ 'sm:justify-center' if img.center_buttons }}">{% for b in img.buttons_below %}{{ cta_button(b) }}{% endfor %}</div>
+{% endif %}
+{% endmacro %}
+
+{# ---- Image split into equal clickable regions (left to right), for a
+   strip graphic whose own labels/CTAs are baked in. Transparent links
+   overlay each region so the art stays untouched. ---- #}
+{% macro clickable_image(img) %}
+<figure class="relative overflow-hidden {{ '' if img.bare else 'rounded-xl border border-black/10' }} {{ '-mx-6 sm:mx-0' if img.fullbleed }}">
+  <img src="{{ img.src }}" alt="{{ img.alt }}" class="block w-full h-auto {{ 'imgblend' if img.blend }}" loading="lazy">
+  {% if img.regions %}
+  {% set nrows = img.rows or 1 %}
+  <div class="absolute inset-0 grid" style="grid-template-columns: repeat({{ (img.regions | length / nrows) | round(0, 'ceil') | int }}, minmax(0, 1fr)); grid-template-rows: repeat({{ nrows }}, minmax(0, 1fr));{% if img.inset_top %} top: {{ img.inset_top }};{% endif %}">
+    {% for r in img.regions %}
+    <a href="{{ r.href }}" aria-label="{{ r.label }}" title="{{ r.label }}" class="block h-full w-full cursor-pointer"></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</figure>
+{% endmacro %}
+
+{# ---- Pillar visual (stats / cards / avatars / tiles) ---- #}
+{% macro pillar_visual(v, dark) %}
+{% set card = 'border-white/10 bg-white/5' if dark else 'border-black/10 bg-white' %}
+{% set label = 'text-gray-500' if dark else 'text-[#8a8377]' %}
+{% set value = 'text-[#e6c675]' if dark else 'text-[#8a6d1f]' %}
+{% set head = 'text-gray-100' if dark else 'text-[#141210]' %}
+{% if v.type == 'stats' %}
+<div class="grid grid-cols-2 gap-3">
+  {% for s in v['items'] %}
+  <div class="rounded-xl border {{ card }} p-5 text-center">
+    <div class="text-2xl font-extrabold tabular-nums {{ value }}">{{ s.value }}</div>
+    <div class="mt-1 text-[10px] font-semibold uppercase tracking-wide {{ label }}">{{ s.label }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% elif v.type == 'cards' %}
+<div class="space-y-3">
+  {% for cd in v['items'] %}
+  <div class="rounded-xl border {{ card }} p-4">
+    <div class="text-sm font-bold {{ head }}">{{ cd.title }}</div>
+    <div class="mt-0.5 text-xs {{ label }}">{{ cd.desc }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% elif v.type == 'avatars' %}
+<div class="rounded-2xl border {{ card }} p-6">
+  <div class="flex flex-wrap gap-3">
+    {% for name in v['items'] %}
+    <div class="flex items-center gap-2 rounded-full border {{ 'border-white/10' if dark else 'border-black/10' }} px-3 py-1.5">
+      <span class="grid h-7 w-7 place-items-center rounded-full border border-amber-500/40 text-[10px] font-bold text-amber-500">{{ name.split()|map('first')|join|upper }}</span>
+      <span class="text-xs font-semibold {{ head }}">{{ name }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% elif v.type == 'tiles' %}
+<div class="grid grid-cols-2 gap-3">
+  {% for tl in v['items'] %}
+  <div class="flex h-20 items-end overflow-hidden rounded-xl p-3" style="background: linear-gradient(135deg, {{ tl.from }}, {{ tl.to }});">
+    <span class="text-xs font-bold text-white drop-shadow">{{ tl.name }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endmacro %}
+
+{# ---- Pillar section (alternating light / dark) ---- #}
+{% macro pillar_section(p, i) %}
+{% set dark = p.theme == 'dark' %}
+{% set flip = (i % 2) == 1 %}
+{% if dark %}
+<section class="my-6 overflow-hidden rounded-2xl border border-black/20 bg-gradient-to-br from-[#141416] to-[#0a0a0b] p-8 text-gray-100 lg:p-10">
+{% else %}
+<section class="border-t border-black/10 py-12">
+{% endif %}
+  <div class="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12">
+    <div class="{{ 'lg:order-2' if flip }}">
+      <div class="text-[11px] font-semibold uppercase tracking-[0.25em] {{ 'text-[#d8b25a]' if dark else 'text-[#8a6d1f]' }}">{{ p.eyebrow }}</div>
+      <h2 class="mt-3 text-3xl font-extrabold uppercase leading-[0.95] tracking-tight sm:text-4xl {{ 'text-white' if dark else 'text-[#141210]' }}">{{ p.title }}</h2>
+      <p class="mt-2 text-lg font-semibold {{ 'text-gray-300' if dark else 'text-[#4a463e]' }}">{{ p.tagline }}</p>
+      <p class="mt-3 max-w-md text-sm leading-relaxed {{ 'text-gray-400' if dark else 'text-[#5a544a]' }}">{{ p.description }}</p>
+      <ul class="mt-4 space-y-1.5">
+        {% for b in p['bullets'] %}
+        <li class="flex items-start gap-2 text-sm {{ 'text-gray-300' if dark else 'text-[#3a352c]' }}">
+          <svg class="mt-0.5 h-4 w-4 shrink-0 {{ 'text-[#d8b25a]' if dark else 'text-[#8a6d1f]' }}" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7 7a1 1 0 01-1.4 0l-3-3a1 1 0 111.4-1.4L9 11.6l6.3-6.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+          {{ b }}
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a href="{{ p.cta.href }}" class="inline-flex items-center gap-2 rounded-md px-5 py-2.5 text-sm font-bold transition-colors {{ 'bg-[#d8b25a] text-[#1c1302] hover:bg-[#e6c675]' if dark else 'bg-[#141210] text-white hover:bg-[#2a251d]' }}">
+          {{ p.cta.label }}
+          <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+        </a>
+        {% if p.secondary_cta %}<a href="{{ p.secondary_cta.href }}" class="inline-flex items-center rounded-md border px-5 py-2.5 text-sm font-semibold transition-colors {{ 'border-white/20 text-white hover:bg-white/10' if dark else 'border-black/20 text-[#141210] hover:bg-black/5' }}">{{ p.secondary_cta.label }}</a>{% endif %}
+      </div>
+    </div>
+    <div class="{{ 'lg:order-1' if flip }}">{{ pillar_visual(p.visual, dark) }}</div>
+  </div>
+</section>
+{% endmacro %}
+
+{# ---- Analog VU meter (reused in the command desk + engine) ---- #}
+{% macro vu_meter(cls='h-20', needle=32, dark=True) %}
+<svg viewBox="0 0 200 120" class="{{ cls }}" aria-hidden="true">
+  <defs>
+    <linearGradient id="vuface" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="{{ '#f4e6c0' if dark else '#f6efd8' }}"/>
+      <stop offset="1" stop-color="{{ '#d8c084' if dark else '#e6d5a0' }}"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="192" height="112" rx="8" fill="url(#vuface)" stroke="#0000001a"/>
+  <path d="M30 96 A70 70 0 0 1 170 96" fill="none" stroke="#5c4a1e" stroke-width="1.5"/>
+  {% for i in range(11) %}
+  {% set a = 3.14159 - (i / 10.0) * 3.14159 %}
+  <line x1="{{ 100 + 62 * cos(a) }}" y1="{{ 96 - 62 * sin(a) }}" x2="{{ 100 + 70 * cos(a) }}" y2="{{ 96 - 70 * sin(a) }}"
+        stroke="{{ '#b33' if i >= 8 else '#5c4a1e' }}" stroke-width="{{ 2 if i >= 8 else 1.2 }}"/>
+  {% endfor %}
+  <text x="100" y="70" text-anchor="middle" font-size="15" font-weight="700" fill="#3a2f14" font-family="serif" letter-spacing="2">VU</text>
+  {% set na = 3.14159 - (needle / 100.0) * 3.14159 %}
+  <line x1="100" y1="96" x2="{{ 100 + 58 * cos(na) }}" y2="{{ 96 - 58 * sin(na) }}" stroke="#111" stroke-width="2"/>
+  <circle cx="100" cy="96" r="4" fill="#111"/>
+</svg>
+{% endmacro %}
+
+{# ---- Hardware texture for feature cards ---- #}
+{% macro hw_texture(kind) %}
+<div class="grid h-16 w-16 shrink-0 place-items-center rounded-lg border border-black/10 bg-gradient-to-br from-[#eceae3] to-[#d9d6cc]">
+  {% if kind == 'vu' %}{{ vu_meter('h-10', 30, False) }}
+  {% elif kind == 'knob' %}
+  <svg viewBox="0 0 40 40" class="h-10 w-10" aria-hidden="true"><circle cx="20" cy="20" r="13" fill="#2a2a2a"/><circle cx="20" cy="20" r="13" fill="none" stroke="#00000030"/><line x1="20" y1="20" x2="20" y2="9" stroke="#d8b25a" stroke-width="2"/>{% for d in [0,45,90,135,180,225,270,315] %}<circle cx="{{ 20 + 15*cos(d*3.14159/180) }}" cy="{{ 20 + 15*sin(d*3.14159/180) }}" r="0.9" fill="#7a7a7a"/>{% endfor %}</svg>
+  {% elif kind == 'grille' %}
+  <svg viewBox="0 0 40 40" class="h-10 w-10" aria-hidden="true">{% for r in range(5) %}{% for col in range(5) %}<circle cx="{{ 8 + col*6 }}" cy="{{ 8 + r*6 }}" r="1.6" fill="#3a3a3a"/>{% endfor %}{% endfor %}</svg>
+  {% else %}
+  <svg viewBox="0 0 40 40" class="h-10 w-10" aria-hidden="true">{% for x in [10,20,30] %}<circle cx="{{ x }}" cy="12" r="3.5" fill="#1e1e1e" stroke="#d8b25a" stroke-width="1"/><path d="M{{ x }} 15 q 3 8 -3 13" fill="none" stroke="#555" stroke-width="1.5"/>{% endfor %}</svg>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{# ---- White Street Banker feature card ---- #}
+{% macro feature_card(f) %}
+<a href="{{ f.link.href }}" class="group flex flex-col rounded-xl border border-black/10 bg-white p-5 transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
+  {{ hw_texture(f.texture) }}
+  <div class="mt-4 text-sm font-bold tracking-tight text-[#141210]">{{ f.title }}</div>
+  <div class="mt-1 flex-1 text-xs leading-snug text-[#6b6459]">{{ f.description }}</div>
+  <span class="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8a6d1f]">{{ f.link.label }}
+    <svg class="h-3 w-3 transition-transform group-hover:translate-x-0.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+  </span>
+</a>
+{% endmacro %}
+
+{# ---- Lane hardware module ---- #}
+{% macro lane_card(item) %}
+<a href="{{ item.href }}" class="group relative flex-1 rounded-lg border border-white/10 bg-gradient-to-b from-[#2b2b2e] to-[#1a1a1c] p-4 transition-colors hover:border-[#d8b25a]/40">
+  <div class="flex items-center gap-3">
+    <svg viewBox="0 0 40 40" class="h-9 w-9 shrink-0" aria-hidden="true"><circle cx="20" cy="20" r="12" fill="#141416"/><circle cx="20" cy="20" r="12" fill="none" stroke="#ffffff20"/><line x1="20" y1="20" x2="20" y2="10" stroke="#d8b25a" stroke-width="2"/></svg>
+    <div>
+      <div class="text-[10px] font-semibold tracking-[0.2em] text-[#d8b25a]">{{ item.number }}</div>
+      <div class="text-sm font-bold text-gray-100">{{ item.title }}</div>
+    </div>
+  </div>
+  <div class="mt-2 text-[11px] text-gray-400">{{ item.description }}</div>
+</a>
+{% endmacro %}
+
+{# ---- Service list card ---- #}
+{% macro service_card(s) %}
+<a href="{{ s.href }}" class="group block border-t border-black/10 pt-4 transition-colors">
+  <div class="text-sm font-bold tracking-tight text-[#141210] group-hover:text-[#8a6d1f]">{{ s.title }}</div>
+  <div class="mt-1 text-xs leading-snug text-[#6b6459]">{{ s.description }}</div>
+</a>
+{% endmacro %}
+
+{# ---- Command desk: connected source row (dark) ---- #}
+{% macro source_row(src) %}
+<div class="flex items-center gap-2 rounded-md border border-white/5 bg-white/[0.03] px-2.5 py-1.5">
+  {{ c.platform_logo(src.logo, "h-5 w-5") }}
+  <span class="min-w-0 flex-1">
+    <span class="block truncate text-[11px] font-semibold text-gray-100">{{ src.name }}</span>
+    <span class="flex items-center gap-1 text-[9px] text-emerald-400"><span class="h-1 w-1 rounded-full bg-emerald-400"></span>{{ src.status }}</span>
+  </span>
+</div>
+{% endmacro %}
+
+{# ---- Command desk: recovery opportunity row (dark) ---- #}
+{% macro opportunity_row(op) %}
+<div class="flex items-center justify-between gap-2 rounded-md border border-white/5 bg-white/[0.03] px-2.5 py-2">
+  <span class="truncate text-[11px] text-gray-300">{{ op.title }}</span>
+  <span class="shrink-0 text-[11px] font-bold tabular-nums text-[#e6c675]">{{ op.amount }}</span>
+</div>
+{% endmacro %}
+
+{# ---- Command desk: recent recovery pill (dark) ---- #}
+{% macro recovery_pill(r) %}
+<div class="rounded-md border border-white/5 bg-white/[0.03] px-2.5 py-2 text-center">
+  {{ c.platform_logo(r.logo, "h-5 w-5 mx-auto") }}
+  <div class="mt-1 text-[11px] font-bold tabular-nums text-gray-100">{{ r.amount }}</div>
+  <div class="text-[9px] font-semibold uppercase tracking-wide text-emerald-400">{{ r.status }}</div>
+</div>
+{% endmacro %}

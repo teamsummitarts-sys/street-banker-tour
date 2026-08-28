@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Funding - Royalty Sweep{% endblock %}
+
+{% set fn = funding %}
+
+{% block content %}
+<div class="mx-auto max-w-[1400px] space-y-5">
+  <div>
+    <h1 class="sb-h1">Advance &amp; Funding</h1>
+    <p class="mt-1 text-sm text-gray-300">Get paid upfront against your future royalties. Offers are based on your catalog's advance eligibility.</p>
+  </div>
+
+  <div class="rounded-2xl border border-amber-500/15 bg-gradient-to-r from-amber-500/[0.06] to-transparent p-5">
+    <div class="flex flex-wrap items-center gap-6">
+      <div>
+        <div class="sb-label text-gray-300">Your Eligibility</div>
+        <div class="mt-1 flex items-center gap-2">
+          <span class="rounded-full border border-green-500/20 bg-green-500/10 px-2.5 py-0.5 text-xs font-semibold text-green-400">{{ fn.eligibility.tier }}</span>
+          <span class="text-xs text-gray-300">Score {{ fn.eligibility.score }}/100</span>
+          {% if fn.eligibility.note %}<span class="w-full text-xs leading-relaxed text-gray-300 font-medium">{{ fn.eligibility.note }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="h-10 w-px bg-white/10"></div>
+      <div>
+        <div class="sb-label text-gray-300">{{ "Indicative Range" if fn.eligibility.real else "Suggested Advance" }}</div>
+        {% if fn.eligibility.real %}
+        <div class="mt-1 text-2xl font-bold tabular-nums text-sb-ink">${{ "{:,}".format(fn.eligibility.band.low) }}–${{ "{:,}".format(fn.eligibility.band.high) }}</div>
+        {% else %}
+        <div class="mt-1 text-2xl font-bold text-gray-300">—</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <h2 class="sb-label text-gray-300">Available Offers</h2>
+    <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      {% if fn.unavailable %}
+      <div class="rounded-xl border border-sb-gold/30 bg-sb-surface-2 p-5">
+        <div class="sb-label text-sb-gold-bright">Nothing to quote yet</div>
+        <p class="mt-2 text-sm leading-relaxed text-gray-300">{{ fn.unavailable }}</p>
+        <a href="/statements" class="sb-btn sb-btn-primary sb-btn-sm mt-4">Upload a statement</a>
+      </div>
+      {% endif %}
+      {% for o in fn.offers %}
+      <div class="flex flex-col rounded-2xl border {{ 'border-amber-500/30' if o.recommended else 'border-white/5' }} bg-sb-surface-1 p-5">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <div class="text-sm font-semibold text-gray-100">{{ o.name }}</div>
+            <div class="text-xs text-gray-300 font-medium">{{ o.provider }}</div>
+          </div>
+          {% if o.recommended %}<span class="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-400">Best fit</span>{% endif %}
+        </div>
+        <div class="mt-4 text-3xl font-bold tabular-nums text-sb-ink">${{ "{:,}".format(o.amount) }}</div>
+        <p class="mt-2 flex-1 text-xs text-gray-300">{{ o.note }}</p>
+        <dl class="mt-4 space-y-1.5 text-xs font-medium">
+          <div class="flex justify-between"><dt class="text-gray-300">Term</dt><dd class="font-semibold text-gray-200">{{ o.term_months }} months</dd></div>
+          <div class="flex justify-between"><dt class="text-gray-300">Recoupment</dt><dd class="font-semibold text-gray-200">{{ o.recoupment_pct }}% of royalties</dd></div>
+          <div class="flex justify-between"><dt class="text-gray-300">Total repayable</dt><dd class="font-semibold text-gray-200">${{ "{:,.0f}".format(o.total_repayable) }}</dd></div>
+          <div class="flex justify-between"><dt class="text-gray-300">Cost of funds</dt><dd class="font-semibold text-gray-200">${{ "{:,.0f}".format(o.cost) }}</dd></div>
+          <div class="flex justify-between"><dt class="text-gray-300">Funded in</dt><dd class="font-semibold text-green-400">{{ o.speed }}</dd></div>
+        </dl>
+        <button type="button" class="request-offer-btn sb-btn sb-btn-secondary sb-btn-sm mt-4 w-full"
+                data-offer-id="{{ o.id }}">Request {{ o.name }}</button>
+        <div class="request-result mt-2 hidden text-xs font-semibold text-green-400"></div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# The old line covered the request action only - "requesting an offer
+     records interest" - and said nothing about the offers themselves. So
+     "Street Banker Capital", "Catalog Partners", "FlexDraw", their terms,
+     factors and "Funded in 24 hours" read as real lenders quoting real
+     paper. The amounts ARE scaled from the artist's own statements; the
+     companies quoting them are invented. Say which is which. #}
+  <p class="px-1 text-xs text-gray-300 font-medium">
+    <span class="font-semibold text-amber-300">The providers, terms and funding speeds shown are examples, not real lenders.</span>
+    Offer amounts are scaled from your own uploaded statements, but no company has quoted you.
+    Requesting an offer records interest and returns a reference number — no money moves, no
+    application is submitted, and no financial details are collected. Not financial advice.
+  </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll(".request-offer-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const card = btn.closest("div");
+      const result = btn.parentElement.querySelector(".request-result");
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = "Submitting...";
+      try {
+        const res = await fetch("/funding/request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ offer_id: btn.dataset.offerId }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          result.textContent = "Interest recorded — reference " + data.reference;
+          result.classList.remove("hidden");
+          btn.textContent = "Requested ✓";
+        } else {
+          btn.disabled = false;
+          btn.textContent = original;
+        }
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    });
+  });
+</script>
+{% endblock %}

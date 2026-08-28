@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Performance · {{ c.title }} - Rollout Engine{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Rollout Engine · Performance</div>
+      <h1 class="sb-h1 mt-1">{{ c.title }}</h1>
+      <p class="mt-1 text-sm text-gray-300">Post-to-link attribution: which post, platform, and phase actually drove clicks and fans.</p>
+    </div>
+    <a href="/rollout-studio/{{ c.id }}" class="sb-btn sb-btn-secondary">← Overview</a>
+  </div>
+
+  {% if not c.ml_campaign_id %}
+  <div class="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-sm text-amber-300">This rollout has no Street Banker Link campaign connected, so post attribution can't be tracked. Connect one when creating your next rollout.</div>
+  {% endif %}
+
+  <div class="grid grid-cols-3 gap-3">
+    {% for label, value in [("Link visits", totals.visits), ("Service clicks", totals.clicks), ("Fans captured", totals.fans)] %}
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-4 text-center">
+      <div class="text-2xl font-bold tabular-nums {{ 'text-sb-gold-bright' if loop.last }}">{{ value }}</div>
+      <div class="sb-label mt-1 text-gray-300">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- By platform -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">By Platform</h2>
+    {% if by_platform %}
+    <table class="mt-3 w-full text-left text-sm">
+      <thead><tr class="border-b border-white/5 text-xs uppercase tracking-wide text-gray-300 font-medium">
+        <th class="py-2 pr-4 font-medium">Platform</th><th class="py-2 pr-4 text-right font-medium">Visits</th>
+        <th class="py-2 pr-4 text-right font-medium">Clicks</th><th class="py-2 text-right font-medium">Fans</th></tr></thead>
+      <tbody>
+        {% for platform, agg in by_platform.items() %}
+        <tr class="border-b border-white/5 last:border-0">
+          <td class="py-2.5 pr-4 font-semibold text-gray-100">{{ platform_names.get(platform, platform) }}</td>
+          <td class="py-2.5 pr-4 text-right sb-num text-gray-200">{{ agg.visits }}</td>
+          <td class="py-2.5 pr-4 text-right sb-num text-gray-200">{{ agg.clicks }}</td>
+          <td class="py-2.5 text-right sb-num text-sb-ink">{{ agg.fans }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="mt-3 text-xs text-gray-300">No posts yet.</p>{% endif %}
+  </section>
+
+  <!-- Ranked posts -->
+  <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+    <h2 class="sb-label text-sb-gold-bright">Top Posts</h2>
+    <div class="mt-3 space-y-2">
+      {% for p in posts[:10] %}
+      <div class="flex flex-wrap items-center gap-3 rounded-lg border border-white/5 bg-black/30 px-3 py-2.5 text-xs">
+        <span class="w-6 shrink-0 text-center font-black text-sb-gold">{{ loop.index }}</span>
+        <span class="w-24 shrink-0 font-bold sb-num text-gray-300">{{ p.scheduled_date }}</span>
+        <span class="w-32 shrink-0 font-semibold text-gray-200">{{ platform_names.get(p.platform, p.platform) }}</span>
+        <span class="rounded bg-sb-gold/15 px-1.5 py-0.5 text-xs font-bold uppercase text-sb-gold-bright">{{ phase_names.get(p.phase, p.phase) }}</span>
+        <span class="min-w-0 flex-1 truncate text-gray-300">{{ p.caption }}</span>
+        <span class="flex shrink-0 gap-3 sb-num text-gray-300">
+          <span>{{ p.visits }}v</span><span>{{ p.clicks }}c</span><span class="font-bold text-sb-gold-bright">{{ p.fans }}f</span>
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

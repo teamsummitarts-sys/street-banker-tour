@@ -1,0 +1,61 @@
+{# Team-Up Board macros. Subscript access only (see test_no_object_leaks). #}
+{% macro kind_badge(kind) -%}
+<span class="tb-badge {{ 'tb-badge--venue' if kind == 'venue' }}">{{ 'Venue seeks artists' if kind == 'venue' else 'Artist seeks partners' }}</span>
+{%- endmacro %}
+
+{% macro listing_fields(regions, genre_opts, v, prefix='') -%}
+{# v: dict with region_text, region_code, window_start, window_end, genres (codes), draw_min, draw_max, details #}
+<label class="tb-field">
+  <span>City / region</span>
+  <input name="region_text" list="{{ prefix }}tb-regions" data-region-input="{{ prefix }}tb-region-code" value="{{ v['region_text'] or '' }}" placeholder="Start typing — Nashville, Southeast US, UK…" autocomplete="off" aria-describedby="{{ prefix }}tb-region-help">
+  <input type="hidden" id="{{ prefix }}tb-region-code" name="region_code" value="{{ v['region_code'] or '' }}">
+  <datalist id="{{ prefix }}tb-regions">{% for code, label, kind in regions %}<option value="{{ label }}" data-code="{{ code }}"></option>{% endfor %}</datalist>
+  <span id="{{ prefix }}tb-region-help" class="tb-help">Pick from the list so people can filter to you; anything else is kept as written.</span>
+</label>
+<label class="tb-field"><span>Window starts</span><input type="date" name="window_start" value="{{ v['window_start'] or '' }}"></label>
+<label class="tb-field"><span>Window ends</span><input type="date" name="window_end" value="{{ v['window_end'] or '' }}"></label>
+<label class="tb-field">
+  <span>Genres</span>
+  <input name="genre" list="{{ prefix }}tb-genres" data-genre-input="{{ prefix }}tb-genre-box" value="{{ v['genre_text'] or '' }}" placeholder="Indie, synthwave — comma-separated or pick" autocomplete="off">
+  <datalist id="{{ prefix }}tb-genres">{% for code, label in genre_opts %}<option value="{{ label }}" data-code="{{ code }}"></option>{% endfor %}</datalist>
+  <select id="{{ prefix }}tb-genre-box" name="genres" multiple size="4" aria-label="Selected genres" style="margin-top:4px">{% for code, label in genre_opts %}<option value="{{ code }}" {% if code in (v['genres'] or []) %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+</label>
+<div class="tb-field"><span>Draw (paid, a range)</span>
+  <div style="display:flex;gap:6px;align-items:center"><input name="draw_min" inputmode="numeric" placeholder="150" value="{{ v['draw_min'] if v['draw_min'] is not none else '' }}" aria-label="Draw, low end" style="width:50%"> – <input name="draw_max" inputmode="numeric" placeholder="200" value="{{ v['draw_max'] if v['draw_max'] is not none else '' }}" aria-label="Draw, high end" style="width:50%"></div>
+  <span class="tb-help">Self-reported — shown as such.</span></div>
+<label class="tb-field tb-wide"><span>Details — draw, capacity, pay structure, what you're after</span>
+  <textarea name="details" rows="3" placeholder="Be specific: average draw, room capacity, what the deal looks like. Real numbers get real replies.">{{ v['details'] or '' }}</textarea></label>
+{%- endmacro %}
+
+{% macro chips(cset) -%}
+{% for c in cset['chips'] %}<span class="tb-pill is-verified" title="From {{ c['source'] }}">✓ {{ c['label'] }}</span>{% endfor %}
+{%- endmacro %}
+
+{% macro card(l, user, chips_for, counts, show_reply=True) -%}
+{% set c = chips_for[l['user_id']] if l['user_id'] in chips_for else none %}
+<article class="tb-card {{ 'is-mine' if l['user_id'] == user['id'] }} {{ 'is-muted' if l['effective_status'] != 'open' }}" id="l-{{ l['id'] }}">
+  <div class="tb-card-top">
+    {{ kind_badge(l['kind']) }}
+    {% if l['matched'] %}<span class="tb-badge tb-badge--match">★ Matched on the Board</span>{% elif l['effective_status'] != 'open' %}<span class="tb-badge tb-badge--state">{{ l['effective_status'] }}</span>{% endif %}
+    <a class="tb-title" href="/tour-board/{{ l['id'] }}">{{ l['title'] }}</a>
+  </div>
+  <div class="tb-meta">
+    {% if l['region_label'] %}<span>{{ l['region_label'] }}</span>{% endif %}
+    {% if l['window_label'] %}<span>· {{ l['window_label'] }}</span>{% endif %}
+    {% for g in l['genre_labels'] %}<span class="tb-pill">{{ g }}</span>{% endfor %}
+    {% if l['draw_min'] is not none %}<span class="tb-pill is-self" title="Entered by the poster">draw {{ l['draw_min'] }}{% if l['draw_max'] and l['draw_max'] != l['draw_min'] %}–{{ l['draw_max'] }}{% endif %} · self-reported</span>{% endif %}
+    <span>· {% if c and c['slug'] %}<a href="/@{{ c['slug'] }}">{{ l['poster_name'] }}</a>{% else %}{{ l['poster_name'] }}{% endif %}</span>
+    <span>· <a href="/tour-board/{{ l['id'] }}" title="{{ l['created'][:10] }}">{{ l['ago'] }}</a></span>
+    {% if c %}{{ chips(c) }}{% endif %}
+  </div>
+  {% if l['details'] %}<p class="tb-details">{{ l['details'] }}</p>{% endif %}
+  <div class="tb-card-foot">
+    {% if l['user_id'] != user['id'] and l['effective_status'] == 'open' and show_reply %}<a class="tb-btn tb-btn--small" href="/tour-board/{{ l['id'] }}#reply">Reply in Street Banker</a>{% endif %}
+    {% if l['user_id'] == user['id'] %}
+      {% set rc = counts[l['id']] if l['id'] in counts else none %}
+      <a class="tb-btn tb-btn--ghost tb-btn--small" href="/tour-board/{{ l['id'] }}">{{ rc['threads'] if rc else 0 }} repl{{ 'y' if rc and rc['threads'] == 1 else 'ies' }}{% if rc and rc['unread'] %} <span class="tb-unread">{{ rc['unread'] }}</span>{% endif %}</a>
+      {% if l['parse_flag'] %}<span class="tb-pill" title="Some fields could not be read from the old free-text listing">needs a detail: {{ l['parse_flag'] }} <a href="/tour-board/{{ l['id'] }}/edit">fix</a></span>{% endif %}
+    {% endif %}
+  </div>
+</article>
+{%- endmacro %}

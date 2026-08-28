@@ -1,0 +1,58 @@
+{% set nav = 'tasks' %}
+{% extends "desk/layout.html" %}
+{% block title %}Tasks{% endblock %}
+{% block main %}
+<h1 class="dk-h1">Tasks</h1>
+<p class="dk-sub">Who is doing what, by when.</p>
+
+<div class="dk-quick">
+  <a class="{{ 'is-on' if view == 'my' }}" href="/operator-desk/tasks?view=my">My tasks</a>
+  <a class="{{ 'is-on' if view == 'team' }}" href="/operator-desk/tasks?view=team">Team tasks</a>
+  <a class="{{ 'is-on' if view == 'overdue' }}" href="/operator-desk/tasks?view=overdue">Overdue</a>
+  <a class="{{ 'is-on' if view == 'week' }}" href="/operator-desk/tasks?view=week">Due this week</a>
+  <a class="{{ 'is-on' if view == 'done' }}" href="/operator-desk/tasks?view=done">Completed</a>
+</div>
+
+{% if can('task_add') %}
+<form class="dk-bar" method="post" action="/operator-desk/tasks?view={{ view }}" style="margin-top:14px">
+  <input class="dk-search" name="title" placeholder="New task" required>
+  <select class="dk-mini" name="lead_id"><option value="">No lead</option>
+    {% for l in leads %}<option value="{{ l.id }}">{{ l.artist_name }}</option>{% endfor %}</select>
+  {% if can('task_assign') %}
+  <select class="dk-mini" name="assigned_to">{% for n in vocab.team %}<option {{ 'selected' if n == me.name }}>{{ n }}</option>{% endfor %}</select>
+  {% endif %}
+  <input class="dk-mini" type="date" name="due_date" style="padding:5px 8px;border:1px solid var(--dk-rule);border-radius:var(--sb-r-control)">
+  <select class="dk-mini" name="priority">{% for p in vocab.priorities %}<option {{ 'selected' if p == 'Medium' }}>{{ p }}</option>{% endfor %}</select>
+  <select class="dk-mini" name="category">{% for c in vocab.task_categories %}<option>{{ c }}</option>{% endfor %}</select>
+  <button class="dk-btn" type="submit">Add</button>
+</form>
+{% endif %}
+
+{% if tasks %}
+<div class="dk-table-wrap" style="margin-top:14px"><table class="dk-table">
+  <thead><tr><th>Task</th><th>Assigned</th><th>Created by</th><th>Due</th>
+             <th>Priority</th><th>Category</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for t in tasks %}
+  <tr>
+    <td>{{ t.title }}{% if t.description %}<div style="font-size:12px;color:var(--dk-faint)">{{ t.description }}</div>{% endif %}</td>
+    <td>{{ t.assigned_to or '—' }}</td>
+    <td>{{ t.created_by }}</td>
+    <td>{{ t.due_date or '—' }}</td>
+    <td><span class="dk-chip {{ 'dk-chip--amber' if t.priority in ('High', 'Urgent') }}">{{ t.priority }}</span></td>
+    <td>{{ t.category }}</td>
+    <td><span class="dk-chip {{ 'dk-chip--ok' if t.status == 'Complete' }}">{{ t.status }}</span></td>
+    <td>{% if can('task_add') %}
+      <form class="dk-inline" method="post" action="/operator-desk/tasks/{{ t.id }}/status">
+        <input type="hidden" name="back" value="/operator-desk/tasks?view={{ view }}">
+        <select class="dk-mini" name="status">{% for s in vocab.task_statuses %}<option {{ 'selected' if t.status == s }}>{{ s }}</option>{% endfor %}</select>
+        <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px" type="submit">Set</button>
+      </form>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="dk-empty">No tasks in this view.</p>
+{% endif %}
+{% endblock %}

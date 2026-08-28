@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block head_scripts %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+
+{% block title %}Audience - Royalty Sweep{% endblock %}
+
+{% set au = audience %}
+
+{% block content %}
+<div class="mx-auto max-w-[1400px] space-y-5">
+  <div>
+    <h1 class="sb-h1">Audience</h1>
+    <p class="mt-1 text-sm text-gray-300">Who's listening, where they are, and how your reach is trending.</p>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Monthly Listeners</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-sb-ink">{{ "{:,}".format(au.summary.monthly_listeners) }}</div>
+      <div class="mt-1 text-xs {{ 'text-green-400' if au.summary.growth_pct >= 0 else 'text-red-400' }} font-medium">{{ '+' if au.summary.growth_pct >= 0 else '' }}{{ au.summary.growth_pct }}% vs last month</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Followers</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ "{:,}".format(au.summary.followers) }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Playlist Adds</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ "{:,}".format(au.summary.playlist_adds) }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">Last 7 days</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Total Streams</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ "{:,}".format(au.summary.total_streams) }}</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Listener Trend</h2>
+      <div class="mt-4"><canvas id="audienceChart" height="130"></canvas></div>
+    </section>
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Top Tracks</h2>
+      <div class="mt-3 space-y-2">
+        {% for t in au.top_tracks %}
+        <div class="flex items-center gap-3 rounded-lg border border-white/5 bg-white/5 px-3 py-2">
+          <span class="w-5 text-center text-xs font-bold text-gray-300">{{ loop.index }}</span>
+          <span class="min-w-0 flex-1 truncate text-sm font-semibold text-gray-100">{{ t.title }}</span>
+          <span class="shrink-0 text-xs font-bold sb-num text-sb-ink">{{ "{:,}".format(t.streams) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Age Breakdown</h2>
+      <div class="mt-3 space-y-3">
+        {% for a in au.age_brackets %}
+        <div>
+          <div class="flex justify-between text-xs"><span class="text-gray-200">{{ a.label }}</span><span class="font-semibold text-gray-200">{{ a.pct }}%</span></div>
+          <div class="mt-1 h-1.5 rounded-full bg-white/5"><div class="h-1.5 rounded-full bg-sb-gold" style="width: {{ a.pct }}%;"></div></div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Top Geographies</h2>
+      <div class="mt-3 space-y-2">
+        {% for g in au.geography %}
+        <div class="flex items-center gap-3">
+          <span class="grid h-6 w-8 shrink-0 place-items-center rounded border border-white/10 bg-black/30 text-xs font-bold text-gray-200">{{ g.flag }}</span>
+          <span class="min-w-0 flex-1 text-sm text-gray-200">{{ g.country }}</span>
+          <span class="shrink-0 text-xs font-semibold sb-num text-gray-200">{{ g.pct }}%</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+  <p class="px-1 text-xs text-gray-300 font-medium">Top tracks and the trend shape are from your catalog. Listener, follower, demographic, and geographic figures are illustrative.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const AUD_TREND = {{ au.trend | tojson }};
+  new Chart(document.getElementById("audienceChart"), {
+    type: "line",
+    data: {
+      labels: AUD_TREND.map((p) => p.label),
+      datasets: [{ data: AUD_TREND.map((p) => p.value), borderColor: "#E8B950",
+        backgroundColor: "rgba(234,179,8,0.08)", fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: "#E8B950" }],
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: "#91836A", font: { size: 10 } }, grid: { color: "rgba(255,255,255,0.04)" } },
+        y: { ticks: { color: "#91836A", font: { size: 10 }, callback: (v) => v >= 1000 ? (v/1000).toFixed(0) + "K" : v }, grid: { color: "rgba(255,255,255,0.04)" } },
+      },
+    },
+  });
+</script>
+{% endblock %}

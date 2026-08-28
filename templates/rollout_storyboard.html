@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Storyboard · {{ c.title }} - Rollout Engine{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1150px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Rollout Engine · Storyboard</div>
+      <h1 class="sb-h1 mt-1">{{ c.title }}</h1>
+      <p class="mt-1 max-w-2xl text-sm text-gray-300">Every scheduled post with its content on one board. Attach assets straight from your Vault — the caption, date, and tracked link stay on the <a href="/rollout-studio/{{ c.id }}/posts" class="font-bold text-sb-gold-bright hover:underline">Posts</a> page.</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="/rollout-studio/{{ c.id }}/posts" class="sb-btn sb-btn-secondary">Posts</a>
+      <a href="/rollout-studio/{{ c.id }}" class="sb-btn sb-btn-secondary">← Overview</a>
+    </div>
+  </div>
+
+  {% if not posts %}
+  <div class="rounded-2xl border border-dashed border-white/10 py-8 text-center text-xs text-gray-300">No posts yet — generate the rollout from the overview page, then storyboard it here.</div>
+  {% else %}
+  <div class="flex items-center gap-3 px-1 text-xs font-bold uppercase text-gray-300">
+    <span>Heat = this post's real smart-link clicks, not platform metrics:</span>
+    <span><span class="mr-1 inline-block h-2 w-2 rounded-full bg-gray-700"></span>0</span>
+    <span><span class="mr-1 inline-block h-2 w-2 rounded-full bg-sb-gold"></span>1–9</span>
+    <span><span class="mr-1 inline-block h-2 w-2 rounded-full bg-sb-gold"></span>10+</span>
+  </div>
+
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    {% for p in posts %}
+    <div class="overflow-hidden rounded-2xl border {{ 'border-green-500/25' if p.status == 'posted' else 'border-white/10' }} bg-sb-surface-1">
+      <div class="relative aspect-[9/16] max-h-56 w-full bg-black/50">
+        {% if p.asset and p.asset.asset_type == 'image' and p.asset.file_path %}
+        <img src="{{ p.asset.file_path }}" alt="" class="h-full w-full object-cover">
+        {% elif p.asset and p.asset.asset_type == 'video' and p.asset.file_path %}
+        <video src="{{ p.asset.file_path }}" muted preload="metadata" class="h-full w-full object-cover"></video>
+        <span class="absolute left-2 top-2 rounded bg-black/70 px-1.5 py-0.5 text-xs font-bold uppercase text-gray-200">▶ video</span>
+        {% else %}
+        <div class="grid h-full w-full place-items-center text-3xl text-gray-300">{{ '✎' if p.post_type == 'text' else '🎬' if p.post_type == 'video' else '🖼' }}</div>
+        {% endif %}
+        <span class="absolute right-2 top-2 h-3 w-3 rounded-full border border-black/60 {{ 'bg-sb-gold-bright' if p.clicks >= 10 else 'bg-amber-500' if p.clicks else 'bg-gray-700' }}" title="{{ p.clicks }} smart-link clicks"></span>
+        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-2 pt-6">
+          <div class="text-xs font-black sb-num text-gray-200">{{ p.scheduled_date }}</div>
+          <div class="truncate text-xs text-gray-300 font-medium">{{ platform_names.get(p.platform, p.platform) }} · {{ phase_names.get(p.phase, p.phase) }}</div>
+        </div>
+      </div>
+      <div class="space-y-1.5 p-2.5">
+        <p class="line-clamp-2 text-xs leading-snug text-gray-300 font-medium">{{ p.caption }}</p>
+        <form method="post" class="flex items-center gap-1.5">
+          <input type="hidden" name="post_id" value="{{ p.id }}">
+          <select name="vault_id" class="min-w-0 flex-1 rounded-md border border-white/10 bg-black/40 px-3 py-2.5 text-base text-gray-200 focus:outline-none [color-scheme:dark] sm:px-1.5 sm:py-1 sm:text-xs">
+            <option value="">{{ 'Detach asset' if p.asset else 'Attach from Vault…' }}</option>
+            {% for v in vault %}
+            <option value="{{ v.id }}">{{ v.label or v.path.split('/')[-1] }} ({{ v.kind }})</option>
+            {% endfor %}
+          </select>
+          <button class="sb-btn sb-btn-secondary sb-btn-sm shrink-0">Set</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% if not vault %}
+  <p class="text-xs text-gray-300 font-medium">Your Vault is empty — <a href="/vault" class="font-bold text-sb-gold-bright hover:underline">upload press shots, covers, or clips</a> and they become attachable here.</p>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

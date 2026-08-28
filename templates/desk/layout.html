@@ -1,0 +1,61 @@
+{# Operator Desk shell: left sidebar, main pane. Internal only — this
+   layout is reached exclusively through operator_desk.require(), so by
+   the time it renders, the visitor is on the roster.
+
+   Templates set {% set nav = '...' %} before extending, and put their
+   content in block main. The sidebar shows only what the role can do;
+   the routes enforce it regardless. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "_fonts.html" %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Operator Desk{% endblock %} · Street Banker</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  <link rel="stylesheet" href="/static/css/operator-desk.css?v=2">
+</head>
+<body class="dk-body">
+<div class="dk-shell">
+
+  <nav class="dk-side" aria-label="Operator Desk">
+    <div class="dk-brand">
+      <div class="dk-brand-name">Street Banker</div>
+      <div class="dk-brand-sub">Operator Desk</div>
+    </div>
+    <a class="dk-nav {{ 'is-active' if nav == 'dashboard' }}" href="/operator-desk/">Dashboard</a>
+    <a class="dk-nav {{ 'is-active' if nav == 'leads' }}" href="/operator-desk/leads">Leads</a>
+    <a class="dk-nav {{ 'is-active' if nav == 'tasks' }}" href="/operator-desk/tasks">Tasks</a>
+    <a class="dk-nav {{ 'is-active' if nav == 'followups' }}" href="/operator-desk/follow-ups">Follow-Ups</a>
+    <a class="dk-nav {{ 'is-active' if nav == 'events' }}" href="/operator-desk/events">Shows &amp; Meetings</a>
+    <a class="dk-nav {{ 'is-active' if nav == 'deals' }}" href="/operator-desk/deals">Deal Desk</a>
+    <a class="dk-nav {{ 'is-active' if nav == 'files' }}" href="/operator-desk/files">Files</a>
+    <a class="dk-nav {{ 'is-active' if nav == 'meetings' }}" href="/operator-desk/meetings">Meetings</a>
+    <a class="dk-nav {{ 'is-active' if nav == 'agents' }}" href="/operator-desk/agents">Voice Agent</a>
+    {% if can('manage_users') %}
+    <a class="dk-nav {{ 'is-active' if nav == 'team' }}" href="/operator-desk/team">Team &amp; Settings</a>
+    {% endif %}
+    {% if can('audit') %}
+    <a class="dk-nav {{ 'is-active' if nav == 'activity' }}" href="/operator-desk/activity">Activity Log</a>
+    {% endif %}
+
+    {# Signal is where most leads on this desk come from, so the two halves
+       of the workflow link both ways. A Desk seat is mirrored into Signal on
+       first visit, so anyone reading this can open it. #}
+    <a class="dk-nav" href="/signal" style="margin-top: 10px;">Signal &rarr;</a>
+
+    <div class="dk-side-foot">
+      <strong>{{ me.name }}</strong>
+      {{ vocab.role_labels[me.role] }}
+      <div style="margin-top: 8px;"><a href="/" style="color: inherit;">&larr; Back to the site</a></div>
+    </div>
+  </nav>
+
+  <main class="dk-main">
+    {% block main %}{% endblock %}
+  </main>
+
+</div>
+</body>
+</html>

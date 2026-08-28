@@ -1,0 +1,21 @@
+{% import "tour/_macros.html" as m %}
+{% set e = edit if edit is defined and edit else {} %}
+<form method="post" action="/tours/{{ tour['id'] }}/people/save" class="to-form">
+  {% if e %}<input type="hidden" name="person_id" value="{{ e['id'] }}">{% endif %}
+  <div class="to-grid">
+    {{ m.field('name', 'Name', e['name'] if e else '', required=True) }}
+    {{ m.field('role', 'Role', e['role'] if e else '', placeholder='Tour manager, FOH, driver') }}
+    {{ m.select('category', 'Category', vocab['people_categories'], e['category'] if e else 'Crew') }}
+    {{ m.field('company', 'Company', e['company'] if e else '') }}
+    {{ m.field('email', 'Email', e['email'] if e else '', type='email') }}
+    {{ m.field('phone', 'Phone', e['phone'] if e else '') }}
+    {{ m.field('emergency', 'Emergency contact', e['emergency'] if e else '') }}
+    {% if contacts %}<label class="to-field"><span>Or pull from Press Desk contacts</span><select name="from_contact"><option value="">—</option>{% for c in contacts %}<option value="{{ c['id'] }}">{{ c['name'] }}{% if c['outlet'] %} · {{ c['outlet'] }}{% endif %}</option>{% endfor %}</select></label>{% endif %}
+    {{ m.textarea('notes', 'Notes', e['notes'] if e else '', rows=2) }}
+    <div class="to-checks to-wide">{{ m.check('phone_public', 'Phone visible to everyone on the tour', (e and not e['phone_private'])) }}</div>
+    <div class="to-wide"><span class="to-eyebrow" style="font-size:12px">Shows (none ticked = every show)</span>
+      <div class="to-checks">{% for s in shows %}<label><input type="checkbox" name="shows" value="{{ s['id'] }}" {% if e and s['id'] in e['shows'] %}checked{% endif %}> {{ s['date'][5:] }} {{ s['city'] or s['venue'] }}</label>{% endfor %}</div></div>
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">{{ 'Save' if e else 'Add person' }}</button>
+    {% if e %}<button class="to-btn to-btn--ghost to-btn--danger" type="submit" name="action" value="delete">Remove</button> <a class="to-btn to-btn--ghost" href="/tours/{{ tour['id'] }}/people">Cancel</a>{% endif %}</div>
+</form>

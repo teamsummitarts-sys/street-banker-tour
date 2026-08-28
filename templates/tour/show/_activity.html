@@ -1,0 +1,22 @@
+{% import "tour/_macros.html" as m %}
+{% if changes %}
+{% for c in changes %}
+<div class="to-change">
+  <span class="sev {{ c['severity'] }}"></span>
+  <div><div><b>{{ c['entity_type']|replace('_',' ') }}</b>{% if c['entity_label'] %} · {{ c['entity_label'] }}{% endif %} · {{ c['field']|replace('_',' ') }}</div>
+    <div><del>{{ c['before'] or '—' }}</del> <ins>{{ c['after'] or '—' }}</ins></div>
+    <small>{{ c['created'][:16]|replace('T',' ') }} UTC · {{ c['actor_name'] or 'system' }}{% if c['source'] != 'manual' %} · via {{ c['source'] }}{% endif %}</small></div>
+  <div>{{ m.sev(c['severity']) }}</div>
+</div>
+{% endfor %}
+{% else %}
+  {{ m.empty("No activity on this show yet", "Every edit — who, what, before and after — lands here.") }}
+{% endif %}
+{% if can('admin') %}
+<details style="margin-top:18px"><summary class="to-muted" style="cursor:pointer">Delete this show</summary>
+  <form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/delete" class="to-form" style="margin-top:8px">
+    {{ m.field('confirm', 'Type the venue name to confirm', placeholder=show['venue']) }}
+    <div class="to-bar" style="margin-bottom:0"><button class="to-btn to-btn--ghost to-btn--danger" type="submit">Delete show and its records</button></div>
+  </form>
+</details>
+{% endif %}

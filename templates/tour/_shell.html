@@ -1,0 +1,47 @@
+{# TOUR shell: the signed-in frame, the module stylesheet, the tour header
+   (name, status line, mode), the tour-level tabs the viewer is allowed to
+   see, and the offline strip. Pages extend this and fill `tour_body`. #}
+{% extends "base.html" %}
+{% block head_scripts %}
+  <link rel="stylesheet" href="/static/css/tour-os.css?v=3">
+{% endblock %}
+{% block content %}
+{% import "tour/_macros.html" as m %}
+<div class="to">
+  <div class="to-offline" id="to-offline" role="status">Offline — showing the last copy of this page</div>
+
+  <div class="to-head">
+    <div>
+      <p class="to-eyebrow"><a href="/tours" style="text-decoration:none">TOUR</a>{% if tour['artist_name'] %} · {{ tour['artist_name'] }}{% endif %}</p>
+      <h1 class="to-h1">{{ tour['name'] }}</h1>
+    </div>
+    <div class="to-inline">
+      <span class="to-status">{{ status_line }}</span>
+      {% if can('edit') %}
+      <form method="post" action="/tours/{{ tour['id'] }}/mode" class="to-inline">
+        <input type="hidden" name="mode" value="{{ 'planning' if mode == 'live' else 'live' }}">
+        <button class="to-btn to-btn--ghost to-btn--small" type="submit" title="Switch between planning and live">{{ 'Planning view' if mode == 'live' else 'Live view' }}</button>
+      </form>
+      {% endif %}
+      <form method="get" action="/tours/{{ tour['id'] }}/search" role="search" class="to-inline">
+        <input class="to-input" type="search" name="q" placeholder="Search this tour" aria-label="Search this tour" style="width:170px;min-height:36px;padding:6px 10px">
+      </form>
+    </div>
+  </div>
+
+  <nav class="to-tabs" aria-label="Tour sections">
+    {% for key, label, path in tour_tabs %}
+      <a class="to-tab {{ 'is-on' if nav == key }}" href="/tours/{{ tour['id'] }}{% if path %}/{{ path }}{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  {% block tour_body %}{% endblock %}
+</div>
+<script>
+(function () {
+  var bar = document.getElementById("to-offline");
+  function sync() { if (bar) bar.classList.toggle("is-on", !navigator.onLine); }
+  window.addEventListener("online", sync); window.addEventListener("offline", sync); sync();
+})();
+</script>
+{% endblock %}

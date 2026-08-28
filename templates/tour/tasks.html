@@ -1,0 +1,28 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Tasks - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Tasks</p><h1 class="to-h1" style="font-size:20px">Tour tasks</h1><p class="to-sub">The same Street Banker actions that show in Command Center, tagged to this tour or a show on it.</p></div><a class="to-btn to-btn--ghost to-btn--small" href="/actions">Command Center actions</a></div>
+{% if rows %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Task</th><th>Show</th><th>Priority</th><th>Due</th><th>Status</th><th></th></tr></thead>
+  <tbody>{% for t in rows %}<tr><td data-k="Task"><b>{{ t['title'] }}</b>{% if t['description'] %}<div class="to-muted">{{ t['description'] }}</div>{% endif %}</td>
+    <td data-k="Show">{% if t['entity_type'] == 'tour_show' and t['entity_id'] in show_by_id %}<a href="/tours/{{ tour['id'] }}/shows/{{ t['entity_id'] }}?tab=tasks">{{ show_by_id[t['entity_id']]['city'] or show_by_id[t['entity_id']]['venue'] }}</a>{% else %}<span class="to-muted">tour</span>{% endif %}</td>
+    <td data-k="Priority">{{ t['priority'] }}</td><td data-k="Due">{{ t['due_date'] or '—' }}</td><td data-k="Status">{{ m.chip(t['status']) }}</td>
+    <td>{% if t['status'] in ('new','in_progress') and (can('edit') or can('schedule') or can('advance') or can('production')) %}<form method="post" action="/tours/{{ tour['id'] }}/tasks/{{ t['id'] }}/status"><input type="hidden" name="status" value="complete"><button class="to-btn to-btn--small" type="submit">Done</button></form>{% endif %}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}{{ m.empty("No tour tasks", "Add one below, or from any show's Tasks tab.") }}{% endif %}
+{% if can('edit') or can('schedule') or can('advance') or can('production') %}
+<form method="post" action="/tours/{{ tour['id'] }}/tasks/add" class="to-form" style="margin-top:10px">
+  <div class="to-grid">
+    {{ m.field('title', 'Task', required=True) }}
+    <label class="to-field"><span>Show</span><select name="show_id"><option value="">Tour-level</option>{% for s in shows %}<option value="{{ s['id'] }}">{{ s['date'] }} {{ s['city'] or s['venue'] }}</option>{% endfor %}</select></label>
+    {{ m.field('assignee', 'Assignee') }}
+    {{ m.select('priority', 'Priority', ['high','medium','low'], 'medium') }}
+    {{ m.field('due_date', 'Due', type='date') }}
+    {{ m.textarea('description', 'Details', rows=1) }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Add task</button></div>
+</form>
+{% endif %}
+{% endblock %}

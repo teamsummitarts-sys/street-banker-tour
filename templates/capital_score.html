@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Capital Readiness - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Capital</div>
+    <h1 class="sb-h1 mt-1">Capital Readiness Score</h1>
+    {% include "partials/score_trend.html" %}
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">What a funder sees when they look at your account: verifiable income, consistency, and business hygiene. Every point is computed from your real data.</p>
+  </div>
+
+  <!-- Score plate -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-6 shadow-[0_0_60px_rgba(201,162,74,0.07)]">
+    <div class="flex flex-wrap items-center justify-between gap-6">
+      <div>
+        <div class="sb-label text-gray-300">Capital Readiness</div>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span class="text-6xl font-black tabular-nums {{ 'text-green-400' if cs.total >= 75 else 'text-sb-gold-bright' }}">{{ cs.total }}</span>
+          <span class="text-xl text-gray-300">/100</span>
+        </div>
+        <div class="mt-1 text-xs font-bold uppercase tracking-wide {{ 'text-green-400' if cs.total >= 75 else 'text-sb-gold-bright' }}">{{ cs.verdict }}</div>
+      </div>
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div><div class="text-2xl font-black tabular-nums">${{ "{:,.0f}".format(cs.income_total) }}</div><div class="sb-label text-gray-300">Income on record</div></div>
+        <div><div class="text-2xl font-black tabular-nums">{{ cs.periods }}</div><div class="sb-label text-gray-300">Statement periods</div></div>
+        <div><div class="text-2xl font-black tabular-nums">{{ cs.sources }}</div><div class="sb-label text-gray-300">Income sources</div></div>
+      </div>
+    </div>
+    <div class="mt-6 space-y-3">
+      {% for name, pts, note in cs.factors %}
+      <div>
+        <div class="flex items-baseline justify-between">
+          <span class="text-xs font-bold uppercase tracking-wide text-gray-200">{{ name }}</span>
+          <span class="text-xs font-black tabular-nums {{ 'text-green-400' if pts >= 14 else ('text-sb-gold-bright' if pts >= 8 else 'text-red-400/80') }}">{{ pts }}/20</span>
+        </div>
+        <div class="mt-1 h-2.5 overflow-hidden rounded-full bg-white/10">
+          <div class="h-full rounded-full {{ 'bg-green-500' if pts >= 14 else ('bg-sb-gold-bright' if pts >= 8 else 'bg-red-500/70') }}" style="width: {{ pts * 5 }}%;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if cs.advance_band %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-sb-gold">Illustrative Advance Band</h2>
+    <div class="mt-2 text-3xl font-black tabular-nums">${{ "{:,}".format(cs.advance_band[0]) }} <span class="text-gray-300">–</span> ${{ "{:,}".format(cs.advance_band[1]) }}</div>
+    <p class="mt-2 text-xs leading-relaxed text-gray-300">A common shape for catalog advances is 0.8–1.5× annualized trailing income — this band annualizes the income on your uploaded statements. Real offers depend on the funder, the catalog's age, and terms.</p>
+  </section>
+  {% endif %}
+
+  {% if cs.weak %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-sb-gold">What raises the score</h2>
+    <div class="mt-3 space-y-2">
+      {% for name, pts, note in cs.weak %}
+      <div class="rounded-lg border border-white/10 bg-black/30 px-4 py-3">
+        <div class="text-xs font-bold text-gray-200">{{ name }} — {{ pts }}/20</div>
+        <div class="mt-0.5 text-xs text-gray-300">{{ note }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <p class="px-1 text-xs text-gray-300 font-medium">Estimates only — not financial advice, not an offer of funding. Figures are computed from the statements and activity in this account.</p>
+</div>
+{% endblock %}

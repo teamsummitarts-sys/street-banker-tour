@@ -1,0 +1,586 @@
+/* Street Banker /login — Session Recall.
+
+   The chassis is real material from the approved mock: login-tex-silver.jpg
+   (brushed frame strip), login-tex-black.jpg (faceplate leather), and the
+   three engraved badge icons. Colors are sampled from the same file:
+   gold button 202,169,112 -> 176,139,81; LED 237,173,34; plate 31,32,31;
+   ivory 245,239,229. Textures are decorative layers over solid colors, so
+   the page reads identically if an image fails to load. */
+
+:root {
+  --lsr-ink: var(--sb-ink);          /* page text on the dark console */
+  --lsr-muted: var(--sb-ink-2);
+  --lsr-page: var(--sb-ground);         /* black console, matching theme-color */
+  --lsr-gold: var(--sb-gold-bright);
+  --lsr-gold-dark: var(--sb-gold-deep);
+  --lsr-led: rgb(237, 173, 34);
+}
+
+* { box-sizing: border-box; }
+
+body.lsr {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% -5%, rgba(216, 178, 90, 0.08), transparent 65%),
+    var(--lsr-page);
+  color: var(--lsr-ink);
+  font-family: var(--sb-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.lsr-page {
+  max-width: 66rem;
+  margin: 0 auto;
+  padding: 40px 20px 56px;
+}
+
+/* --- intro ------------------------------------------------------------ */
+.lsr-intro { text-align: center; }
+
+.lsr-brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+.lsr-brand img { height: 40px; width: auto; }
+.lsr-brand span {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  color: var(--lsr-gold);
+}
+
+.lsr-title {
+  margin: 34px 0 0;
+  font-size: clamp(2.1rem, 7vw, 3.9rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.lsr-support {
+  margin: 14px auto 0;
+  max-width: 30rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--lsr-muted);
+}
+
+/* --- rack chassis ----------------------------------------------------- */
+.lsr-rack {
+  position: relative;
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 0;
+  margin-top: 30px;
+  padding: 18px 40px 18px 16px;
+  border-radius: var(--sb-r-control);
+  /* Satin-brushed aluminum: one continuous tonal sweep with chamfered
+     edges. No texture tile - repeating strips read as banding, and the
+     banding is exactly what got this plate redesigned. */
+  background:
+    linear-gradient(180deg, var(--sb-ink) 0%, var(--sb-ink) 38%, var(--sb-ink-2) 60%, var(--sb-ink) 100%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.55),
+              inset 0 2px 0 rgba(255, 255, 255, 0.9),
+              inset 0 -2px 3px rgba(0, 0, 0, 0.18),
+              inset 3px 0 4px -2px rgba(0, 0, 0, 0.14),
+              inset -3px 0 4px -2px rgba(0, 0, 0, 0.14),
+              0 18px 40px rgba(0, 0, 0, 0.55);
+}
+.lsr-intro + .lsr-rack { margin-top: 42px; }
+
+/* display:grid above would defeat the hidden attribute (author beats UA
+   stylesheet), so the conditional mix rack pins it explicitly: absent
+   means gone, no gap left behind. Same for the flip-state demo forms. */
+.lsr-rack[hidden],
+.lsr-demo-form[hidden] { display: none; }
+
+.lsr-screw {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--sb-ink), var(--sb-ink-2) 58%, var(--sb-line-strong));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45),
+              0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.lsr-screw::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 8px;
+  height: 1.6px;
+  background: rgba(20, 18, 16, 0.7);
+  transform: rotate(32deg);
+}
+.lsr-screw--tl { top: 12px; left: 13px; }
+.lsr-screw--bl { bottom: 12px; left: 13px; }
+.lsr-screw--tr { top: 12px; right: 13px; }
+.lsr-screw--br { bottom: 12px; right: 13px; }
+
+/* badge column: engraved icon lifted from the mock + HTML label */
+.lsr-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 8px;
+}
+.lsr-badge img {
+  width: 58px;
+  height: 58px;
+  border-radius: var(--sb-r-control);
+}
+.lsr-badge span {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  line-height: 1.7;
+  text-align: center;
+  color: var(--sb-line-strong);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);   /* engraved, not printed */
+}
+
+/* faceplate: the mock's leather-black tile over its sampled base color */
+.lsr-face {
+  border-radius: var(--sb-r-control);
+  background-color: rgb(31, 32, 31);
+  background-image: url("/static/img/login-tex-black.jpg?v=1");
+  box-shadow: inset 0 0 0 1px rgba(216, 178, 90, 0.28),
+              inset 0 2px 10px rgba(0, 0, 0, 0.85);
+  padding: 20px 26px 22px;
+  color: var(--sb-ink);
+}
+
+.lsr-face-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.lsr-face-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--lsr-gold);
+  white-space: nowrap;
+}
+.lsr-face-rule { flex: 1; height: 1px; background: rgba(216, 178, 90, 0.35); }
+
+.lsr-led {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, var(--sb-gold-bright), var(--lsr-led) 60%, var(--sb-gold-deep));
+  box-shadow: 0 0 6px rgba(237, 173, 34, 0.7),
+              inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.lsr-face-sub {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--sb-ink-2);
+}
+
+.lsr-error {
+  margin: 14px 0 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(237, 173, 34, 0.5);
+  border-left: 3px solid var(--lsr-led);
+  border-radius: var(--sb-r-control);
+  background: rgba(237, 173, 34, 0.08);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--sb-gold-bright);
+}
+
+/* --- session recall form ---------------------------------------------- */
+.lsr-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: 30px;
+  margin-top: 16px;
+}
+
+.lsr-field label,
+.lsr-mix-col h3 {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: var(--sb-ink-2);
+}
+.lsr-field + .lsr-field { margin-top: 14px; }
+
+.lsr-field input,
+.lsr-demo-row input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid rgba(236, 232, 222, 0.22);
+  border-radius: var(--sb-r-control);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--sb-ink);
+  font: inherit;
+  font-size: 14px;
+}
+/* Under 16px iOS Safari zooms the viewport when the field takes focus and
+   never zooms back, stranding a phone user panning around a login form.
+   Desktop keeps the 14px console face. */
+@media (pointer: coarse) {
+  .lsr-field input,
+  .lsr-demo-row input { font-size: 16px; }
+}
+.lsr-field input::placeholder,
+.lsr-demo-row input::placeholder { color: var(--sb-ink-3); }
+.lsr-field input:focus-visible,
+.lsr-demo-row input:focus-visible {
+  outline: 2px solid var(--lsr-gold);
+  outline-offset: 1px;
+  border-color: var(--lsr-gold);
+}
+
+.lsr-pw { position: relative; }
+.lsr-pw input { padding-right: 44px; }
+.lsr-pw-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--sb-r-control);
+  background: transparent;
+  color: var(--sb-ink-2);
+  cursor: pointer;
+}
+.lsr-pw-toggle:hover { color: var(--lsr-gold); }
+.lsr-pw-toggle[aria-pressed="true"] { color: var(--lsr-gold); }
+.lsr-pw-toggle:focus-visible { outline: 2px solid var(--lsr-gold); }
+.lsr-pw-toggle svg { width: 18px; height: 18px; }
+
+.lsr-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 12.5px;
+  color: var(--sb-ink);
+  cursor: pointer;
+}
+.lsr-remember input { accent-color: var(--lsr-gold); width: 15px; height: 15px; }
+.lsr-remember input:focus-visible { outline: 2px solid var(--lsr-gold); }
+
+/* right column: the gold button + links */
+.lsr-form-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.lsr-gold-btn {
+  display: inline-block;
+  width: 100%;
+  padding: 14px 18px;
+  border: 1px solid var(--sb-gold-deep);
+  border-radius: var(--sb-r-control);
+  /* sampled from the mock's RECALL MY DESK face */
+  background: linear-gradient(180deg, rgb(224, 194, 138) 0%,
+              rgb(202, 169, 112) 45%, rgb(176, 139, 81) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 248, 230, 0.75),
+              inset 0 -2px 4px rgba(90, 62, 12, 0.4),
+              0 3px 8px rgba(20, 18, 16, 0.5);
+  color: var(--sb-gold-deep);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 120ms ease, transform 90ms ease;
+}
+.lsr-gold-btn:hover { filter: brightness(1.06); }
+.lsr-gold-btn:active { transform: translateY(1px); }
+.lsr-gold-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.lsr-gold-btn[disabled] { filter: saturate(0.55) brightness(0.9); cursor: wait; }
+.lsr-gold-btn--slim { width: auto; padding: 12px 20px; font-size: 12px; white-space: nowrap; }
+
+.lsr-side-rule {
+  display: flex;
+  align-items: center;
+  width: 80%;
+  height: 1px;
+  background: rgba(216, 178, 90, 0.3);
+}
+.lsr-side-link {
+  /* Bare inline text with no box. Whoever needs this link is already
+     locked out; it should not also be hard to hit. */
+  display: inline-block;
+  padding: 10px 4px;
+  margin: -10px -4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--lsr-gold);
+  text-decoration: underline;
+  text-decoration-color: rgba(216, 178, 90, 0.5);
+}
+.lsr-side-link:hover { color: var(--sb-gold-bright); }
+.lsr-side-note { margin: 0; font-size: 12px; color: var(--sb-ink-2); }
+.lsr-side-note a { color: var(--lsr-gold); }
+
+/* --- mix rack ---------------------------------------------------------- */
+.lsr-mix-cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 16px;
+}
+.lsr-mix-lane { margin: 0; font-size: 15px; font-weight: 800; color: var(--sb-ink); }
+.lsr-mix-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--sb-ink);
+}
+.lsr-mix-list li::before { content: "· "; color: var(--lsr-gold); }
+
+.lsr-mix-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+.lsr-mix-cta .lsr-gold-btn { max-width: 420px; }
+
+/* --- tour rack --------------------------------------------------------- */
+.lsr-workspaces {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  border: none;
+}
+.lsr-workspace { position: relative; cursor: pointer; }
+.lsr-workspace input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.lsr-workspace span {
+  display: block;
+  padding: 13px 6px;
+  border: 1px solid rgba(236, 232, 222, 0.25);
+  border-radius: var(--sb-r-control);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.35));
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-align: center;
+  color: var(--sb-ink);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+.lsr-workspace:hover span { border-color: rgba(216, 178, 90, 0.6); }
+/* selection: fill + weight + check mark, never gold alone */
+.lsr-workspace input:checked + span {
+  border-color: var(--lsr-gold);
+  background: rgba(216, 178, 90, 0.16);
+  color: var(--sb-gold-bright);
+}
+.lsr-workspace input:checked + span::before { content: "✓ "; }
+.lsr-workspace input:focus-visible + span { outline: 2px solid var(--lsr-gold); outline-offset: 2px; }
+
+.lsr-demo-form { margin-top: 16px; }
+.lsr-demo-row {
+  display: flex;
+  gap: 10px;
+}
+.lsr-demo-row input { flex: 1; }
+
+.lsr-demo-note {
+  margin: 14px 0 0;
+  padding: 8px 12px;
+  border-radius: var(--sb-r-control);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.lsr-demo-note--ok {
+  border: 1px solid rgba(216, 178, 90, 0.45);
+  background: rgba(216, 178, 90, 0.1);
+  color: var(--sb-gold-bright);
+}
+.lsr-demo-note--err {
+  border: 1px solid rgba(237, 120, 60, 0.5);
+  background: rgba(237, 120, 60, 0.1);
+  color: var(--sb-warn);
+}
+
+.lsr-demo-fine { margin: 10px 0 0; font-size: 12px; color: var(--sb-ink-3); }
+.lsr-demo-fine--center { text-align: center; margin-top: 14px; }
+
+.lsr-flip {
+  margin-top: 10px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lsr-gold);
+  text-decoration: underline;
+  text-decoration-color: rgba(216, 178, 90, 0.5);
+  cursor: pointer;
+}
+.lsr-flip:hover { color: var(--sb-gold-bright); }
+.lsr-flip:focus-visible { outline: 2px solid var(--lsr-gold); }
+
+/* honeypot: physically removed from view, still in the DOM for bots */
+.lsr-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* --- secondary rows ---------------------------------------------------- */
+.lsr-rows { margin-top: 34px; display: flex; flex-direction: column; gap: 12px; }
+.lsr-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 22px;
+  border: 1px solid rgba(242, 238, 230, 0.16);
+  border-radius: var(--sb-r-control);
+  background: rgba(255, 255, 255, 0.04);
+}
+.lsr-row-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+.lsr-row-sub { margin: 4px 0 0; font-size: 12.5px; color: var(--lsr-muted); }
+/* The second way in. It is a real alternative, not a second primary, so
+   it reads as a line of the sentence rather than a rival button. */
+.lsr-row-alt {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 6px 2px;
+  font-weight: 700;
+  color: var(--lsr-gold);
+  text-decoration: underline;
+  text-decoration-color: rgba(216, 178, 90, 0.45);
+}
+.lsr-row-alt:hover { color: var(--sb-gold-bright); }
+.lsr-row-alt:focus-visible { outline: 2px solid var(--lsr-gold); outline-offset: 2px; }
+@media (pointer: coarse) {
+  /* An inline link is still a control someone has to hit with a thumb. */
+  .lsr-row-alt { padding: 13px 2px; margin: -7px 0; }
+}
+.lsr-row-btn {
+  flex: 0 0 auto;
+  padding: 11px 20px;
+  border: 1px solid rgba(242, 238, 230, 0.55);
+  border-radius: var(--sb-r-control);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--lsr-ink);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.lsr-row-btn:hover { background: var(--sb-ink); color: var(--sb-surface-2); }
+.lsr-row-btn:focus-visible { outline: 2px solid var(--lsr-gold); outline-offset: 2px; }
+
+/* --- security + footer -------------------------------------------------- */
+.lsr-security {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 36px 0 0;
+  font-size: 12.5px;
+  color: var(--lsr-muted);
+  text-align: center;
+}
+.lsr-security-mark {
+  width: 26px;
+  height: 1px;
+  background: var(--lsr-gold-dark);
+  opacity: 0.6;
+}
+
+.lsr-footer { margin-top: 26px; text-align: center; }
+.lsr-footer nav {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 12px;
+}
+.lsr-footer a { color: var(--lsr-muted); text-decoration: none; }
+.lsr-footer a:hover { color: var(--lsr-ink); text-decoration: underline; }
+.lsr-footer span { color: rgba(242, 238, 230, 0.25); }
+.lsr-footer p { margin: 10px 0 0; font-size: 12px; color: var(--sb-ink-3); }
+
+.lsr-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- responsive --------------------------------------------------------- */
+@media (max-width: 860px) {
+  .lsr-form { grid-template-columns: 1fr; gap: 18px; }
+  .lsr-form-side { align-items: stretch; }
+  .lsr-mix-cols { grid-template-columns: 1fr; gap: 16px; }
+}
+
+@media (max-width: 640px) {
+  .lsr-page { padding: 28px 14px 44px; }
+  .lsr-rack {
+    grid-template-columns: 1fr;
+    padding: 14px 18px;
+  }
+  .lsr-badge { flex-direction: row; gap: 12px; padding: 0 0 10px; }
+  .lsr-badge img { width: 40px; height: 40px; }
+  .lsr-badge span br { display: none; }
+  .lsr-screw { width: 11px; height: 11px; }
+  .lsr-screw--tl, .lsr-screw--bl { left: 7px; }
+  .lsr-screw--tr, .lsr-screw--br { right: 7px; }
+  .lsr-workspaces { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lsr-demo-row { flex-direction: column; }
+  .lsr-demo-row .lsr-gold-btn--slim { width: 100%; }
+  .lsr-row { flex-direction: column; align-items: flex-start; }
+  .lsr-row-btn { width: 100%; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lsr * { transition-duration: 0.01ms !important; }
+}

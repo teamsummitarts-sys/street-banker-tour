@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% import "board/_macros.html" as m %}
+{% block title %}Team-Up Board - Street Banker{% endblock %}
+{% block head_scripts %}<link rel="stylesheet" href="/static/css/board.css?v=2">{% endblock %}
+{% block content %}
+<div class="tb">
+  <div class="tb-head">
+    <div>
+      <p class="tb-eyebrow">Street Banker · Touring</p>
+      <h1 class="tb-h1">Team-Up Board</h1>
+      <p class="tb-lede">Artists looking for tour partners, and venues looking for acts. Every listing is a real account — nothing here is seeded or faked, so an empty board means nobody's posted yet, not that something's broken.</p>
+    </div>
+    <div class="tb-stats" aria-label="Board activity">
+      <span><b>{{ stats['open'] }}</b> open</span>
+      <span><b>{{ stats['posts_30d'] }}</b> posted this month</span>
+      <span><b>{{ stats['messages_30d'] }}</b> replies sent</span>
+      {% if stats['matched'] %}<span><b>{{ stats['matched'] }}</b> matched on the board</span>{% endif %}
+      <a class="tb-btn tb-btn--ghost tb-btn--small" href="/tour-board/inbox">Inbox{% if unread %} <span class="tb-unread">{{ unread }}</span>{% endif %}</a>
+    </div>
+  </div>
+
+  {% if request.args.get('watched') %}<div class="tb-ok">Watching. You'll get a notification (and an email if mail is set up) when a matching listing is posted.</div>{% endif %}
+  {% if coach %}<div class="tb-coach{% if coach['err'] %} tb-coach-err{% endif %}" role="status"><b>{{ coach['head'] }}</b> {{ coach['items']|join(' ') }}</div>{% endif %}
+
+  <div class="tb-layout">
+    <main>
+      <details class="tb-post tb-pane is-warm" {% if prefill %}open data-open="1"{% endif %} style="margin-bottom:12px">
+        <summary><span class="tb-btn tb-btn--fill">+ Post a listing</span> <span class="tb-help" style="margin-left:8px">Artists seeking partners · venues seeking acts</span></summary>
+        <form method="post" action="/tour-board/post" accept-charset="utf-8" class="tb-form">
+          <label class="tb-field"><span>I am</span>
+            <select name="kind">
+              <option value="artist" {% if not prefill or prefill['kind'] == 'artist' %}selected{% endif %}>An artist seeking partners</option>
+              <option value="venue" {% if prefill and prefill['kind'] == 'venue' %}selected{% endif %}>A venue seeking artists</option>
+            </select></label>
+          <label class="tb-field" style="grid-column: span 2"><span>Headline</span>
+            <input name="title" required maxlength="120" value="{{ prefill['title'] if prefill else '' }}" placeholder="Co-headline run through the Southeast / Weekend slots open in October"></label>
+          {{ m.listing_fields(regions, genre_opts, prefill or {'region_text': '', 'region_code': '', 'window_start': '', 'window_end': '', 'genres': [], 'draw_min': none, 'draw_max': none, 'details': '', 'genre_text': ''}) }}
+          <div class="tb-wide" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="tb-btn tb-btn--fill" type="submit">Post to the Board</button>
+            <span class="tb-help">Replies arrive inside Street Banker — no email address is shown to anyone.</span>
+          </div>
+        </form>
+      </details>
+
+      {% if filtered %}<p class="tb-help" style="margin:0 0 8px">Filtered — <a href="/tour-board">show everything</a>.</p>{% endif %}
+      {% if listings %}
+      <div class="tb-list" role="list" aria-label="Open listings">
+        {% for l in listings %}{{ m.card(l, user, chips, counts) }}{% endfor %}
+      </div>
+      {% else %}
+      <div class="tb-empty"><b>No open listings{{ ' match these filters' if filtered else ' yet' }}.</b><br>
+        {% if filtered %}Loosen a filter, or <form method="post" action="/tour-board/watch" style="display:inline">{% for k in ('kind','region','genre','from','to') %}<input type="hidden" name="{{ k }}" value="{{ f[k] }}">{% endfor %}<button class="tb-btn tb-btn--ghost tb-btn--small" type="submit">watch this search</button></form> and get told when something lands.
+        {% else %}Post the first one — the board only works if it's used.{% endif %}
+      </div>
+      {% endif %}
+
+      {% if own %}
+      <section class="tb-pane" style="margin-top:14px">
+        <h2 class="tb-h2">Your listings</h2>
+        <div class="tb-list">
+          {% for l in own %}
+          {{ m.card(l, user, chips, counts, show_reply=False) }}
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 6px 4px">
+            <a class="tb-btn tb-btn--ghost tb-btn--small" href="/tour-board/{{ l['id'] }}/edit">Edit</a>
+            {% if l['effective_status'] == 'open' %}
+              <form method="post" action="/tour-board/{{ l['id'] }}/close"><input type="hidden" name="next" value="/tour-board"><button class="tb-btn tb-btn--ghost tb-btn--small" type="submit">Close</button></form>
+              <form method="post" action="/tour-board/{{ l['id'] }}/fill"><input type="hidden" name="next" value="/tour-board"><button class="tb-btn tb-btn--ghost tb-btn--small" type="submit">Mark filled</button></form>
+            {% else %}
+              <form method="post" action="/tour-board/{{ l['id'] }}/renew"><input type="hidden" name="next" value="/tour-board"><button class="tb-btn tb-btn--small" type="submit">{{ 'Renew' if l['effective_status'] == 'expired' else 'Reopen' }} for {{ 60 }} days</button></form>
+            {% endif %}
+            <form method="post" action="/tour-board/{{ l['id'] }}/delete" onsubmit="return confirm('Delete this listing and its threads?')"><button class="tb-btn tb-btn--ghost tb-btn--small tb-btn--danger" type="submit">Delete</button></form>
+            {% if l['expires_at'] and l['effective_status'] == 'open' %}<span class="tb-help">expires {{ l['expires_at'][:10] }}</span>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </main>
+
+    <aside>
+      <section class="tb-pane">
+        <h2 class="tb-h2">Filter</h2>
+        <form method="get" action="/tour-board" class="tb-filters">
+          <label class="tb-field"><span>Who</span><select name="kind"><option value="">Everyone</option><option value="artist" {% if f['kind'] == 'artist' %}selected{% endif %}>Artists seeking partners</option><option value="venue" {% if f['kind'] == 'venue' %}selected{% endif %}>Venues seeking artists</option></select></label>
+          <label class="tb-field"><span>Region</span>
+            <input name="region" list="tb-f-regions" value="{{ region_label(f['region']) if f['region'] else '' }}" placeholder="Anywhere" autocomplete="off" data-region-input="tb-f-region-code">
+            <input type="hidden" id="tb-f-region-code" value="{{ f['region'] }}">
+            <datalist id="tb-f-regions">{% for code, label, kind in regions %}<option value="{{ label }}" data-code="{{ code }}"></option>{% endfor %}</datalist></label>
+          <label class="tb-field"><span>Genre</span><select name="genre"><option value="">Any</option>{% for code, label in genre_opts %}<option value="{{ code }}" {% if f['genre'] == code %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+          <div class="row">
+            <label class="tb-field"><span>From</span><input type="date" name="from" value="{{ f['from'] }}"></label>
+            <label class="tb-field"><span>To</span><input type="date" name="to" value="{{ f['to'] }}"></label>
+          </div>
+          <label class="tb-field"><span>Sort</span><select name="sort"><option value="newest" {% if f['sort'] == 'newest' %}selected{% endif %}>Newest</option><option value="soonest" {% if f['sort'] == 'soonest' %}selected{% endif %}>Soonest window</option></select></label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="tb-btn tb-btn--small" type="submit">Apply</button><a class="tb-btn tb-btn--ghost tb-btn--small" href="/tour-board">Clear</a></div>
+        </form>
+        <form method="post" action="/tour-board/watch" style="margin-top:10px">
+          {% for k in ('kind','region','genre','from','to') %}<input type="hidden" name="{{ k }}" value="{{ f[k] }}">{% endfor %}
+          <button class="tb-btn tb-btn--ghost tb-btn--small" type="submit" title="Get a notification when a listing matching the current filters is posted">Watch this search</button>
+        </form>
+      </section>
+      {% if watches %}
+      <section class="tb-pane" style="margin-top:12px">
+        <h2 class="tb-h2">Watching</h2>
+        {% for w in watches %}
+        <div class="tb-watch"><span>{{ w['label'] }}</span>
+          <form method="post" action="/tour-board/watch/{{ w['id'] }}/delete"><button class="tb-btn tb-btn--ghost tb-btn--small" type="submit" aria-label="Stop watching {{ w['label'] }}">✕</button></form></div>
+        {% endfor %}
+      </section>
+      {% endif %}
+      <section class="tb-pane" style="margin-top:12px">
+        <h2 class="tb-h2">How it works</h2>
+        <p class="tb-help">Replies are threads inside Street Banker — both sides have accounts, so nobody hands out an email to a stranger. Listings run for 60 days; you'll get one renew link before they drop off. When a listing is filled through a thread it earns a <span class="tb-badge tb-badge--match">★ Matched on the Board</span> badge.</p>
+      </section>
+    </aside>
+  </div>
+</div>
+<script src="/static/js/board.js?v=1" defer></script>
+{% endblock %}

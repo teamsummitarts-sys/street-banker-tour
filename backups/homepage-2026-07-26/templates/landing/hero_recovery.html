@@ -1,0 +1,122 @@
+{% import "landing/_cards.html" as c %}
+<div id="hero-recovery-panel" class="relative overflow-hidden rounded-3xl border border-amber-500/10 bg-[#0d0d0f] p-5 lg:p-7">
+  <div class="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-500/10 blur-3xl"></div>
+
+  <div class="relative text-center text-[11px] font-semibold uppercase tracking-[0.25em] text-amber-500/70">{{ hero.eyebrow }}</div>
+
+  <div id="hero-connector-grid" class="relative mt-6 grid grid-cols-1 items-center gap-4 lg:grid-cols-[minmax(140px,0.95fr)_minmax(180px,1.1fr)_minmax(140px,0.95fr)] lg:gap-4">
+    <svg id="connector-svg" class="pointer-events-none absolute inset-0 hidden h-full w-full lg:block" aria-hidden="true"></svg>
+
+    <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-1">
+      {% for node in hero.nodes[:4] %}
+      {{ c.source_node(node, elem_id='node-left-' ~ loop.index, side='left') }}
+      {% endfor %}
+    </div>
+
+    <div class="relative mx-auto flex aspect-square w-full max-w-[220px] shrink-0 items-center justify-center">
+      <span class="absolute h-2 w-2 rounded-full bg-amber-400/70" style="top: 6%; left: 18%;"></span>
+      <span class="absolute h-1.5 w-1.5 rounded-full bg-amber-400/50" style="top: 82%; left: 78%;"></span>
+      <span class="absolute h-1 w-1 rounded-full bg-amber-400/60" style="top: 14%; left: 84%;"></span>
+      <span class="absolute h-1.5 w-1.5 rounded-full bg-amber-400/40" style="top: 88%; left: 22%;"></span>
+      <div class="absolute inset-0 rounded-full border border-amber-500/20"></div>
+      <div class="absolute inset-4 animate-[spin_18s_linear_infinite] rounded-full border border-dashed border-amber-500/15"></div>
+      <div class="absolute inset-8 rounded-full border-2 border-amber-500/60"></div>
+      <div id="hero-center" class="relative w-[82%] rounded-2xl border border-amber-500/30 bg-[#111113] px-3 py-3 text-center shadow-[0_0_40px_-10px_rgba(234,179,8,0.35)]">
+        <div class="text-[9px] uppercase tracking-widest text-gray-500">{{ hero.center_label }}</div>
+        <div class="mt-2 text-2xl font-bold tabular-nums text-amber-400">${{ "{:,.2f}".format(hero.center_amount) }}</div>
+        <div class="mt-2 flex flex-col gap-1 text-[10px]">
+          <span class="inline-flex items-center gap-1.5 text-green-400">
+            <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7 7a1 1 0 01-1.4 0l-3-3a1 1 0 111.4-1.4L9 11.6l6.3-6.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+            {{ hero.confidence_pct }}% high confidence
+          </span>
+          <span class="inline-flex items-center gap-1.5 text-gray-400">
+            <svg class="h-3 w-3" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3L2 17h16L10 3z"/><path d="M10 8v4M10 15v.5"/></svg>
+            {{ hero.issues_detected }} issues detected
+          </span>
+          <span class="inline-flex items-center gap-1.5 text-green-400">
+            <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7 7a1 1 0 01-1.4 0l-3-3a1 1 0 111.4-1.4L9 11.6l6.3-6.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+            {{ hero.ready_to_claim }} ready to claim
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-1">
+      {% for callout in hero.callouts %}
+      {% set tone = {'warning': 'border-amber-500/25 text-amber-400', 'danger': 'border-red-500/25 text-red-400'} %}
+      <div id="callout-{{ loop.index }}" class="connector-node rounded-xl border bg-[#111113]/80 px-2.5 py-2 {{ tone.get(callout.severity, tone['warning']) }}" data-tone="{{ callout.severity }}" data-side="right">
+        <div class="flex items-start gap-1.5 text-[9px] font-semibold uppercase leading-tight tracking-wide">
+          <svg class="mt-0.5 h-3 w-3 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3L2 17h16L10 3z"/><path d="M10 8v4M10 15v.5"/></svg>
+          <span>{{ callout.title }}</span>
+        </div>
+        <div class="mt-1 text-[10px] leading-snug text-gray-400">{{ callout.desc }}</div>
+      </div>
+      {% endfor %}
+      {% for node in hero.nodes[4:] %}
+      {{ c.source_node(node, elem_id='node-right-' ~ loop.index, side='right') }}
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="relative mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+    {% for card in hero.cards %}
+    {{ c.recovery_card(card) }}
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+(function () {
+  const grid = document.getElementById("hero-connector-grid");
+  const svg = document.getElementById("connector-svg");
+  const center = document.getElementById("hero-center");
+  if (!grid || !svg || !center) return;
+
+  const TONE_COLOR = {
+    ok: "#22c55e", warning: "#eab308", danger: "#ef4444", "": "#6b7280",
+  };
+
+  function draw() {
+    if (window.innerWidth < 1024) return;
+    const gridRect = grid.getBoundingClientRect();
+    const centerRect = center.getBoundingClientRect();
+    svg.setAttribute("viewBox", `0 0 ${gridRect.width} ${gridRect.height}`);
+    svg.innerHTML = "";
+
+    const cx = centerRect.left - gridRect.left;
+    const cy = centerRect.top - gridRect.top;
+    const cw = centerRect.width;
+    const ch = centerRect.height;
+    const centerLeftPoint = [cx, cy + ch / 2];
+    const centerRightPoint = [cx + cw, cy + ch / 2];
+
+    document.querySelectorAll(".connector-node").forEach((node) => {
+      const r = node.getBoundingClientRect();
+      const side = node.dataset.side;
+      const color = TONE_COLOR[node.dataset.tone] || TONE_COLOR[""];
+      const startX = side === "left" ? r.right - gridRect.left : r.left - gridRect.left;
+      const startY = r.top - gridRect.top + r.height / 2;
+      const [endX, endY] = side === "left" ? centerLeftPoint : centerRightPoint;
+      const midX = (startX + endX) / 2;
+
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`);
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", color);
+      path.setAttribute("stroke-width", "1.5");
+      path.setAttribute("stroke-opacity", "0.55");
+      svg.appendChild(path);
+
+      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      dot.setAttribute("cx", startX);
+      dot.setAttribute("cy", startY);
+      dot.setAttribute("r", "2.5");
+      dot.setAttribute("fill", color);
+      svg.appendChild(dot);
+    });
+  }
+
+  draw();
+  window.addEventListener("resize", draw);
+})();
+</script>

@@ -1,0 +1,39 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Merch - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Merch</p><h1 class="to-h1" style="font-size:20px">Products, counts, what's left</h1><p class="to-sub">Counts are entered per show on the show's Merch tab. Inventory left = tour inventory − sold across shows. Your store runs on Shopify; this is the road count.</p></div></div>
+
+{% if products %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Product</th><th>Price</th><th>Tour inventory</th><th>Sold</th><th>Left</th><th>Gross</th></tr></thead>
+  <tbody>
+  {% for p in products %}{% set t = totals[p['id']] %}
+  <tr><td data-k="Product"><b>{{ p['name'] }}</b>{% if p['sku'] %}<div class="to-muted">{{ p['sku'] }}</div>{% endif %}</td><td data-k="Price">{{ p['price'] or '—' }}</td><td data-k="Inventory">{{ p['tour_inventory'] or '—' }}</td><td data-k="Sold">{{ t['sold']|int }}</td>
+    <td data-k="Left">{% if t['left'] is not none %}{{ t['left']|int }}{% if t['low'] %} <span class="to-chip to-chip--warn">low</span>{% endif %}{% else %}—{% endif %}</td><td data-k="Gross">{{ '%.0f'|format(t['gross']) }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}{{ m.empty("No products yet", "Add what is on the table, with tour inventory and a low-stock threshold.") }}{% endif %}
+
+<form method="post" action="/tours/{{ tour['id'] }}/merch/products/add" class="to-form" style="margin-top:10px">
+  <div class="to-grid">
+    {{ m.field('name', 'Product', required=True) }}
+    {{ m.field('sku', 'SKU') }}
+    {{ m.field('price', 'Price') }}
+    {{ m.field('tour_inventory', 'Tour inventory') }}
+    {{ m.field('low_stock_at', 'Low-stock alert at') }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Add product</button></div>
+</form>
+
+{% if per_show %}
+<h2 class="to-h2">By show</h2>
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Show</th><th>Sold</th><th>Gross</th><th>Settled</th></tr></thead>
+  <tbody>{% for s in shows if s['id'] in per_show %}{% set rows = per_show[s['id']] %}
+  <tr><td data-k="Show"><a href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}?tab=merch">{{ s['date'] }} {{ s['city'] or s['venue'] }}</a></td><td data-k="Sold">{% set ns = namespace(sold=0, gross=0.0) %}{% for c in rows %}{% set ns.sold = ns.sold + (c['sold']|float if c['sold'] else 0) %}{% set ns.gross = ns.gross + (c['gross']|float if c['gross'] else 0) %}{% endfor %}{{ ns.sold|int }}</td><td data-k="Gross">{{ '%.0f'|format(ns.gross) }}</td><td data-k="Settled">{{ 'yes' if rows|selectattr('settled')|list|length == rows|length else 'no' }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% endblock %}

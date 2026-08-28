@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Beats - Street Banker{% endblock %}
+{% block head_scripts %}<link rel="stylesheet" href="/static/css/beats.css?v=2">{% endblock %}
+
+{% block content %}
+{% set d = desk %}
+<div class="bt" id="bt-root">
+  <div id="bt-live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="bt-head">
+    <div>
+      <p class="bt-eyebrow">Street Banker · Producers</p>
+      <h1 class="bt-h1">Beats</h1>
+      <p class="bt-lede">Register a beat, licence it with terms somebody signs, and keep a cleared list a label can check in one click. Drop the audio in and this page measures its tempo and key in your browser — the file is never sent anywhere to be analysed. Every row here is one you entered.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="bt-open-drawer" class="bt-btn bt-btn--fill" type="button" aria-haspopup="dialog">Register beat +</button>
+    </div>
+  </div>
+
+  {# The state of the product, not fine print. The headline stays visible
+     because it is the one thing a producer must not misunderstand; only
+     the explanation folds. It turns green on its own the day a
+     fingerprinting vendor is configured. #}
+  <details class="bt-glass bt-state{{ ' is-on' if monitoring.on else '' }}" id="bt-state">
+    <summary>{{ monitoring.headline }}</summary>
+    <p>{{ monitoring.detail }}</p>
+  </details>
+
+  <div class="bt-tabs" role="tablist" aria-label="Beats sections">
+    <button class="bt-tab" id="bt-tab-catalog" role="tab" aria-selected="true" aria-controls="bt-panel-catalog" type="button">Catalogue</button>
+    <button class="bt-tab" id="bt-tab-licences" role="tab" aria-selected="false" aria-controls="bt-panel-licences" type="button">Licences &amp; uses</button>
+    <button class="bt-tab" id="bt-tab-api" role="tab" aria-selected="false" aria-controls="bt-panel-api" type="button" data-locked="1">
+      <svg class="bt-lock" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><rect x="2.5" y="5.5" width="7" height="5" rx="1"/><path d="M4.2 5.5V4a1.8 1.8 0 013.6 0v1.5"/></svg>
+      API integrations
+    </button>
+  </div>
+
+  <section id="bt-panel-catalog" role="tabpanel" aria-labelledby="bt-tab-catalog">
+    <dl class="bt-counts">
+      <div class="bt-glass bt-count"><dt>Beats registered</dt><dd>{{ d.beats | length }}</dd></div>
+      <div class="bt-glass bt-count"><dt>With a signed licence</dt><dd>{{ d.signed_beats }}</dd></div>
+      <div class="bt-glass bt-count"><dt>Open usage cases</dt><dd class="{{ 'is-gold' if d.open_uses else '' }}">{{ d.open_uses | length }}</dd></div>
+      <div class="bt-glass bt-count"><dt>Recovered on cases</dt><dd class="{{ 'is-ok' if d.recovered else '' }}">${{ "{:,.2f}".format(d.recovered) }}</dd></div>
+    </dl>
+
+    {# Outside the has-beats branch on purpose: dropping a folder of audio
+       is the fastest way to go from an empty account to a catalogue, so
+       it must be there when the account is empty. #}
+    <div class="bt-glass bt-drop" id="bt-drop">
+      <p class="bt-h2" style="margin:0">Drop beats here</p>
+      <p class="bt-hint">Drop one file or forty. Each one is decoded in this browser, measured for tempo and key, and registered under its filename — rename it afterwards from the beat's own page.</p>
+      <p class="bt-hint"><b>{{ max_beat_mb }} MB a file.</b> An MP3 or FLAC of a full beat fits comfortably; a 24-bit WAV usually does not, so bounce those first.</p>
+      <p style="margin-top:12px"><label class="bt-btn bt-btn--ghost bt-btn--small" style="cursor:pointer">Choose files<input id="bt-files" type="file" accept="audio/*" multiple class="sr-only" aria-label="Choose beat audio files to upload"></label></p>
+      <ul id="bt-queue" class="bt-queue" role="list"></ul>
+    </div>
+
+    {% if d.rows %}
+    <section class="bt-glass" style="padding:15px;margin-top:14px">
+      <h2 class="bt-h2">Your beats</h2>
+      <ul class="bt-rows" role="list" id="bt-rows">
+        {% for row in d.rows %}
+        {% set a = audio.get(row.beat.id) %}
+        <li class="bt-glass bt-row" data-beat="{{ row.beat.id }}">
+          <button class="bt-play" type="button" data-play="{{ row.beat.id }}"
+                  {% if not a %}disabled title="No audio on this beat yet"{% endif %}
+                  aria-label="Play {{ row.beat.title }}">&#9654;</button>
+          <div style="min-width:0">
+            <a class="bt-title" href="/beats/{{ row.beat.id }}">{{ row.beat.title }}</a>
+            <p class="bt-meta">
+              {% if a and a.bpm %}<span class="is-measured">{{ a.bpm | round | int }} BPM</span>
+              {% elif row.beat.bpm %}<span>{{ row.beat.bpm }} BPM</span>
+              {% else %}<span>BPM not set</span>{% endif %}
+              {% if a and a.song_key %}<span class="is-measured">{{ a.song_key }}</span>
+              {% elif row.beat.song_key %}<span>{{ row.beat.song_key }}</span>
+              {% else %}<span>key not set</span>{% endif %}
+              {% if row.beat.tags %}<span>{{ row.beat.tags }}</span>{% endif %}
+            </p>
+          </div>
+          <div class="bt-wave-wrap">
+            {% if a %}
+            <canvas class="bt-wave" data-wave="{{ row.beat.id }}" height="38"
+                    aria-label="Waveform for {{ row.beat.title }} — click to seek"></canvas>
+            {% else %}
+            <p class="bt-hint" style="margin:0">No audio yet — drop a file above.</p>
+            {% endif %}
+          </div>
+          <div class="bt-row-right">
+            {% if row.summary.exclusive %}
+              <span class="bt-led bt-led--sold"><i></i>Exclusive sold</span>
+            {% elif row.summary.signed %}
+              <span class="bt-led bt-led--leased"><i></i>Leased · {{ row.summary.signed }}</span>
+            {% else %}
+              <span class="bt-led bt-led--free"><i></i>Available</span>
+            {% endif %}
+            <span class="bt-hint">{{ row.summary.signed }} signed · {{ row.summary.unsigned }} awaiting · {{ row.summary.cleared }} cleared</span>
+            <span class="bt-fee">${{ "{:,.2f}".format(row.summary.fees_agreed) }}</span>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% else %}
+    <div class="bt-glass bt-empty" style="margin-top:14px">
+      <div class="bt-empty-art">
+        <picture>
+          <source type="image/avif" srcset="/static/img/eq-room-900.avif">
+          <source type="image/webp" srcset="/static/img/eq-room-900.webp">
+          <img src="/static/img/eq-room-900.jpg" alt="" width="900" height="600" loading="lazy" decoding="async"
+               style="object-position: 82% center">
+        </picture>
+      </div>
+      <div>
+        <h2>Nothing registered yet</h2>
+        <p>Register a beat and you can licence it with terms somebody signs, keep a cleared list of who is allowed to use it, send a private link to an artist, and track a use when you find one.</p>
+        <p style="margin-bottom:0"><button id="bt-empty-cta" class="bt-btn bt-btn--fill" type="button">Register your first beat</button></p>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  <section id="bt-panel-licences" role="tabpanel" aria-labelledby="bt-tab-licences" hidden>
+    {% if d.held %}
+    <section class="bt-glass" style="padding:16px;margin-bottom:12px">
+      <h2 class="bt-h2">Licences granted to you</h2>
+      <p class="bt-hint">The other end of the same paperwork — beats somebody licensed to this account's email.</p>
+      <ul class="bt-rows" role="list" style="margin-top:11px">
+        {% for l in d.held %}
+        <li class="bt-glass bt-row" style="grid-template-columns:minmax(0,1fr) auto">
+          <div style="min-width:0">
+            <b class="bt-title" style="cursor:default">{{ l.beat_title }}</b>
+            <p class="bt-meta"><span>from {{ l.producer_name }}</span><span>{{ l.status }}</span></p>
+          </div>
+          <div class="bt-row-right">
+            {% if l.status != 'signed' %}
+            <a href="/licence/{{ l.token }}" class="bt-btn bt-btn--small">Read &amp; sign →</a>
+            {% else %}
+            <span class="bt-led bt-led--free"><i></i>Signed</span>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {% if d.uses %}
+    <section class="bt-glass" style="padding:16px">
+      <h2 class="bt-h2">Usage cases</h2>
+      <p class="bt-hint">Uses somebody logged, worked from open to resolved. Nothing on this page found them for you.</p>
+      <ul class="bt-rows" role="list" style="margin-top:11px">
+        {% for u in d.uses[:10] %}
+        <li class="bt-glass bt-row" style="grid-template-columns:minmax(0,1fr) auto">
+          <div style="min-width:0">
+            <a class="bt-title" href="/beats/{{ u.beat_id }}">{{ u.beat_title }}</a>
+            <p class="bt-meta"><span>{{ u.status }}</span><span>{{ u.platform or 'platform not set' }}</span></p>
+          </div>
+          <div class="bt-row-right">
+            {% if u.resolved_amount %}<span class="bt-fee" style="color:var(--bt-ok)">${{ "{:,.2f}".format(u.resolved_amount) }}</span>{% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {% if not d.held and not d.uses %}
+    <div class="bt-glass" style="padding:22px">
+      <h2 class="bt-h2">Nothing here yet</h2>
+      <p class="bt-hint">Licences you grant appear on each beat's own page. This tab fills up with licences granted <b>to</b> you, and with usage cases once somebody logs one.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  {# Locked honestly: what it would do, and that it does not do it yet. No
+     fake rows and no greyed-out switches implying a working thing behind
+     a paywall. #}
+  <section id="bt-panel-api" role="tabpanel" aria-labelledby="bt-tab-api" hidden>
+    <div class="bt-glass bt-locked">
+      <h2 class="bt-h2">API integrations</h2>
+      <p class="bt-hint" style="max-width:70ch"><b>Not built.</b> This tab is here so the plan is on the record, not because there is something behind it. Nothing below works today, and none of it is scheduled — when one of these ships it will appear here doing its actual job.</p>
+      <ul>
+        <li><b>Beat store sync</b>Push a registered beat, its tags and its licence tiers to a storefront, and pull back sales so the cleared list keeps itself.</li>
+        <li><b>Fingerprint monitoring</b>Hand a vendor (ACRCloud, Audible Magic, Pex) the audio and receive matches as usage cases. This is a paid account and a signed agreement, not a switch.</li>
+        <li><b>Split sheets to distribution</b>Send the agreed producer split with the release so it does not get retyped at the distributor.</li>
+        <li><b>Webhooks</b>Fire on licence signed, exclusive sold, and usage case opened, so a producer's own tooling can react.</li>
+      </ul>
+      <p class="bt-hint" style="margin-top:14px">Fingerprint monitoring is the only one with a working path in the codebase today: set the vendor's keys and the state line at the top of this page turns green on its own.</p>
+    </div>
+  </section>
+</div>
+
+{# --- Register drawer ------------------------------------------------- #}
+<div id="bt-scrim" class="bt-scrim" hidden></div>
+<div id="bt-drawer" class="bt-glass bt-drawer" role="dialog" aria-modal="true" aria-labelledby="bt-drawer-title" hidden>
+  <div class="bt-drawer-head">
+    <div>
+      <p class="bt-eyebrow">Producers</p>
+      <h2 class="bt-h1" style="font-size:17px" id="bt-drawer-title">Register a beat</h2>
+    </div>
+    <button id="bt-drawer-close" class="bt-x" type="button" aria-label="Close">&#10005;</button>
+  </div>
+  <p class="bt-hint">A row here is a beat you can licence. Leave BPM and key blank and dropping the audio fills them in — a number you type is never overwritten by one this page measured.</p>
+  <form method="post" style="display:flex;flex-direction:column;gap:11px">
+    <label class="bt-field"><span>Title</span>
+      <input name="title" id="bt-title" class="bt-input" required maxlength="200" placeholder="e.g. Cold Corner">
+    </label>
+    <div class="bt-grid2">
+      <label class="bt-field"><span>BPM</span><input name="bpm" class="bt-input" maxlength="20" inputmode="decimal" placeholder="optional"></label>
+      <label class="bt-field"><span>Key</span><input name="song_key" class="bt-input" maxlength="20" placeholder="optional"></label>
+    </div>
+    <label class="bt-field"><span>Tags</span>
+      <input name="tags" class="bt-input" maxlength="200" placeholder="trap, 808, dark">
+    </label>
+    <label class="bt-field"><span>Note to yourself</span>
+      <textarea name="note" class="bt-area" maxlength="600" placeholder="Who it was made for, what it samples, anything you need to remember before licensing it."></textarea>
+    </label>
+    <button class="bt-btn bt-btn--fill" type="submit">Register beat</button>
+  </form>
+</div>
+
+<script>window.__btAudio = {{ audio_public | js_json }}; window.__btMaxMb = {{ max_beat_mb }};</script>
+<script src="/static/js/tempokey.js?v=3"></script>
+<script src="/static/js/beats.js?v=1"></script>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% set nav = 'dashboard' %}
+{% extends "desk/layout.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block main %}
+<h1 class="dk-h1">Dashboard</h1>
+<p class="dk-sub">The pipeline at a glance. Every card is a filtered view of the same lead list.</p>
+
+<div class="dk-cards">
+  <a class="dk-card" href="/operator-desk/leads?stage=New+Lead"><b>{{ counts.new_leads }}</b><span>New leads</span></a>
+  <a class="dk-card" href="/operator-desk/leads"><b>{{ counts.active_conversations }}</b><span>Active conversations</span></a>
+  <a class="dk-card" href="/operator-desk/leads?quick=high"><b>{{ counts.priority_opportunities }}</b><span>Priority opportunities</span></a>
+  <a class="dk-card" href="/operator-desk/follow-ups"><b>{{ counts.upcoming_follow_ups }}</b><span>Upcoming follow-ups</span></a>
+  <a class="dk-card" href="/operator-desk/tasks"><b>{{ counts.open_tasks }}</b><span>Open tasks</span></a>
+  <a class="dk-card" href="/operator-desk/leads?opportunity=Catalog"><b>{{ counts.catalog_opportunities }}</b><span>Catalog opportunities</span></a>
+  <a class="dk-card" href="/operator-desk/deals"><b>{{ counts.partnership_deals }}</b><span>Deals in motion</span></a>
+</div>
+
+<div class="dk-quick">
+  <a href="/operator-desk/leads?quick=week">This week</a>
+  <a href="/operator-desk/leads?quick=month">This month</a>
+  <a href="/operator-desk/leads?quick=mine">Assigned to me</a>
+  <a href="/operator-desk/leads?quick=high">High priority</a>
+  <a href="/operator-desk/leads?quick=followup">Needs follow-up</a>
+  <a href="/operator-desk/leads?quick=deal">Deal in motion</a>
+  <a href="/operator-desk/leads?quick=dormant">Dormant</a>
+</div>
+
+{% if warnings %}
+<h2 class="dk-h2">Needs attention</h2>
+<ul class="dk-warnings">
+  {% for warn_lead, reason in warnings %}
+  <li><a href="/operator-desk/leads/{{ warn_lead.id }}">{{ warn_lead.artist_name }}</a> — {{ reason }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<h2 class="dk-h2">Today's follow-ups</h2>
+{% if follow_ups %}
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr><th>Lead</th><th>Due</th><th>Owner</th><th>Reason</th><th>Stage</th></tr></thead>
+  <tbody>
+  {% for f in follow_ups %}
+  <tr>
+    <td><a href="/operator-desk/leads/{{ f.id }}">{{ f.artist_name }}</a></td>
+    <td>{{ f.follow_up_date }}</td>
+    <td>{{ f.follow_up_owner or '—' }}</td>
+    <td>{{ f.follow_up_reason or '—' }}</td>
+    <td><span class="dk-chip">{{ f.pipeline_stage }}</span></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="dk-empty">Nothing due today.</p>
+{% endif %}
+
+<h2 class="dk-h2">My open tasks</h2>
+{% if my_tasks %}
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr><th>Task</th><th>Due</th><th>Priority</th><th>Category</th></tr></thead>
+  <tbody>
+  {% for t in my_tasks %}
+  <tr><td>{{ t.title }}</td><td>{{ t.due_date or '—' }}</td>
+      <td><span class="dk-chip {{ 'dk-chip--amber' if t.priority in ('High', 'Urgent') }}">{{ t.priority }}</span></td>
+      <td>{{ t.category }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="dk-empty">No open tasks assigned to {{ me.name }}.</p>
+{% endif %}
+
+<h2 class="dk-h2">Recently updated</h2>
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr><th>Lead</th><th>Stage</th><th>Priority</th><th>Assigned</th><th>Updated</th></tr></thead>
+  <tbody>
+  {% for r in recent %}
+  <tr>
+    <td><a href="/operator-desk/leads/{{ r.id }}">{{ r.artist_name }}</a></td>
+    <td><span class="dk-chip">{{ r.pipeline_stage }}</span></td>
+    <td><span class="dk-chip {{ 'dk-chip--amber' if r.priority in ('High', 'Urgent') }}">{{ r.priority }}</span></td>
+    <td>{{ r.assigned_to or '—' }}</td>
+    <td>{{ r.updated_at[:10] }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

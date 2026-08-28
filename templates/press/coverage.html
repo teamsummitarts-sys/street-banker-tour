@@ -1,0 +1,59 @@
+{% set tab = 'coverage' %}
+{% extends "press/_shell.html" %}
+{% block title %}Coverage - Press Desk{% endblock %}
+{% block press %}
+
+<div class="pd-head">
+  <div>
+    <p class="pd-eyebrow">Coverage</p>
+    <h1 class="pd-h1">{{ coverage | length }} logged</h1>
+    <p class="pd-sub">What actually ran. Quotes you record here are real ones with a source and a date — which is the difference between a press kit that helps you and one that invents its own reviews.</p>
+  </div>
+</div>
+
+<form method="post" class="pd-form" action="/press-desk/coverage">
+  <div class="pd-grid">
+    <label class="pd-field"><span>Outlet *</span><input name="outlet" required></label>
+    <label class="pd-field"><span>Kind</span>
+      <select name="kind">{% for k in vocab.coverage_kinds %}<option>{{ k }}</option>{% endfor %}</select></label>
+    <label class="pd-field"><span>Published on</span><input name="published_on" type="date"></label>
+    <label class="pd-field"><span>Announcement</span>
+      <select name="release_id"><option value="">—</option>
+        {% for r in releases %}<option value="{{ r.id }}">{{ r.headline or r.title }}</option>{% endfor %}</select></label>
+    <label class="pd-field"><span>Who wrote it</span>
+      <select name="contact_id"><option value="">—</option>
+        {% for c in contacts %}<option value="{{ c.id }}">{{ c.name }}{% if c.outlet %} — {{ c.outlet }}{% endif %}</option>{% endfor %}</select></label>
+    <label class="pd-field" style="grid-column:1/-1"><span>Headline</span><input name="headline"></label>
+    <label class="pd-field" style="grid-column:1/-1"><span>Link</span><input name="url" placeholder="https://"></label>
+    <label class="pd-field" style="grid-column:1/-1"><span>Pull quote</span>
+      <textarea name="quote" rows="2" placeholder="The line worth reusing — exactly as printed."></textarea></label>
+  </div>
+  <div style="margin-top:14px"><button class="pd-btn" type="submit">Log it</button></div>
+</form>
+
+{% if coverage %}
+<h2 class="pd-h2">Everything logged</h2>
+<div class="pd-table-wrap"><table class="pd-table">
+  <thead><tr><th>Outlet</th><th>Headline</th><th>Kind</th><th>Published</th><th>Announcement</th><th>Quote</th><th></th></tr></thead>
+  <tbody>
+  {% for c in coverage %}
+  <tr>
+    <td>{{ c.outlet }}</td>
+    <td>{% if c.url %}<a href="{{ c.url }}" target="_blank" rel="noopener noreferrer">{{ c.headline or c.url }}</a>{% else %}{{ c.headline or '—' }}{% endif %}</td>
+    <td><span class="pd-chip">{{ c.kind }}</span></td>
+    <td class="pd-muted">{{ c.published_on or '—' }}</td>
+    <td class="pd-muted">{{ c.release_title or '—' }}</td>
+    <td class="pd-muted">{{ c.quote or '—' }}</td>
+    <td>
+      <form class="pd-inline" method="post" action="/press-desk/coverage/{{ c.id }}/delete">
+        <button class="pd-btn pd-btn--ghost pd-btn--small" type="submit">Remove</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<div class="pd-empty" style="margin-top:16px">Nothing logged yet.</div>
+{% endif %}
+{% endblock %}

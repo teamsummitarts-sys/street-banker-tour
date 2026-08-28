@@ -1,0 +1,98 @@
+{% set nav = 'leads' %}
+{% extends "desk/layout.html" %}
+{% block title %}{{ 'Edit lead' if lead else 'New lead' }}{% endblock %}
+{% block main %}
+{# One form for create and edit. `lead` is None on create; on edit every
+   field is prefilled. lv() reads a lead value without tripping on
+   missing keys. #}
+{% macro lv(key) %}{{ (lead[key] if lead and lead[key] else '') }}{% endmacro %}
+
+<h1 class="dk-h1">{{ 'Edit lead' if lead else 'New lead' }}</h1>
+<p class="dk-sub">{{ lead.artist_name if lead else 'Only the artist/company name is required — fill in the rest as you learn it.' }}</p>
+
+<form method="post" class="dk-form"
+      action="{{ '/operator-desk/leads/' ~ lead.id ~ '/edit' if lead else '/operator-desk/leads/new' }}">
+
+  <h2 class="dk-h2" style="margin-top:0">Basic info</h2>
+  <div class="dk-grid">
+    <label class="dk-field"><span>Artist / Company Name *</span>
+      <input name="artist_name" required value="{{ lv('artist_name') }}"></label>
+    <label class="dk-field"><span>Contact Name</span>
+      <input name="contact_name" value="{{ lv('contact_name') }}"></label>
+    <label class="dk-field"><span>Role</span>
+      <select name="role">{% for r in vocab.contact_roles %}
+        <option {{ 'selected' if lead and lead.role == r }}>{{ r }}</option>{% endfor %}
+      </select></label>
+    <label class="dk-field"><span>Email</span><input name="email" type="email" value="{{ lv('email') }}"></label>
+    <label class="dk-field"><span>Phone</span><input name="phone" value="{{ lv('phone') }}"></label>
+    <label class="dk-field"><span>Instagram</span><input name="instagram" value="{{ lv('instagram') }}"></label>
+    <label class="dk-field"><span>TikTok</span><input name="tiktok" value="{{ lv('tiktok') }}"></label>
+    <label class="dk-field"><span>YouTube</span><input name="youtube" value="{{ lv('youtube') }}"></label>
+    <label class="dk-field"><span>Website</span><input name="website" value="{{ lv('website') }}"></label>
+    <label class="dk-field"><span>City</span><input name="city" value="{{ lv('city') }}"></label>
+    <label class="dk-field"><span>State</span><input name="state" value="{{ lv('state') }}"></label>
+    <label class="dk-field"><span>Country</span><input name="country" value="{{ lv('country') }}"></label>
+    <label class="dk-field"><span>Timezone</span><input name="timezone" value="{{ lv('timezone') }}"></label>
+  </div>
+
+  <h2 class="dk-h2">Music / business</h2>
+  <div class="dk-grid">
+    <label class="dk-field"><span>Genre</span><input name="genre" value="{{ lv('genre') }}"></label>
+    <label class="dk-field"><span>Current distributor</span><input name="current_distributor" value="{{ lv('current_distributor') }}"></label>
+    <label class="dk-field"><span>Monthly streaming revenue estimate</span><input name="monthly_revenue_estimate" value="{{ lv('monthly_revenue_estimate') }}"></label>
+    <label class="dk-field"><span>Catalog size</span><input name="catalog_size" value="{{ lv('catalog_size') }}"></label>
+    <label class="dk-field"><span>Upcoming release date</span><input name="upcoming_release_date" type="date" value="{{ lv('upcoming_release_date') }}"></label>
+    <label class="dk-field"><span>Existing team</span><input name="existing_team" value="{{ lv('existing_team') }}"></label>
+    <label class="dk-field"><span>Manager name</span><input name="manager_name" value="{{ lv('manager_name') }}"></label>
+    <label class="dk-field"><span>Attorney name</span><input name="attorney_name" value="{{ lv('attorney_name') }}"></label>
+    <label class="dk-field"><span>Producer relationships</span><input name="producer_relationships" value="{{ lv('producer_relationships') }}"></label>
+    <label class="dk-field"><span>Label/imprint affiliation</span><input name="label_affiliation" value="{{ lv('label_affiliation') }}"></label>
+    <label class="dk-field"><span>Publishing/admin status</span><input name="publishing_status" value="{{ lv('publishing_status') }}"></label>
+    <label class="dk-field"><span>SoundExchange status</span><input name="soundexchange_status" value="{{ lv('soundexchange_status') }}"></label>
+    <label class="dk-field"><span>MLC status</span><input name="mlc_status" value="{{ lv('mlc_status') }}"></label>
+    <label class="dk-field"><span>YouTube Content ID status</span><input name="content_id_status" value="{{ lv('content_id_status') }}"></label>
+    <label class="dk-field"><span>Known splits issues</span><input name="splits_issues" value="{{ lv('splits_issues') }}"></label>
+    <label class="dk-field"><span>Known catalog issues</span><input name="catalog_issues" value="{{ lv('catalog_issues') }}"></label>
+  </div>
+
+  <h2 class="dk-h2">Opportunity</h2>
+  <div class="dk-checks">
+    {% for o in vocab.opportunities %}
+    <label><input type="checkbox" name="opportunity_types" value="{{ o }}"
+      {{ 'checked' if lead and o in lead.opportunity_types }}> {{ o }}</label>
+    {% endfor %}
+  </div>
+
+  <div class="dk-grid" style="margin-top:14px">
+    {% if not lead %}
+    <label class="dk-field"><span>Pipeline stage</span>
+      <select name="pipeline_stage">{% for s in vocab.stages %}<option>{{ s }}</option>{% endfor %}</select></label>
+    {% endif %}
+    <label class="dk-field"><span>Priority</span>
+      <select name="priority">{% for p in vocab.priorities %}
+        <option {{ 'selected' if (lead and lead.priority == p) or (not lead and p == 'Medium') }}>{{ p }}</option>{% endfor %}
+      </select></label>
+    <label class="dk-field"><span>Lead source</span>
+      <select name="lead_source">{% for s in vocab.sources %}
+        <option {{ 'selected' if (lead and lead.lead_source == s) or (not lead and s == 'Manual entry') }}>{{ s }}</option>{% endfor %}
+      </select></label>
+    <label class="dk-field"><span>Assigned team member</span>
+      <select name="assigned_to"><option value="">—</option>{% for n in vocab.team %}
+        <option {{ 'selected' if lead and lead.assigned_to == n }}>{{ n }}</option>{% endfor %}
+      </select></label>
+  </div>
+
+  <h2 class="dk-h2">Tags</h2>
+  <div class="dk-checks">
+    {% for t in vocab.tags %}
+    <label><input type="checkbox" name="tags" value="{{ t }}"
+      {{ 'checked' if lead and t in lead.tags }}> {{ t }}</label>
+    {% endfor %}
+  </div>
+
+  <div style="margin-top:18px">
+    <button class="dk-btn" type="submit">{{ 'Save changes' if lead else 'Create lead' }}</button>
+    <a class="dk-btn dk-btn--ghost" href="{{ '/operator-desk/leads/' ~ lead.id if lead else '/operator-desk/leads' }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

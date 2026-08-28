@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ e.name }} — Press Kit | Street Banker</title>
+  <meta property="og:title" content="{{ e.name }} — Official Press Kit">
+  <meta property="og:description" content="{{ e.profile.tagline }}">
+  {% if e.photo %}<meta property="og:image" content="{{ e.photo }}">{% endif %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,900;1,9..144,300&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <style>
+    /* The desk the sheet lies on. Flat var(--sb-ink) read as "unstyled page";
+       the same tone with a grain and a slight vignette reads as a
+       surface, which is what makes the ivory sheet on top of it read as
+       paper. The file is 20 lines of SVG, not a photograph. */
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: var(--sb-ink);
+      background-image:
+        radial-gradient(ellipse 90% 55% at 50% 0%, rgba(20, 18, 16, 0.07), transparent 70%),
+        url("/static/img/tex-paper.svg");
+      background-repeat: no-repeat, repeat;
+      background-attachment: fixed, scroll;
+    }
+    @media print { body { background-image: none !important; } }
+    .serif { font-family: 'Fraunces', Georgia, serif; }
+    /* Printed-paper sheet */
+    .sheet {
+      background-color: var(--sb-ink);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.02 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    .duo { filter: grayscale(1) contrast(1.08) brightness(1.02); }
+    .rule { background: var(--sb-surface-2); height: 1px; opacity: .14; }
+    .leaders { overflow: hidden; }
+    .leaders::after { content: " . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ."; color: rgba(20,18,16,.25); letter-spacing: 2px; }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #ffffff !important; }
+      .sheet { box-shadow: none !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-sb-surface-2 antialiased">
+
+  <!-- Utility bar -->
+  <div class="no-print">
+    <div class="mx-auto flex max-w-[1040px] items-center justify-between px-6 py-4">
+      <div class="sb-label text-sb-surface-2/70">Street Banker <span class="text-sb-gold-deep">— Press Office</span></div>
+      <button type="button" onclick="window.print()" class="border border-sb-surface-2/25 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] transition-colors hover:bg-sb-surface-2 hover:text-white">Print / Save PDF</button>
+    </div>
+  </div>
+
+  <!-- ===== The sheet ===== -->
+  <main class="sheet mx-auto mb-14 max-w-[1040px] shadow-[0_30px_80px_rgba(20,18,16,0.18)]">
+
+    <!-- ===== Cover masthead (artist-chosen color) ===== -->
+    <header class="relative px-8 pb-0 pt-10 text-white sm:px-14" style="background-color: {{ e.bg_color }};">
+      <div class="h-[3px] w-full bg-gradient-to-r from-sb-gold-deep via-sb-gold-bright to-sb-gold-deep"></div>
+
+      <div class="flex items-baseline justify-between pt-8">
+        <span class="text-xs font-bold uppercase tracking-[0.5em] text-sb-gold-bright">Official Press Kit</span>
+        <span class="serif text-xs italic text-white/70 font-medium">Street Banker Press Office</span>
+      </div>
+
+      <div class="pb-10 pt-8">
+        <h1 class="serif break-words text-[17vw] font-black uppercase leading-[0.88] tracking-tight text-white sm:text-[92px] lg:text-[110px]">{{ e.name }}</h1>
+        <div class="mt-7 flex flex-wrap items-end justify-between gap-6">
+          <p class="serif max-w-md text-xl font-light italic leading-snug text-sb-gold-bright sm:text-2xl">{{ e.profile.tagline }}</p>
+          <div class="text-right">
+            <div class="sb-label flex flex-wrap items-center justify-end gap-x-3 gap-y-2 text-white/60">
+              <span class="text-white">{{ e.profile.location }}</span>
+              {% for g in e.profile.genres %}<span class="text-sb-gold-bright">·</span><span>{{ g }}</span>{% endfor %}
+            </div>
+            {# Letterhead, not footer. The booking address was only at the
+               bottom of the sheet, which is a long way to scroll for the
+               one thing the reader came to act on. #}
+            {% if e.sections_on.contact and e.profile.contact.booking %}
+            <div class="mt-3">
+              <div class="sb-label text-sb-gold-bright">Booking</div>
+              {% if '@' in e.profile.contact.booking %}
+              <a href="mailto:{{ e.profile.contact.booking }}" class="serif mt-1 block break-all text-lg font-semibold text-white underline underline-offset-4 hover:text-sb-gold-bright">{{ e.profile.contact.booking }}</a>
+              {% else %}
+              <div class="serif mt-1 break-all text-lg font-semibold text-white">{{ e.profile.contact.booking }}</div>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {% if e.logo_path %}
+      <!-- Artist logo above the cover photograph -->
+      <div class="flex justify-center pb-8 pt-2">
+        <img src="{{ e.logo_path }}" alt="{{ e.name }} logo" class="max-h-24 w-auto max-w-[320px] object-contain">
+      </div>
+      {% endif %}
+
+      {% if e.photo %}
+      <!-- Full-bleed cover photograph -->
+      <figure class="relative -mx-8 sm:-mx-14">
+        <img src="{{ e.photo | media_url }}" alt="{{ e.name }}" class="aspect-[4/5] w-full object-cover sm:aspect-[21/10]" style="filter: contrast(1.04) saturate(1.05);">
+        <div class="pointer-events-none absolute inset-x-0 top-0 h-16" style="background-image: linear-gradient(to bottom, {{ e.bg_color }}, transparent);"></div>
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-gradient-to-r from-sb-gold-deep via-sb-gold-bright to-sb-gold-deep"></div>
+      </figure>
+      {% endif %}
+
+      {% if e.sections_on.stats and e.stats %}
+      <!-- Stats strip set into the cover -->
+      {% if not e.stats_are_real %}
+      <p class="border-t border-amber-400/25 bg-amber-400/[0.07] px-4 py-2 text-center text-xs uppercase tracking-[0.2em] text-amber-200/80 font-medium">Sample metrics — not this artist's catalogue</p>
+      {% endif %}
+      <div class="grid grid-cols-2 border-t border-white/15">
+        {% for s in e.stats[:2] %}
+        <div class="{{ 'border-l border-white/15' if not loop.first }} px-4 py-7 text-center">
+          <div class="serif text-4xl font-black tabular-nums text-sb-gold-bright sm:text-5xl">{{ s.value }}</div>
+          <div class="sb-label mt-2 text-white/60">{{ s.label }}</div>
+          <div class="sb-label mt-0.5 text-white/30">{{ s.sub }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </header>
+
+    <!-- ===== Body of the sheet ===== -->
+    <div class="px-8 py-4 sm:px-14">
+
+      {# A booker asks what it sounds like before they ask who it
+         is. The sheet used to open with three paragraphs of
+         biography; sound now comes first, and the private room -
+         when there is one - comes before everything, because a
+         gated pitch link exists to be listened to. #}
+      {% if pitch_audio %}
+      <!-- Private listening room: only on the gated pitch link -->
+      <section class="my-12 bg-sb-surface-2 px-8 py-9 text-white sm:px-10">
+        <div class="h-[2px] w-14 bg-sb-gold-bright"></div>
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-2">
+          <h2 class="text-xs font-bold uppercase tracking-[0.4em] text-sb-gold-bright">Private Listening Room</h2>
+          <span class="sb-label text-white/70">Shared with you directly — not public</span>
+        </div>
+        <div class="mt-6 space-y-4">
+          {% for a in pitch_audio %}
+          <div class="rounded-xl border border-white/10 bg-black/30 p-4">
+            <div class="mb-2 text-sm font-bold">{{ a.label }}</div>
+            <audio controls preload="none" src="{{ a.media_path }}" data-label="{{ a.label }}" class="pitch-audio w-full"></audio>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Top tracks: index with dotted leaders -->
+      {% if e.sections_on.tracks %}
+      <section class="py-12">
+        <div class="flex items-center gap-5">
+          <h2 class="shrink-0 text-xs font-bold uppercase tracking-[0.4em] text-sb-gold-deep">Top Tracks</h2>
+          <div class="rule w-full"></div>
+        </div>
+        <ol class="mt-8">
+          {% for t in e.top_tracks %}
+          <li class="flex items-baseline gap-4 py-3">
+            <span class="serif shrink-0 text-sm font-light sb-num text-sb-gold-deep">{{ '%02d' | format(loop.index) }}</span>
+            <span class="serif shrink-0 text-xl font-semibold sm:text-3xl">{{ t.title }}</span>
+            <span class="leaders min-w-0 flex-1"></span>
+            <span class="sb-label shrink-0 text-sb-surface-2/55">{{ t.streams_compact }} streams</span>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+      {% endif %}
+
+      <!-- Bio -->
+      {% if e.sections_on.bio %}
+      <section class="py-12">
+        <div class="flex items-center gap-5">
+          <h2 class="shrink-0 text-xs font-bold uppercase tracking-[0.4em] text-sb-gold-deep">Biography</h2>
+          <div class="rule w-full"></div>
+        </div>
+        <p class="serif mt-8 max-w-3xl text-2xl font-light leading-[1.6] text-sb-surface-2/90 sm:text-3xl">{{ e.profile.bio }}</p>
+      </section>
+      {% endif %}
+
+      <!-- Press: full editorial pull quotes -->
+      {% if e.profile.press and e.sections_on.press %}
+      <section class="py-12">
+        <div class="flex items-center gap-5">
+          <h2 class="shrink-0 text-xs font-bold uppercase tracking-[0.4em] text-sb-gold-deep">Press</h2>
+          <div class="rule w-full"></div>
+        </div>
+        <div class="mt-4 divide-y divide-sb-surface-2/10">
+          {% for q in e.profile.press %}
+          <blockquote class="py-10 {{ 'sm:pl-24' if loop.index is even }}">
+            <p class="serif max-w-3xl text-3xl font-light italic leading-[1.25] text-sb-surface-2 sm:text-4xl">“{{ q.quote }}”</p>
+            <cite class="mt-5 flex items-center gap-4 not-italic">
+              <span class="h-px w-10 bg-sb-gold-deep"></span>
+              {% if q.url %}
+              <a href="{{ q.url }}" target="_blank" rel="noopener" class="sb-label text-sb-surface-2/60 hover:text-sb-gold-deep">{{ q.source }} ↗</a>
+              {% else %}
+              <span class="sb-label text-sb-surface-2/60">{{ q.source }}</span>
+              {% endif %}
+            </cite>
+          </blockquote>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Tour dates (live from Bandsintown) -->
+      {% if e.sections_on.tour and e.tour_dates %}
+      <section class="py-12">
+        <div class="flex items-center gap-5">
+          <h2 class="shrink-0 text-xs font-bold uppercase tracking-[0.4em] text-sb-gold-deep">Tour Dates</h2>
+          <div class="rule w-full"></div>
+        </div>
+        <div class="mt-6 divide-y divide-sb-surface-2/10">
+          {% for ev in e.tour_dates %}
+          <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-5">
+            <div class="flex items-baseline gap-6">
+              <span class="sb-label w-28 shrink-0 text-sb-surface-2/50 sb-num">{{ ev.date }}</span>
+              <span class="serif text-xl font-semibold sm:text-2xl">{{ ev.venue }}</span>
+            </div>
+            <div class="flex items-baseline gap-5">
+              <span class="sb-label text-sb-surface-2/55">{{ ev.location }}</span>
+              {% if ev.tickets %}
+              <a href="{{ ev.tickets }}" target="_blank" rel="noopener" class="sb-label text-sb-gold-deep hover:underline">Tickets ↗</a>
+              {% elif ev.url %}
+              <a href="{{ ev.url }}" target="_blank" rel="noopener" class="sb-label text-sb-gold-deep hover:underline">Details ↗</a>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <p class="sb-label mt-3 text-sb-surface-2/35">Live dates via Bandsintown</p>
+      </section>
+      {% endif %}
+
+      <!-- Merch (stitched to the artist's store) -->
+      {% if e.store_url or e.merch %}
+      <section class="py-9">
+        <div class="flex items-center gap-5">
+          <h2 class="shrink-0 text-xs font-bold uppercase tracking-[0.4em] text-sb-gold-deep">Merch</h2>
+          <div class="rule w-full"></div>
+          {% if e.store_url %}<a href="{{ e.store_url }}" target="_blank" rel="noopener" class="sb-label shrink-0 text-sb-gold-deep hover:underline">Full store ↗</a>{% endif %}
+        </div>
+        {% if e.merch %}
+        <div class="mt-6 grid gap-3 sm:grid-cols-2">
+          {% for item in e.merch %}
+          <a href="{{ item.url }}" target="_blank" rel="noopener" class="flex items-baseline justify-between gap-4 border border-sb-surface-2/15 px-5 py-4 transition-colors hover:bg-sb-surface-2 hover:text-white">
+            <span class="serif text-lg font-semibold">{{ item.title }}</span>
+            <span class="sb-label shrink-0 text-sb-gold-deep">{{ item.price or 'Shop' }} ↗</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      <!-- Royalty Sweep intelligence (optional, artist-controlled) -->
+      {% if e.show_sweep %}
+      <section class="my-12 bg-sb-surface-2 px-8 py-9 text-white sm:px-10">
+        <div class="h-[2px] w-14 bg-sb-gold-bright"></div>
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-2">
+          <h2 class="text-xs font-bold uppercase tracking-[0.4em] text-sb-gold-bright">Powered by Royalty Sweep</h2>
+          {% if e.stats_are_real %}<span class="sb-label inline-flex items-center gap-1.5 text-green-400"><span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>From uploaded statements</span>{% endif %}
+        </div>
+        <div class="mt-7 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
+          <div><div class="sb-label text-white/70">Strongest Platform</div><div class="serif mt-2 text-2xl font-semibold">{{ e.top_platform }}</div></div>
+          {# Only what the cover strip did not already show, and only when
+             the artist has the stats section switched on - "hide stats"
+             has to mean hidden everywhere, not hidden in one place. #}
+          {% for s in (e.stats[2:] if e.sections_on.stats else []) %}
+          <div><div class="sb-label text-white/70">{{ s.label }}</div><div class="serif mt-2 text-2xl font-semibold tabular-nums {{ 'text-sb-gold-bright' if 'Value' in s.label }}">{{ s.value }}</div>{% if s.sub %}<div class="sb-label mt-1 text-white/30">{{ s.sub }}</div>{% endif %}</div>
+          {% endfor %}
+        </div>
+        {% if e.stats_are_real %}
+        <p class="sb-label mt-7 text-white/70">Catalog intelligence by Royalty Sweep · Figures calculated from this artist’s own royalty statements</p>
+        {% else %}
+        <p class="mt-7 rounded border border-amber-400/30 bg-amber-400/5 px-3 py-2 text-xs uppercase tracking-[0.15em] text-amber-200/80 font-medium">Sample metrics — this artist has not connected royalty statements yet. These figures are illustrative and are not their catalogue.</p>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      <!-- Media assets / downloads -->
+      {% if e.sections_on.media and (e.assets or e.video_url) %}
+      <section class="py-9">
+        <div class="flex items-center gap-5">
+          <h2 class="shrink-0 text-xs font-bold uppercase tracking-[0.4em] text-sb-gold-deep">Media Assets</h2>
+          <div class="rule w-full"></div>
+          {% if e.assets %}
+          <a href="/epk/{{ slug }}/kit.zip" class="no-print shrink-0 bg-sb-surface-2 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.25em] text-white transition-colors hover:bg-sb-gold-deep">Download Press Kit (ZIP)</a>
+          {% endif %}
+        </div>
+        {% if e.assets %}
+        <div class="mt-8 grid gap-8 sm:grid-cols-2">
+          {% for a in e.assets %}
+          <a href="{{ a.path | media_url }}" download class="group block">
+            <div class="relative overflow-hidden border border-sb-surface-2/15">
+              <img src="{{ a.path | media_url }}" alt="{{ a.label }}" class="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" style="filter: contrast(1.03) saturate(1.04);">
+              <div class="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-sb-gold-deep via-sb-gold-bright to-sb-gold-deep opacity-0 transition-opacity group-hover:opacity-100"></div>
+            </div>
+            <div class="mt-3 flex items-baseline justify-between">
+              <span class="sb-label">{{ a.label }}</span>
+              <span class="sb-label text-sb-gold-deep">Download ↓</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if e.video_embed %}
+        <div class="no-print mt-8 aspect-video w-full border border-sb-surface-2/20">
+          <iframe src="{{ e.video_embed }}" class="h-full w-full" frameborder="0" allowfullscreen loading="lazy" title="{{ e.name }} video"></iframe>
+        </div>
+        {% elif e.video_url %}
+        <a href="{{ e.video_url }}" target="_blank" rel="noopener" class="no-print mt-8 inline-block border border-sb-surface-2/25 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] hover:bg-sb-surface-2 hover:text-white">Watch video ↗</a>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      <!-- Contact -->
+      {% if e.sections_on.contact %}
+      <section class="py-12">
+        <div class="flex items-center gap-5">
+          <h2 class="shrink-0 text-xs font-bold uppercase tracking-[0.4em] text-sb-gold-deep">Contact</h2>
+          <div class="rule w-full"></div>
+        </div>
+        <div class="mt-8 grid gap-x-10 gap-y-8 sm:grid-cols-3">
+          {% for key, label in [('booking', 'Booking'), ('press', 'Press'), ('management', 'Management')] %}
+          {% if e.profile.contact[key] %}
+          <div>
+            <div class="sb-label text-sb-surface-2/45">{{ label }}</div>
+            {% if '@' in e.profile.contact[key] %}
+            <a href="mailto:{{ e.profile.contact[key] }}" class="serif mt-2 block break-all text-lg font-semibold underline decoration-sb-gold-deep/40 decoration-1 underline-offset-4 hover:decoration-sb-gold-deep">{{ e.profile.contact[key] }}</a>
+            {% else %}
+            <div class="serif mt-2 break-all text-lg font-semibold">{{ e.profile.contact[key] }}</div>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% if e.profile.socials %}
+        <div class="mt-9 flex flex-wrap gap-x-8 gap-y-3">
+          {% for s in e.profile.socials %}
+          <span class="sb-label"><span class="text-sb-gold-deep">{{ s.label }}</span> <span class="text-sb-surface-2/70 normal-case tracking-normal">{{ s.handle }}</span></span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
+      <!-- Folio -->
+      <footer class="flex items-center justify-between border-t border-sb-surface-2/15 py-8">
+        <span class="sb-label text-sb-surface-2/45">{{ e.name }} — Press Kit</span>
+        <a href="/" class="inline-flex items-center gap-2 opacity-60 transition-opacity hover:opacity-100"><span class="sb-label text-sb-surface-2/60">Powered by</span><img src="/static/img/streetbanker-logo-dark.svg" alt="Street Banker" class="h-5 w-auto"></a>
+      </footer>
+    </div>
+  </main>
+
+{% if pitch_token %}
+<script>
+  // Play logging: one event per track per page load, fired on first play.
+  document.querySelectorAll(".pitch-audio").forEach((el) => {
+    let logged = false;
+    el.addEventListener("play", () => {
+      if (logged) return;
+      logged = true;
+      fetch("/pitch/{{ pitch_token }}/play", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({label: el.dataset.label}),
+      }).catch(() => {});
+    });
+  });
+</script>
+{% endif %}
+</body>
+</html>

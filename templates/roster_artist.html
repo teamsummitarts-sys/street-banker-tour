@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}{{ member.artist_name }} - Roster - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[900px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <a href="/roster" class="text-xs font-bold text-gray-300 hover:text-sb-gold-bright">← Label Roster</a>
+      <h1 class="sb-h1 mt-1">{{ member.artist_name }}</h1>
+    </div>
+    <span class="rounded-full border border-white/15 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-gray-300">Roster · read-only</span>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-4">
+      <div class="sb-label text-gray-300">Statement Revenue</div>
+      <div class="mt-1 text-xl font-black tabular-nums text-sb-ink">${{ "{:,.2f}".format(snap.revenue) }}</div>
+      <div class="text-xs text-gray-300 font-medium">{{ snap.statements }} statement{{ 's' if snap.statements != 1 }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Fans (CRM)</div>
+      <div class="mt-1 text-xl font-black tabular-nums">{{ "{:,}".format(snap.fans) }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Live Links</div>
+      <div class="mt-1 text-xl font-black tabular-nums">{{ snap.links | length }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Upcoming Shows</div>
+      <div class="mt-1 text-xl font-black tabular-nums">{{ snap.shows | length }}</div>
+    </div>
+  </div>
+
+  {% if snap.links %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-sb-gold">Live campaigns</h2>
+    <div class="mt-3 divide-y divide-white/5">
+      {% for c in snap.links %}
+      <div class="flex items-center justify-between gap-3 py-2.5">
+        <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ c.title }}</span>
+        <a href="/l/{{ c.slug }}" target="_blank" class="shrink-0 text-xs font-bold text-sb-gold-bright hover:underline">/l/{{ c.slug }} ↗</a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if snap.shows %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-sb-gold">Upcoming shows</h2>
+    <div class="mt-3 divide-y divide-white/5">
+      {% for s in snap.shows %}
+      <div class="flex items-baseline gap-3 py-2.5">
+        <span class="w-24 shrink-0 text-sm font-black sb-num">{{ s.date }}</span>
+        <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ s.venue }}</span>
+        <span class="shrink-0 text-xs text-gray-300 font-medium">{{ s.city }}</span>
+        <span class="shrink-0 rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-xs font-bold uppercase text-green-400">{{ s.status }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <p class="px-1 text-xs text-gray-300 font-medium">Everything here reflects what {{ member.artist_name }} has actually uploaded and connected — you're seeing their real desk, read-only.</p>
+</div>
+{% endblock %}

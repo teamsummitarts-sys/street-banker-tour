@@ -1,0 +1,57 @@
+/* The public release-readiness check.
+ *
+ * A count with a bar, then eight groups of checkboxes. Deliberately
+ * plain: this is a form, and dressing a form up as a dashboard is how
+ * you end up with a fake dashboard.
+ */
+
+.sbrc-readout {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 12px;
+}
+
+.sbrc-track {
+  height: 4px;
+  border-radius: var(--sb-r-control);
+  background: rgb(238 232 220 / 0.1);
+  overflow: hidden;
+}
+.sbrc-fill {
+  height: 100%;
+  background: var(--sb-gold);
+  transition: width 260ms ease;
+}
+@media (prefers-reduced-motion: reduce) { .sbrc-fill { transition: none; } }
+
+/* One row per requirement. The whole row is the target - a 16px
+   checkbox is not a touch target on a phone. */
+.sbrc-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgb(238 232 220 / 0.07);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--sb-ink);
+  cursor: pointer;
+}
+.sbrc-item:hover { color: #fff; }
+
+.sbrc-box {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--sb-gold);
+  cursor: pointer;
+}
+.sbrc-box:focus-visible {
+  outline: 2px solid var(--sb-gold);
+  outline-offset: 3px;
+}
+/* Ticked requirements recede: what is left undone should be what reads. */
+.sbrc-box:checked + span { color: var(--sb-ink-3); text-decoration: line-through; }

@@ -1,0 +1,88 @@
+{# A beat sent to one artist.
+
+   Standalone: opened by somebody with no account, from a link a producer
+   sent them. The token is the authorisation, and it carries this one beat
+   — not the catalogue, not the licences, not who else has heard it.
+
+   No download control here on purpose. A private link is a courtesy, not
+   a DRM scheme, and pretending otherwise would be the one dishonest
+   thing on the page. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "_fonts.html" %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0B0A08">
+  <title>{% if gone %}Link expired{% else %}{{ beat['title'] }}{% endif %}</title>
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  <link rel="stylesheet" href="/static/css/beats.css?v=2">
+</head>
+<body class="bts-body">
+{% if gone %}
+  <div class="bt bts">
+    <p class="bt-eyebrow">Street Banker · Producers</p>
+    <h1 class="bt-h1">This link is no longer live</h1>
+    <p class="bt-lede">The producer revoked it, it lapsed, or the beat it pointed at was removed. Ask them for a fresh one.</p>
+  </div>
+{% else %}
+  <div class="bt bts">
+    <p class="bt-eyebrow">Sent by {{ producer_name }}</p>
+    <h1 class="bt-h1">{{ beat['title'] }}</h1>
+    <p class="bt-lede">A private link to one beat. Nobody else can reach it without this address, and {{ producer_name }} can switch it off at any time.</p>
+
+    {% if has_audio %}
+    <section class="bt-glass bts-player" aria-label="Player">
+      <div class="bts-transport">
+        <button id="bts-play" class="bts-big" type="button" aria-pressed="false" aria-label="Play this beat">&#9654;</button>
+        <span class="bts-clock" id="bts-clock">0:00</span>
+        <span class="bt-hint" id="bts-note">Press play — the file streams, nothing downloads.</span>
+      </div>
+      <canvas id="bts-wave" class="bt-wave" height="70" style="height:70px;margin-top:16px"
+              aria-label="Waveform — click to seek"></canvas>
+    </section>
+    {% else %}
+    <section class="bt-glass bts-player" aria-label="Player">
+      <p class="bt-hint" style="margin:0">The producer has not attached audio to this beat yet, so there is nothing to play. The details below are still theirs.</p>
+    </section>
+    {% endif %}
+
+    <dl class="bts-facts">
+      <div>
+        <dt>Tempo</dt>
+        <dd>{% if audio and audio['bpm'] %}{{ audio['bpm'] | round | int }}<span style="font-size:12px;color:var(--bt-soft)"> BPM</span>{% elif beat['bpm'] %}{{ beat['bpm'] }}{% else %}—{% endif %}</dd>
+      </div>
+      <div>
+        <dt>Key</dt>
+        <dd>{{ (audio and audio['song_key']) or beat['song_key'] or '—' }}</dd>
+      </div>
+      <div>
+        <dt>Length</dt>
+        <dd id="bts-length">{% if audio and audio['duration'] %}{{ (audio['duration'] // 60) | int }}:{{ '%02d' % (audio['duration'] % 60) | int }}{% else %}—{% endif %}</dd>
+      </div>
+      {% if beat['tags'] %}
+      <div style="min-width:140px">
+        <dt>Tags</dt>
+        <dd style="font-size:13px;font-weight:600">{{ beat['tags'] }}</dd>
+      </div>
+      {% endif %}
+    </dl>
+
+    {% if audio and audio['bpm'] %}
+    <p class="bt-hint" style="margin-top:16px">Tempo and key were measured automatically from the audio, not typed in{% if audio['bpm_alternates'] %} — at this tempo the reading could also be {{ audio['bpm_alternates'] }} BPM, which is a musical judgement no detector can settle{% endif %}.</p>
+    {% endif %}
+
+    <section class="bt-glass" style="padding:18px;margin-top:22px">
+      <h2 class="bt-h2">Want to use it?</h2>
+      <p class="bt-hint" style="max-width:62ch">Reply to {{ producer_name }} and ask for a licence. They send terms you read and sign in a browser — and the signed licence is what lets you release the record, not this page.</p>
+    </section>
+
+    <p class="bts-foot">Sent from Street Banker · Producers. This link carries one beat and nothing else about the producer's catalogue.</p>
+  </div>
+
+  <script>window.__btShare = {{ audio | js_json }}; window.__btToken = {{ token | js_json }};</script>
+  <script src="/static/js/beat-share.js?v=1"></script>
+{% endif %}
+</body>
+</html>

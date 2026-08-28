@@ -1,0 +1,40 @@
+{% import "tour/_macros.html" as m %}
+<div class="to-split">
+  <div>
+    {% if venue %}
+    <div class="to-panel is-warm">
+      <div class="to-eyebrow">Saved venue record</div>
+      <div style="font-weight:800;font-size:17px">{{ venue['name'] }}</div>
+      <div class="to-muted">{{ venue['address'] }}{% if venue['city'] %}, {{ venue['city'] }}{% endif %}{% if venue['region'] %}, {{ venue['region'] }}{% endif %} {{ venue['country'] }}</div>
+      <div class="to-grid" style="margin-top:10px;font-size:13px">
+        {% for k, label in [('capacity','Capacity'),('venue_type','Type'),('phone','Phone'),('website','Website'),('tz','Timezone'),('loading','Loading'),('parking','Parking'),('bus_parking','Bus parking'),('stage','Stage'),('backstage','Backstage'),('dressing_rooms','Dressing rooms'),('showers','Showers'),('catering','Catering'),('wifi','Wi-Fi'),('settlement_location','Settlement'),('merch_location','Merch'),('production_notes','Production'),('notes','Notes')] %}
+          {% if venue[k] %}<div><div class="to-muted" style="font-size:12px;letter-spacing:.12em;text-transform:uppercase">{{ label }}</div><div>{{ venue[k] }}</div></div>{% endif %}
+        {% endfor %}
+      </div>
+      <p class="to-sub" style="margin-top:10px">This is what was saved last time. The current advance for this show lives on the <a href="?tab=advance">Advance</a> tab — when it is confirmed, promote it here so the next run starts ahead.</p>
+      <div class="to-bar" style="margin-bottom:0">
+        {% if can('edit') %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/venues?edit={{ venue['id'] }}">Edit record</a>
+        <form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/venue/from-advance"><button class="to-btn to-btn--small" type="submit">Update record from this advance</button></form>{% endif %}
+        {% if venue['address'] %}<a class="to-btn to-btn--ghost to-btn--small" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query={{ (venue['address'] ~ ' ' ~ venue['city'])|urlencode }}">Map</a>{% endif %}
+      </div>
+    </div>
+    {% else %}
+      {{ m.empty("No venue record linked", "Link one of your saved venues, or create the record from this show's advance so it is known next time.") }}
+      {% if can('edit') or can('advance') %}
+      <div class="to-bar"><form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/venue/from-advance"><button class="to-btn" type="submit">Create venue record from this show</button></form></div>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% if can('edit') or can('advance') %}
+  <aside>
+    <form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/ext" class="to-form">
+      <div class="to-eyebrow">Link a saved venue</div>
+      <label class="to-field"><span>Venue</span><select name="venue_id"><option value="">— none —</option>{% for v in venues %}<option value="{{ v['id'] }}" {% if v['id'] == show['venue_id'] %}selected{% endif %}>{{ v['name'] }}{% if v['city'] %}, {{ v['city'] }}{% endif %}</option>{% endfor %}</select></label>
+      {{ m.field('tz', 'Show timezone', show['tz'], placeholder=tour['home_tz']) }}
+      {{ m.field('promoter', 'Promoter', show['promoter']) }}
+      {{ m.field('capacity', 'Capacity', show['capacity']) }}
+      <div class="to-bar" style="margin-bottom:0"><button class="to-btn to-btn--small" type="submit">Save</button></div>
+    </form>
+  </aside>
+  {% endif %}
+</div>

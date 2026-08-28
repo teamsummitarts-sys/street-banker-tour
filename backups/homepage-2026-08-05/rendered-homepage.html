@@ -1,0 +1,2389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Street Banker · Royalty Sweep — The Artist Back Office</title>
+  <meta name="description" content="Distribution, royalty recovery, campaign tools, and catalog intelligence built around artist ownership.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141210'/%3E%3Cpath d='M6 12l5 4 5-7 5 7 5-4v10a1 1 0 01-1 1H7a1 1 0 01-1-1z' fill='none' stroke='%23d8b25a' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#0d0c0a">
+  <link rel="apple-touch-icon" href="/static/img/icon-192.png">
+  <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=22">
+  <link rel="stylesheet" href="/static/css/artist-eq.css?v=12">
+  <link rel="stylesheet" href="/static/css/public-header.css?v=3">
+  <link rel="stylesheet" href="/static/css/hero.css?v=3">
+  <link rel="stylesheet" href="/static/css/departments.css?v=2">
+  <link rel="stylesheet" href="/static/css/artist-twin.css?v=3">
+  <link rel="stylesheet" href="/static/css/lanes.css?v=1">
+  <link rel="stylesheet" href="/static/css/creative-studio.css?v=5">
+  <link rel="stylesheet" href="/static/css/rollout.css?v=5">
+  <link rel="stylesheet" href="/static/css/sweep.css?v=2">
+  <link rel="stylesheet" href="/static/css/distribution.css?v=2">
+  <link rel="stylesheet" href="/static/css/passport.css?v=1">
+  <link rel="stylesheet" href="/static/css/closing.css?v=1">
+  <style>
+    body { font-feature-settings: "ss01"; }
+  </style>
+</head>
+<body class="min-h-screen bg-white text-[#141210] antialiased">
+
+<!-- 1. NAVIGATION -->
+
+
+<a class="sbh-skip" href="#main">Skip to content</a>
+
+<header class="sbh" id="sb-header" data-scrolled="false">
+  <div class="sbh-inner">
+    <a class="sbh-brand" href="/" aria-label="Street Banker — home">
+      <img class="sbh-logo" src="/static/img/streetbanker-logo-light.svg"
+           alt="Street Banker" width="920" height="250">
+      <span class="sbh-rule" aria-hidden="true"></span>
+      <span class="sbh-descriptor">The Artist<br>Operating System</span>
+    </a>
+
+    <nav class="sbh-nav" aria-label="Product">
+      
+      <a class="sbh-link" href="/#platform"
+         >Platform</a>
+      
+      <a class="sbh-link" href="/#artist-twin-section"
+         >AI Artist Twin</a>
+      
+      <a class="sbh-link" href="/#creative-studio"
+         >Creative + Rollout</a>
+      
+      <a class="sbh-link" href="/#royalty-sweep"
+         >Royalty Sweep</a>
+      
+      <a class="sbh-link" href="/product-tour"
+         >Product tour</a>
+      
+      <a class="sbh-link" href="/services"
+         >For Labels</a>
+      
+    </nav>
+
+    <div class="sbh-right">
+      <a class="sbh-login" href="/login">Log in</a>
+      <a class="sbh-cta" href="/catalog-sweep">
+        <span class="sbh-cta-full">Run a Free Catalog Sweep</span>
+        <span class="sbh-cta-short">Free Sweep</span>
+      </a>
+      <button type="button" class="sbh-burger" id="sb-header-burger"
+              aria-expanded="false" aria-controls="sb-header-drawer"
+              aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <path d="M3 5h14M3 10h14M3 15h14"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+
+<div class="sbh-drawer" id="sb-header-drawer" hidden role="dialog" aria-modal="true"
+     aria-label="Street Banker menu">
+  <div class="sbh-panel">
+    <div class="sbh-panel-head">
+      <img class="sbh-logo" src="/static/img/streetbanker-logo-light.svg"
+           alt="Street Banker" style="width: 140px;">
+      <button type="button" class="sbh-close" id="sb-header-close" aria-label="Close menu">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <path d="M5 5l10 10M15 5L5 15"/>
+        </svg>
+      </button>
+    </div>
+    
+    <a class="sbh-drawer-link" href="/#platform">Platform</a>
+    
+    <a class="sbh-drawer-link" href="/#artist-twin-section">AI Artist Twin</a>
+    
+    <a class="sbh-drawer-link" href="/#creative-studio">Creative Studio</a>
+    
+    <a class="sbh-drawer-link" href="/#rollout-engine">Rollout Engine</a>
+    
+    <a class="sbh-drawer-link" href="/#royalty-sweep">Royalty Sweep</a>
+    
+    <a class="sbh-drawer-link" href="/#metadata-passport">Metadata Passport</a>
+    
+    <a class="sbh-drawer-link" href="/product-tour">Product tour</a>
+    
+    <a class="sbh-drawer-link" href="/services">For Labels</a>
+    
+    <a class="sbh-drawer-link" href="/login">Log in</a>
+    <a class="sbh-drawer-cta" href="/catalog-sweep">Run a Free Catalog Sweep</a>
+  </div>
+</div>
+
+<script src="/static/js/public-header.js?v=4" defer></script>
+
+<main id="main">
+<div class="mx-auto max-w-6xl px-6 lg:px-10">
+
+  <!-- 2. HERO -->
+</div><!-- /reading column: the hero is full-bleed -->
+
+
+
+<section class="sbhero" aria-labelledby="sbhero-title">
+  
+  <picture>
+    <source media="(max-width: 1023px)" type="image/avif"
+            srcset="/static/img/hero-band-tall-640.avif 640w, /static/img/hero-band-tall-900.avif 900w"
+            sizes="100vw">
+    <source media="(max-width: 1023px)" type="image/webp"
+            srcset="/static/img/hero-band-tall-640.webp 640w, /static/img/hero-band-tall-900.webp 900w"
+            sizes="100vw">
+    <source media="(max-width: 1023px)" type="image/jpeg"
+            srcset="/static/img/hero-band-tall-640.jpg 640w, /static/img/hero-band-tall-900.jpg 900w"
+            sizes="100vw">
+    <source type="image/avif"
+            srcset="/static/img/hero-band-wide-900.avif 900w, /static/img/hero-band-wide-1100.avif 1100w, /static/img/hero-band-wide-1342.avif 1342w"
+            sizes="100vw">
+    <source type="image/webp"
+            srcset="/static/img/hero-band-wide-900.webp 900w, /static/img/hero-band-wide-1100.webp 1100w, /static/img/hero-band-wide-1342.webp 1342w"
+            sizes="100vw">
+    <img class="sbhero-photo" src="/static/img/hero-band-wide-1100.jpg"
+         srcset="/static/img/hero-band-wide-900.jpg 900w, /static/img/hero-band-wide-1100.jpg 1100w, /static/img/hero-band-wide-1342.jpg 1342w"
+         sizes="100vw" width="1342" height="775"
+         fetchpriority="high" decoding="async"
+         alt="Band rehearsing while release artwork is developed inside a working music studio.">
+  </picture>
+  <div class="sbhero-veil" aria-hidden="true"></div>
+
+  <div class="sbhero-inner">
+    <div class="sbhero-copy">
+      <p class="sbhero-eyebrow">STREET BANKER · THE ARTIST OPERATING SYSTEM</p>
+      <h1 class="sbhero-title" id="sbhero-title">
+        <span>BUILD THE RELEASE.</span><span>OWN THE MOMENT.</span>
+      </h1>
+      <span class="sbhero-rule" aria-hidden="true"></span>
+      <p class="sbhero-support">Street Banker brings creative tools, rollout intelligence, artist development, rights management, fan data, and royalty recovery into one platform.</p>
+      <div class="sbhero-ctas">
+        
+        <a class="sbhero-cta"
+           href="#platform">Explore Street Banker
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 10h11M11 6l4 4-4 4"/>
+          </svg>
+        </a>
+        
+        <a class="sbhero-cta-2"
+           href="/catalog-sweep">Run a Royalty Sweep
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 10h11M11 6l4 4-4 4"/>
+          </svg>
+        </a>
+        
+      </div>
+    </div>
+
+    
+    <aside class="sbhero-preview" aria-label="Example of the Release Readiness panel">
+      <div class="sbhero-preview-head">
+        <span class="sbhero-preview-title">Release Readiness</span>
+        <span class="sbhero-preview-tag">Example workspace</span>
+      </div>
+      <div class="sbhero-preview-rows">
+        
+        
+        <div class="sbhero-preview-row">
+          
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#5DBB7D"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 10.5l4 4 8-9"/>
+          </svg>
+          
+          <span>Metadata Passport complete</span>
+        </div>
+        
+        <div class="sbhero-preview-row">
+          
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#5DBB7D"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 10.5l4 4 8-9"/>
+          </svg>
+          
+          <span>Splits signed by every collaborator</span>
+        </div>
+        
+        <div class="sbhero-preview-row">
+          
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#C9A86A"
+               stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <circle cx="10" cy="10" r="7"/><path d="M10 6.5v4"/>
+          </svg>
+          
+          <span>Rollout scheduled for release week</span>
+        </div>
+        
+        <div class="sbhero-preview-row">
+          
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#C9A86A"
+               stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <circle cx="10" cy="10" r="7"/><path d="M10 6.5v4"/>
+          </svg>
+          
+          <span>Royalty lanes claimed on all sources</span>
+        </div>
+        
+      </div>
+      <p class="sbhero-preview-foot">Sample checks from the Clean Release panel. A real account scores this from its own tracks and statements.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- 3 and 4 are one dark stretch of page: the EQ console and the six
+     departments both carry their own near-black ground, so they run the
+     full width the way the hero does rather than sitting as dark cards
+     with white margins either side. The reading column resumes below. -->
+
+<!-- 3. THE ARTIST EQ — additive: a six-channel priority console.
+     Everything that moves is coded; nothing here replaces an existing
+     section. -->
+
+
+
+<section class="sbeq" id="artist-eq" aria-labelledby="sbeq-heading">
+  <picture class="sbeq-room" aria-hidden="true">
+    <source type="image/avif" srcset="/static/img/eq-room-900.avif 900w, /static/img/eq-room-1200.avif 1200w, /static/img/eq-room-1600.avif 1600w" sizes="100vw">
+    <source type="image/webp" srcset="/static/img/eq-room-900.webp 900w, /static/img/eq-room-1200.webp 1200w, /static/img/eq-room-1600.webp 1600w" sizes="100vw">
+    <img src="/static/img/eq-room-1200.jpg" alt="" loading="lazy" decoding="async"
+         width="1535" height="1024">
+  </picture>
+
+  <div class="sbeq-inner">
+    <header class="sbeq-head">
+      <p class="sbeq-eyebrow">ARTIST EQ</p>
+      <h2 class="sbeq-title" id="sbeq-heading">TUNE YOUR ARTIST SYSTEM.</h2>
+      <p class="sbeq-support">Set your priorities. Street Banker builds the plan.</p>
+      <p class="sbeq-instruction">Adjust the six areas below or choose a preset. Your recommended tools and next actions update instantly.</p>
+    </header>
+
+    
+    <div class="sbeq-presets-wrap">
+      <div class="sbeq-panel-label">Choose your focus preset</div>
+      <div class="sbeq-presets" role="group" aria-label="Focus presets">
+        
+        <button type="button" class="sbeq-preset" data-preset="new-artist"
+                aria-pressed="false">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 3v14M3 10h14"/><path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/>
+          </svg>
+          New Artist
+        </button>
+        
+        <button type="button" class="sbeq-preset" data-preset="releasing-soon"
+                aria-pressed="true">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 6a4 4 0 100 8 4 4 0 000-8z"/><path d="M4 4c3.5 3.5 3.5 8.5 0 12M16 4c-3.5 3.5-3.5 8.5 0 12"/>
+          </svg>
+          Releasing Soon
+        </button>
+        
+        <button type="button" class="sbeq-preset" data-preset="growing-catalog"
+                aria-pressed="false">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 4c3.5 0 6 1 6 2s-2.5 2-6 2-6-1-6-2 2.5-2 6-2z"/><path d="M4 6v8c0 1 2.5 2 6 2s6-1 6-2V6"/>
+          </svg>
+          Growing Catalog
+        </button>
+        
+        <button type="button" class="sbeq-preset" data-preset="missing-royalties"
+                aria-pressed="false">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 4a5 5 0 100 10 5 5 0 000-10z"/><path d="M13 12l4 4"/>
+          </svg>
+          Missing Royalties
+        </button>
+        
+        <button type="button" class="sbeq-preset" data-preset="label-ready"
+                aria-pressed="false">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 6l3 3 4-5 4 5 3-3v8H3z"/><path d="M3 16h14"/>
+          </svg>
+          Label Ready
+        </button>
+        
+        <button type="button" class="sbeq-preset" data-preset="custom"
+                aria-pressed="false">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 6h12M4 10h12M4 14h12"/><path d="M7 4v4M13 8v4M9 12v4"/>
+          </svg>
+          Custom
+        </button>
+        
+      </div>
+    </div>
+
+    <div class="sbeq-console">
+      
+      <div class="sbeq-channels-wrap">
+        <div class="sbeq-panel-label">Balance what matters</div>
+        <div class="sbeq-channels">
+          
+          <div class="sbeq-channel" data-channel="release">
+            <span class="sbeq-ch-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 3a7 7 0 100 14 7 7 0 000-14z"/><path d="M10 6.5v4l2.5 2"/>
+              </svg>
+            </span>
+            <span class="sbeq-ch-name" id="sbeq-name-release">RELEASE</span>
+            <span class="sbeq-lamp" aria-hidden="true"></span>
+
+            <div class="sbeq-fader">
+              <span class="sbeq-scale" aria-hidden="true"><i>10</i><i>5</i><i>0</i></span>
+              <input type="range" class="sbeq-range" id="sbeq-release"
+                     min="0" max="10" step="0.5"
+                     value="10"
+                     aria-labelledby="sbeq-name-release"
+                     aria-describedby="sbeq-desc-release"
+                     data-key="release">
+            </div>
+
+            <output class="sbeq-value" for="sbeq-release"
+                    id="sbeq-out-release">10.0</output>
+            <p class="sbeq-ch-desc" id="sbeq-desc-release">Release preparation, timing, metadata completion, delivery readiness and the launch checklist.</p>
+          </div>
+          
+          <div class="sbeq-channel" data-channel="creative">
+            <span class="sbeq-ch-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 3a5 5 0 00-3 9v2h6v-2a5 5 0 00-3-9z"/><path d="M8 17h4"/>
+              </svg>
+            </span>
+            <span class="sbeq-ch-name" id="sbeq-name-creative">CREATIVE</span>
+            <span class="sbeq-lamp" aria-hidden="true"></span>
+
+            <div class="sbeq-fader">
+              <span class="sbeq-scale" aria-hidden="true"><i>10</i><i>5</i><i>0</i></span>
+              <input type="range" class="sbeq-range" id="sbeq-creative"
+                     min="0" max="10" step="0.5"
+                     value="8"
+                     aria-labelledby="sbeq-name-creative"
+                     aria-describedby="sbeq-desc-creative"
+                     data-key="creative">
+            </div>
+
+            <output class="sbeq-value" for="sbeq-creative"
+                    id="sbeq-out-creative">8.0</output>
+            <p class="sbeq-ch-desc" id="sbeq-desc-creative">Cover artwork, visual identity, content production, merch direction and creative consistency.</p>
+          </div>
+          
+          <div class="sbeq-channel" data-channel="audience">
+            <span class="sbeq-ch-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM13 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/><path d="M3 16c0-2.2 1.8-4 4-4M13 12c2.2 0 4 1.8 4 4"/>
+              </svg>
+            </span>
+            <span class="sbeq-ch-name" id="sbeq-name-audience">AUDIENCE</span>
+            <span class="sbeq-lamp" aria-hidden="true"></span>
+
+            <div class="sbeq-fader">
+              <span class="sbeq-scale" aria-hidden="true"><i>10</i><i>5</i><i>0</i></span>
+              <input type="range" class="sbeq-range" id="sbeq-audience"
+                     min="0" max="10" step="0.5"
+                     value="8"
+                     aria-labelledby="sbeq-name-audience"
+                     aria-describedby="sbeq-desc-audience"
+                     data-key="audience">
+            </div>
+
+            <output class="sbeq-value" for="sbeq-audience"
+                    id="sbeq-out-audience">8.0</output>
+            <p class="sbeq-ch-desc" id="sbeq-desc-audience">Fan discovery and capture, segmentation, geographic response, and streaming and social engagement.</p>
+          </div>
+          
+          <div class="sbeq-channel" data-channel="rights">
+            <span class="sbeq-ch-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 3l6 3v5c0 3-2.5 5-6 6-3.5-1-6-3-6-6V6z"/><path d="M7.5 10l2 2 3.5-4"/>
+              </svg>
+            </span>
+            <span class="sbeq-ch-name" id="sbeq-name-rights">RIGHTS</span>
+            <span class="sbeq-lamp" aria-hidden="true"></span>
+
+            <div class="sbeq-fader">
+              <span class="sbeq-scale" aria-hidden="true"><i>10</i><i>5</i><i>0</i></span>
+              <input type="range" class="sbeq-range" id="sbeq-rights"
+                     min="0" max="10" step="0.5"
+                     value="7"
+                     aria-labelledby="sbeq-name-rights"
+                     aria-describedby="sbeq-desc-rights"
+                     data-key="rights">
+            </div>
+
+            <output class="sbeq-value" for="sbeq-rights"
+                    id="sbeq-out-rights">7.0</output>
+            <p class="sbeq-ch-desc" id="sbeq-desc-rights">Ownership, credits, splits, registrations, metadata conflicts and the documents that prove them.</p>
+          </div>
+          
+          <div class="sbeq-channel" data-channel="revenue">
+            <span class="sbeq-ch-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 3v14M6 7h6a2 2 0 010 4H8a2 2 0 000 4h6"/>
+              </svg>
+            </span>
+            <span class="sbeq-ch-name" id="sbeq-name-revenue">REVENUE</span>
+            <span class="sbeq-lamp" aria-hidden="true"></span>
+
+            <div class="sbeq-fader">
+              <span class="sbeq-scale" aria-hidden="true"><i>10</i><i>5</i><i>0</i></span>
+              <input type="range" class="sbeq-range" id="sbeq-revenue"
+                     min="0" max="10" step="0.5"
+                     value="5"
+                     aria-labelledby="sbeq-name-revenue"
+                     aria-describedby="sbeq-desc-revenue"
+                     data-key="revenue">
+            </div>
+
+            <output class="sbeq-value" for="sbeq-revenue"
+                    id="sbeq-out-revenue">5.0</output>
+            <p class="sbeq-ch-desc" id="sbeq-desc-revenue">Royalty visibility, missing-income detection, statement review and monetisation opportunities.</p>
+          </div>
+          
+          <div class="sbeq-channel" data-channel="growth">
+            <span class="sbeq-ch-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 14l4-4 3 3 7-7"/><path d="M14 6h3v3"/>
+              </svg>
+            </span>
+            <span class="sbeq-ch-name" id="sbeq-name-growth">GROWTH</span>
+            <span class="sbeq-lamp" aria-hidden="true"></span>
+
+            <div class="sbeq-fader">
+              <span class="sbeq-scale" aria-hidden="true"><i>10</i><i>5</i><i>0</i></span>
+              <input type="range" class="sbeq-range" id="sbeq-growth"
+                     min="0" max="10" step="0.5"
+                     value="6"
+                     aria-labelledby="sbeq-name-growth"
+                     aria-describedby="sbeq-desc-growth"
+                     data-key="growth">
+            </div>
+
+            <output class="sbeq-value" for="sbeq-growth"
+                    id="sbeq-out-growth">6.0</output>
+            <p class="sbeq-ch-desc" id="sbeq-desc-growth">Artist development, campaign expansion, partner readiness, catalog growth and long-term leverage.</p>
+          </div>
+          
+        </div>
+
+        
+        <div class="sbeq-trace">
+          <div class="sbeq-panel-label">System output</div>
+          
+          
+          
+          <svg id="sbeq-trace" viewBox="0 0 600 90" preserveAspectRatio="none"
+               role="img" aria-label="Signal trace across the six channel values.">
+            <polyline id="sbeq-trace-line" fill="none" stroke="#C9A86A"
+                      stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+                      points="24.0,16.0 134.4,28.8 244.8,28.8 355.2,35.2 465.6,48.0 576.0,41.6"/>
+            <g id="sbeq-trace-dots">
+              <circle cx="24.0" cy="16.0" r="2.6" fill="#C9A86A"/><circle cx="134.4" cy="28.8" r="2.6" fill="#C9A86A"/><circle cx="244.8" cy="28.8" r="2.6" fill="#C9A86A"/><circle cx="355.2" cy="35.2" r="2.6" fill="#C9A86A"/><circle cx="465.6" cy="48.0" r="2.6" fill="#C9A86A"/><circle cx="576.0" cy="41.6" r="2.6" fill="#C9A86A"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      
+      <div class="sbeq-output" aria-live="polite">
+        <div class="sbeq-out-block">
+          <div class="sbeq-panel-label">System readiness</div>
+          <div class="sbeq-score-row">
+            <div>
+              <span class="sbeq-score" id="sbeq-score">75</span><span class="sbeq-score-max">/100</span>
+              <p class="sbeq-band" id="sbeq-band">Growth Ready</p>
+            </div>
+            <svg class="sbeq-dial" viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="27" fill="none" stroke="#2A2622" stroke-width="5"/>
+              <circle id="sbeq-dial-arc" cx="32" cy="32" r="27" fill="none" stroke="#C9A86A"
+                      stroke-width="5" stroke-linecap="round" stroke-dasharray="169.6"
+                      stroke-dashoffset="42.4"
+                      transform="rotate(-90 32 32)"/>
+            </svg>
+          </div>
+          <p class="sbeq-score-note">A weighted average of the six priorities you set. It describes your
+            focus, not your prospects — it predicts no hit, no signing and no recovered money.</p>
+        </div>
+
+        <div class="sbeq-out-block">
+          <div class="sbeq-panel-label">Recommended lane</div>
+          <a class="sbeq-lane" id="sbeq-lane" href="/services/distribution">
+            <span class="sbeq-lane-name" id="sbeq-lane-name">Distribution — Release the Record</span>
+            <span class="sbeq-lane-why" id="sbeq-lane-why">Your highest priorities are getting the record out clean, on time and correctly registered.</span>
+          </a>
+        </div>
+
+        
+        <div class="sbeq-out-block">
+          <div class="sbeq-panel-label">Recommended modules</div>
+          <ul class="sbeq-modules" id="sbeq-modules">
+            
+            <li><a class="sbeq-module" href="/plan?release=10&amp;creative=8&amp;audience=8&amp;rights=7&amp;revenue=5&amp;growth=6&amp;preset=releasing-soon#rollout-studio">
+              <span class="sbeq-module-name">Rollout Engine</span>
+              <span class="sbeq-module-note">Generates a dated rollout — captions, assets and a schedule — from the release you are working on.</span>
+            </a></li>
+            
+            <li><a class="sbeq-module" href="/plan?release=10&amp;creative=8&amp;audience=8&amp;rights=7&amp;revenue=5&amp;growth=6&amp;preset=releasing-soon#creative-studio">
+              <span class="sbeq-module-name">Creative Studio</span>
+              <span class="sbeq-module-note">Cover directions, campaign visuals and merch concepts kept beside the release they belong to.</span>
+            </a></li>
+            
+            <li><a class="sbeq-module" href="/plan?release=10&amp;creative=8&amp;audience=8&amp;rights=7&amp;revenue=5&amp;growth=6&amp;preset=releasing-soon#fan-intelligence">
+              <span class="sbeq-module-name">Fan Intelligence</span>
+              <span class="sbeq-module-note">Who is listening, where they are, and which of them you actually own the relationship with.</span>
+            </a></li>
+            
+            <li><a class="sbeq-module" href="/plan?release=10&amp;creative=8&amp;audience=8&amp;rights=7&amp;revenue=5&amp;growth=6&amp;preset=releasing-soon#rights-ownership">
+              <span class="sbeq-module-name">Rights &amp; Ownership</span>
+              <span class="sbeq-module-note">Splits, credits and signatures in one place, with the documents attached to the track.</span>
+            </a></li>
+            
+          </ul>
+        </div>
+
+        <div class="sbeq-out-block">
+          <div class="sbeq-panel-label">Top 3 actions</div>
+          <ol class="sbeq-actions" id="sbeq-actions">
+            
+            <li><a class="sbeq-action" href="/plan?release=10&amp;creative=8&amp;audience=8&amp;rights=7&amp;revenue=5&amp;growth=6&amp;preset=releasing-soon#metadata-passport">Complete the release metadata passport</a></li>
+            
+            <li><a class="sbeq-action" href="/plan?release=10&amp;creative=8&amp;audience=8&amp;rights=7&amp;revenue=5&amp;growth=6&amp;preset=releasing-soon#artwork-generator">Generate and compare three cover-art directions</a></li>
+            
+            <li><a class="sbeq-action" href="/plan?release=10&amp;creative=8&amp;audience=8&amp;rights=7&amp;revenue=5&amp;growth=6&amp;preset=releasing-soon#smart-links">Create a fan-capture smart link</a></li>
+            
+          </ol>
+          <p class="sbeq-setup">Estimated setup time:
+            <strong id="sbeq-setup">20–30 minutes</strong>
+            <span class="sbeq-setup-note">(an estimate)</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sbeq-ctas">
+      <a class="sbeq-cta" id="sbeq-cta" href="/plan?release=10&amp;creative=8&amp;audience=8&amp;rights=7&amp;revenue=5&amp;growth=6&amp;preset=releasing-soon">Build my Street Banker plan</a>
+      <button type="button" class="sbeq-reset" id="sbeq-reset">Reset EQ</button>
+    </div>
+  </div>
+
+  
+  <script type="application/json" id="sbeq-config">{"eyebrow": "ARTIST EQ", "heading": "TUNE YOUR ARTIST SYSTEM.", "support": "Set your priorities. Street Banker builds the plan.", "instruction": "Adjust the six areas below or choose a preset. Your recommended tools and next actions update instantly.", "channels": [{"key": "release", "label": "Release", "short": "RELEASE", "icon": "M10 3a7 7 0 100 14 7 7 0 000-14z|M10 6.5v4l2.5 2", "desc": "Release preparation, timing, metadata completion, delivery readiness and the launch checklist."}, {"key": "creative", "label": "Creative", "short": "CREATIVE", "icon": "M10 3a5 5 0 00-3 9v2h6v-2a5 5 0 00-3-9z|M8 17h4", "desc": "Cover artwork, visual identity, content production, merch direction and creative consistency."}, {"key": "audience", "label": "Audience", "short": "AUDIENCE", "icon": "M7 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM13 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5z|M3 16c0-2.2 1.8-4 4-4M13 12c2.2 0 4 1.8 4 4", "desc": "Fan discovery and capture, segmentation, geographic response, and streaming and social engagement."}, {"key": "rights", "label": "Rights", "short": "RIGHTS", "icon": "M10 3l6 3v5c0 3-2.5 5-6 6-3.5-1-6-3-6-6V6z|M7.5 10l2 2 3.5-4", "desc": "Ownership, credits, splits, registrations, metadata conflicts and the documents that prove them."}, {"key": "revenue", "label": "Revenue", "short": "REVENUE", "icon": "M10 3v14M6 7h6a2 2 0 010 4H8a2 2 0 000 4h6", "desc": "Royalty visibility, missing-income detection, statement review and monetisation opportunities."}, {"key": "growth", "label": "Growth", "short": "GROWTH", "icon": "M3 14l4-4 3 3 7-7|M14 6h3v3", "desc": "Artist development, campaign expansion, partner readiness, catalog growth and long-term leverage."}], "presets": [{"id": "new-artist", "name": "New Artist", "icon": "M10 3v14M3 10h14|M5.5 5.5l9 9M14.5 5.5l-9 9", "values": {"release": 6, "creative": 8, "audience": 7, "rights": 4, "revenue": 3, "growth": 7}, "weights": {"creative": 1.25, "audience": 1.15, "growth": 1.1}}, {"id": "releasing-soon", "name": "Releasing Soon", "icon": "M10 6a4 4 0 100 8 4 4 0 000-8z|M4 4c3.5 3.5 3.5 8.5 0 12M16 4c-3.5 3.5-3.5 8.5 0 12", "values": {"release": 10, "creative": 8, "audience": 8, "rights": 7, "revenue": 5, "growth": 6}, "weights": {"release": 1.35, "creative": 1.15, "audience": 1.15, "rights": 1.1}}, {"id": "growing-catalog", "name": "Growing Catalog", "icon": "M10 4c3.5 0 6 1 6 2s-2.5 2-6 2-6-1-6-2 2.5-2 6-2z|M4 6v8c0 1 2.5 2 6 2s6-1 6-2V6", "values": {"release": 6, "creative": 6, "audience": 8, "rights": 8, "revenue": 8, "growth": 9}, "weights": {"audience": 1.15, "rights": 1.15, "revenue": 1.2, "growth": 1.25}}, {"id": "missing-royalties", "name": "Missing Royalties", "icon": "M9 4a5 5 0 100 10 5 5 0 000-10z|M13 12l4 4", "values": {"release": 4, "creative": 3, "audience": 4, "rights": 10, "revenue": 10, "growth": 5}, "weights": {"rights": 1.4, "revenue": 1.4}}, {"id": "label-ready", "name": "Label Ready", "icon": "M3 6l3 3 4-5 4 5 3-3v8H3z|M3 16h14", "values": {"release": 9, "creative": 9, "audience": 9, "rights": 9, "revenue": 8, "growth": 10}, "weights": {}}, {"id": "custom", "name": "Custom", "icon": "M4 6h12M4 10h12M4 14h12|M7 4v4M13 8v4M9 12v4", "values": null, "weights": {}}], "default_preset": "releasing-soon", "default_values": {"release": 10, "creative": 8, "audience": 8, "rights": 7, "revenue": 5, "growth": 6}, "lanes": [{"id": "distribution", "name": "Distribution \u2014 Release the Record", "href": "/services/distribution", "keys": ["release", "creative", "rights"], "why": "Your highest priorities are getting the record out clean, on time and correctly registered."}, {"id": "development", "name": "Development \u2014 Build the Artist", "href": "/catalog-sweep", "keys": ["creative", "audience", "growth"], "why": "Your highest priorities are creative work and audience, which is artist development."}, {"id": "partnership", "name": "Partnership \u2014 Build the Asset", "href": "/services", "keys": ["rights", "revenue", "growth"], "why": "Your highest priorities are rights and income, which is where a catalog becomes an asset."}], "modules": {"release": [["Rollout Engine", "rollout-studio"], ["Metadata Passport", "metadata-passport"], ["Smart Links", "smart-links"]], "creative": [["Creative Studio", "creative-studio"], ["Artwork Generator", "artwork-generator"], ["AI Artist Twin", "artist-twin"]], "audience": [["Fan Intelligence", "fan-intelligence"], ["Smart Links", "smart-links"], ["Rollout Engine", "rollout-studio"]], "rights": [["Rights & Ownership", "rights-ownership"], ["Metadata Passport", "metadata-passport"], ["Royalty Sweep", "royalty-sweep"]], "revenue": [["Royalty Sweep", "royalty-sweep"], ["Catalog Intelligence", "catalog-intelligence"], ["Rights & Ownership", "rights-ownership"]], "growth": [["AI Artist Twin", "artist-twin"], ["Deal Room", "deal-room"], ["Catalog Intelligence", "catalog-intelligence"]]}, "module_notes": {"rollout-studio": "Generates a dated rollout \u2014 captions, assets and a schedule \u2014 from the release you are working on.", "metadata-passport": "One record per track of every field a distributor, PRO or society asks for, with the gaps marked.", "smart-links": "One link per release that shows where the clicks came from and captures the fans who consent.", "creative-studio": "Cover directions, campaign visuals and merch concepts kept beside the release they belong to.", "artwork-generator": "Cover-art directions to compare side by side before committing to one.", "artist-twin": "A strategist read on your own numbers: what moved, what stalled, and what to do next.", "fan-intelligence": "Who is listening, where they are, and which of them you actually own the relationship with.", "rights-ownership": "Splits, credits and signatures in one place, with the documents attached to the track.", "royalty-sweep": "Reads your uploaded statements for money paid but unattributed, and for sources that have gone quiet.", "catalog-intelligence": "What the catalog earns, where it earns it, and what that pace is worth.", "deal-room": "The export a partner asks for: income on record, rights position and catalog shape in one document."}, "actions": {"release": [["Complete the release metadata passport", "metadata-passport"], ["Build a 21-day rollout around the active release", "rollout-studio"]], "creative": [["Generate and compare three cover-art directions", "artwork-generator"], ["Set the visual direction for the campaign", "creative-studio"]], "audience": [["Create a fan-capture smart link", "smart-links"], ["Segment the fans you already own", "fan-intelligence"]], "rights": [["Complete missing songwriter and producer splits", "rights-ownership"], ["File the documents that prove each split", "rights-ownership"]], "revenue": [["Run a preliminary Royalty Sweep on the catalog", "royalty-sweep"], ["Upload a recent statement so the sweep has rows to read", "royalty-sweep"]], "growth": [["Review the Artist Twin's campaign assessment", "artist-twin"], ["Assemble the deal room export for a partner", "deal-room"]]}, "readiness_bands": [[40, "Foundation Stage"], [60, "Building Momentum"], [75, "Release Ready"], [88, "Growth Ready"], [101, "Partner Ready"]], "setup_times": ["10\u201315 minutes", "20\u201330 minutes", "45\u201360 minutes"], "max_modules": 4, "action_count": 3, "storage_key": "streetBankerArtistEq", "module_routes": {"Rollout Engine": "/rollout-studio", "Metadata Passport": "/metadata-passport", "Smart Links": "/links", "Creative Studio": "/artwork", "Artwork Generator": "/artwork", "AI Artist Twin": "/artist-twin", "Fan Intelligence": "/fans", "Rights & Ownership": "/tracks", "Royalty Sweep": "/recovery", "Catalog Intelligence": "/catalog", "Deal Room": "/deal-room"}, "action_routes": {"Complete the release metadata passport": "/metadata-passport", "Build a 21-day rollout around the active release": "/rollout-studio", "Generate and compare three cover-art directions": "/artwork", "Set the visual direction for the campaign": "/artwork", "Create a fan-capture smart link": "/links", "Segment the fans you already own": "/fans", "Complete missing songwriter and producer splits": "/tracks", "File the documents that prove each split": "/tracks", "Run a preliminary Royalty Sweep on the catalog": "/recovery", "Upload a recent statement so the sweep has rows to read": "/recovery", "Review the Artist Twin's campaign assessment": "/artist-twin", "Assemble the deal room export for a partner": "/deal-room"}, "cta": {"label": "Build my Street Banker plan", "href": "/plan"}, "reset_label": "Reset EQ", "default_plan": {"values": {"release": 10.0, "creative": 8.0, "audience": 8.0, "rights": 7.0, "revenue": 5.0, "growth": 6.0}, "preset": "releasing-soon", "score": 75, "band": "Growth Ready", "lane": {"id": "distribution", "name": "Distribution \u2014 Release the Record", "href": "/services/distribution", "keys": ["release", "creative", "rights"], "why": "Your highest priorities are getting the record out clean, on time and correctly registered."}, "modules": [{"name": "Rollout Engine", "slug": "rollout-studio", "channel": "release", "note": "Generates a dated rollout \u2014 captions, assets and a schedule \u2014 from the release you are working on."}, {"name": "Creative Studio", "slug": "creative-studio", "channel": "creative", "note": "Cover directions, campaign visuals and merch concepts kept beside the release they belong to."}, {"name": "Fan Intelligence", "slug": "fan-intelligence", "channel": "audience", "note": "Who is listening, where they are, and which of them you actually own the relationship with."}, {"name": "Rights & Ownership", "slug": "rights-ownership", "channel": "rights", "note": "Splits, credits and signatures in one place, with the documents attached to the track."}], "actions": [{"label": "Complete the release metadata passport", "slug": "metadata-passport", "channel": "release"}, {"label": "Generate and compare three cover-art directions", "slug": "artwork-generator", "channel": "creative"}, {"label": "Create a fan-capture smart link", "slug": "smart-links", "channel": "audience"}], "setup_time": "20\u201330 minutes"}, "default_query": "release=10&creative=8&audience=8&rights=7&revenue=5&growth=6&preset=releasing-soon"}</script>
+</section>
+
+<!-- 4. ONE SYSTEM. SIX DEPARTMENTS. — one photograph, six coded slices.
+     It displaces nothing below it. -->
+
+
+
+
+<section class="sbdept" id="departments" aria-labelledby="sbdept-heading">
+  <div class="sbdept-inner">
+    <header class="sbdept-head">
+      <h2 class="sbdept-eyebrow" id="sbdept-heading">One system. Six departments.</h2>
+      <p class="sbdept-support">Everything behind the artist, working together.</p>
+    </header>
+
+    <div class="sbdept-grid" style="--sbdept-count: 6">
+      <picture class="sbdept-photo">
+        <source type="image/avif"
+                srcset="/static/img/departments-900.avif 900w, /static/img/departments-1200.avif 1200w, /static/img/departments-1553.avif 1553w"
+                sizes="(min-width: 1600px) 1540px, 100vw">
+        <source type="image/webp"
+                srcset="/static/img/departments-900.webp 900w, /static/img/departments-1200.webp 1200w, /static/img/departments-1553.webp 1553w"
+                sizes="(min-width: 1600px) 1540px, 100vw">
+        <img src="/static/img/departments-1200.jpg"
+             srcset="/static/img/departments-900.jpg 900w, /static/img/departments-1200.jpg 1200w, /static/img/departments-1553.jpg 1553w"
+             sizes="(min-width: 1600px) 1540px, 100vw"
+             width="1553" height="676"
+             alt="Band performing inside a raw studio with artwork and equipment surrounding the musicians." loading="lazy" decoding="async">
+      </picture>
+
+      
+      <a class="sbdept-dept" href="#artist-twin-section"
+         style="--sbdept-i: 0; --sbdept-wash: rgba(150, 156, 168, 0.05)"
+         data-dept="artist-twin" data-index="0">
+        
+        <span class="sbdept-window" aria-hidden="true">
+          <span class="sbdept-wash"></span>
+        </span>
+        <span class="sbdept-body">
+          <span class="sbdept-num">01</span>
+          <span class="sbdept-name">AI Artist Twin</span>
+          <span class="sbdept-desc">Evaluate and plan.</span>
+        </span>
+      </a>
+      
+      <a class="sbdept-dept" href="#creative-studio"
+         style="--sbdept-i: 1; --sbdept-wash: rgba(126, 100, 74, 0.07)"
+         data-dept="creative-studio" data-index="1">
+        
+        <span class="sbdept-window" aria-hidden="true">
+          <span class="sbdept-wash"></span>
+        </span>
+        <span class="sbdept-body">
+          <span class="sbdept-num">02</span>
+          <span class="sbdept-name">Creative Studio</span>
+          <span class="sbdept-desc">Build the visual world.</span>
+        </span>
+      </a>
+      
+      <a class="sbdept-dept" href="#rollout-engine"
+         style="--sbdept-i: 2; --sbdept-wash: rgba(112, 82, 56, 0.08)"
+         data-dept="rollout-engine" data-index="2">
+        
+        <span class="sbdept-window" aria-hidden="true">
+          <span class="sbdept-wash"></span>
+        </span>
+        <span class="sbdept-body">
+          <span class="sbdept-num">03</span>
+          <span class="sbdept-name">Rollout Engine</span>
+          <span class="sbdept-desc">Turn the release into a campaign.</span>
+        </span>
+      </a>
+      
+      <a class="sbdept-dept" href="#royalty-sweep-section"
+         style="--sbdept-i: 3; --sbdept-wash: rgba(190, 142, 72, 0.07)"
+         data-dept="royalty-sweep" data-index="3">
+        
+        <span class="sbdept-window" aria-hidden="true">
+          <span class="sbdept-wash"></span>
+        </span>
+        <span class="sbdept-body">
+          <span class="sbdept-num">04</span>
+          <span class="sbdept-name">Royalty Sweep</span>
+          <span class="sbdept-desc">Find potential missing income.</span>
+        </span>
+      </a>
+      
+      <a class="sbdept-dept" href="#metadata-passport"
+         style="--sbdept-i: 4; --sbdept-wash: rgba(112, 116, 82, 0.07)"
+         data-dept="rights" data-index="4">
+        
+        <span class="sbdept-window" aria-hidden="true">
+          <span class="sbdept-wash"></span>
+        </span>
+        <span class="sbdept-body">
+          <span class="sbdept-num">05</span>
+          <span class="sbdept-name">Rights</span>
+          <span class="sbdept-desc">Protect ownership and metadata.</span>
+        </span>
+      </a>
+      
+      <a class="sbdept-dept" href="/product-tour/smart-link#fans"
+         style="--sbdept-i: 5; --sbdept-wash: rgba(118, 138, 166, 0.08)"
+         data-dept="fan-intelligence" data-index="5">
+        
+        <span class="sbdept-window" aria-hidden="true">
+          <span class="sbdept-wash"></span>
+        </span>
+        <span class="sbdept-body">
+          <span class="sbdept-num">06</span>
+          <span class="sbdept-name">Fan Intelligence</span>
+          <span class="sbdept-desc">Understand and grow the audience.</span>
+        </span>
+      </a>
+      
+    </div>
+  </div>
+
+  <script type="application/json" id="sbdept-config">{"eyebrow": "One system. Six departments.", "support": "Everything behind the artist, working together.", "departments": [{"num": "01", "slug": "artist-twin", "name": "AI Artist Twin", "desc": "Evaluate and plan.", "href": "#artist-twin-section", "tone": "graphite neutral", "wash": "rgba(150, 156, 168, 0.05)"}, {"num": "02", "slug": "creative-studio", "name": "Creative Studio", "desc": "Build the visual world.", "href": "#creative-studio", "tone": "warm charcoal", "wash": "rgba(126, 100, 74, 0.07)"}, {"num": "03", "slug": "rollout-engine", "name": "Rollout Engine", "desc": "Turn the release into a campaign.", "href": "#rollout-engine", "tone": "muted brown", "wash": "rgba(112, 82, 56, 0.08)"}, {"num": "04", "slug": "royalty-sweep", "name": "Royalty Sweep", "desc": "Find potential missing income.", "href": "#royalty-sweep-section", "tone": "soft amber", "wash": "rgba(190, 142, 72, 0.07)"}, {"num": "05", "slug": "rights", "name": "Rights", "desc": "Protect ownership and metadata.", "href": "#metadata-passport", "tone": "olive charcoal", "wash": "rgba(112, 116, 82, 0.07)"}, {"num": "06", "slug": "fan-intelligence", "name": "Fan Intelligence", "desc": "Understand and grow the audience.", "href": "/product-tour/smart-link#fans", "tone": "cool slate", "wash": "rgba(118, 138, 166, 0.08)"}], "image": {"stem": "/static/img/departments", "widths": [900, 1200, 1553], "width": 1553, "height": 676, "alt": "Band performing inside a raw studio with artwork and equipment surrounding the musicians."}, "count": 6}</script>
+</section>
+
+<!-- 5. AI ARTIST TWIN — photograph and assessment as two layers that never
+     touch. Additive: it displaces nothing below it. -->
+
+
+
+
+<section class="sbtw" id="artist-twin-section" aria-labelledby="sbtw-heading">
+  <div class="sbtw-inner">
+
+    <figure class="sbtw-photo">
+      <picture>
+        <source type="image/avif"
+                srcset="/static/img/artist-twin-480.avif 480w, /static/img/artist-twin-700.avif 700w, /static/img/artist-twin-893.avif 893w"
+                sizes="(min-width: 1180px) 55vw, 100vw">
+        <source type="image/webp"
+                srcset="/static/img/artist-twin-480.webp 480w, /static/img/artist-twin-700.webp 700w, /static/img/artist-twin-893.webp 893w"
+                sizes="(min-width: 1180px) 55vw, 100vw">
+        <img src="/static/img/artist-twin-700.jpg"
+             srcset="/static/img/artist-twin-480.jpg 480w, /static/img/artist-twin-700.jpg 700w, /static/img/artist-twin-893.jpg 893w"
+             sizes="(min-width: 1180px) 55vw, 100vw"
+             width="893" height="941"
+             alt="Artist reviewing release photographs and campaign materials while team members move through a creative studio." loading="lazy" decoding="async">
+      </picture>
+    </figure>
+
+    <div class="sbtw-panel">
+      <p class="sbtw-eyebrow">AI Artist Twin</p>
+      <h2 class="sbtw-title" id="sbtw-heading">
+        <span>Know the artist.</span><span>Test the move.</span>
+      </h2>
+      <p class="sbtw-support">The Artist Twin learns your music, visuals, audience, catalog and goals—then helps evaluate releases, artwork, campaigns and opportunities before you commit.</p>
+
+      <div class="sbtw-card">
+        <p class="sbtw-example" id="sbtw-example">Example Artist Twin assessment</p>
+
+        <ul class="sbtw-rows" aria-labelledby="sbtw-example">
+          
+          <li>
+            <details class="sbtw-row" id="sbtw-release-readiness" data-row="release-readiness">
+              <summary class="sbtw-summary" aria-expanded="false">
+                <span class="sbtw-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 9v2"/><path d="M8 6.5v7"/><path d="M12 4.5v11"/><path d="M16 8v4"/>
+                  </svg>
+                </span>
+                <span class="sbtw-text">
+                  <span class="sbtw-row-title">Release Readiness</span>
+                  <span class="sbtw-row-summary">Strong foundation. Review sequencing, metadata and final delivery requirements.</span>
+                </span>
+                
+                <span class="sbtw-status sbtw-status--good">
+                  <span class="sbtw-dot" aria-hidden="true"></span>Good
+                </span>
+                <span class="sbtw-chev" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5l6 5.5-6 5.5"/></svg>
+                </span>
+              </summary>
+
+              <div class="sbtw-detail">
+                <dl>
+                  <dt>What the Twin observed</dt>
+                  <dd>Masters, artwork and credits are present for every track, and the release date leaves room for a normal delivery window. Two tracks are still missing songwriter splits.</dd>
+                  <dt>Why it matters</dt>
+                  <dd>Stores reject or hold deliveries on missing metadata, and unsigned splits are the most common reason royalties sit unclaimed later.</dd>
+                  <dt>Confidence</dt>
+                  <dd>Strong</dd>
+                  <dt>Missing inputs</dt>
+                  <dd>Signed splits on two tracks; final track order.</dd>
+                  <dt>Recommended action</dt>
+                  <dd>Complete the metadata passport, then lock the sequence before delivery.</dd>
+                </dl>
+              </div>
+            </details>
+          </li>
+          
+          <li>
+            <details class="sbtw-row" id="sbtw-brand-alignment" data-row="brand-alignment">
+              <summary class="sbtw-summary" aria-expanded="false">
+                <span class="sbtw-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 3.2a6.8 6.8 0 1 0 0 13.6a6.8 6.8 0 1 0 0-13.6"/><path d="M10 7.6a2.4 2.4 0 1 0 0 4.8a2.4 2.4 0 1 0 0-4.8"/>
+                  </svg>
+                </span>
+                <span class="sbtw-text">
+                  <span class="sbtw-row-title">Brand Alignment</span>
+                  <span class="sbtw-row-summary">The visual direction and campaign language consistently reflect the artist identity.</span>
+                </span>
+                
+                <span class="sbtw-status sbtw-status--strong">
+                  <span class="sbtw-dot" aria-hidden="true"></span>Strong
+                </span>
+                <span class="sbtw-chev" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5l6 5.5-6 5.5"/></svg>
+                </span>
+              </summary>
+
+              <div class="sbtw-detail">
+                <dl>
+                  <dt>What the Twin observed</dt>
+                  <dd>Artwork, press copy and the last three campaigns use the same vocabulary and the same restrained palette. Nothing in this release reads as borrowed from somewhere else.</dd>
+                  <dt>Why it matters</dt>
+                  <dd>An audience recognises an artist before it reads a name. Consistency is what makes a catalog feel like one body of work.</dd>
+                  <dt>Confidence</dt>
+                  <dd>Strong</dd>
+                  <dt>Missing inputs</dt>
+                  <dd>Nothing material.</dd>
+                  <dt>Recommended action</dt>
+                  <dd>Carry the same language into the release-week assets.</dd>
+                </dl>
+              </div>
+            </details>
+          </li>
+          
+          <li>
+            <details class="sbtw-row" id="sbtw-artwork-strength" data-row="artwork-strength">
+              <summary class="sbtw-summary" aria-expanded="false">
+                <span class="sbtw-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3.6 4.6h12.8v10.8H3.6z"/><path d="M3.6 12.2l3.4-3.3 2.9 2.9 3-2.5 3.5 3.4"/>
+                  </svg>
+                </span>
+                <span class="sbtw-text">
+                  <span class="sbtw-row-title">Artwork Strength</span>
+                  <span class="sbtw-row-summary">The direction is cohesive. Test stronger thumbnail contrast before approval.</span>
+                </span>
+                
+                <span class="sbtw-status sbtw-status--solid">
+                  <span class="sbtw-dot" aria-hidden="true"></span>Solid
+                </span>
+                <span class="sbtw-chev" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5l6 5.5-6 5.5"/></svg>
+                </span>
+              </summary>
+
+              <div class="sbtw-detail">
+                <dl>
+                  <dt>What the Twin observed</dt>
+                  <dd>Artwork and campaign materials use a consistent visual language, but the focal subject becomes difficult to read at small streaming-thumbnail sizes.</dd>
+                  <dt>Why it matters</dt>
+                  <dd>Most listeners first meet the artwork at a small scale on a phone.</dd>
+                  <dt>Confidence</dt>
+                  <dd>Moderate</dd>
+                  <dt>Missing inputs</dt>
+                  <dd>Final streaming-platform crop tests.</dd>
+                  <dt>Recommended action</dt>
+                  <dd>Compare two higher-contrast thumbnail versions before final approval.</dd>
+                </dl>
+              </div>
+            </details>
+          </li>
+          
+          <li>
+            <details class="sbtw-row" id="sbtw-audience-fit" data-row="audience-fit">
+              <summary class="sbtw-summary" aria-expanded="false">
+                <span class="sbtw-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7.4 9.1a2.4 2.4 0 1 0 0-4.8a2.4 2.4 0 1 0 0 4.8"/><path d="M3.1 16c0-2.2 1.9-3.9 4.3-3.9s4.3 1.7 4.3 3.9"/><path d="M13.2 8.6a1.9 1.9 0 1 0 0-3.8"/><path d="M13.6 12.4c1.9.4 3.3 1.9 3.3 3.6"/>
+                  </svg>
+                </span>
+                <span class="sbtw-text">
+                  <span class="sbtw-row-title">Audience Fit</span>
+                  <span class="sbtw-row-summary">The release aligns with the core audience and shows potential in adjacent listener groups.</span>
+                </span>
+                
+                <span class="sbtw-status sbtw-status--good">
+                  <span class="sbtw-dot" aria-hidden="true"></span>Good
+                </span>
+                <span class="sbtw-chev" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5l6 5.5-6 5.5"/></svg>
+                </span>
+              </summary>
+
+              <div class="sbtw-detail">
+                <dl>
+                  <dt>What the Twin observed</dt>
+                  <dd>The tempo range and features sit inside what the existing audience already saves. Two adjacent scenes share playlist neighbours but have never been targeted directly.</dd>
+                  <dt>Why it matters</dt>
+                  <dd>Reaching an adjacent audience is cheaper than building a new one, and it is easier to judge before a campaign than after it.</dd>
+                  <dt>Confidence</dt>
+                  <dd>Moderate</dd>
+                  <dt>Missing inputs</dt>
+                  <dd>Recent audience geography; current playlist placements.</dd>
+                  <dt>Recommended action</dt>
+                  <dd>Pick one adjacent scene and test it with a single asset.</dd>
+                </dl>
+              </div>
+            </details>
+          </li>
+          
+          <li>
+            <details class="sbtw-row" id="sbtw-next-move" data-row="next-move">
+              <summary class="sbtw-summary" aria-expanded="false">
+                <span class="sbtw-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6.2 13.8L13.8 6.2"/><path d="M8.6 6.2h5.2v5.2"/>
+                  </svg>
+                </span>
+                <span class="sbtw-text">
+                  <span class="sbtw-row-title">Recommended Next Move</span>
+                  <span class="sbtw-row-summary">Compare the strongest artwork direction, finalise the rollout and run a preliminary Royalty Sweep.</span>
+                </span>
+                
+                <span class="sbtw-status sbtw-status--suggested">
+                  <span class="sbtw-dot" aria-hidden="true"></span>Suggested
+                </span>
+                <span class="sbtw-chev" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5l6 5.5-6 5.5"/></svg>
+                </span>
+              </summary>
+
+              <div class="sbtw-detail">
+                <dl>
+                  <dt>What the Twin observed</dt>
+                  <dd>The two open items on this release - artwork contrast and the missing splits - are both cheap to close now and expensive to fix after release.</dd>
+                  <dt>Why it matters</dt>
+                  <dd>Sequence matters more than speed: artwork and splits are decided once, and everything downstream inherits them.</dd>
+                  <dt>Confidence</dt>
+                  <dd>Moderate</dd>
+                  <dt>Missing inputs</dt>
+                  <dd>Your decision on the artwork direction.</dd>
+                  <dt>Recommended action</dt>
+                  <dd>Pick the artwork, close the splits, then build the rollout around the confirmed date.</dd>
+                </dl>
+              </div>
+            </details>
+          </li>
+          
+        </ul>
+
+        <div class="sbtw-sources">
+          <p class="sbtw-sources-label" id="sbtw-based-on">Based on</p>
+          <ul aria-labelledby="sbtw-based-on">
+            
+            <li class="sbtw-source sbtw-source--connected">
+              <span class="sbtw-source-dot" aria-hidden="true"></span>
+              <span class="sbtw-source-name">Music</span>
+              <span class="sbtw-source-state">Connected</span>
+            </li>
+            
+            <li class="sbtw-source sbtw-source--added">
+              <span class="sbtw-source-dot" aria-hidden="true"></span>
+              <span class="sbtw-source-name">Visuals</span>
+              <span class="sbtw-source-state">Added</span>
+            </li>
+            
+            <li class="sbtw-source sbtw-source--connected">
+              <span class="sbtw-source-dot" aria-hidden="true"></span>
+              <span class="sbtw-source-name">Audience</span>
+              <span class="sbtw-source-state">Connected</span>
+            </li>
+            
+            <li class="sbtw-source sbtw-source--connected">
+              <span class="sbtw-source-dot" aria-hidden="true"></span>
+              <span class="sbtw-source-name">Catalog</span>
+              <span class="sbtw-source-state">Connected</span>
+            </li>
+            
+            <li class="sbtw-source sbtw-source--added">
+              <span class="sbtw-source-dot" aria-hidden="true"></span>
+              <span class="sbtw-source-name">Campaign History</span>
+              <span class="sbtw-source-state">Added</span>
+            </li>
+            
+            <li class="sbtw-source sbtw-source--needs-input">
+              <span class="sbtw-source-dot" aria-hidden="true"></span>
+              <span class="sbtw-source-name">Goals</span>
+              <span class="sbtw-source-state">Needs Input</span>
+            </li>
+            
+          </ul>
+        </div>
+      </div>
+
+      <div class="sbtw-ctas">
+        <a class="sbtw-cta" href="/artist-twin/start">Build my Artist Twin</a>
+        <button type="button" class="sbtw-cta-2" id="sbtw-explain"
+                aria-controls="sbtw-artwork-strength">See how it thinks</button>
+      </div>
+
+      <p class="sbtw-microcopy">
+        Your Artist Twin supports your decisions. It does not replace your judgement.
+        <a class="sbtw-trust" href="/ai">How Street Banker uses AI</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<span id="platform" class="block" style="scroll-margin-top: 110px;" aria-hidden="true"></span>
+<!-- 6. THE THREE LANES — one unit, three channels. Full width like the
+     three dark bands above it: the hardware is the argument here, and it
+     cannot be the hero object from inside a narrow gutter. -->
+
+
+
+
+<section class="sblane" id="lanes" aria-labelledby="sblane-heading">
+  <div class="sblane-inner"
+       style="--sblane-seam-1: 0.337; --sblane-seam-2: 0.6553">
+    <header class="sblane-head">
+      <p class="sblane-eyebrow">Three lanes. One system.</p>
+      <h2 class="sblane-title" id="sblane-heading">
+        <span>Choose your lane.</span><span>Build your career.</span>
+      </h2>
+      <p class="sblane-support">Street Banker meets artists where they are—whether they need release infrastructure, deeper development, or long-term strategic partnership.</p>
+    </header>
+
+    
+    <div class="sblane-rail">
+      <div class="sblane-unit">
+        <picture>
+          <source type="image/avif"
+                  srcset="/static/img/lanes-unit-760.avif 760w, /static/img/lanes-unit-1100.avif 1100w, /static/img/lanes-unit-1626.avif 1626w"
+                  sizes="(min-width: 1024px) min(1560px, 92vw), 175vw">
+          <source type="image/webp"
+                  srcset="/static/img/lanes-unit-760.webp 760w, /static/img/lanes-unit-1100.webp 1100w, /static/img/lanes-unit-1626.webp 1626w"
+                  sizes="(min-width: 1024px) min(1560px, 92vw), 175vw">
+          <img class="sblane-photo" src="/static/img/lanes-unit-1100.jpg"
+               srcset="/static/img/lanes-unit-760.jpg 760w, /static/img/lanes-unit-1100.jpg 1100w, /static/img/lanes-unit-1626.jpg 1626w"
+               sizes="(min-width: 1024px) min(1560px, 92vw), 175vw"
+               width="1626" height="892"
+               alt="Street Banker hardware-style unit with three channels representing Distribution, Development and Partnership." loading="lazy" decoding="async">
+        </picture>
+        
+        <div class="sblane-channels" aria-hidden="true">
+          
+          <span class="sblane-channel" data-channel="distribution"></span>
+          
+          <span class="sblane-channel" data-channel="development"></span>
+          
+          <span class="sblane-channel" data-channel="partnership"></span>
+          
+        </div>
+      </div>
+    </div>
+
+    <ol class="sblane-summaries">
+      
+      <li class="sblane-summary" data-lane="distribution">
+        <a class="sblane-link" href="/lanes#distribution"
+           data-lane-link="distribution">
+          <span class="sblane-num">01</span>
+          <span class="sblane-name">Distribution</span>
+          <span class="sblane-subline">Release the Record</span>
+          <span class="sblane-desc">Get your music released with the core infrastructure: delivery, release tools, metadata support, smart links and launch essentials.</span>
+          <span class="sblane-cta">Explore Distribution
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+          </span>
+        </a>
+      </li>
+      
+      <li class="sblane-summary" data-lane="development">
+        <a class="sblane-link" href="/lanes#development"
+           data-lane-link="development">
+          <span class="sblane-num">02</span>
+          <span class="sblane-name">Development</span>
+          <span class="sblane-subline">Build the Artist</span>
+          <span class="sblane-desc">Add deeper creative, strategic and growth support through Artist Twin guidance, rollout planning, audience development and artist-building tools.</span>
+          <span class="sblane-cta">Explore Development
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+          </span>
+        </a>
+      </li>
+      
+      <li class="sblane-summary" data-lane="partnership">
+        <a class="sblane-link" href="/lanes#partnership"
+           data-lane-link="partnership">
+          <span class="sblane-num">03</span>
+          <span class="sblane-name">Partnership</span>
+          <span class="sblane-subline">Build the Asset</span>
+          <span class="sblane-desc">For artists with momentum who are building long-term value through catalog strategy, higher-touch support and partnership-level opportunities.</span>
+          <span class="sblane-cta">Explore Partnership
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+          </span>
+        </a>
+      </li>
+      
+    </ol>
+
+    <div class="sblane-ctas">
+      <a class="sblane-primary" href="/lanes">Find my lane</a>
+      <button type="button" class="sblane-secondary" id="sblane-compare"
+              aria-expanded="false" aria-controls="sblane-comparison">Compare the lanes</button>
+    </div>
+
+    
+    <div class="sblane-comparison" id="sblane-comparison" hidden>
+      <div class="sblane-compare-grid">
+        
+        <div class="sblane-compare-col" data-lane="distribution">
+          <h3 class="sblane-compare-title"><span>01</span> Distribution</h3>
+          <p class="sblane-compare-for">You have the record and you need it out, correctly and on time.</p>
+          <ul>
+            <li>Delivery to the stores and services</li><li>Metadata and credits kept release-ready</li><li>Smart links and pre-save pages</li><li>Statements read and reported back to you</li>
+          </ul>
+        </div>
+        
+        <div class="sblane-compare-col" data-lane="development">
+          <h3 class="sblane-compare-title"><span>02</span> Development</h3>
+          <p class="sblane-compare-for">The releases are landing and the next thing you need is a plan around them.</p>
+          <ul>
+            <li>Everything in Distribution</li><li>Artist Twin guidance on releases and artwork</li><li>Rollout planning built backwards from release day</li><li>Audience and fan development, read from your own data</li>
+          </ul>
+        </div>
+        
+        <div class="sblane-compare-col" data-lane="partnership">
+          <h3 class="sblane-compare-title"><span>03</span> Partnership</h3>
+          <p class="sblane-compare-for">There is a catalog behind you and the question is what it is worth in five years.</p>
+          <ul>
+            <li>Everything in Development</li><li>Catalog strategy and rights work</li><li>Higher-touch support on the decisions that compound</li><li>Partnership-level opportunities, case by case</li>
+          </ul>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. CREATIVE STUDIO — a backstage photograph and four words along its
+     bottom edge. Additive: it displaces nothing below it. -->
+
+
+
+
+<section class="sbcs" id="creative-studio" aria-labelledby="sbcs-heading">
+  <div class="sbcs-inner">
+
+    <div class="sbcs-copy">
+      <p class="sbcs-eyebrow">
+        <span class="sbcs-num">07</span>
+        <span class="sbcs-rule" aria-hidden="true"></span>
+        Creative Studio
+      </p>
+      <h2 class="sbcs-title" id="sbcs-heading">
+        <span>Build the</span><span>Visual world.</span>
+      </h2>
+      <p class="sbcs-support">Artwork, merch, campaign assets, and release content built around one clear artist identity.</p>
+
+      <div class="sbcs-ctas">
+        <a class="sbcs-cta" href="/creative-studio">Open Creative Studio
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+        </a>
+        <button type="button" class="sbcs-workflow-btn" id="sbcs-workflow-btn"
+                aria-expanded="false" aria-controls="sbcs-workflow">See the workflow</button>
+      </div>
+
+      
+      <ol class="sbcs-workflow" id="sbcs-workflow" hidden>
+        
+        <li>
+          <span class="sbcs-step">Brief</span>
+          <span class="sbcs-step-detail">The artist provides the release story, references, goals and available assets.</span>
+        </li>
+        
+        <li>
+          <span class="sbcs-step">Directions</span>
+          <span class="sbcs-step-detail">Street Banker develops several coherent creative directions.</span>
+        </li>
+        
+        <li>
+          <span class="sbcs-step">Refine</span>
+          <span class="sbcs-step-detail">The artist reviews and requests targeted revisions.</span>
+        </li>
+        
+        <li>
+          <span class="sbcs-step">Approve</span>
+          <span class="sbcs-step-detail">One visual direction becomes the campaign master.</span>
+        </li>
+        
+        <li>
+          <span class="sbcs-step">Adapt</span>
+          <span class="sbcs-step-detail">The approved direction is converted into platform, merchandise, social, video and promotional formats.</span>
+        </li>
+        
+      </ol>
+
+      <div class="sbcs-memory">
+        <p class="sbcs-memory-title">Built around your identity.</p>
+        <p class="sbcs-memory-copy">Creative Studio remembers approved visual directions, colours, logos, imagery and rejected styles so every release still feels like the same artist.</p>
+      </div>
+    </div>
+
+    <figure class="sbcs-photo">
+      <picture>
+        
+        <source media="(max-width: 767px)" type="image/avif"
+                srcset="/static/img/creative-close-400.avif 400w, /static/img/creative-close-600.avif 600w"
+                sizes="100vw">
+        <source media="(max-width: 767px)" type="image/webp"
+                srcset="/static/img/creative-close-400.webp 400w, /static/img/creative-close-600.webp 600w"
+                sizes="100vw">
+        <source media="(max-width: 767px)" type="image/jpeg"
+                srcset="/static/img/creative-close-400.jpg 400w, /static/img/creative-close-600.jpg 600w"
+                sizes="100vw">
+        
+        <source type="image/avif"
+                srcset="/static/img/creative-wide-520.avif 520w, /static/img/creative-wide-830.avif 830w"
+                sizes="(min-width: 1024px) 64vw, 100vw">
+        <source type="image/webp"
+                srcset="/static/img/creative-wide-520.webp 520w, /static/img/creative-wide-830.webp 830w"
+                sizes="(min-width: 1024px) 64vw, 100vw">
+        <img class="sbcs-img" src="/static/img/creative-wide-830.jpg"
+             srcset="/static/img/creative-wide-520.jpg 520w, /static/img/creative-wide-830.jpg 830w"
+             sizes="(min-width: 1024px) 64vw, 100vw"
+             width="830" height="980"
+             alt="Touring artist and crew setting up a merchandise table backstage inside a small music venue." loading="lazy" decoding="async">
+      </picture>
+      <span class="sbcs-veil" aria-hidden="true"></span>
+    </figure>
+
+    
+    <div class="sbcs-features">
+      <ul class="sbcs-feature-row">
+        
+        <li>
+          <button type="button" class="sbcs-feature" data-feature="cover-art"
+                  aria-describedby="sbcs-feature-line">Cover Art</button>
+        </li>
+        
+        <li>
+          <button type="button" class="sbcs-feature" data-feature="merch"
+                  aria-describedby="sbcs-feature-line">Merch</button>
+        </li>
+        
+        <li>
+          <button type="button" class="sbcs-feature" data-feature="campaign-assets"
+                  aria-describedby="sbcs-feature-line">Campaign Assets</button>
+        </li>
+        
+        <li>
+          <button type="button" class="sbcs-feature" data-feature="platform-formats"
+                  aria-describedby="sbcs-feature-line">Platform Formats</button>
+        </li>
+        
+      </ul>
+      
+      <p class="sbcs-feature-line" id="sbcs-feature-line" aria-live="polite">
+        <span class="sbcs-feature-text">Build the visual identity of the release.</span>
+      </p>
+      
+      <dl class="sbcs-feature-fallback">
+        
+        <dt>Cover Art</dt><dd>Build the visual identity of the release.</dd>
+        
+        <dt>Merch</dt><dd>Turn the campaign into wearable and collectible objects.</dd>
+        
+        <dt>Campaign Assets</dt><dd>Create teasers, posters, social content, and launch materials.</dd>
+        
+        <dt>Platform Formats</dt><dd>Adapt approved creative for every required channel and dimension.</dd>
+        
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- 8. ROLLOUT ENGINE — one photograph the section is made of, with the
+     copy over its darkened right side. Additive: nothing below moves. -->
+
+
+
+
+<section class="sbro" id="rollout-engine" aria-labelledby="sbro-heading">
+  <div class="sbro-stage">
+    <picture class="sbro-photo">
+      
+      <source media="(max-width: 767px)" type="image/avif"
+              srcset="/static/img/rollout-close-400.avif 400w, /static/img/rollout-close-600.avif 600w"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/webp"
+              srcset="/static/img/rollout-close-400.webp 400w, /static/img/rollout-close-600.webp 600w"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/jpeg"
+              srcset="/static/img/rollout-close-400.jpg 400w, /static/img/rollout-close-600.jpg 600w"
+              sizes="100vw">
+      <source type="image/avif"
+              srcset="/static/img/rollout-wide-560.avif 560w, /static/img/rollout-wide-940.avif 940w"
+              sizes="100vw">
+      <source type="image/webp"
+              srcset="/static/img/rollout-wide-560.webp 560w, /static/img/rollout-wide-940.webp 940w"
+              sizes="100vw">
+      <img class="sbro-img" src="/static/img/rollout-wide-940.jpg"
+           srcset="/static/img/rollout-wide-560.jpg 560w, /static/img/rollout-wide-940.jpg 940w"
+           sizes="100vw"
+           width="940" height="710"
+           alt="Artist and touring crew updating printed release calendars backstage while equipment moves through a small venue." loading="lazy" decoding="async">
+    </picture>
+    <span class="sbro-veil" aria-hidden="true"></span>
+
+    <div class="sbro-inner">
+      <div class="sbro-copy">
+        <div class="sbro-head">
+        <p class="sbro-eyebrow">
+          <span class="sbro-num">08</span>
+          <span class="sbro-rule" aria-hidden="true"></span>
+          Rollout Engine
+        </p>
+        <h2 class="sbro-title" id="sbro-heading">
+          <span>Plan it.</span><span>Launch it.</span><span>Live it.</span>
+        </h2>
+        <p class="sbro-support">From release calendars to content drops and tour routing—build your rollout and hit every moment that matters.</p>
+
+        <div class="sbro-ctas">
+          <a class="sbro-cta" href="/rollout">Open Rollout Engine
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+          </a>
+          <button type="button" class="sbro-sample-btn" id="sbro-sample-btn"
+                  aria-expanded="false" aria-controls="sbro-sample">See a sample rollout</button>
+        </div>
+        </div><!-- /head: the photograph slots in here on a phone -->
+
+        
+        <ul class="sbro-caps">
+          
+          <li>
+            <button type="button" class="sbro-cap" data-cap="release-calendar">
+              <span class="sbro-cap-label">Release Calendar</span>
+              <span class="sbro-cap-line">Map releases, shows, deadlines, and key campaign moments.</span>
+            </button>
+          </li>
+          
+          <li>
+            <button type="button" class="sbro-cap" data-cap="content-schedule">
+              <span class="sbro-cap-label">Content Schedule</span>
+              <span class="sbro-cap-line">Plan posts, videos, stories, email, SMS, and campaign drops.</span>
+            </button>
+          </li>
+          
+          <li>
+            <button type="button" class="sbro-cap" data-cap="tour-routing">
+              <span class="sbro-cap-label">Tour Routing</span>
+              <span class="sbro-cap-line">Coordinate release activity with markets, travel, and show nights.</span>
+            </button>
+          </li>
+          
+          <li>
+            <button type="button" class="sbro-cap" data-cap="impact-tracking">
+              <span class="sbro-cap-label">Impact Tracking</span>
+              <span class="sbro-cap-line">See which moments are working and adjust the next move.</span>
+            </button>
+          </li>
+          
+        </ul>
+
+        
+        <div class="sbro-flow">
+          <ol class="sbro-flow-row">
+            
+            <li>
+              <button type="button" class="sbro-stage-btn" data-stage="plan"
+                      aria-describedby="sbro-flow-detail">Plan</button>
+            </li>
+            
+            <li>
+              <button type="button" class="sbro-stage-btn" data-stage="build"
+                      aria-describedby="sbro-flow-detail">Build</button>
+            </li>
+            
+            <li>
+              <button type="button" class="sbro-stage-btn" data-stage="schedule"
+                      aria-describedby="sbro-flow-detail">Schedule</button>
+            </li>
+            
+            <li>
+              <button type="button" class="sbro-stage-btn" data-stage="launch"
+                      aria-describedby="sbro-flow-detail">Launch</button>
+            </li>
+            
+            <li>
+              <button type="button" class="sbro-stage-btn" data-stage="adapt"
+                      aria-describedby="sbro-flow-detail">Adapt</button>
+            </li>
+            
+          </ol>
+          <p class="sbro-flow-detail" id="sbro-flow-detail" aria-live="polite">
+            <span class="sbro-flow-text">Choose release dates, campaign length, target markets, goals and available assets.</span>
+          </p>
+          
+          <dl class="sbro-flow-fallback">
+            <dt>Plan</dt><dd>Choose release dates, campaign length, target markets, goals and available assets.</dd><dt>Build</dt><dd>Generate or organise the creative, copy, pitches, emails and content required.</dd><dt>Schedule</dt><dd>Assign dates, channels, owners, approvals and tracking links.</dd><dt>Launch</dt><dd>Execute the release sequence across approved channels.</dd><dt>Adapt</dt><dd>Review results and adjust timing, content, markets or follow-through.</dd>
+          </dl>
+        </div>
+
+        
+        <div class="sbro-sample" id="sbro-sample" hidden>
+          <p class="sbro-sample-head">
+            <span class="sbro-sample-tag">Example campaign</span>
+            <span class="sbro-sample-len">21-day rollout</span>
+          </p>
+          <ol class="sbro-sample-list">
+            
+            <li>
+              <span class="sbro-day">Day −21</span>
+              <span class="sbro-item">Release announcement</span>
+              <span class="sbro-status sbro-status--approved">Approved</span>
+            </li>
+            
+            <li>
+              <span class="sbro-day">Day −18</span>
+              <span class="sbro-item">Teaser post</span>
+              <span class="sbro-status sbro-status--scheduled">Scheduled</span>
+            </li>
+            
+            <li>
+              <span class="sbro-day">Day −14</span>
+              <span class="sbro-item">Pre-save push</span>
+              <span class="sbro-status sbro-status--scheduled">Scheduled</span>
+            </li>
+            
+            <li>
+              <span class="sbro-day">Day −10</span>
+              <span class="sbro-item">Artwork reveal</span>
+              <span class="sbro-status sbro-status--awaiting-approval">Awaiting Approval</span>
+            </li>
+            
+            <li>
+              <span class="sbro-day">Day −6</span>
+              <span class="sbro-item">Short-form video</span>
+              <span class="sbro-status sbro-status--drafting">Drafting</span>
+            </li>
+            
+            <li>
+              <span class="sbro-day">Day 0</span>
+              <span class="sbro-item">Release-day post</span>
+              <span class="sbro-status sbro-status--awaiting-asset">Awaiting Asset</span>
+            </li>
+            
+            <li>
+              <span class="sbro-day">Day +1</span>
+              <span class="sbro-item">Email and SMS to the list</span>
+              <span class="sbro-status sbro-status--idea">Idea</span>
+            </li>
+            
+            <li>
+              <span class="sbro-day">Day +7</span>
+              <span class="sbro-item">Follow-up content</span>
+              <span class="sbro-status sbro-status--idea">Idea</span>
+            </li>
+            
+          </ol>
+          <p class="sbro-sample-note">Days are counted from release day. This is a shape, not a schedule: nothing here is anyone&#39;s real campaign.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<span id="royalty-sweep" class="block" style="scroll-margin-top: 110px;" aria-hidden="true"></span>
+<!-- 9. ROYALTY SWEEP — header, one archive photograph, five stages, one way
+     in. Full width like the dark run above it: the evidence table is the
+     argument, and it cannot be that from inside a narrow gutter. -->
+
+
+
+
+<section class="sbsw" id="royalty-sweep-section" aria-labelledby="sbsw-heading">
+  <header class="sbsw-head">
+    <p class="sbsw-eyebrow">Royalty Sweep</p>
+    <h2 class="sbsw-title" id="sbsw-heading">
+      <span>Find what&#39;s yours.</span><span>Keep what&#39;s earned.</span>
+    </h2>
+    <p class="sbsw-support">Connect the catalog, trace missing registrations and income sources, and turn every potential gap into a trackable recovery case.</p>
+  </header>
+
+  <figure class="sbsw-photo">
+    <picture>
+      
+      <source media="(max-width: 767px)" type="image/avif"
+              srcset="/static/img/sweep-close-430.avif 430w, /static/img/sweep-close-860.avif 860w"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/webp"
+              srcset="/static/img/sweep-close-430.webp 430w, /static/img/sweep-close-860.webp 860w"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/jpeg"
+              srcset="/static/img/sweep-close-430.jpg 430w, /static/img/sweep-close-860.jpg 860w"
+              sizes="100vw">
+      <source type="image/avif"
+              srcset="/static/img/sweep-wide-900.avif 900w, /static/img/sweep-wide-1400.avif 1400w, /static/img/sweep-wide-1672.avif 1672w"
+              sizes="100vw">
+      <source type="image/webp"
+              srcset="/static/img/sweep-wide-900.webp 900w, /static/img/sweep-wide-1400.webp 1400w, /static/img/sweep-wide-1672.webp 1672w"
+              sizes="100vw">
+      <img class="sbsw-img" src="/static/img/sweep-wide-1400.jpg"
+           srcset="/static/img/sweep-wide-900.jpg 900w, /static/img/sweep-wide-1400.jpg 1400w, /static/img/sweep-wide-1672.jpg 1672w"
+           sizes="100vw"
+           width="1672" height="555"
+           alt="Archive table covered with master tapes, hard drives, test pressings, notebooks and music-rights documents." loading="lazy" decoding="async">
+    </picture>
+  </figure>
+
+  <div class="sbsw-foot">
+    <ol class="sbsw-flow">
+      
+      <li class="sbsw-stage" data-stage="detect">
+        <span class="sbsw-num">01</span>
+        <span class="sbsw-stage-name">Detect</span>
+        <span class="sbsw-stage-detail">Scan the catalog for missing registrations, metadata conflicts, duplicate records and unexplained reporting gaps.</span>
+      </li>
+      
+      <li class="sbsw-stage" data-stage="match">
+        <span class="sbsw-num">02</span>
+        <span class="sbsw-stage-name">Match</span>
+        <span class="sbsw-stage-detail">Cross-reference recordings, compositions, contributors, identifiers, ownership information and royalty sources.</span>
+      </li>
+      
+      <li class="sbsw-stage" data-stage="verify">
+        <span class="sbsw-num">03</span>
+        <span class="sbsw-stage-name">Verify</span>
+        <span class="sbsw-stage-detail">Review evidence, confirm ownership and identify the information required before a case can move forward.</span>
+      </li>
+      
+      <li class="sbsw-stage" data-stage="claim">
+        <span class="sbsw-num">04</span>
+        <span class="sbsw-stage-name">Claim</span>
+        <span class="sbsw-stage-detail">Prepare and track the appropriate registration correction, inquiry or recovery case.</span>
+      </li>
+      
+      <li class="sbsw-stage" data-stage="track">
+        <span class="sbsw-num">05</span>
+        <span class="sbsw-stage-name">Track</span>
+        <span class="sbsw-stage-detail">Monitor progress, requests for information, resolutions and verified recovered income.</span>
+      </li>
+      
+    </ol>
+
+    <div class="sbsw-ctas">
+      <a class="sbsw-cta" href="/catalog-sweep">Run a Royalty Sweep
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+      </a>
+      <button type="button" class="sbsw-example-btn" id="sbsw-example-btn"
+              aria-expanded="false" aria-controls="sbsw-example">See how the sweep works</button>
+    </div>
+
+    <p class="sbsw-trust">
+      <span class="sbsw-trust-line">Your catalog. Your data. Your approval.</span>
+      <span class="sbsw-trust-copy">Royalty Sweep identifies potential gaps and organises recovery work. Every finding requires verification before submission.</span>
+      <a class="sbsw-method" href="/royalty-sweep">How Royalty Sweep works</a>
+    </p>
+
+    
+    <div class="sbsw-example" id="sbsw-example" hidden>
+      <p class="sbsw-example-head">
+        <span class="sbsw-example-tag">Example recovery opportunity</span>
+        <span class="sbsw-example-status">Needs Information</span>
+      </p>
+      <dl class="sbsw-example-fields">
+        
+        <dt>Opportunity</dt><dd>Possible missing songwriter registration</dd>
+        
+        <dt>Affected release</dt><dd>Example Single</dd>
+        
+        <dt>Source</dt><dd>Mechanical royalty coverage</dd>
+        
+        <dt>Confidence</dt><dd>Moderate</dd>
+        
+        <dt>Potential issue</dt><dd>Composition ownership appears incomplete across available records.</dd>
+        
+        <dt>Information needed</dt>
+        <dd>
+          <ul><li>Writer names</li><li>Ownership splits</li><li>IPI or CAE identifiers</li><li>Publishing administrator</li><li>Existing registration confirmation</li></ul>
+        </dd>
+        <dt>Recommended action</dt><dd>Complete the missing information before submitting a registration review.</dd>
+      </dl>
+      <p class="sbsw-example-note">An example of the shape a case takes. It is not an artist&#39;s case and it carries no figure: an estimated value range is only produced once there is something real to estimate from, and it still requires verification.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 10. GLOBAL DISTRIBUTION — how a release is prepared, validated and
+     handed to the distribution partner. Additive: nothing below moves. -->
+
+
+
+
+<section class="sbds" id="global-distribution" aria-labelledby="sbds-heading">
+  <header class="sbds-head">
+    <p class="sbds-eyebrow">
+      <span class="sbds-num">10</span>
+      <span class="sbds-rule" aria-hidden="true"></span>
+      Global Distribution
+    </p>
+    <h2 class="sbds-title" id="sbds-heading">
+      <span>Your music. Everywhere.</span><span>On your terms.</span>
+    </h2>
+    <p class="sbds-support">Prepare and deliver your release to supported platforms while keeping control of your masters, metadata, timing, territories and release information.</p>
+    <div class="sbds-ctas">
+      <a class="sbds-cta" href="/distribution">Distribute now
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+      </a>
+      <a class="sbds-guide" href="/distribution#guide">View distribution guide</a>
+    </div>
+    <p class="sbds-trust">Your masters. Your metadata. Your release plan.</p>
+  </header>
+
+  <figure class="sbds-photo">
+    <picture>
+      
+      <source media="(max-width: 767px)" type="image/avif"
+              srcset="/static/img/distro-close-480.avif 480w, /static/img/distro-close-740.avif 740w"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/webp"
+              srcset="/static/img/distro-close-480.webp 480w, /static/img/distro-close-740.webp 740w"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/jpeg"
+              srcset="/static/img/distro-close-480.jpg 480w, /static/img/distro-close-740.jpg 740w"
+              sizes="100vw">
+      <source type="image/avif"
+              srcset="/static/img/distro-wide-760.avif 760w, /static/img/distro-wide-1180.avif 1180w, /static/img/distro-wide-1402.avif 1402w"
+              sizes="100vw">
+      <source type="image/webp"
+              srcset="/static/img/distro-wide-760.webp 760w, /static/img/distro-wide-1180.webp 1180w, /static/img/distro-wide-1402.webp 1402w"
+              sizes="100vw">
+      <img class="sbds-img" src="/static/img/distro-wide-1180.jpg"
+           srcset="/static/img/distro-wide-760.jpg 760w, /static/img/distro-wide-1180.jpg 1180w, /static/img/distro-wide-1402.jpg 1402w"
+           sizes="100vw"
+           width="1402" height="462"
+           alt="Road cases and release materials arranged around a release passport, audio masters, stems drive, cables and release checklist." loading="lazy" decoding="async">
+    </picture>
+  </figure>
+
+  <div class="sbds-body">
+    
+    <p class="sbds-partner">Street Banker prepares and validates the release. Delivery to stores and streaming platforms goes out through SummitArts on Symphonic Distribution — the partnership on the services page.</p>
+
+    <ol class="sbds-caps">
+      
+      <li class="sbds-cap" data-cap="platform-delivery">
+        <span class="sbds-cap-num">01</span>
+        <span class="sbds-cap-name">Platform Delivery</span>
+        <span class="sbds-cap-detail">Prepare and deliver releases to supported streaming platforms and digital stores through the Street Banker distribution partnership.</span>
+      </li>
+      
+      <li class="sbds-cap" data-cap="ownership-control">
+        <span class="sbds-cap-num">02</span>
+        <span class="sbds-cap-name">Ownership Control</span>
+        <span class="sbds-cap-detail">Keep ownership and control of masters and catalog information according to your agreement and the Street Banker lane you are on.</span>
+      </li>
+      
+      <li class="sbds-cap" data-cap="release-control">
+        <span class="sbds-cap-num">03</span>
+        <span class="sbds-cap-name">Release Control</span>
+        <span class="sbds-cap-detail">Manage release dates, territories, versions, metadata, credits, artwork and delivery status from one release workspace.</span>
+      </li>
+      
+      <li class="sbds-cap" data-cap="reporting">
+        <span class="sbds-cap-num">04</span>
+        <span class="sbds-cap-name">Reporting</span>
+        <span class="sbds-cap-detail">Organise available performance reports, royalty statements, delivery updates and release activity in one place.</span>
+      </li>
+      
+      <li class="sbds-cap" data-cap="splits-and-credits">
+        <span class="sbds-cap-num">05</span>
+        <span class="sbds-cap-name">Splits and Credits</span>
+        <span class="sbds-cap-detail">Confirm contributors, ownership splits, identifiers, performer roles, publishing information and required release credits.</span>
+      </li>
+      
+    </ol>
+
+    <div class="sbds-flow">
+      <ol class="sbds-flow-row">
+        
+        <li>
+          <button type="button" class="sbds-stage" data-stage="prepare"
+                  aria-describedby="sbds-flow-detail">Prepare</button>
+        </li>
+        
+        <li>
+          <button type="button" class="sbds-stage" data-stage="validate"
+                  aria-describedby="sbds-flow-detail">Validate</button>
+        </li>
+        
+        <li>
+          <button type="button" class="sbds-stage" data-stage="deliver"
+                  aria-describedby="sbds-flow-detail">Deliver</button>
+        </li>
+        
+        <li>
+          <button type="button" class="sbds-stage" data-stage="monitor"
+                  aria-describedby="sbds-flow-detail">Monitor</button>
+        </li>
+        
+        <li>
+          <button type="button" class="sbds-stage" data-stage="maintain"
+                  aria-describedby="sbds-flow-detail">Maintain</button>
+        </li>
+        
+      </ol>
+      <p class="sbds-flow-detail" id="sbds-flow-detail" aria-live="polite">
+        <span class="sbds-flow-text">Add audio, artwork, metadata, contributors, ownership details, territories and release timing.</span>
+      </p>
+      
+      <dl class="sbds-flow-fallback">
+        <dt>Prepare</dt><dd>Add audio, artwork, metadata, contributors, ownership details, territories and release timing.</dd><dt>Validate</dt><dd>Check required fields, audio specifications, artwork dimensions, metadata consistency, rights confirmation and delivery readiness.</dd><dt>Deliver</dt><dd>Submit the approved package to the distribution partner for delivery to supported platforms.</dd><dt>Monitor</dt><dd>Track delivery status, platform availability, processing issues and available reporting.</dd><dt>Maintain</dt><dd>Manage corrections, updated metadata, new versions, territory changes, takedowns and catalog history.</dd>
+      </dl>
+    </div>
+
+    
+    <div class="sbds-check">
+      <div class="sbds-check-head">
+        <p class="sbds-check-tag">Example release checklist</p>
+        <p class="sbds-check-state">Setup Incomplete — nothing has been entered yet</p>
+      </div>
+      <div class="sbds-check-grid">
+        
+        <div class="sbds-check-group">
+          <p class="sbds-check-group-name">Audio</p>
+          <ul><li>Final audio master</li><li>Clean version, when needed</li><li>Instrumental, when needed</li></ul>
+        </div>
+        
+        <div class="sbds-check-group">
+          <p class="sbds-check-group-name">Artwork</p>
+          <ul><li>Cover artwork</li></ul>
+        </div>
+        
+        <div class="sbds-check-group">
+          <p class="sbds-check-group-name">Names and titles</p>
+          <ul><li>Artist and release names</li><li>Track titles</li><li>Featured artists</li></ul>
+        </div>
+        
+        <div class="sbds-check-group">
+          <p class="sbds-check-group-name">Credits</p>
+          <ul><li>Producer and contributor credits</li><li>Songwriter information</li><li>Publishing information</li></ul>
+        </div>
+        
+        <div class="sbds-check-group">
+          <p class="sbds-check-group-name">Rights</p>
+          <ul><li>Ownership splits</li><li>Copyright information</li><li>Rights confirmation</li></ul>
+        </div>
+        
+        <div class="sbds-check-group">
+          <p class="sbds-check-group-name">Identifiers</p>
+          <ul><li>ISRC information</li><li>UPC information</li></ul>
+        </div>
+        
+        <div class="sbds-check-group">
+          <p class="sbds-check-group-name">Release settings</p>
+          <ul><li>Explicit-content status</li><li>Release date</li><li>Territories</li></ul>
+        </div>
+        
+        <div class="sbds-check-group">
+          <p class="sbds-check-group-name">Extras</p>
+          <ul><li>Lyrics</li><li>Platform links or artist profiles</li><li>Final review</li></ul>
+        </div>
+        
+      </div>
+      <p class="sbds-check-note">
+        Readiness is completion, and nothing else: it counts required fields
+        that are filled in. It says nothing about how a release will perform.
+      </p>
+    </div>
+
+    <div class="sbds-final">
+      <div>
+        <p class="sbds-final-title">Ready to release?</p>
+        <p class="sbds-final-copy">Build the complete release package, check every requirement, and move toward delivery from one workspace.</p>
+      </div>
+      <a class="sbds-final-cta" href="/distribution">Start a release</a>
+    </div>
+  </div>
+</section>
+
+<!-- 11. METADATA PASSPORT + RIGHTS — one release in the middle of a floor
+     blueprint, seven connected records around it. Additive. -->
+
+
+
+
+<section class="sbmp" id="metadata-passport" aria-labelledby="sbmp-heading">
+  <header class="sbmp-head">
+    <p class="sbmp-eyebrow">
+      <span class="sbmp-num">11</span>
+      <span class="sbmp-rule" aria-hidden="true"></span>
+      Metadata Passport + Rights
+    </p>
+    <h2 class="sbmp-title" id="sbmp-heading">
+      <span>One release.</span><span>Every detail connected.</span>
+    </h2>
+    <p class="sbmp-support">Organise credits, splits, identifiers, ownership, agreements, assets, versions and release history in one living record.</p>
+    <div class="sbmp-ctas">
+      <a class="sbmp-cta" href="/metadata">Open Metadata Passport
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+      </a>
+      <button type="button" class="sbmp-connect-btn" id="sbmp-connect-btn"
+              aria-expanded="false" aria-controls="sbmp-connect">See how it connects</button>
+    </div>
+  </header>
+
+  <div class="sbmp-plan">
+    <figure class="sbmp-photo">
+      <picture>
+        
+        <source media="(max-width: 767px)" type="image/avif"
+                srcset="/static/img/passport-close-520.avif 520w, /static/img/passport-close-1037.avif 1037w"
+                sizes="100vw">
+        <source media="(max-width: 767px)" type="image/webp"
+                srcset="/static/img/passport-close-520.webp 520w, /static/img/passport-close-1037.webp 1037w"
+                sizes="100vw">
+        <source media="(max-width: 767px)" type="image/jpeg"
+                srcset="/static/img/passport-close-520.jpg 520w, /static/img/passport-close-1037.jpg 1037w"
+                sizes="100vw">
+        <source type="image/avif"
+                srcset="/static/img/passport-wide-900.avif 900w, /static/img/passport-wide-1300.avif 1300w, /static/img/passport-wide-1672.avif 1672w"
+                sizes="(min-width: 1700px) 1600px, 100vw">
+        <source type="image/webp"
+                srcset="/static/img/passport-wide-900.webp 900w, /static/img/passport-wide-1300.webp 1300w, /static/img/passport-wide-1672.webp 1672w"
+                sizes="(min-width: 1700px) 1600px, 100vw">
+        <img class="sbmp-img" src="/static/img/passport-wide-1300.jpg"
+             srcset="/static/img/passport-wide-900.jpg 900w, /static/img/passport-wide-1300.jpg 1300w, /static/img/passport-wide-1672.jpg 1672w"
+             sizes="(min-width: 1700px) 1600px, 100vw"
+             width="1672" height="941"
+             alt="One album release arranged at the centre of a floor blueprint connecting credits, ownership, identifiers, versions, agreements, assets and release history." loading="lazy" decoding="async">
+      </picture>
+
+      
+      <div class="sbmp-zones">
+        
+        <button type="button" class="sbmp-zone" data-category="credits"
+                aria-pressed="false"
+                style="--l: 15.0%; --t: 10.5%;
+                       --w: 21.5%;
+                       --h: 22.000000000000004%">
+          <span class="sbmp-zone-label">Credits</span>
+        </button>
+        
+        <button type="button" class="sbmp-zone" data-category="ownership"
+                aria-pressed="false"
+                style="--l: 11.799999999999999%; --t: 33.5%;
+                       --w: 21.700000000000003%;
+                       --h: 21.000000000000004%">
+          <span class="sbmp-zone-label">Ownership</span>
+        </button>
+        
+        <button type="button" class="sbmp-zone" data-category="identifiers"
+                aria-pressed="false"
+                style="--l: 5.800000000000001%; --t: 57.49999999999999%;
+                       --w: 25.4%;
+                       --h: 29.500000000000004%">
+          <span class="sbmp-zone-label">Identifiers</span>
+        </button>
+        
+        <button type="button" class="sbmp-zone" data-category="versions"
+                aria-pressed="false"
+                style="--l: 38.3%; --t: 58.5%;
+                       --w: 22.9%;
+                       --h: 31.500000000000007%">
+          <span class="sbmp-zone-label">Versions</span>
+        </button>
+        
+        <button type="button" class="sbmp-zone" data-category="agreements"
+                aria-pressed="false"
+                style="--l: 61.8%; --t: 10.5%;
+                       --w: 26.400000000000002%;
+                       --h: 22.000000000000004%">
+          <span class="sbmp-zone-label">Agreements</span>
+        </button>
+        
+        <button type="button" class="sbmp-zone" data-category="assets"
+                aria-pressed="false"
+                style="--l: 64.0%; --t: 33.5%;
+                       --w: 27.800000000000004%;
+                       --h: 22.500000000000004%">
+          <span class="sbmp-zone-label">Assets</span>
+        </button>
+        
+        <button type="button" class="sbmp-zone" data-category="release-history"
+                aria-pressed="false"
+                style="--l: 64.8%; --t: 57.49999999999999%;
+                       --w: 28.400000000000002%;
+                       --h: 28.700000000000003%">
+          <span class="sbmp-zone-label">Release History</span>
+        </button>
+        
+      </div>
+    </figure>
+
+    
+    <ol class="sbmp-cats">
+      
+      <li>
+        <button type="button" class="sbmp-cat" data-category="credits"
+                aria-pressed="false" aria-controls="sbmp-detail">
+          <span class="sbmp-cat-num">01</span>
+          <span class="sbmp-cat-label">Credits</span>
+          <span class="sbmp-cat-short">Record every contributor and role attached to the release.</span>
+        </button>
+      </li>
+      
+      <li>
+        <button type="button" class="sbmp-cat" data-category="ownership"
+                aria-pressed="false" aria-controls="sbmp-detail">
+          <span class="sbmp-cat-num">02</span>
+          <span class="sbmp-cat-label">Ownership</span>
+          <span class="sbmp-cat-short">Document who controls the recording and composition, and how ownership is divided.</span>
+        </button>
+      </li>
+      
+      <li>
+        <button type="button" class="sbmp-cat" data-category="identifiers"
+                aria-pressed="false" aria-controls="sbmp-detail">
+          <span class="sbmp-cat-num">03</span>
+          <span class="sbmp-cat-label">Identifiers</span>
+          <span class="sbmp-cat-short">Keep the identifiers that connect the release across platforms, organisations and payment systems.</span>
+        </button>
+      </li>
+      
+      <li>
+        <button type="button" class="sbmp-cat" data-category="versions"
+                aria-pressed="false" aria-controls="sbmp-detail">
+          <span class="sbmp-cat-num">04</span>
+          <span class="sbmp-cat-label">Versions</span>
+          <span class="sbmp-cat-short">Track every approved version of the recording.</span>
+        </button>
+      </li>
+      
+      <li>
+        <button type="button" class="sbmp-cat" data-category="agreements"
+                aria-pressed="false" aria-controls="sbmp-detail">
+          <span class="sbmp-cat-num">05</span>
+          <span class="sbmp-cat-label">Agreements</span>
+          <span class="sbmp-cat-short">Connect the documents that establish permissions, obligations and chain of title.</span>
+        </button>
+      </li>
+      
+      <li>
+        <button type="button" class="sbmp-cat" data-category="assets"
+                aria-pressed="false" aria-controls="sbmp-detail">
+          <span class="sbmp-cat-num">06</span>
+          <span class="sbmp-cat-label">Assets</span>
+          <span class="sbmp-cat-short">Organise the media and files connected to the release.</span>
+        </button>
+      </li>
+      
+      <li>
+        <button type="button" class="sbmp-cat" data-category="release-history"
+                aria-pressed="false" aria-controls="sbmp-detail">
+          <span class="sbmp-cat-num">07</span>
+          <span class="sbmp-cat-label">Release History</span>
+          <span class="sbmp-cat-short">Preserve the complete timeline of the release.</span>
+        </button>
+      </li>
+      
+    </ol>
+  </div>
+
+  <div class="sbmp-body">
+    
+    <div class="sbmp-detail" id="sbmp-detail">
+      <p class="sbmp-detail-tag">Example metadata passport</p>
+      
+      <article class="sbmp-panel" data-panel="credits"
+               >
+        <div class="sbmp-panel-head">
+          <h3 class="sbmp-panel-title"><span>01</span> Credits</h3>
+          <span class="sbmp-status sbmp-status--needs-review">Needs Review</span>
+        </div>
+        <dl class="sbmp-fields">
+          <dt>What is stored</dt>
+          <dd>Primary artist · Featured artist · Songwriters · Producers · Engineers · Musicians · Photographers · Designers · Additional contributors</dd>
+          <dt>Why it matters</dt>
+          <dd>Credits are how a person gets paid and how they get found. A contributor with no role attached is invisible to every system downstream.</dd>
+          <dt>Missing information</dt>
+          <dd>Two performers are listed without a role.</dd>
+          <dt>Recommended action</dt>
+          <dd>Assign a role to every contributor before the release is confirmed.</dd>
+        </dl>
+      </article>
+      
+      <article class="sbmp-panel" data-panel="ownership"
+               hidden>
+        <div class="sbmp-panel-head">
+          <h3 class="sbmp-panel-title"><span>02</span> Ownership</h3>
+          <span class="sbmp-status sbmp-status--conflicts-detected">Conflicts Detected</span>
+        </div>
+        <dl class="sbmp-fields">
+          <dt>What is stored</dt>
+          <dd>Master owner · Composition owners · Publishing shares · Administration · Territories · Ownership percentages · Effective dates</dd>
+          <dt>Why it matters</dt>
+          <dd>Splits that do not add up are the most common reason money sits uncollected. Ownership is also the first thing anybody reviewing the catalog asks for.</dd>
+          <dt>Missing information</dt>
+          <dd>Composition shares total 90%.</dd>
+          <dt>Recommended action</dt>
+          <dd>Reconcile the composition split with the writers named in Credits, then have it confirmed.</dd>
+        </dl>
+      </article>
+      
+      <article class="sbmp-panel" data-panel="identifiers"
+               hidden>
+        <div class="sbmp-panel-head">
+          <h3 class="sbmp-panel-title"><span>03</span> Identifiers</h3>
+          <span class="sbmp-status sbmp-status--needs-review">Needs Review</span>
+        </div>
+        <dl class="sbmp-fields">
+          <dt>What is stored</dt>
+          <dd>ISRC · UPC or EAN · ISWC · IPI or CAE · ISNI · Catalog number · Internal release ID</dd>
+          <dt>Why it matters</dt>
+          <dd>Identifiers connect the release to platforms, registrations, statements and royalty sources. Incorrect or missing identifiers fragment reporting.</dd>
+          <dt>Missing information</dt>
+          <dd>ISWC and two contributor IPI numbers have not been added.</dd>
+          <dt>Recommended action</dt>
+          <dd>Confirm the composition registration and complete contributor identifiers before final delivery.</dd>
+        </dl>
+      </article>
+      
+      <article class="sbmp-panel" data-panel="versions"
+               hidden>
+        <div class="sbmp-panel-head">
+          <h3 class="sbmp-panel-title"><span>04</span> Versions</h3>
+          <span class="sbmp-status sbmp-status--incomplete">Incomplete</span>
+        </div>
+        <dl class="sbmp-fields">
+          <dt>What is stored</dt>
+          <dd>Original · Clean · Explicit · Instrumental · Acapella · Radio edit · Extended · Live · Remix · Alternate master</dd>
+          <dt>Why it matters</dt>
+          <dd>Each version is its own recording with its own identifier. A version without a matching asset cannot be delivered, and a version delivered without its own ISRC splits the reporting.</dd>
+          <dt>Missing information</dt>
+          <dd>The clean version has no audio asset attached.</dd>
+          <dt>Recommended action</dt>
+          <dd>Attach the clean master or remove the version from the plan.</dd>
+        </dl>
+      </article>
+      
+      <article class="sbmp-panel" data-panel="agreements"
+               hidden>
+        <div class="sbmp-panel-head">
+          <h3 class="sbmp-panel-title"><span>05</span> Agreements</h3>
+          <span class="sbmp-status sbmp-status--incomplete">Incomplete</span>
+        </div>
+        <dl class="sbmp-fields">
+          <dt>What is stored</dt>
+          <dd>Split sheets · Producer agreements · Featured-artist agreements · Work-for-hire agreements · Master-use licences · Sample clearances · Publishing administration · Distribution agreements</dd>
+          <dt>Why it matters</dt>
+          <dd>An agreement is what turns a claim into a right. Without the paperwork behind a split, the split is an intention.</dd>
+          <dt>Missing information</dt>
+          <dd>The split sheet has not been signed by one writer.</dd>
+          <dt>Recommended action</dt>
+          <dd>Send the split sheet for the outstanding signature.</dd>
+        </dl>
+      </article>
+      
+      <article class="sbmp-panel" data-panel="assets"
+               hidden>
+        <div class="sbmp-panel-head">
+          <h3 class="sbmp-panel-title"><span>06</span> Assets</h3>
+          <span class="sbmp-status sbmp-status--ready-for-confirmation">Ready for Confirmation</span>
+        </div>
+        <dl class="sbmp-fields">
+          <dt>What is stored</dt>
+          <dd>Audio masters · Stems · Artwork · Artist photography · Lyrics · Videos · Canvas clips · Campaign files · Press materials · Supporting documents</dd>
+          <dt>Why it matters</dt>
+          <dd>The files are the release. Keeping them against the record rather than in a folder somewhere is what makes a re-issue, a sync request or a transfer possible years later.</dd>
+          <dt>Missing information</dt>
+          <dd>Nothing outstanding.</dd>
+          <dt>Recommended action</dt>
+          <dd>Confirm the master and artwork as final.</dd>
+        </dl>
+      </article>
+      
+      <article class="sbmp-panel" data-panel="release-history"
+               hidden>
+        <div class="sbmp-panel-head">
+          <h3 class="sbmp-panel-title"><span>07</span> Release History</h3>
+          <span class="sbmp-status sbmp-status--complete">Complete</span>
+        </div>
+        <dl class="sbmp-fields">
+          <dt>What is stored</dt>
+          <dd>Original release · Metadata updates · Artwork changes · New territories · Clean version added · Remix added · Deluxe version · Distribution transfer · Rights corrections · Catalog ownership updates</dd>
+          <dt>Why it matters</dt>
+          <dd>Catalog value is a paper trail. What changed, when and on whose authority is the difference between a catalog somebody can buy and one nobody can price.</dd>
+          <dt>Missing information</dt>
+          <dd>Nothing outstanding.</dd>
+          <dt>Recommended action</dt>
+          <dd>Keep recording changes as they happen.</dd>
+        </dl>
+      </article>
+      
+    </div>
+
+    
+    <div class="sbmp-connect" id="sbmp-connect" hidden>
+      <p class="sbmp-connect-trigger">A songwriter is added under Credits.</p>
+      <ul class="sbmp-connect-list">
+        
+        <li><span class="sbmp-connect-area">Ownership</span><span>The composition split has to be reopened and the new share agreed.</span></li>
+        
+        <li><span class="sbmp-connect-area">Identifiers</span><span>Their IPI or CAE number is needed, or the registration cannot name them.</span></li>
+        
+        <li><span class="sbmp-connect-area">Agreements</span><span>The split sheet has to be reissued and signed.</span></li>
+        
+        <li><span class="sbmp-connect-area">Versions</span><span>Every version of the recording inherits the change.</span></li>
+        
+        <li><span class="sbmp-connect-area">Release History</span><span>The correction is recorded, with the date and who made it.</span></li>
+        
+      </ul>
+      <p class="sbmp-connect-note">One entry, five consequences. That is why this is a record rather than a form.</p>
+    </div>
+
+    
+    <div class="sbmp-health">
+      <div class="sbmp-health-row">
+        <p class="sbmp-health-label">Metadata completeness</p>
+        <p class="sbmp-health-value"><span>29</span>%</p>
+      </div>
+      <div class="sbmp-health-bar" role="img"
+           aria-label="Metadata completeness on the example passport: 29 per cent.">
+        <span style="width: 29%"></span>
+      </div>
+      <ul class="sbmp-health-list">
+        
+        <li>
+          <span class="sbmp-health-name">Credits</span>
+          <span class="sbmp-status sbmp-status--needs-review">Needs Review</span>
+        </li>
+        
+        <li>
+          <span class="sbmp-health-name">Ownership</span>
+          <span class="sbmp-status sbmp-status--conflicts-detected">Conflicts Detected</span>
+        </li>
+        
+        <li>
+          <span class="sbmp-health-name">Identifiers</span>
+          <span class="sbmp-status sbmp-status--needs-review">Needs Review</span>
+        </li>
+        
+        <li>
+          <span class="sbmp-health-name">Versions</span>
+          <span class="sbmp-status sbmp-status--incomplete">Incomplete</span>
+        </li>
+        
+        <li>
+          <span class="sbmp-health-name">Agreements</span>
+          <span class="sbmp-status sbmp-status--incomplete">Incomplete</span>
+        </li>
+        
+        <li>
+          <span class="sbmp-health-name">Assets</span>
+          <span class="sbmp-status sbmp-status--ready-for-confirmation">Ready for Confirmation</span>
+        </li>
+        
+        <li>
+          <span class="sbmp-health-name">Release History</span>
+          <span class="sbmp-status sbmp-status--complete">Complete</span>
+        </li>
+        
+      </ul>
+      <p class="sbmp-health-note">Completeness counts the required fields that are filled in on this example. It is not a prediction, not a valuation and not a confirmation - a record is verified when a person has checked it.</p>
+    </div>
+
+    <p class="sbmp-trust">
+      <span class="sbmp-trust-line">Your credits. Your rights. Your record.</span>
+      <span class="sbmp-trust-copy">Street Banker organises the information. Artists and authorised collaborators control what is confirmed, shared or submitted.</span>
+      <a class="sbmp-trust-link" href="/metadata#used">How metadata is used</a>
+    </p>
+  </div>
+</section>
+
+<!-- 11.5 TRUST BAND — the promises made across the page, in one place. -->
+
+
+
+<section class="sbtb" id="artist-control" aria-labelledby="sbtb-heading">
+  <div class="sbtb-inner">
+    <h2 class="sbtb-title" id="sbtb-heading">Built for artist control.</h2>
+    <ul class="sbtb-cols">
+      
+      <li>
+        <p class="sbtb-col-title">You own the work</p>
+        <p class="sbtb-col-body">Your masters, catalog, creative assets and release information remain under your control according to your agreement.</p>
+      </li>
+      
+      <li>
+        <p class="sbtb-col-title">Your data stays yours</p>
+        <p class="sbtb-col-body">Artist data is not sold, and music or imagery is not used for AI training without explicit permission.</p>
+      </li>
+      
+      <li>
+        <p class="sbtb-col-title">AI explains its reasoning</p>
+        <p class="sbtb-col-body">Artist Twin recommendations show observations, confidence, missing inputs and recommended actions — not guaranteed outcomes.</p>
+      </li>
+      
+      <li>
+        <p class="sbtb-col-title">Royalty findings are verified</p>
+        <p class="sbtb-col-body">Royalty Sweep identifies potential gaps and organises recovery cases. Findings require evidence and verification before submission.</p>
+      </li>
+      
+    </ul>
+    <a class="sbtb-link" href="/artist-control">Read our artist control policy</a>
+  </div>
+</section>
+
+<!-- 12. CLOSING STATEMENT — the catalog as the asset. Last frame; nothing
+     after it but the footer. -->
+
+
+
+
+<section class="sbcl" id="closing" aria-labelledby="sbcl-heading">
+  <div class="sbcl-stage">
+    <picture class="sbcl-photo">
+      
+      <source media="(max-width: 767px)" type="image/avif"
+              srcset="/static/img/closing-close-520.avif 520w, /static/img/closing-close-1070.avif 1070w"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/webp"
+              srcset="/static/img/closing-close-520.webp 520w, /static/img/closing-close-1070.webp 1070w"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/jpeg"
+              srcset="/static/img/closing-close-520.jpg 520w, /static/img/closing-close-1070.jpg 1070w"
+              sizes="100vw">
+      <source type="image/avif"
+              srcset="/static/img/closing-wide-960.avif 960w, /static/img/closing-wide-1440.avif 1440w, /static/img/closing-wide-1672.avif 1672w"
+              sizes="100vw">
+      <source type="image/webp"
+              srcset="/static/img/closing-wide-960.webp 960w, /static/img/closing-wide-1440.webp 1440w, /static/img/closing-wide-1672.webp 1672w"
+              sizes="100vw">
+      <img class="sbcl-img" src="/static/img/closing-wide-1440.jpg"
+           srcset="/static/img/closing-wide-960.jpg 960w, /static/img/closing-wide-1440.jpg 1440w, /static/img/closing-wide-1672.jpg 1672w"
+           sizes="100vw"
+           width="1672" height="941"
+           alt="Worn touring road case inside an empty venue with records, tapes and hard drives creating a trail toward the stage." loading="lazy" decoding="async">
+    </picture>
+    <span class="sbcl-veil" aria-hidden="true"></span>
+
+    <div class="sbcl-inner">
+      <div class="sbcl-copy">
+        <p class="sbcl-eyebrow">Street Banker</p>
+        <h2 class="sbcl-title" id="sbcl-heading">
+          
+          <span>Your music is the <em>product.</em></span>
+          
+          <span>Your catalog is the <em>asset.</em></span>
+          
+        </h2>
+        <p class="sbcl-support">Street Banker helps artists build, protect, distribute, promote and grow the work from one connected system.</p>
+        <div class="sbcl-ctas">
+          <a class="sbcl-cta" href="/start">Build my Street Banker</a>
+          <a class="sbcl-cta-2" href="/product-tour">Explore the platform</a>
+        </div>
+        <p class="sbcl-trust">Your music. Your data. Your decisions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+  </main>
+
+  <!-- FOOTER. Dark, because the closing frame above it fades to the same
+       ink: a pale footer would put a hard line under the last photograph.
+       Five columns, every link public. -->
+  
+  <footer class="bg-[#080807] text-[#EEE8DC]">
+    <div class="mx-auto max-w-[1600px] px-5 py-14 sm:px-8 lg:px-14 lg:py-20">
+      <div class="grid gap-10 lg:grid-cols-[minmax(0,1.5fr)_repeat(5,minmax(0,1fr))] lg:gap-8">
+        <div>
+          <img src="/static/img/streetbanker-logo-light.svg" alt="STREET BANKER" width="920" height="250" class="h-8 w-auto">
+          <div class="mt-2 text-[9px] font-semibold uppercase tracking-[0.24em] text-[#A7A198]">The Artist Operating System</div>
+          <p class="mt-4 max-w-xs text-[12.5px] leading-relaxed text-[#A7A198]">One connected system to build, protect, distribute, promote and grow the work.</p>
+          
+          <div class="mt-5 flex gap-4 text-[11px] font-semibold text-[#A7A198]">
+            
+            <a href="https://instagram.com/summitartsgroup" target="_blank" rel="noopener" class="-my-2 inline-block py-3.5 transition-colors hover:text-[#C9A86A] sm:my-0 sm:py-0">Instagram</a>
+            
+          </div>
+          
+        </div>
+        
+        <div>
+          <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#C9A86A]">Platform</h2>
+          <ul class="mt-4 space-y-2.5">
+            
+            <li><a href="/product-tour" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Product tour</a></li>
+            
+            <li><a href="/artist-twin/start" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">AI Artist Twin</a></li>
+            
+            <li><a href="/creative-studio" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Creative Studio</a></li>
+            
+            <li><a href="/rollout" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Rollout Engine</a></li>
+            
+            <li><a href="/royalty-sweep" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Royalty Sweep</a></li>
+            
+            <li><a href="/distribution" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Global Distribution</a></li>
+            
+            <li><a href="/metadata" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Metadata Passport</a></li>
+            
+            <li><a href="/product-tour/smart-link" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Smart Links</a></li>
+            
+          </ul>
+        </div>
+        
+        <div>
+          <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#C9A86A]">Solutions</h2>
+          <ul class="mt-4 space-y-2.5">
+            
+            <li><a href="/start" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Start a plan</a></li>
+            
+            <li><a href="/lanes" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Find your lane</a></li>
+            
+            <li><a href="/catalog-sweep" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Free catalog sweep</a></li>
+            
+            <li><a href="/services" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">For labels</a></li>
+            
+          </ul>
+        </div>
+        
+        <div>
+          <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#C9A86A]">Trust</h2>
+          <ul class="mt-4 space-y-2.5">
+            
+            <li><a href="/artist-control" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Artist control policy</a></li>
+            
+            <li><a href="/ai" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">How we use AI</a></li>
+            
+            <li><a href="/privacy" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Privacy</a></li>
+            
+            <li><a href="/terms" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Terms</a></li>
+            
+          </ul>
+        </div>
+        
+        <div>
+          <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#C9A86A]">Company</h2>
+          <ul class="mt-4 space-y-2.5">
+            
+            <li><a href="/services" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">About</a></li>
+            
+            <li><a href="/submit" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Contact</a></li>
+            
+          </ul>
+        </div>
+        
+        <div>
+          <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#C9A86A]">Account</h2>
+          <ul class="mt-4 space-y-2.5">
+            
+            <li><a href="/signup" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Create an account</a></li>
+            
+            <li><a href="/login" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Log in</a></li>
+            
+            <li><a href="/forgot" class="-my-2 inline-block py-3.5 text-[12.5px] text-[#A7A198] transition-colors hover:text-[#EEE8DC] sm:my-0 sm:py-0">Reset password</a></li>
+            
+          </ul>
+        </div>
+        
+      </div>
+      <div class="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-[rgb(238_232_220_/_0.08)] pt-6 text-[11px] text-[#7E786F]">
+        <span>© 2026 Street Banker LLC. All rights reserved.</span>
+        <span>Your music. Your data. Your decisions.</span>
+      </div>
+    </div>
+  </footer>
+
+<script src="/static/js/artist-eq.js?v=8" defer></script>
+<script src="/static/js/departments.js?v=3" defer></script>
+<script src="/static/js/artist-twin.js?v=2" defer></script>
+<script src="/static/js/lanes.js?v=1" defer></script>
+<script src="/static/js/creative-studio.js?v=1" defer></script>
+<script src="/static/js/rollout.js?v=1" defer></script>
+<script src="/static/js/sweep.js?v=1" defer></script>
+<script src="/static/js/distribution.js?v=1" defer></script>
+<script src="/static/js/passport.js?v=1" defer></script>
+<script src="/static/js/closing.js?v=1" defer></script>
+</body>
+</html>

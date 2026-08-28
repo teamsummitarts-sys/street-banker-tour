@@ -1,0 +1,317 @@
+/* Operator Desk — the internal workspace.
+ *
+ * Same paper-and-ink language as the public light pages: off-white
+ * ground, near-black type, thin rules, amber only for status. Built as
+ * an operator tool: tables first, no decoration that costs scanning
+ * speed, and nothing that reads as a generic SaaS dashboard.
+ */
+
+.dk-body {
+  --dk-paper: var(--sb-paper);
+  --dk-panel: var(--sb-paper-panel);
+  --dk-ink: var(--sb-paper-ink);
+  --dk-muted: var(--sb-paper-ink-2);
+  --dk-faint: var(--sb-paper-ink-3);
+  --dk-rule: var(--sb-paper-line);
+  --dk-rule-soft: var(--sb-paper-line-soft);
+  --dk-gold: var(--sb-paper-gold);
+  --dk-amber: var(--sb-gold-deep);
+  --dk-warn-bg: var(--sb-warn-wash);
+  --dk-warn-edge: var(--sb-warn);
+  --dk-ok: var(--sb-good);
+
+  margin: 0;
+  min-height: 100vh;
+  background: var(--dk-paper);
+  color: var(--dk-ink);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dk-shell { display: flex; min-height: 100vh; }
+
+/* --- sidebar --------------------------------------------------------------- */
+.dk-side {
+  flex: 0 0 208px;
+  border-right: 1px solid var(--dk-rule);
+  padding: 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--dk-panel);
+}
+.dk-brand {
+  padding: 0 18px 16px;
+  border-bottom: 1px solid var(--dk-rule-soft);
+  margin-bottom: 10px;
+}
+.dk-brand-name {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.dk-brand-sub {
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--dk-gold);
+}
+.dk-nav {
+  display: block;
+  padding: 9px 18px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dk-muted);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+}
+.dk-nav:hover { color: var(--dk-ink); }
+.dk-nav.is-active {
+  color: var(--dk-ink);
+  border-left-color: var(--dk-gold);
+  background: rgb(20 18 16 / 0.04);
+}
+.dk-side-foot {
+  margin-top: auto;
+  padding: 14px 18px 0;
+  border-top: 1px solid var(--dk-rule-soft);
+  font-size: 12px;
+  color: var(--dk-faint);
+}
+.dk-side-foot strong { display: block; color: var(--dk-ink); font-size: 12px; }
+
+/* --- main ------------------------------------------------------------------ */
+.dk-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: clamp(20px, 3vw, 40px);
+}
+.dk-h1 { font-family: var(--sb-display); font-size: 28px; font-weight: 800; font-stretch: 112%; line-height: 1.1; text-transform: uppercase; letter-spacing: 0; margin: 0; margin: 0 0 4px; }
+.dk-sub { margin: 0 0 20px; font-size: 12.5px; color: var(--dk-faint); }
+.dk-h2 { font-family: var(--sb-mono); font-size: 12px; font-weight: 500; letter-spacing: 0.13em; text-transform: uppercase; margin: 28px 0 10px; color: var(--dk-gold); }
+
+/* --- cards ----------------------------------------------------------------- */
+.dk-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.dk-card {
+  border: 1px solid var(--dk-rule);
+  border-radius: var(--sb-r-control);
+  background: var(--dk-panel);
+  padding: 12px 14px;
+  text-decoration: none;
+  color: inherit;
+}
+.dk-card b { display: block; font-size: 22px; font-weight: 900; }
+.dk-card span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dk-muted);
+}
+a.dk-card:hover { border-color: var(--dk-ink); }
+
+.dk-quick { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.dk-quick a {
+  padding: 6px 12px;
+  border: 1px solid var(--dk-rule);
+  border-radius: var(--sb-r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dk-muted);
+  text-decoration: none;
+}
+.dk-quick a:hover, .dk-quick a.is-on { border-color: var(--dk-ink); color: var(--dk-ink); }
+
+/* --- tables ---------------------------------------------------------------- */
+.dk-table-wrap { overflow-x: auto; border: 1px solid var(--dk-rule); border-radius: var(--sb-r-control); background: var(--dk-panel); }
+.dk-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dk-table th {
+  text-align: left;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-muted);
+  border-bottom: 1px solid var(--dk-rule);
+  white-space: nowrap;
+}
+.dk-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--dk-rule-soft);
+  vertical-align: top;
+}
+.dk-table tr:last-child td { border-bottom: 0; }
+.dk-table a { color: inherit; font-weight: 700; text-decoration: none; }
+.dk-table a:hover { color: var(--dk-gold); }
+
+/* --- status chips ---------------------------------------------------------- */
+.dk-chip {
+  display: inline-block;
+  padding: 2px 9px 3px;
+  border: 1px solid var(--dk-rule);
+  border-radius: var(--sb-r-control);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--dk-muted);
+}
+.dk-chip--amber { color: var(--dk-amber); border-color: var(--dk-amber); }
+.dk-chip--ink { background: var(--dk-ink); border-color: var(--dk-ink); color: var(--dk-paper); }
+.dk-chip--ok { color: var(--dk-ok); border-color: var(--dk-ok); }
+.dk-chip--warn { color: var(--dk-warn-edge); border-color: var(--dk-warn-edge); }
+
+/* --- warnings -------------------------------------------------------------- */
+.dk-warnings { margin: 0; padding: 0; list-style: none; }
+.dk-warnings li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--dk-warn-edge);
+  background: var(--dk-warn-bg);
+  border-radius: 0 var(--sb-r-control) var(--sb-r-control) 0;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+}
+.dk-warnings a { font-weight: 700; color: inherit; }
+
+/* --- forms ----------------------------------------------------------------- */
+.dk-form { border: 1px solid var(--dk-rule); border-radius: var(--sb-r-control); background: var(--dk-panel); padding: 16px; }
+.dk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px 14px; }
+.dk-field span {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dk-muted);
+}
+.dk-field input, .dk-field select, .dk-field textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--dk-rule);
+  border-radius: var(--sb-r-control);
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  color: var(--dk-ink);
+  box-sizing: border-box;
+}
+.dk-field textarea { min-height: 74px; resize: vertical; }
+.dk-field input:focus-visible, .dk-field select:focus-visible,
+.dk-field textarea:focus-visible, .dk-btn:focus-visible {
+  outline: 2px solid var(--dk-gold);
+  outline-offset: 1px;
+}
+.dk-checks { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; }
+.dk-checks label { display: inline-flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--dk-muted); }
+
+.dk-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 18px;
+  border: 1px solid var(--dk-ink);
+  border-radius: var(--sb-r-control);
+  background: var(--dk-ink);
+  color: var(--dk-paper);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+}
+.dk-btn:hover { background: var(--sb-surface-3); }
+.dk-btn--ghost { background: none; color: var(--dk-ink); }
+.dk-btn--ghost:hover { background: rgb(20 18 16 / 0.06); }
+.dk-btn--danger { border-color: var(--dk-warn-edge); background: none; color: var(--dk-warn-edge); }
+.dk-inline { display: inline; }
+select.dk-mini {
+  padding: 5px 8px;
+  border: 1px solid var(--dk-rule);
+  border-radius: var(--sb-r-control);
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+}
+
+/* --- notes timeline --------------------------------------------------------- */
+.dk-notes { margin: 0; padding: 0; list-style: none; }
+.dk-note {
+  border: 1px solid var(--dk-rule-soft);
+  border-radius: var(--sb-r-control);
+  background: var(--dk-panel);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.dk-note.is-pinned { border-color: var(--dk-gold); }
+.dk-note-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; font-size: 12px; color: var(--dk-faint); }
+.dk-note-head b { color: var(--dk-ink); font-size: 12.5px; }
+.dk-note-body { margin: 8px 0 0; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; }
+.dk-note-meta { margin-top: 8px; font-size: 12px; color: var(--dk-muted); }
+.dk-mention { color: var(--dk-gold); font-weight: 700; }
+
+/* --- misc ------------------------------------------------------------------- */
+.dk-empty { padding: 18px; font-size: 13px; color: var(--dk-faint); }
+.dk-legal { margin-top: 10px; font-size: 12px; color: var(--dk-faint); max-width: 70ch; }
+.dk-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 14px; }
+.dk-bar form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.dk-search {
+  padding: 8px 12px;
+  border: 1px solid var(--dk-rule);
+  border-radius: var(--sb-r-control);
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  min-width: 210px;
+}
+.dk-kv { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px 22px; }
+.dk-kv dt { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dk-muted); }
+.dk-kv dd { margin: 1px 0 8px; font-size: 13px; overflow-wrap: anywhere; }
+
+/* --- denied ----------------------------------------------------------------- */
+.dk-denied {
+  max-width: 520px;
+  margin: 18vh auto 0;
+  padding: 0 24px;
+  text-align: center;
+}
+.dk-denied h1 { font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; }
+.dk-denied p { color: var(--dk-muted); font-size: 14px; line-height: 1.6; }
+
+/* --- phones ----------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .dk-shell { display: block; }
+  .dk-side {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0;
+    padding: 10px 8px;
+  }
+  .dk-brand { border: 0; margin: 0; padding: 8px 10px; width: 100%; }
+  .dk-nav { border-left: 0; padding: 8px 10px; }
+  .dk-nav.is-active { background: none; color: var(--dk-gold); }
+  .dk-side-foot { display: none; }
+}

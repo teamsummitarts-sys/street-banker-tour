@@ -1,0 +1,22 @@
+{# Press Desk shell: the app's own signed-in frame, plus this module's
+   stylesheet and its four tabs. Every press page extends this and fills
+   the `press` block. #}
+{% extends "base.html" %}
+{% block head_scripts %}
+  <link rel="stylesheet" href="/static/css/press-desk.css?v=2">
+{% endblock %}
+{% block content %}
+<div class="pd">
+
+  <div class="pd-bar" style="border-bottom:1px solid var(--pd-rule);padding-bottom:12px">
+    <a class="pd-btn {{ 'pd-btn--ghost' if tab != 'desk' }}" href="/press-desk">Desk</a>
+    <a class="pd-btn {{ 'pd-btn--ghost' if tab != 'contacts' }}" href="/press-desk/contacts">Media list</a>
+    <a class="pd-btn {{ 'pd-btn--ghost' if tab != 'releases' }}" href="/press-desk/announcements">Announcements</a>
+    <a class="pd-btn {{ 'pd-btn--ghost' if tab != 'coverage' }}" href="/press-desk/coverage">Coverage</a>
+    <span style="flex:1"></span>
+    <a class="pd-btn" href="/press-desk/pitch/new">Start a pitch</a>
+  </div>
+
+  {% block press %}{% endblock %}
+</div>
+{% endblock %}

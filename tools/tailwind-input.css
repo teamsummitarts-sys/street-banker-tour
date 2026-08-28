@@ -1,0 +1,886 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   STREET BANKER — DESIGN TOKENS v1  ·  22 Aug 2026
+   ------------------------------------------------------------
+   The CSS half of the token set. tools/tailwind.config.js holds
+   the same values as Tailwind theme keys; this file is what the
+   hand-written stylesheets in static/css/*.css read from.
+
+   Rules that do most of the work:
+     1. Gold is brand and primary action ONLY - never a status.
+        A gold pill cannot mean "warning" if gold is also Save.
+     2. One gold-filled element per view. If two things are gold,
+        neither is primary - demote one to outlined or ghost.
+     3. Machine values are mono with tabular figures. Prose is not.
+     4. 12px is the floor for anything a decision depends on.
+   ============================================================ */
+
+@layer base {
+  :root {
+    /* --- ground & surfaces: warm-biased neutrals, not cool grey --- */
+    --sb-ground: #0B0A08;
+    --sb-surface-1: #131110;
+    --sb-surface-2: #1A1714;
+    --sb-surface-3: #221D18;
+    --sb-line: #2A241C;
+    --sb-line-strong: #3A3226;
+
+    /* --- ink --- */
+    --sb-ink: #F2ECE0;
+    --sb-ink-2: #A99B84;
+    /* The spec draws ink-3 as #6E6350. Measured, that is 2.84:1 on
+       surface-3 and 3.36:1 on ground - it fails AA at the 12px label
+       size it is actually used for. #91836A is the smallest
+       hue-preserving lift that clears 4.5:1 on all four surfaces
+       (4.50 / 4.81 / 5.07 / 5.33). See tests/test_design_system.py,
+       which measures this rather than trusting it. */
+    --sb-ink-3: #91836A;
+
+    /* --- paper: the platform's one light surface -------------------
+       Signal and the Operator Desk are internal desks designed to read
+       as paper, not as console. That is a real surface the system has,
+       so it gets real tokens - before this they borrowed --sb-ink for a
+       background and --sb-surface-2 for text, which happens to look
+       right and says something false. Ink on paper is 15.6:1. */
+    --sb-paper: #F4F1EA;
+    --sb-paper-panel: #FBF9F4;
+    --sb-paper-ink: #141210;
+    --sb-paper-ink-2: #5A544A;
+    --sb-paper-ink-3: #6E6656;
+    --sb-paper-line: rgb(20 18 16 / .16);
+    --sb-paper-line-soft: rgb(20 18 16 / .08);
+    /* Gold on paper is the one place the brand colour has to be darkened
+       to stay readable. The desks shipped #8A6D1F, which measures 4.34:1
+       on paper - under AA, and it was under AA before this migration
+       too. #856A2E is the smallest hue-preserving darkening that clears
+       4.5:1 on both the sheet and a panel sitting on it. */
+    --sb-paper-gold: #856A2E;
+
+    /* --- brand gold: ONE ramp, brand + action only --- */
+    --sb-gold: #C9A24A;
+    --sb-gold-bright: #E8B950;
+    --sb-gold-deep: #8A6E30;
+    --sb-gold-wash: rgba(201, 162, 74, .12);
+    --sb-gold-line: rgba(201, 162, 74, .34);
+    --sb-on-gold: #14100A;
+
+    /* --- semantic: state only, never decoration, never the accent --- */
+    --sb-good: #79B473;
+    --sb-good-wash: rgba(121, 180, 115, .13);
+    --sb-good-line: rgba(121, 180, 115, .40);
+    --sb-warn: #E8843F;
+    --sb-warn-wash: rgba(232, 132, 63, .13);
+    --sb-warn-line: rgba(232, 132, 63, .40);
+    --sb-crit: #E05C4A;
+    --sb-crit-wash: rgba(224, 92, 74, .13);
+    --sb-crit-line: rgba(224, 92, 74, .40);
+    --sb-info: #7FA8E8;
+    --sb-info-wash: rgba(127, 168, 232, .13);
+    --sb-info-line: rgba(127, 168, 232, .40);
+
+    /* --- type --- */
+    --sb-display: 'Archivo', 'Helvetica Neue', Arial, system-ui, sans-serif;
+    --sb-text: 'Archivo', 'Helvetica Neue', Arial, system-ui, sans-serif;
+    --sb-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+
+    /* --- radius: two values, plus pill --- */
+    --sb-r-control: 6px;
+    --sb-r-panel: 10px;
+    --sb-r-pill: 999px;
+
+    /* --- space: 4px base --- */
+    --sb-s1: 4px;
+    --sb-s2: 8px;
+    --sb-s3: 12px;
+    --sb-s4: 16px;
+    --sb-s5: 24px;
+    --sb-s6: 32px;
+    --sb-s7: 48px;
+    --sb-s8: 64px;
+
+    /* --- elevation: borders + light, not drop shadows --- */
+    --sb-e1: inset 0 1px 0 rgba(255, 255, 255, .03);
+    --sb-e2: inset 0 1px 0 rgba(255, 255, 255, .045), 0 1px 2px rgba(0, 0, 0, .4);
+    --sb-e3: inset 0 1px 0 rgba(255, 255, 255, .06), 0 8px 24px -8px rgba(0, 0, 0, .65);
+    --sb-focus: 0 0 0 2px var(--sb-ground), 0 0 0 4px var(--sb-gold);
+
+    /* --- motion --- */
+    --sb-fast: 120ms cubic-bezier(.2, .6, .35, 1);
+    --sb-slow: 220ms cubic-bezier(.2, .6, .35, 1);
+    --sb-ease: cubic-bezier(.2, .6, .35, 1);
+  }
+
+  html {
+    background: var(--sb-ground);
+  }
+
+  body {
+    background: var(--sb-ground);
+    color: var(--sb-ink);
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Native select popups follow the OS light theme by default, which
+     makes light select text unreadable (white on white). Force dark. */
+  select {
+    color-scheme: dark;
+  }
+
+  select option,
+  select optgroup {
+    background-color: var(--sb-surface-2);
+    color: var(--sb-ink);
+  }
+
+  /* --- focus: non-negotiable, and platform-wide ------------------
+     A 2px gold ring offset by 2px of ground. Shaped like its control,
+     because a square outline on a round knob reads as a rendering
+     fault - hence the :where() so the Rack's own round rings win. */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: none;
+    box-shadow: var(--sb-focus);
+    border-radius: var(--sb-r-control);
+  }
+
+  /* Anything that opts out of the shared shape still gets the ring. */
+  .sb-focus-inherit:focus-visible {
+    border-radius: inherit;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ============================================================
+   COMPONENT LIBRARY
+   Every page composes from these. If a page needs a pattern that
+   is not here, add it here rather than styling it one-off.
+   ============================================================ */
+
+@layer components {
+
+  /* --- micro label: 12px mono, letterspaced, reads smaller than it
+         measures, which is how the 9px labels get retired ---------- */
+  .sb-label {
+    font-family: var(--sb-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--sb-ink-3);
+    line-height: 1.4;
+  }
+
+  .sb-label-gold {
+    color: var(--sb-gold);
+  }
+
+  /* --- machine values: timecode, DMX, ISRC, money, deltas, IDs ---- */
+  .sb-num {
+    font-family: var(--sb-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* --- headings ---------------------------------------------------- */
+  .sb-display {
+    font-family: var(--sb-display);
+    font-weight: 800;
+    font-stretch: 118%;
+    font-size: 40px;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: -.005em;
+    text-wrap: balance;
+  }
+
+  .sb-h1 {
+    font-family: var(--sb-display);
+    font-weight: 800;
+    font-stretch: 112%;
+    font-size: 28px;
+    line-height: 1.1;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  .sb-h2 {
+    font-family: var(--sb-display);
+    font-weight: 700;
+    font-stretch: 106%;
+    font-size: 22px;
+    line-height: 1.15;
+    text-transform: uppercase;
+    letter-spacing: .01em;
+  }
+
+  .sb-h3 {
+    font-weight: 600;
+    font-size: 17px;
+    line-height: 1.45;
+  }
+
+  /* --- eyebrow: section marker with a rule running off it --------- */
+  .sb-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: var(--sb-s3);
+    font-family: var(--sb-mono);
+    font-size: 12px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--sb-gold);
+  }
+
+  .sb-eyebrow::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--sb-line);
+  }
+
+  /* --- buttons ---------------------------------------------------- */
+  .sb-btn {
+    font-family: var(--sb-text);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 11px 16px;
+    border-radius: var(--sb-r-control);
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    transition: background var(--sb-fast), border-color var(--sb-fast), color var(--sb-fast);
+  }
+
+  .sb-btn-primary {
+    background: var(--sb-gold);
+    color: var(--sb-on-gold);
+    border-color: var(--sb-gold);
+  }
+
+  .sb-btn-primary:hover {
+    background: var(--sb-gold-bright);
+    border-color: var(--sb-gold-bright);
+  }
+
+  .sb-btn-secondary {
+    background: transparent;
+    color: var(--sb-ink);
+    border-color: var(--sb-line-strong);
+  }
+
+  .sb-btn-secondary:hover {
+    border-color: var(--sb-gold-line);
+    color: var(--sb-gold-bright);
+  }
+
+  .sb-btn-ghost {
+    background: transparent;
+    color: var(--sb-ink-2);
+    border-color: transparent;
+  }
+
+  .sb-btn-ghost:hover {
+    color: var(--sb-ink);
+    background: var(--sb-surface-2);
+  }
+
+  .sb-btn-danger {
+    background: transparent;
+    color: var(--sb-crit);
+    border-color: var(--sb-crit);
+  }
+
+  .sb-btn-danger:hover {
+    background: var(--sb-crit-wash);
+  }
+
+  .sb-btn-sm {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  /* A dead button with no explanation is a bug report waiting to be
+     filed; the macro forces a reason into the title attribute. */
+  .sb-btn[disabled],
+  .sb-btn[aria-disabled="true"] {
+    opacity: .45;
+    cursor: not-allowed;
+  }
+
+  .sb-btn kbd {
+    font-family: var(--sb-mono);
+    font-size: 11px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, .25);
+    border: 1px solid rgba(255, 255, 255, .11);
+  }
+
+  /* --- badges: dot AND colour, so state survives colour-blindness
+         and a greyscale print of the settlement sheet -------------- */
+  .sb-badge {
+    font-family: var(--sb-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: var(--sb-r-pill);
+    border: 1px solid;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .sb-badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+  }
+
+  .sb-badge-good {
+    color: var(--sb-good);
+    border-color: var(--sb-good-line);
+    background: var(--sb-good-wash);
+  }
+
+  .sb-badge-warn {
+    color: var(--sb-warn);
+    border-color: var(--sb-warn-line);
+    background: var(--sb-warn-wash);
+  }
+
+  .sb-badge-crit {
+    color: var(--sb-crit);
+    border-color: var(--sb-crit-line);
+    background: var(--sb-crit-wash);
+  }
+
+  .sb-badge-info {
+    color: var(--sb-info);
+    border-color: var(--sb-info-line);
+    background: var(--sb-info-wash);
+  }
+
+  .sb-badge-idle {
+    color: var(--sb-ink-3);
+    border-color: var(--sb-line-strong);
+    background: transparent;
+  }
+
+  /* --- KPI tile: a number with its scale, direction, trend and
+         target. "44 out of what, and is 17 good?" is a component
+         problem, so the component answers it. ---------------------- */
+  .sb-kpi {
+    background: var(--sb-surface-1);
+    border: 1px solid var(--sb-line);
+    border-radius: var(--sb-r-panel);
+    padding: var(--sb-s4);
+    display: block;
+    position: relative;
+    overflow: hidden;
+    transition: border-color var(--sb-fast), background var(--sb-fast);
+  }
+
+  a.sb-kpi:hover {
+    border-color: var(--sb-gold-line);
+    background: var(--sb-surface-2);
+  }
+
+  .sb-kpi .sb-label {
+    display: block;
+    margin-bottom: var(--sb-s3);
+  }
+
+  .sb-kpi-val {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+  }
+
+  .sb-kpi-num {
+    font-family: var(--sb-display);
+    font-weight: 700;
+    font-stretch: 106%;
+    font-size: 38px;
+    line-height: 1;
+    color: var(--sb-ink);
+    letter-spacing: -.01em;
+  }
+
+  .sb-kpi-scale {
+    font-family: var(--sb-mono);
+    font-size: 13px;
+    color: var(--sb-ink-3);
+  }
+
+  .sb-kpi-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sb-s3);
+    margin-top: var(--sb-s3);
+  }
+
+  .sb-kpi-delta {
+    font-family: var(--sb-mono);
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .sb-kpi-delta.up {
+    color: var(--sb-good);
+  }
+
+  .sb-kpi-delta.down {
+    color: var(--sb-crit);
+  }
+
+  .sb-kpi-delta.flat {
+    color: var(--sb-ink-3);
+  }
+
+  .sb-kpi-target {
+    font-size: 12px;
+    color: var(--sb-ink-3);
+  }
+
+  /* The empty state. No 0%, no implied failure - the first step is
+     the content. */
+  .sb-kpi-empty .sb-kpi-num {
+    color: var(--sb-ink-3);
+    font-size: 22px;
+    font-weight: 600;
+    font-stretch: 100%;
+  }
+
+  .sb-kpi-first {
+    font-size: 13px;
+    color: var(--sb-gold);
+    margin-top: var(--sb-s2);
+    display: inline-block;
+  }
+
+  /* --- priority card: the most important object in the platform.
+         Severity stripe encodes urgency structurally, so a screenful
+         is scannable without reading a word. ----------------------- */
+  .sb-prio {
+    background: linear-gradient(150deg, var(--sb-surface-2), var(--sb-surface-1) 62%);
+    border: 1px solid var(--sb-line-strong);
+    border-radius: var(--sb-r-panel);
+    padding: var(--sb-s5);
+    box-shadow: var(--sb-e2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sb-prio::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--sb-warn);
+  }
+
+  .sb-prio.crit::before {
+    background: var(--sb-crit);
+  }
+
+  .sb-prio.info::before {
+    background: var(--sb-info);
+  }
+
+  .sb-prio.good::before {
+    background: var(--sb-good);
+  }
+
+  .sb-prio-top {
+    display: flex;
+    align-items: center;
+    gap: var(--sb-s3);
+    flex-wrap: wrap;
+    margin-bottom: var(--sb-s3);
+  }
+
+  .sb-prio-title {
+    font-size: 19px;
+    font-weight: 600;
+    margin: 0 0 var(--sb-s2);
+    letter-spacing: -.005em;
+    color: var(--sb-ink);
+  }
+
+  .sb-prio-body {
+    color: var(--sb-ink-2);
+    margin: 0 0 var(--sb-s4);
+    max-width: 58ch;
+    font-size: 14.5px;
+  }
+
+  .sb-prio-impact {
+    font-family: var(--sb-mono);
+    font-size: 12px;
+    color: var(--sb-good);
+    background: var(--sb-good-wash);
+    border: 1px solid var(--sb-good-line);
+    padding: 4px 9px;
+    border-radius: var(--sb-r-pill);
+  }
+
+  .sb-prio-impact.crit {
+    color: var(--sb-crit);
+    background: var(--sb-crit-wash);
+    border-color: var(--sb-crit-line);
+  }
+
+  .sb-prio-impact.warn {
+    color: var(--sb-warn);
+    background: var(--sb-warn-wash);
+    border-color: var(--sb-warn-line);
+  }
+
+  .sb-prio-actions {
+    display: flex;
+    gap: var(--sb-s2);
+    flex-wrap: wrap;
+  }
+
+  /* --- module card ------------------------------------------------- */
+  .sb-mod {
+    background: var(--sb-surface-1);
+    border: 1px solid var(--sb-line);
+    border-radius: var(--sb-r-panel);
+    padding: var(--sb-s4);
+    display: block;
+    transition: border-color var(--sb-fast), transform var(--sb-fast);
+  }
+
+  a.sb-mod:hover {
+    border-color: var(--sb-gold-line);
+    transform: translateY(-1px);
+  }
+
+  .sb-mod-head {
+    display: flex;
+    align-items: center;
+    gap: var(--sb-s2);
+    margin-bottom: 6px;
+  }
+
+  .sb-mod-ic {
+    width: 26px;
+    height: 26px;
+    border-radius: var(--sb-r-control);
+    background: var(--sb-gold-wash);
+    border: 1px solid var(--sb-gold-line);
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+
+  .sb-mod-ic svg {
+    width: 14px;
+    height: 14px;
+    stroke: var(--sb-gold);
+    fill: none;
+    stroke-width: 1.7;
+  }
+
+  .sb-mod-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--sb-ink);
+  }
+
+  .sb-mod-note {
+    font-size: 13.5px;
+    color: var(--sb-ink-2);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* --- data table: mono tabular numerals right-aligned so money and
+         dates form true columns. Status is a badge, not a coloured
+         word. ------------------------------------------------------ */
+  .sb-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .sb-tbl th {
+    font-family: var(--sb-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--sb-ink-3);
+    text-align: left;
+    padding: 0 var(--sb-s3) var(--sb-s2);
+    border-bottom: 1px solid var(--sb-line);
+  }
+
+  .sb-tbl td {
+    padding: var(--sb-s3);
+    border-bottom: 1px solid var(--sb-line);
+    color: var(--sb-ink-2);
+  }
+
+  .sb-tbl tr:last-child td {
+    border-bottom: none;
+  }
+
+  .sb-tbl tbody tr {
+    transition: background var(--sb-fast);
+  }
+
+  .sb-tbl tbody tr:hover {
+    background: var(--sb-surface-2);
+  }
+
+  .sb-tbl .num,
+  .sb-tbl th.num {
+    font-family: var(--sb-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--sb-ink);
+    text-align: right;
+  }
+
+  .sb-tbl .primary {
+    color: var(--sb-ink);
+    font-weight: 500;
+  }
+
+  /* --- form field: a real label above. Placeholders are examples,
+         never the label - that pattern fails the moment somebody
+         types. ------------------------------------------------------ */
+  .sb-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .sb-input,
+  .sb-select,
+  .sb-textarea {
+    font-family: var(--sb-text);
+    font-size: 14.5px;
+    color: var(--sb-ink);
+    background: var(--sb-surface-2);
+    border: 1px solid var(--sb-line-strong);
+    border-radius: var(--sb-r-control);
+    padding: 11px 13px;
+    width: 100%;
+    transition: border-color var(--sb-fast);
+  }
+
+  .sb-input::placeholder,
+  .sb-textarea::placeholder {
+    color: var(--sb-ink-3);
+  }
+
+  .sb-input:hover,
+  .sb-select:hover,
+  .sb-textarea:hover {
+    border-color: var(--sb-gold-line);
+  }
+
+  .sb-hint {
+    font-size: 12.5px;
+    color: var(--sb-ink-3);
+  }
+
+  .sb-error {
+    font-size: 12.5px;
+    color: var(--sb-crit);
+  }
+
+  /* --- transport bar (the console pages) --------------------------- */
+  .sb-transport {
+    background: var(--sb-surface-1);
+    border: 1px solid var(--sb-gold-line);
+    border-radius: var(--sb-r-panel);
+    padding: var(--sb-s4);
+    display: flex;
+    align-items: center;
+    gap: var(--sb-s4);
+    flex-wrap: wrap;
+    box-shadow: var(--sb-e2);
+  }
+
+  .sb-tc {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /* The timecode is the loudest thing in the transport - it is the one
+     number a light operator reads mid-show. */
+  .sb-tc-num {
+    font-family: var(--sb-mono);
+    font-weight: 600;
+    font-size: 44px;
+    line-height: 1;
+    color: var(--sb-gold);
+    letter-spacing: .01em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sb-tc-lab {
+    font-family: var(--sb-mono);
+    font-size: 10.5px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--sb-ink-3);
+  }
+
+  /* --- cue row ------------------------------------------------------ */
+  .sb-cue {
+    display: grid;
+    grid-template-columns: 74px 26px 1fr auto;
+    gap: var(--sb-s3);
+    align-items: center;
+    padding: var(--sb-s3);
+    border: 1px solid var(--sb-line);
+    border-radius: var(--sb-r-control);
+    background: var(--sb-surface-2);
+    transition: border-color var(--sb-fast);
+  }
+
+  .sb-cue:hover {
+    border-color: var(--sb-gold-line);
+  }
+
+  .sb-cue-t {
+    font-family: var(--sb-mono);
+    font-size: 14px;
+    color: var(--sb-gold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sb-cue-sw {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, .18);
+  }
+
+  /* Blackout is dashed so it is distinguishable from a dark colour. */
+  .sb-cue-sw.blackout {
+    background: var(--sb-ground);
+    border-style: dashed;
+  }
+
+  .sb-cue-nm {
+    font-size: 14px;
+    color: var(--sb-ink);
+    display: block;
+  }
+
+  .sb-cue-meta {
+    font-family: var(--sb-mono);
+    font-size: 11.5px;
+    color: var(--sb-ink-3);
+    margin-top: 2px;
+    display: block;
+  }
+
+  /* --- icon nav rail ------------------------------------------------ */
+  .sb-rail {
+    background: var(--sb-surface-1);
+    border-right: 1px solid var(--sb-line);
+    padding: var(--sb-s3) 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .sb-rail-i {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--sb-r-control);
+    display: grid;
+    place-items: center;
+    color: var(--sb-ink-3);
+    border: none;
+    background: transparent;
+    transition: background var(--sb-fast), color var(--sb-fast);
+  }
+
+  .sb-rail-i svg {
+    width: 17px;
+    height: 17px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.7;
+  }
+
+  .sb-rail-i:hover {
+    background: var(--sb-surface-3);
+    color: var(--sb-ink);
+  }
+
+  .sb-rail-i.on {
+    background: var(--sb-gold-wash);
+    color: var(--sb-gold);
+    box-shadow: inset 2px 0 0 var(--sb-gold);
+  }
+
+  /* --- panels & rule boxes ------------------------------------------ */
+  .sb-panel {
+    background: var(--sb-surface-1);
+    border: 1px solid var(--sb-line);
+    border-radius: var(--sb-r-panel);
+    box-shadow: var(--sb-e1);
+  }
+
+  .sb-panel-raised {
+    background: var(--sb-surface-2);
+    border: 1px solid var(--sb-line-strong);
+    border-radius: var(--sb-r-panel);
+    box-shadow: var(--sb-e2);
+  }
+
+  .sb-overlay {
+    background: var(--sb-surface-2);
+    border: 1px solid var(--sb-line-strong);
+    border-radius: var(--sb-r-panel);
+    box-shadow: var(--sb-e3);
+  }
+
+  .sb-rulebox {
+    border-left: 3px solid var(--sb-gold);
+    background: var(--sb-surface-1);
+    padding: var(--sb-s4) var(--sb-s5);
+    border-radius: 0 var(--sb-r-panel) var(--sb-r-panel) 0;
+  }
+}

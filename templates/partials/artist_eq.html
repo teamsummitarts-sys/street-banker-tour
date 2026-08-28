@@ -1,0 +1,171 @@
+{# Section 3 — the Artist EQ.
+
+   Six strategic channels, a live output panel, and a signal trace drawn
+   from the six values. Everything that reads out, moves or responds is
+   markup and script; the room around it is a photograph with its centre
+   painted out, used as a frame and nothing else.
+
+   The controls are native range inputs — rotated upright with CSS on
+   desktop, left horizontal on phones. Keyboard, touch and screen-reader
+   support come with them rather than being reimplemented badly. #}
+
+{% set eq = artist_eq %}
+<section class="sbeq" id="artist-eq" aria-labelledby="sbeq-heading">
+  <picture class="sbeq-room" aria-hidden="true">
+    <source type="image/avif" srcset="/static/img/eq-room-900.avif 900w, /static/img/eq-room-1200.avif 1200w, /static/img/eq-room-1600.avif 1600w" sizes="100vw">
+    <source type="image/webp" srcset="/static/img/eq-room-900.webp 900w, /static/img/eq-room-1200.webp 1200w, /static/img/eq-room-1600.webp 1600w" sizes="100vw">
+    <img src="/static/img/eq-room-1200.jpg" alt="" loading="lazy" decoding="async"
+         width="1535" height="1024">
+  </picture>
+
+  <div class="sbeq-inner">
+    {# --- presets -------------------------------------------------------- #}
+    <div class="sbeq-presets-wrap">
+      <div class="sbeq-panel-label">Choose your focus preset</div>
+      <div class="sbeq-presets" role="group" aria-label="Focus presets">
+        {% for p in eq.presets %}
+        <button type="button" class="sbeq-preset" data-preset="{{ p.id }}"
+                aria-pressed="{{ 'true' if p.id == eq.default_preset else 'false' }}">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            {% for d in p.icon.split('|') if d %}<path d="{{ d }}"/>{% endfor %}
+          </svg>
+          {{ p.name }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="sbeq-console">
+      {# --- channels ---------------------------------------------------- #}
+      <div class="sbeq-channels-wrap">
+        <div class="sbeq-panel-label">Balance what matters</div>
+        <div class="sbeq-channels">
+          {% for ch in eq.channels %}
+          <div class="sbeq-channel" data-channel="{{ ch.key }}">
+            <span class="sbeq-ch-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4"
+                   stroke-linecap="round" stroke-linejoin="round">
+                {% for d in ch.icon.split('|') if d %}<path d="{{ d }}"/>{% endfor %}
+              </svg>
+            </span>
+            <span class="sbeq-ch-name" id="sbeq-name-{{ ch.key }}">{{ ch.short }}</span>
+            <span class="sbeq-lamp" aria-hidden="true"></span>
+
+            <div class="sbeq-fader">
+              <span class="sbeq-scale" aria-hidden="true"><i>10</i><i>5</i><i>0</i></span>
+              <input type="range" class="sbeq-range" id="sbeq-{{ ch.key }}"
+                     min="0" max="10" step="0.5"
+                     value="{{ eq.default_values[ch.key] }}"
+                     aria-labelledby="sbeq-name-{{ ch.key }}"
+                     aria-describedby="sbeq-desc-{{ ch.key }}"
+                     data-key="{{ ch.key }}">
+            </div>
+
+            <output class="sbeq-value" for="sbeq-{{ ch.key }}"
+                    id="sbeq-out-{{ ch.key }}">{{ "%.1f"|format(eq.default_values[ch.key]) }}</output>
+            <p class="sbeq-ch-desc" id="sbeq-desc-{{ ch.key }}">{{ ch.desc }}</p>
+          </div>
+          {% endfor %}
+        </div>
+
+        {# --- signal trace: a drawing of the six values, nothing else ---- #}
+        <div class="sbeq-trace">
+          <div class="sbeq-panel-label">System output</div>
+          {# The six values plotted straight, so the trace is drawn before
+             the script runs; the script redraws the same points smoothed. #}
+          {% set pts = [] %}
+          {% for ch in eq.channels %}
+            {%- set _ = pts.append("%.1f,%.1f"|format(24 + loop.index0 * 110.4,
+                                   80 - (eq.default_values[ch.key] / 10) * 64)) -%}
+          {% endfor %}
+          <svg id="sbeq-trace" viewBox="0 0 600 90" preserveAspectRatio="none"
+               role="img" aria-label="Signal trace across the six channel values.">
+            <polyline id="sbeq-trace-line" fill="none" stroke="#C9A24A"
+                      stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+                      points="{{ pts | join(' ') }}"/>
+            <g id="sbeq-trace-dots">
+              {% for p in pts %}<circle cx="{{ p.split(',')[0] }}" cy="{{ p.split(',')[1] }}" r="2.6" fill="#C9A24A"/>{% endfor %}
+            </g>
+          </svg>
+        </div>
+
+        {# Everything that used to sit above the console, and the note
+           that used to sit under the score, now fill the space the six
+           faders leave at the foot of this column. #}
+        <header class="sbeq-head">
+          <p class="sbeq-eyebrow">{{ eq.eyebrow }}</p>
+          <h2 class="sbeq-title" id="sbeq-heading">{{ eq.heading }}</h2>
+          <p class="sbeq-support">{{ eq.support }}</p>
+          <p class="sbeq-instruction">{{ eq.instruction }}</p>
+          <p class="sbeq-score-note">A weighted average of the six priorities you set. It describes your
+            focus, not your prospects — it predicts no hit, no signing and no recovered money.</p>
+        </header>
+
+        <div class="sbeq-ctas">
+          <a class="sbeq-cta" id="sbeq-cta" href="{{ eq.cta.href }}?{{ eq.default_query }}">{{ eq.cta.label }}</a>
+          <button type="button" class="sbeq-reset" id="sbeq-reset">{{ eq.reset_label }}</button>
+        </div>
+      </div>
+
+      {# --- output panel ------------------------------------------------- #}
+      <div class="sbeq-output" aria-live="polite">
+        <div class="sbeq-out-block">
+          <div class="sbeq-panel-label">System readiness</div>
+          <div class="sbeq-score-row">
+            <div>
+              <span class="sbeq-score" id="sbeq-score">{{ eq.default_plan.score }}</span><span class="sbeq-score-max">/100</span>
+              <p class="sbeq-band" id="sbeq-band">{{ eq.default_plan.band }}</p>
+            </div>
+            <svg class="sbeq-dial" viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="27" fill="none" stroke="#2A241C" stroke-width="5"/>
+              <circle id="sbeq-dial-arc" cx="32" cy="32" r="27" fill="none" stroke="#C9A24A"
+                      stroke-width="5" stroke-linecap="round" stroke-dasharray="169.6"
+                      stroke-dashoffset="{{ "%.1f"|format(169.6 * (1 - eq.default_plan.score / 100)) }}"
+                      transform="rotate(-90 32 32)"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="sbeq-out-block">
+          <div class="sbeq-panel-label">Recommended lane</div>
+          <a class="sbeq-lane" id="sbeq-lane" href="{{ eq.default_plan.lane.href }}">
+            <span class="sbeq-lane-name" id="sbeq-lane-name">{{ eq.default_plan.lane.name }}</span>
+            <span class="sbeq-lane-why" id="sbeq-lane-why">{{ eq.default_plan.lane.why }}</span>
+          </a>
+        </div>
+
+        {# Rendered from the same engine the script uses, so the panel is
+           already correct with JavaScript off and never flashes empty. #}
+        <div class="sbeq-out-block">
+          <div class="sbeq-panel-label">Recommended modules</div>
+          <ul class="sbeq-modules" id="sbeq-modules">
+            {% for m in eq.default_plan.modules %}
+            <li><a class="sbeq-module" href="{{ eq.cta.href }}?{{ eq.default_query }}#{{ m.slug }}">
+              <span class="sbeq-module-name">{{ m.name }}</span>
+              <span class="sbeq-module-note">{{ m.note }}</span>
+            </a></li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div class="sbeq-out-block">
+          <div class="sbeq-panel-label">Top 3 actions</div>
+          <ol class="sbeq-actions" id="sbeq-actions">
+            {% for a in eq.default_plan.actions %}
+            <li><a class="sbeq-action" href="{{ eq.cta.href }}?{{ eq.default_query }}#{{ a.slug }}-action">{{ a.label }}</a></li>
+            {% endfor %}
+          </ol>
+          <p class="sbeq-setup">Estimated setup time:
+            <strong id="sbeq-setup">{{ eq.default_plan.setup_time }}</strong>
+            <span class="sbeq-setup-note">(an estimate)</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# The same config the server used to render this markup, handed to the
+     browser so the live plan and the /plan page compute from one source. #}
+  <script type="application/json" id="sbeq-config">{{ artist_eq_json | js_json }}</script>
+</section>

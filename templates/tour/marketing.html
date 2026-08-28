@@ -1,0 +1,20 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Marketing - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Marketing Command</p><h1 class="to-h1" style="font-size:20px">Every market at a glance</h1><p class="to-sub">Announce, presale, on-sale and the local push, per show. Ticket counts are what you enter; no platform is connected. Use the Press Desk for outreach and Smart Links for the ticket link.</p></div>
+  <div class="to-inline"><a class="to-btn to-btn--ghost to-btn--small" href="/press-desk">Press Desk</a><a class="to-btn to-btn--ghost to-btn--small" href="/links">Smart links</a></div></div>
+{% if rows %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Date</th><th>Market</th><th>Tickets</th><th>Announce</th><th>Presale</th><th>On sale</th><th>Local push</th></tr></thead>
+  <tbody>
+  {% for r in rows %}{% set s = r['show'] %}{% set mk = r['mk'] %}
+  <tr><td data-k="Date">{{ s['date'] }}</td><td data-k="Market"><a href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}?tab=marketing">{{ s['city'] or s['venue'] }}</a></td>
+    <td data-k="Tickets">{% if r['progress'] %}{{ r['progress']['sold'] }} / {{ r['progress']['cap'] }} ({{ r['progress']['pct'] }}%){% elif s['ticket_url'] %}<a href="{{ s['ticket_url'] }}" target="_blank" rel="noopener">link</a>{% else %}<span class="to-muted">no link</span>{% endif %}{% if s['ticket_status'] %} · {{ s['ticket_status'] }}{% endif %}</td>
+    <td data-k="Announce">{{ mk['announce'] if 'announce' in mk and mk['announce'] else '—' }}</td><td data-k="Presale">{{ mk['presale'] if 'presale' in mk and mk['presale'] else '—' }}</td><td data-k="On sale">{{ mk['onsale'] if 'onsale' in mk and mk['onsale'] else '—' }}</td>
+    <td data-k="Push" class="to-muted">{% set ns = namespace(n=0) %}{% for k in ('promo_assets','local_press','radio','influencers','paid_ads','email_blast','sms','posts_scheduled','street_team') %}{% if k in mk and mk[k] %}{% set ns.n = ns.n + 1 %}{% endif %}{% endfor %}{{ ns.n }} of 9 channels noted</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}{{ m.empty("No shows yet", "Marketing is tracked per show.") }}{% endif %}
+{% endblock %}

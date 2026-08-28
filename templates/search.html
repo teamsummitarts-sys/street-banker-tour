@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Search - Royalty Sweep{% endblock %}
+
+{% set sr = search_results %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl space-y-5">
+  <div>
+    <h1 class="sb-h1">Search</h1>
+    <p class="mt-1 text-sm text-gray-300">
+      {% if sr.query %}{{ sr.total }} result{{ '' if sr.total == 1 else 's' }} for "{{ sr.query }}"{% else %}Search songs, sources, claims, and disputes.{% endif %}
+    </p>
+  </div>
+
+  <form action="/search" method="get">
+    <div class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 focus-within:border-amber-500/40">
+      <svg class="h-5 w-5 shrink-0 text-gray-300" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="9" r="5.5"/><path d="M17 17l-4-4"/></svg>
+      <input type="search" name="q" autofocus value="{{ sr.query }}" placeholder="Search everything…"
+             class="w-full bg-transparent text-sm text-gray-100 placeholder-gray-300 focus:outline-none">
+    </div>
+  </form>
+
+  {% for group in sr.groups %}
+  <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">{{ group.type }}</h2>
+    <div class="mt-3 space-y-1.5">
+      {% for item in group['items'] %}
+      <a href="{{ item.route }}" class="flex items-center gap-3 rounded-lg border border-white/5 bg-white/5 px-3 py-2.5 transition-colors hover:border-amber-500/30 hover:bg-white/10">
+        <span class="min-w-0 flex-1">
+          <span class="block truncate text-sm font-semibold text-gray-100">{{ item.label }}</span>
+          <span class="block truncate text-xs text-gray-300 font-medium">{{ item.sub }}</span>
+        </span>
+        <svg class="h-4 w-4 shrink-0 text-gray-300" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 5l5 5-5 5"/></svg>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+
+  {% if sr.query and sr.total == 0 %}
+  <div class="rounded-2xl border border-dashed border-white/10 py-10 text-center text-sm text-gray-300">No results for "{{ sr.query }}". Try a song title, source, or claim.</div>
+  {% endif %}
+</div>
+{% endblock %}

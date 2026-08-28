@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Variants · {{ c.title }} - Street Banker Links{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker Links · Variants</div>
+      <h1 class="sb-h1 mt-1">{{ c.title }}</h1>
+      <p class="mt-1 max-w-xl text-sm text-gray-300">One campaign, many trackable doors: give each promo channel — bio, ads, flyers, street team — its own URL and see exactly which one converts.</p>
+    </div>
+    <a href="/links/{{ c.id }}/edit" class="sb-btn sb-btn-secondary">← Campaign</a>
+  </div>
+
+  <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+    <h2 class="sb-label text-sb-gold-bright">New Variant</h2>
+    <form method="post" class="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
+      <input name="name" required placeholder="Name (e.g. Instagram bio)" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none">
+      <input name="utm_source" placeholder="utm_source (instagram)" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none">
+      <input name="utm_medium" placeholder="utm_medium (bio)" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none">
+      <button class="sb-btn sb-btn-secondary">Create</button>
+    </form>
+    <p class="mt-2 text-xs text-gray-300 font-medium">Common channels: Instagram bio, TikTok bio, YouTube description, email blast, QR flyer, street team, press outreach, paid ads.</p>
+  </section>
+
+  {% if variants | length >= 2 %}
+  {# Head-to-head: real CTR per variant; a leader is only called with enough data #}
+  {% set rows = [] %}
+  {% for v in variants %}
+    {% set st = vstats.get(v.id, {}) %}
+    {% set vv = st.get("page_view", 0) %}
+    {% if rows.append({"name": v.name, "visits": vv, "clicks": st.get("service_click", 0),
+                       "ctr": (100 * st.get("service_click", 0) / vv) if vv else 0}) %}{% endif %}
+  {% endfor %}
+  {% set best = rows | sort(attribute="ctr", reverse=true) | first %}
+  {% set enough = rows | selectattr("visits", ">=", 30) | list | length >= 2 %}
+  <section class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-5">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="sb-label text-sb-gold-bright">Head to Head</h2>
+      {% if enough and best.ctr %}
+      <span class="rounded-full border border-green-500/40 bg-green-500/10 px-3 py-1 text-xs font-black uppercase text-green-400">Leader: {{ best.name }} — {{ best.ctr | round(1) }}% CTR</span>
+      {% else %}
+      <span class="text-xs text-gray-300 font-medium">No winner called yet — each variant needs 30+ visits before the comparison means anything.</span>
+      {% endif %}
+    </div>
+    {% set peak = (rows | map(attribute="ctr") | max) or 1 %}
+    <div class="mt-3 space-y-2">
+      {% for r in rows %}
+      <div class="flex items-center gap-3">
+        <span class="w-36 shrink-0 truncate text-xs font-bold {{ 'text-green-400' if enough and r.name == best.name and r.ctr else 'text-gray-200' }}">{{ r.name }}</span>
+        <div class="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-black/40">
+          <span class="block h-full rounded-full {{ 'bg-green-500' if enough and r.name == best.name and r.ctr else 'bg-sb-gold-bright' }}" style="width: {{ (r.ctr / peak * 100) | round(1) if peak else 0 }}%;"></span>
+        </div>
+        <span class="w-28 shrink-0 text-right text-xs sb-num text-gray-300 font-medium">{{ r.ctr | round(1) }}% · {{ r.visits }} visits</span>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="mt-2 text-xs text-gray-300 font-medium">CTR = destination clicks ÷ page visits, straight from this campaign's own event log.</p>
+  </section>
+  {% endif %}
+
+  {% if variants %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">Active Variants</h2>
+    <div class="mt-3 space-y-3">
+      {% for v in variants %}
+      {% set st = vstats.get(v.id, {}) %}
+      <div class="rounded-xl border border-white/5 bg-white/5 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span class="text-sm font-bold text-gray-100">{{ v.name }}</span>
+            {% if v.utm_source %}<span class="ml-2 rounded bg-white/10 px-1.5 py-0.5 text-xs text-gray-300 font-medium">{{ v.utm_source }}{% if v.utm_medium %} / {{ v.utm_medium }}{% endif %}</span>{% endif %}
+          </div>
+          <div class="flex gap-4 text-xs sb-num text-gray-300 font-medium">
+            <span>{{ st.get("page_view", 0) }} visits</span>
+            <span>{{ st.get("service_click", 0) }} clicks</span>
+            <span class="text-sb-gold-bright">{{ st.get("email_capture", 0) + st.get("presave_notify", 0) }} fans</span>
+            <span>{{ st.get("qr_scan", 0) }} QR scans</span>
+          </div>
+        </div>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          <input readonly value="{{ request.url_root.rstrip('/') }}/l/{{ c.slug }}?v={{ v.slug }}{% if v.utm_source %}&utm_source={{ v.utm_source }}{% endif %}" class="variant-url w-full flex-1 rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-gray-200 focus:outline-none sm:w-auto font-medium">
+          <button type="button" class="copy-variant sb-btn sb-btn-secondary sb-btn-sm shrink-0">Copy</button>
+          <a href="/links/{{ c.id }}/qr.svg?v={{ v.slug }}" target="_blank" class="sb-btn sb-btn-secondary sb-btn-sm shrink-0">QR</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-white/10 py-8 text-center text-xs text-gray-300">No variants yet — create one per promo channel so every door is measured.</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll(".copy-variant").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const input = btn.parentElement.querySelector(".variant-url");
+      try { await navigator.clipboard.writeText(input.value); } catch (e) { input.select(); document.execCommand("copy"); }
+      btn.textContent = "Copied ✓";
+      setTimeout(() => { btn.textContent = "Copy"; }, 1500);
+    });
+  });
+</script>
+{% endblock %}

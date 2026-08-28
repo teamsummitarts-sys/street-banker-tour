@@ -1,0 +1,97 @@
+{# Distribution, explained before an account is asked for: who delivers,
+   what a release package needs, what each stage does, and what is and is
+   not connected. Every claim here was checked against the app and the
+   terms already published on the services page. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Distribution guide · Street Banker</title>
+  <meta name="description" content="What a release package needs, how a release is prepared and delivered, and which parts of distribution are handled by the partner.">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-3xl px-6 py-14 lg:px-10 lg:py-20">
+  <div class="sb-label text-sb-gold">Global Distribution</div>
+  <h1 class="mt-4 text-[clamp(1.9rem,5vw,2.9rem)] font-black uppercase leading-[1] tracking-tight text-sb-ink-2">
+    How a release gets out
+  </h1>
+  <p class="mt-5 max-w-xl text-base leading-relaxed text-sb-ink-2">
+    {{ partner.line }}
+  </p>
+
+  <h2 class="mt-11 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">The five stages</h2>
+  <ol class="mt-5 border-l border-[rgb(201_168_106_/_0.22)]">
+    {% for step, body in workflow %}
+    <li class="relative pb-5 pl-5">
+      <span class="absolute -left-[4px] top-[7px] h-[7px] w-[7px] rounded-full bg-sb-gold" aria-hidden="true"></span>
+      <span class="sb-label block text-sb-gold">{{ step }}</span>
+      <span class="mt-1 block max-w-xl text-sm leading-relaxed text-sb-ink-2">{{ body }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+
+  <h2 id="guide" class="mt-14 scroll-mt-28 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">What a release needs</h2>
+  <dl class="mt-5 space-y-6">
+    {% for title, body in guide %}
+    <div class="border-t border-white/[0.07] pt-4">
+      <dt class="text-base font-semibold text-sb-ink">{{ title }}</dt>
+      <dd class="mt-1.5 max-w-2xl text-sm leading-relaxed text-sb-ink-2">{{ body }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+
+  <h2 class="mt-14 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">The package, item by item</h2>
+  <p class="mt-3 max-w-2xl text-sm leading-relaxed text-sb-ink-2">
+    An example release checklist. Nothing here is ticked, because nothing has
+    been entered.
+  </p>
+  <div class="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-2">
+    {% for group, items in checklist %}
+    <div>
+      <p class="sb-label text-sb-ink">{{ group }}</p>
+      <ul class="mt-2">
+        {% for item in items %}
+        <li class="relative mt-1.5 pl-5 text-sm leading-relaxed text-sb-ink-2">
+          <span class="absolute left-0 top-[0.3em] h-[9px] w-[9px] rounded border border-[rgb(201_168_106_/_0.5)]" aria-hidden="true"></span>{{ item }}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2 class="mt-14 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">What is connected, and what is not</h2>
+  <ul class="mt-5">
+    {% for name, status in integrations %}
+    <li class="flex flex-wrap items-baseline justify-between gap-3 border-t border-white/[0.07] py-2.5">
+      <span class="text-sm text-sb-ink">{{ name }}</span>
+      <span class="text-xs uppercase tracking-[0.14em]
+                   {% if status == 'Supported' %}text-sb-gold{% else %}text-sb-ink-2{% endif %}">{{ status }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="mt-4 max-w-2xl text-sm leading-relaxed text-sb-ink-2">
+    Street Banker does not hold a direct connection to a streaming platform.
+    Delivery is the partner's, and reporting arrives on the partner's schedule.
+    Readiness in the app is completion of required fields — it is not a
+    prediction, and it is not a delivery confirmation.
+  </p>
+
+  <div class="mt-12 flex flex-wrap gap-3">
+    <a href="/signup" class="inline-flex min-h-[48px] items-center justify-center rounded-sm bg-sb-gold px-6 text-xs font-bold uppercase tracking-[0.14em] text-sb-surface-2 transition-colors hover:bg-sb-gold-bright">Create an account to build one</a>
+    <a href="/lanes#distribution" class="inline-flex min-h-[48px] items-center justify-center rounded-sm border border-[rgb(201_168_106_/_0.22)] px-6 text-xs font-bold uppercase tracking-[0.14em] text-sb-ink transition-colors hover:border-sb-gold hover:text-sb-gold">The Distribution lane</a>
+  </div>
+</main>
+
+<footer class="mx-auto max-w-3xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/#global-distribution" class="font-semibold hover:text-sb-ink">← Back to Street Banker</a>
+</footer>
+</body>
+</html>

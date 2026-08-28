@@ -1,0 +1,19 @@
+{% import "tour/_macros.html" as m %}
+<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/content/bulk">
+<div class="to-table-wrap"><table class="to-table">
+  <thead><tr><th>Shot / item</th><th>Assignee</th><th>Due</th><th>Status</th><th>File</th></tr></thead>
+  <tbody>
+  {% for c in content %}
+  <tr>
+    <td><b>{{ c['item']|replace('_',' ')|capitalize }}</b>{% if c['notes'] %}<div class="to-muted">{{ c['notes'] }}</div>{% endif %}</td>
+    <td><select name="assignee__{{ c['id'] }}" class="to-input" style="min-height:32px;padding:4px 6px;width:auto"><option value="">—</option>{% for p in people if p['category'] in ('Photographer','Videographer','Marketing','Management','Tour Management','Crew','Artist','Other') %}<option value="{{ p['name'] }}" {% if p['name'] == c['assignee'] %}selected{% endif %}>{{ p['name'] }}</option>{% endfor %}{% if c['assignee'] and c['assignee'] not in people|map(attribute='name')|list %}<option selected>{{ c['assignee'] }}</option>{% endif %}</select></td>
+    <td><input type="time" class="to-input" style="min-height:32px;padding:4px 6px;width:110px" name="due_time__{{ c['id'] }}" value="{{ c['due_time'] }}"></td>
+    <td><select name="status__{{ c['id'] }}" class="to-input" style="min-height:32px;padding:4px 6px;width:auto">{% for s in vocab['content_statuses'] %}<option value="{{ s }}" {% if s == c['status'] %}selected{% endif %}>{{ s|capitalize }}</option>{% endfor %}</select></td>
+    <td>{% if c['file_id'] %}<a href="/tours/{{ tour['id'] }}/files/{{ c['file_id'] }}/download">file</a>{% else %}<span class="to-muted">—</span>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<div class="to-bar"><button class="to-btn" type="submit">Save content plan</button> <a class="to-btn to-btn--ghost" href="/tours/{{ tour['id'] }}/content">All shows</a></div>
+</form>
+<p class="to-sub">Uploads attach per item from the tour Content page. Publishing to platforms is not connected; "published" is your record that it went out.</p>

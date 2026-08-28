@@ -1,0 +1,43 @@
+{% extends "tour/_shell.html" %}
+{% block title %}People - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">People</p><h1 class="to-h1" style="font-size:20px">Everyone on the run</h1><p class="to-sub">Artist, crew, drivers, venue and promoter contacts. Private phone numbers and emergency contacts need the people permission.</p></div>
+  <div class="to-inline">{% if can('people') %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/people.csv">CSV</a>{% endif %}{% if can('admin') %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/team">Access & invites</a>{% endif %}</div></div>
+
+<form method="get" class="to-bar" style="margin-top:0">
+  <input class="to-input" type="search" name="q" value="{{ q }}" placeholder="Name, role, company" style="width:200px;min-height:36px;padding:6px 10px">
+  <select name="category" class="to-input" style="width:auto;min-height:36px;padding:6px 10px"><option value="">All categories</option>{% for c in vocab['people_categories'] %}<option value="{{ c }}" {% if c == cat %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+  <button class="to-btn to-btn--ghost to-btn--small" type="submit">Filter</button>
+</form>
+
+{% if edit %}
+<h2 class="to-h2">Edit person</h2>
+{% include "tour/_person_form.html" %}
+{% endif %}
+
+{% if rows %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Name</th><th>Role</th><th>Category</th><th>Contact</th><th>Shows</th><th></th></tr></thead>
+  <tbody>
+  {% for p in rows %}
+  <tr>
+    <td data-k="Name"><b>{{ p['name'] }}</b>{% if p['company'] %}<div class="to-muted">{{ p['company'] }}</div>{% endif %}{% if p['linked_contact_id'] %}<span class="to-chip to-chip--info">press contact</span>{% endif %}{% for mm in members if mm['person_id'] == p['id'] %}<span class="to-chip to-chip--ok">app access</span>{% endfor %}</td>
+    <td data-k="Role">{{ p['role'] or '—' }}</td>
+    <td data-k="Category">{{ p['category'] }}</td>
+    <td data-k="Contact">{% if p['phone'] %}<a href="tel:{{ p['phone'] }}">{{ p['phone'] }}</a>{% if p['phone_private'] %} <span class="to-chip">private</span>{% endif %}{% endif %}{% if p['email'] %}<div><a href="mailto:{{ p['email'] }}">{{ p['email'] }}</a></div>{% endif %}{% if p['emergency'] %}<div class="to-muted">ICE: {{ p['emergency'] }}</div>{% endif %}</td>
+    <td data-k="Shows">{{ 'all' if not p['shows'] else p['shows']|length }}</td>
+    <td>{% if can('people') %}<a class="to-btn to-btn--ghost to-btn--small" href="?edit={{ p['id'] }}">Edit</a>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+  {{ m.empty("Nobody in the directory yet", "Add the touring party and the people at each venue. Invite the ones who need app access from the Team page.") }}
+{% endif %}
+
+{% if can('people') and not edit %}
+<h2 class="to-h2">Add a person</h2>
+{% with edit=None %}{% include "tour/_person_form.html" %}{% endwith %}
+{% endif %}
+{% endblock %}

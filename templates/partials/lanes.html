@@ -1,0 +1,92 @@
+{# Section 6 — three lanes, one system.
+
+   One photograph of one unit, and three coded overlays that light a
+   single channel. The unit's own labels are part of the object; every
+   word that has to be read, resized or spoken lives in the markup
+   below it.
+
+   Each lane is one control covering its channel and its summary, the
+   same way the departments strip works, so hovering the hardware and
+   hovering the words are the same gesture. #}
+
+{% set cfg = lanes %}
+{% set img = cfg.image %}
+<section class="sblane" id="lanes" aria-labelledby="sblane-heading">
+  <div class="sblane-inner"
+       style="--sblane-seam-1: {{ cfg.seams[0] }}; --sblane-seam-2: {{ cfg.seams[1] }}">
+    <header class="sblane-head">
+      <p class="sblane-eyebrow">{{ cfg.eyebrow }}</p>
+      <h2 class="sblane-title" id="sblane-heading">
+        {% for line in cfg.headline %}<span>{{ line }}</span>{% endfor %}
+      </h2>
+      <p class="sblane-support">{{ cfg.support }}</p>
+    </header>
+
+    {# The unit. On a phone this rail scrolls rather than shrinking the
+       hardware until its own engraving is unreadable. #}
+    <div class="sblane-rail">
+      <div class="sblane-unit">
+        <picture>
+          <source type="image/avif"
+                  srcset="{% for w in img.widths %}{{ img.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                  sizes="(min-width: 1024px) min(1560px, 92vw), 175vw">
+          <source type="image/webp"
+                  srcset="{% for w in img.widths %}{{ img.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                  sizes="(min-width: 1024px) min(1560px, 92vw), 175vw">
+          <img class="sblane-photo" src="{{ img.stem }}-1100.jpg"
+               srcset="{% for w in img.widths %}{{ img.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+               sizes="(min-width: 1024px) min(1560px, 92vw), 175vw"
+               width="{{ img.width }}" height="{{ img.height }}"
+               alt="{{ img.alt }}" loading="lazy" decoding="async">
+        </picture>
+        {# Decorative: the channel is named in its summary, once. #}
+        <div class="sblane-channels" aria-hidden="true">
+          {% for lane in cfg.lanes %}
+          <span class="sblane-channel" data-channel="{{ lane.slug }}"></span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <ol class="sblane-summaries">
+      {% for lane in cfg.lanes %}
+      <li class="sblane-summary" data-lane="{{ lane.slug }}">
+        <a class="sblane-link" href="{{ cfg.primary_cta.href }}#{{ lane.slug }}"
+           data-lane-link="{{ lane.slug }}">
+          <span class="sblane-num">{{ lane.num }}</span>
+          <span class="sblane-name">{{ lane.name }}</span>
+          <span class="sblane-subline">{{ lane.subline }}</span>
+          <span class="sblane-desc">{{ lane.description }}</span>
+          <span class="sblane-cta">{{ lane.cta }}
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+          </span>
+        </a>
+      </li>
+      {% endfor %}
+    </ol>
+
+    <div class="sblane-ctas">
+      <a class="sblane-primary" href="{{ cfg.primary_cta.href }}">{{ cfg.primary_cta.label }}</a>
+      <button type="button" class="sblane-secondary" id="sblane-compare"
+              aria-expanded="false" aria-controls="sblane-comparison">{{ cfg.secondary_cta.label }}</button>
+    </div>
+
+    {# The comparison stays on the page: three columns of what is actually
+       in each lane, opened by the button above. Hidden, not absent, so it
+       is still in the document for anyone reading without CSS. #}
+    <div class="sblane-comparison" id="sblane-comparison" hidden>
+      <div class="sblane-compare-grid">
+        {% for lane in cfg.lanes %}
+        <div class="sblane-compare-col" data-lane="{{ lane.slug }}">
+          <h3 class="sblane-compare-title"><span>{{ lane.num }}</span> {{ lane.name }}</h3>
+          <p class="sblane-compare-for">{{ lane.for_you_if }}</p>
+          <ul>
+            {% for item in lane.includes %}<li>{{ item }}</li>{% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>

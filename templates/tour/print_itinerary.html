@@ -1,0 +1,16 @@
+{% extends "tour/_public.html" %}
+{% block title %}Itinerary · {{ tour['name'] }}{% endblock %}
+{% block body %}
+<div class="to-paper">
+  <span class="tag">Itinerary · {{ tour['name'] }}</span>
+  <h2 style="font-size:20px">{{ tour['artist_name'] or '' }} {{ tour['start_date'] }} → {{ tour['end_date'] }}</h2>
+  {% for d in by_day %}
+  <h3 style="margin-top:16px;font-size:15px">{{ fmt_day(d['day']['date']) }} — {% if d['show'] %}{{ d['show']['city'] or '' }} · {{ d['show']['venue'] }}{% else %}{{ d['day']['title'] or d['day']['kind']|capitalize }}{% if d['day']['city'] %} · {{ d['day']['city'] }}{% endif %}{% endif %}</h3>
+  {% if d['travel'] %}{% for t in d['travel'] %}<div class="meta">{{ fmt_time(t['dep_time']) or '' }} {{ t['mode']|capitalize }} {{ t['carrier'] }} {{ t['number'] }} {{ t['dep_loc'] or t['pickup'] }} → {{ t['arr_loc'] or t['destination'] }}</div>{% endfor %}{% endif %}
+  {% if d['schedule'] %}<table><tbody>{% for r in d['schedule'] %}<tr><td style="width:80px"><b>{{ fmt_time(r['start_time']) or 'TBD' }}</b></td><td>{{ r['title'] }}</td><td class="meta">{{ r['location'] }}</td></tr>{% endfor %}</tbody></table>{% endif %}
+  {% if d['hotel'] %}<div class="meta">Hotel: {{ d['hotel']['property'] }}{% if d['hotel']['address'] %}, {{ d['hotel']['address'] }}{% endif %}</div>{% endif %}
+  {% if d['day']['notes'] %}<div class="meta">{{ d['day']['notes'] }}</div>{% endif %}
+  {% else %}<p class="meta">No days on the tour yet.</p>{% endfor %}
+</div>
+<div class="to-bar no-print"><button class="to-btn to-btn--ghost to-btn--small" onclick="window.print()">Print / Save as PDF</button></div>
+{% endblock %}

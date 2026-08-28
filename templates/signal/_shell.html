@@ -1,0 +1,61 @@
+{# Signal shell: left rail, main pane. Internal only - every page is reached
+   through signal_hub.require(), so by the time this renders the visitor holds
+   a seat. The rail shows only what the role can do; the routes enforce it
+   regardless.
+
+   Standalone rather than extending base.html, for the same reason the
+   Operator Desk is: this is an operator terminal, not a customer dashboard
+   page, and it must not inherit the marketing chrome. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include "_fonts.html" %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Signal{% endblock %} · Street Banker</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  <link rel="stylesheet" href="/static/css/signal.css?v=2">
+</head>
+<body class="sg-body">
+<div class="sg-shell">
+
+  <nav class="sg-side" aria-label="Street Banker Signal">
+    <div class="sg-brand">
+      <div class="sg-brand-name">Street Banker</div>
+      <div class="sg-brand-sub">Signal</div>
+    </div>
+    {% for href, label in nav_items %}
+      <a class="sg-nav{% if here == href or (href != '/signal' and here.startswith(href)) %} is-active{% endif %}" href="{{ href }}">
+        <span>{{ label }}</span>
+        {% if href == '/signal/alerts' and unread_alerts %}<span class="sg-nav-count">{{ unread_alerts }}</span>{% endif %}
+      </a>
+    {% endfor %}
+    <a class="sg-nav{% if here.startswith('/signal/ask') %} is-active{% endif %}" href="/signal/ask">Ask Signal</a>
+    {% if sg_can('provider_admin') %}
+      <a class="sg-nav{% if here.startswith('/signal/admin') %} is-active{% endif %}" href="/signal/admin/data-sources">Data sources</a>
+    {% endif %}
+    <a class="sg-nav{% if here.startswith('/signal/team') %} is-active{% endif %}" href="/signal/team">Team</a>
+    <a class="sg-nav" href="/operator-desk/">Operator Desk →</a>
+
+    <div class="sg-side-foot">
+      {% if me %}<div><b>{{ me['name'] }}</b> · {{ me['role'] }}</div>{% endif %}
+      <div style="margin-top:6px">Scores v{{ score_version }}</div>
+      <div style="margin-top:6px">Signal ranks and explains. It does not sign, offer, or contact anyone.</div>
+    </div>
+  </nav>
+
+  <main class="sg-main">
+    {% if demo_mode %}
+      <div class="sg-banner" role="status">
+        <b>Demo data.</b> No music-data provider is connected, so every artist, company and
+        contact on these screens is fictional and generated locally. Nothing here refers to a
+        real person or business. Connect a provider under Data sources to work with live data.
+      </div>
+    {% endif %}
+    {% block main %}{% endblock %}
+  </main>
+
+</div>
+</body>
+</html>

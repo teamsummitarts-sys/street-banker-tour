@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Royalty Lanes - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1100px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Royalty Sweep · Artist OS</div>
+    <h1 class="sb-h1 mt-1">Royalty Lanes</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Nine ways every song earns. <span class="text-gray-200">Claimed</span> means income for that lane appears in your uploaded statements; <span class="text-gray-200">missing</span> means nothing is set up. Estimates are sized from your own catalog's earnings — never invented.</p>
+  </div>
+
+  <div class="grid grid-cols-3 gap-3">
+    <div class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-4">
+      <div class="sb-label text-gray-300">Lanes Claimed</div>
+      <div class="mt-1 text-2xl font-black tabular-nums text-sb-ink">{{ claimed }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Est. Missing</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ ('$' + '%.2f' % missing_est) if missing_est else '—' }}</div>
+      <div class="text-xs text-gray-300 font-medium">{{ 'from your own statements' if missing_est else 'no statement basis yet' }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Statement Rows</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ ctx.statement_rows }}</div>
+    </div>
+  </div>
+
+  {% if rows %}
+  <section class="overflow-x-auto rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <table class="w-full min-w-[860px] text-left">
+      <thead>
+        <tr class="text-xs font-bold uppercase tracking-wide text-gray-300">
+          <th class="pb-2 pr-3">Track</th>
+          {% for key, label in lanes %}<th class="pb-2 pr-2">{{ label.split(' /')[0].split(' (')[0] }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-white/5">
+        {% for r in rows %}
+        <tr>
+          <td class="py-2.5 pr-3"><a href="/tracks/{{ r.t.id }}" class="text-sm font-bold hover:text-sb-gold-bright">{{ r.t.title }}</a></td>
+          {% for lane in r.lanes %}
+          <td class="py-2.5 pr-2">
+            <span class="inline-block rounded px-1.5 py-0.5 text-xs font-bold uppercase {{ 'bg-green-500/15 text-green-400' if lane.state == 'claimed' else 'bg-sb-gold/15 text-sb-gold-bright' if lane.state == 'connected' else 'bg-blue-500/15 text-blue-300' if lane.state == 'in review' else 'bg-white/5 text-gray-300' if lane.state == 'not eligible' else 'bg-amber-500/15 text-amber-400' }}"
+                  {% if lane.estimate %}title="~${{ '%.2f' % lane.estimate }} — {{ lane.estimate_basis }}"{% endif %}>{{ lane.state }}</span>
+            {% if lane.estimate %}<div class="mt-0.5 text-xs sb-num text-sb-ink/70 font-medium">~${{ '%.2f' % lane.estimate }}</div>{% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <p class="px-1 text-xs text-gray-300 font-medium">Fix a lane from the track's passport — <a href="/money-queue" class="font-bold text-sb-gold-bright hover:underline">the Money Queue</a> puts every gap in priority order.</p>
+  {% else %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-8 text-center">
+    <p class="text-sm text-gray-300">No tracks in the OS spine yet. <a href="/tracks" class="font-bold text-sb-gold-bright hover:underline">Add your songs in Track Passports</a> and every lane computes from your passports and statements.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% import "tour/_macros.html" as m %}
+<div class="to-cards" style="margin-bottom:12px">
+  <div class="to-card is-warm"><b>{{ vip['sold'] }}</b><span>Packages sold</span></div>
+  <div class="to-card"><b>{{ vip['checked_in'] }}</b><span>Checked in</span></div>
+  <div class="to-card"><b>{{ vip['no_show'] }}</b><span>No-shows</span></div>
+  <div class="to-card"><b>{{ vip['unfulfilled'] }}</b><span>Merch unfulfilled</span></div>
+  {% if can('financials') %}<div class="to-card"><b>{{ '%.0f'|format(vip['gross']) }}</b><span>VIP gross</span><small>from entered prices</small></div>{% endif %}
+</div>
+
+{% if vip_rows %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Time</th><th>Package</th><th>Guest</th><th>Includes</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for v in vip_rows %}
+  <tr>
+    <td data-k="Time">{{ fmt_time(v['schedule_time']) or '—' }}</td>
+    <td data-k="Package"><b>{{ v['package'] }}</b> × {{ v['quantity'] }}{% if v['credentials'] %}<div class="to-muted">{{ v['credentials'] }}</div>{% endif %}</td>
+    <td data-k="Guest">{{ v['guest'] or v['purchaser'] or '—' }}{% if v['purchaser'] and v['guest'] %}<div class="to-muted">bought by {{ v['purchaser'] }}</div>{% endif %}</td>
+    <td data-k="Includes">{% if v['meet_greet'] %}M&amp;G {% endif %}{% if v['early_entry'] %}early entry {% endif %}{% if v['merch'] %}merch{% if v['fulfilled'] %} ✓{% endif %} {% endif %}{% if v['photo'] %}photo{% endif %}</td>
+    <td data-k="Status">{{ m.chip(v['status']) }}</td>
+    <td><div class="to-inline">
+      <form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/vip/{{ v['id'] }}" class="to-inline">
+        {% if v['status'] == 'sold' %}<button class="to-btn to-btn--small" type="submit" name="status" value="checked_in">Check in</button><button class="to-btn to-btn--ghost to-btn--small" type="submit" name="status" value="no_show">No show</button>{% else %}<button class="to-btn to-btn--ghost to-btn--small" type="submit" name="status" value="sold">Undo</button>{% endif %}
+      </form>
+      {# Its own form: the fulfilled inputs must not ride along with a check-in. #}
+      {% if v['merch'] and not v['fulfilled'] %}<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/vip/{{ v['id'] }}" class="to-inline"><input type="hidden" name="fulfilled_flag" value="1"><input type="hidden" name="fulfilled" value="1"><button class="to-btn to-btn--ghost to-btn--small" type="submit" name="status" value="{{ v['status'] }}">Merch given</button></form>{% endif %}
+    </div></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+  {{ m.empty("No VIP packages for this show", "Add the packages sold, with times and what each includes; check people in on the night. Ticketing platforms are not connected — these are your records.") }}
+{% endif %}
+
+<h2 class="to-h2">Add a VIP package</h2>
+<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/vip/add" class="to-form">
+  <div class="to-grid">
+    {{ m.field('package', 'Package', required=True, placeholder='Soundcheck party') }}
+    {{ m.field('price', 'Price', placeholder='150') }}
+    {{ m.field('quantity', 'Quantity', '1', type='number') }}
+    {{ m.field('purchaser', 'Purchaser') }}
+    {{ m.field('guest', 'Guest name') }}
+    {{ m.field('email', 'Email', type='email') }}
+    {{ m.field('schedule_time', 'Time', type='time') }}
+    {{ m.field('credentials', 'Credential') }}
+    {{ m.textarea('notes', 'Notes', rows=2) }}
+    <div class="to-checks to-wide">{{ m.check('meet_greet', 'Meet & greet') }} {{ m.check('early_entry', 'Early entry') }} {{ m.check('merch', 'Merch item') }} {{ m.check('photo', 'Photo') }}</div>
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Add</button></div>
+</form>

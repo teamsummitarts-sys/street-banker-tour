@@ -1,0 +1,1 @@
+Drop the ten mode images here: hero-<mode>.png / banner-<mode>.png where mode is release, growth, recovery, partnership, full-stack. Missing files fall back to the current homepage imagery automatically.

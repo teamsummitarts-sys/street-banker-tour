@@ -1,0 +1,34 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Settings - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Settings</p><h1 class="to-h1" style="font-size:20px">{{ tour['name'] }}</h1></div></div>
+<form method="post" action="/tours/{{ tour['id'] }}/settings" class="to-form">
+  <div class="to-grid">
+    {{ m.field('name', 'Tour name', tour['name'], required=True) }}
+    {{ m.field('artist_name', 'Artist', tour['artist_name']) }}
+    {{ m.select('status', 'Status', vocab['tour_statuses'], tour['status']) }}
+    {{ m.field('start_date', 'First date', tour['start_date'], type='date') }}
+    {{ m.field('end_date', 'Last date', tour['end_date'], type='date') }}
+    {{ m.field('home_tz', 'Home timezone', tour['home_tz']) }}
+    {{ m.field('currency', 'Currency', tour['currency']) }}
+    {{ m.textarea('notes', 'Notes', tour['notes'], rows=3) }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Save</button></div>
+</form>
+
+<h2 class="to-h2">Data</h2>
+<p class="to-sub">Everything on this tour belongs to the account that owns it. Export it any time from <a href="/tours/{{ tour['id'] }}/exports">Exports</a>. Fan captures recorded at shows: {{ fan_capture['records'] }} ({{ fan_capture['consented'] }} with consent) — capture forms are an architecture here, not a live kiosk; records come from imports or the API.</p>
+{% if imports %}<p class="to-sub">{{ imports|length }} import{{ '' if imports|length == 1 else 's' }} on record — see <a href="/tours/{{ tour['id'] }}/import">Import</a>.</p>{% endif %}
+
+{% if viewer['is_owner'] %}
+<details style="margin-top:18px"><summary class="to-muted" style="cursor:pointer">Delete this tour</summary>
+  <form method="post" action="/tours/{{ tour['id'] }}/settings" class="to-form" style="margin-top:8px">
+    <input type="hidden" name="action" value="delete">
+    {{ m.field('confirm', 'Type the tour name to confirm', placeholder=tour['name']) }}
+    <p class="to-sub">Removes the tour and everything on it — schedule, travel, hotels, people, guests, files, money. The shows themselves stay in your Tour Hub, detached.</p>
+    <div class="to-bar" style="margin-bottom:0"><button class="to-btn to-btn--ghost to-btn--danger" type="submit">Delete tour</button></div>
+  </form>
+</details>
+{% endif %}
+{% endblock %}

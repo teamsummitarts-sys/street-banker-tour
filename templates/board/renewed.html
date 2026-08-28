@@ -1,0 +1,27 @@
+{# Standalone: reached from the renew email, often signed out, so it must
+   not depend on the signed-in shell. #}
+<!doctype html>
+<html lang="en">
+<head>
+  {% include "_fonts.html" %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{ 'Listing renewed' if ok else 'Renew link expired' }} - Street Banker</title>
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  <link rel="stylesheet" href="/static/css/board.css?v=2">
+  <style>body { margin: 0; padding: 28px 16px; background: var(--sb-ground); color: var(--sb-ink); font: 15px/1.6 var(--sb-text); }</style>
+</head>
+<body>
+<div class="tb" style="max-width:640px">
+  <p class="tb-eyebrow">Street Banker · Team-Up Board</p>
+  {% if ok %}
+  <h1 class="tb-h1" style="font-size:18px">Renewed</h1>
+  <p class="tb-lede">Your listing is back on the board for another 60 days. <a href="/tour-board/{{ listing_id }}">Open it</a> (sign in if asked).</p>
+  {% else %}
+  <h1 class="tb-h1" style="font-size:18px">That renew link is no longer valid</h1>
+  <p class="tb-lede">It was already used or the listing was removed. <a href="/tour-board">Open the board</a> to renew from your listings.</p>
+  {% endif %}
+</div>
+</body>
+</html>

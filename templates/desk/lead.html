@@ -1,0 +1,261 @@
+{% set nav = 'leads' %}
+{% extends "desk/layout.html" %}
+{% block title %}{{ lead.artist_name }}{% endblock %}
+{% block main %}
+<h1 class="dk-h1">{{ lead.artist_name }}</h1>
+<p class="dk-sub">
+  {{ lead.role or '—' }}{{ ' · ' ~ lead.contact_name if lead.contact_name }}
+  {{ ' · ' ~ lead.city if lead.city }}{{ ', ' ~ lead.state if lead.state }}
+  · added {{ lead.created_at[:10] }} · updated {{ lead.updated_at[:10] }}
+</p>
+
+<div class="dk-bar">
+  <span class="dk-chip dk-chip--ink">{{ lead.pipeline_stage }}</span>
+  <span class="dk-chip {{ 'dk-chip--amber' if lead.priority in ('High', 'Urgent') }}">{{ lead.priority }}</span>
+  {% for t in lead.tags %}<span class="dk-chip {{ 'dk-chip--warn' if t in ('High Risk', 'Do Not Contact') }}">{{ t }}</span>{% endfor %}
+  {% if editable and can('lead_edit_assigned') %}
+  <a class="dk-btn dk-btn--ghost" href="/operator-desk/leads/{{ lead.id }}/edit">Edit lead</a>
+  {% endif %}
+  {% if can('delete') %}
+  <form class="dk-inline" method="post" action="/operator-desk/leads/{{ lead.id }}/delete"
+        onsubmit="return confirm('Delete this lead and everything attached to it?');">
+    <button class="dk-btn dk-btn--danger" type="submit">Delete</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if lead_warnings %}
+<ul class="dk-warnings">
+  {% for reason in lead_warnings %}<li>{{ reason }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+{% if signal_link %}
+{# Where this lead came from, and what Signal believed at the time. The
+   snapshot is frozen at hand-off, so it is deliberately not the live score -
+   that is the point of keeping it. #}
+<div class="dk-card" style="margin: 14px 0;">
+  <div class="dk-bar" style="margin: 0 0 8px;">
+    <span class="dk-chip dk-chip--amber">From Signal</span>
+    <span class="dk-sub" style="margin: 0;">Added {{ signal_link['added_at'][:10] }} by {{ signal_link['added_by'] }}</span>
+    <a class="dk-btn dk-btn--ghost" href="/signal/artist/{{ signal_link['artist_id'] }}">Open in Signal &rarr;</a>
+  </div>
+  {% if signal_link['why_now'] %}<p class="dk-sub" style="margin: 0 0 8px;">{{ signal_link['why_now'] }}</p>{% endif %}
+  {% set snap = signal_link['snapshot'] %}
+  {% if snap and snap['scores'] %}
+    <div class="dk-bar" style="margin: 0;">
+      {% for key, label in [('sb_momentum', 'Momentum'), ('distribution_gap', 'Dist. gap'),
+                            ('rights_health', 'Rights'), ('deal_readiness', 'Deal readiness')] %}
+        {% if key in snap['scores'] %}<span class="dk-chip">{{ label }} {{ snap['scores'][key] }}</span>{% endif %}
+      {% endfor %}
+      {% if snap['recommendation'] %}<span class="dk-chip dk-chip--ink">{{ snap['recommendation'] }}</span>{% endif %}
+    </div>
+    <p class="dk-sub" style="margin: 8px 0 0;">
+      Scores as they stood at hand-off (version {{ signal_link['score_version'] }}) — not the live figures.
+    </p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if can('stage_move') %}
+<form class="dk-bar" method="post" action="/operator-desk/leads/{{ lead.id }}/stage">
+  <select class="dk-mini" name="stage">
+    {% for s in vocab.stages %}<option {{ 'selected' if lead.pipeline_stage == s }}>{{ s }}</option>{% endfor %}
+  </select>
+  <button class="dk-btn dk-btn--ghost" type="submit">Move stage</button>
+</form>
+{% endif %}
+
+<h2 class="dk-h2">Details</h2>
+<dl class="dk-kv">
+  {% for key, label in vocab.lead_fields %}
+    {% if lead[key] %}<dt>{{ label }}</dt><dd>{{ lead[key] }}</dd>{% endif %}
+  {% endfor %}
+  {% if lead.opportunity_types %}<dt>Opportunity types</dt><dd>{{ lead.opportunity_types | join(', ') }}</dd>{% endif %}
+  <dt>Lead source</dt><dd>{{ lead.lead_source or '—' }}</dd>
+  <dt>Assigned to</dt><dd>{{ lead.assigned_to or '—' }}</dd>
+</dl>
+
+<h2 class="dk-h2">Follow-up</h2>
+{% if editable and can('lead_edit_assigned') %}
+<form class="dk-form" method="post" action="/operator-desk/leads/{{ lead.id }}/follow-up">
+  <div class="dk-grid">
+    <label class="dk-field"><span>Next follow-up date</span>
+      <input type="date" name="follow_up_date" value="{{ lead.follow_up_date }}"></label>
+    <label class="dk-field"><span>Owner</span>
+      <select name="follow_up_owner"><option value="">—</option>
+        {% for n in vocab.team %}<option {{ 'selected' if lead.follow_up_owner == n }}>{{ n }}</option>{% endfor %}
+      </select></label>
+    <label class="dk-field"><span>Reason</span>
+      <input name="follow_up_reason" value="{{ lead.follow_up_reason }}"></label>
+    <label class="dk-field"><span>Status</span>
+      <input name="follow_up_status" value="{{ lead.follow_up_status }}" placeholder="e.g. waiting on them"></label>
+  </div>
+  <div style="margin-top:12px"><button class="dk-btn dk-btn--ghost" type="submit">Save follow-up</button></div>
+</form>
+{% else %}
+<dl class="dk-kv">
+  <dt>Next follow-up</dt><dd>{{ lead.follow_up_date or '—' }}</dd>
+  <dt>Owner</dt><dd>{{ lead.follow_up_owner or '—' }}</dd>
+  <dt>Reason</dt><dd>{{ lead.follow_up_reason or '—' }}</dd>
+</dl>
+{% endif %}
+
+<h2 class="dk-h2" id="notes">Notes ({{ notes | length }})</h2>
+{% if can('note_add') %}
+<form class="dk-form" method="post" action="/operator-desk/leads/{{ lead.id }}/notes">
+  <div class="dk-grid">
+    <label class="dk-field"><span>Type</span>
+      <select name="note_type">{% for t in vocab.note_types %}<option>{{ t }}</option>{% endfor %}</select></label>
+    <label class="dk-field"><span>Follow-up date (optional)</span>
+      <input type="date" name="follow_up_date"></label>
+    <label class="dk-field"><span>Next step (optional)</span>
+      <input name="next_step"></label>
+  </div>
+  <label class="dk-field" style="display:block;margin-top:10px"><span>Note — mention teammates with @LJ, @Warren, @Jovan</span>
+    <textarea name="body" required></textarea></label>
+  <div class="dk-checks"><label><input type="checkbox" name="is_pinned" value="1"> Pin to top</label></div>
+  <div style="margin-top:12px"><button class="dk-btn" type="submit">Add note</button>
+    <span style="font-size:12px;color:var(--dk-faint)"> All notes are internal. Nothing here is visible to artist accounts.</span></div>
+</form>
+{% endif %}
+
+<ul class="dk-notes" style="margin-top:12px">
+  {% for n in notes %}
+  <li class="dk-note {{ 'is-pinned' if n.is_pinned }}">
+    <div class="dk-note-head">
+      <b>{{ n.author_name }}</b>
+      <span class="dk-chip {{ 'dk-chip--warn' if n.note_type == 'Red Flag' }}">{{ n.note_type }}</span>
+      <span>{{ n.created_at[:16] | replace('T', ' ') }}</span>
+      {% if n.is_pinned %}<span class="dk-chip dk-chip--amber">Pinned</span>{% endif %}
+      {% if can('note_add') %}
+      <form class="dk-inline" method="post" action="/operator-desk/notes/{{ n.id }}/pin">
+        <input type="hidden" name="back" value="/operator-desk/leads/{{ lead.id }}#notes">
+        <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px" type="submit">
+          {{ 'Unpin' if n.is_pinned else 'Pin' }}</button>
+      </form>
+      {% endif %}
+    </div>
+    <p class="dk-note-body">{{ n.body }}</p>
+    {% if n.next_step or n.follow_up_date or n.tagged_users %}
+    <p class="dk-note-meta">
+      {% if n.next_step %}Next step: <b>{{ n.next_step }}</b> · {% endif %}
+      {% if n.follow_up_date %}Follow up {{ n.follow_up_date }} · {% endif %}
+      {% for u in n.tagged_users %}<span class="dk-mention">@{{ u }}</span> {% endfor %}
+    </p>
+    {% endif %}
+  </li>
+  {% else %}
+  <li class="dk-empty">No notes yet — the first call belongs here.</li>
+  {% endfor %}
+</ul>
+
+<h2 class="dk-h2">Tasks ({{ tasks | length }})</h2>
+{% if can('task_add') %}
+<form class="dk-bar" method="post" action="/operator-desk/tasks">
+  <input type="hidden" name="lead_id" value="{{ lead.id }}">
+  <input class="dk-search" name="title" placeholder="New task for this lead" required>
+  <select class="dk-mini" name="assigned_to">{% for n in vocab.team %}<option>{{ n }}</option>{% endfor %}</select>
+  <input class="dk-mini" type="date" name="due_date" style="padding:5px 8px;border:1px solid var(--dk-rule);border-radius:var(--sb-r-control)">
+  <select class="dk-mini" name="category">{% for c in vocab.task_categories %}<option>{{ c }}</option>{% endfor %}</select>
+  <button class="dk-btn dk-btn--ghost" type="submit">Add task</button>
+</form>
+{% endif %}
+{% if tasks %}
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr><th>Task</th><th>Assigned</th><th>Due</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for t in tasks %}
+  <tr>
+    <td>{{ t.title }}</td><td>{{ t.assigned_to or '—' }}</td><td>{{ t.due_date or '—' }}</td>
+    <td><span class="dk-chip {{ 'dk-chip--ok' if t.status == 'Complete' }}">{{ t.status }}</span></td>
+    <td>{% if can('task_add') and t.status not in ('Complete', 'Cancelled') %}
+      <form class="dk-inline" method="post" action="/operator-desk/tasks/{{ t.id }}/status">
+        <input type="hidden" name="status" value="Complete">
+        <input type="hidden" name="back" value="/operator-desk/leads/{{ lead.id }}">
+        <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px" type="submit">Done</button>
+      </form>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+
+<h2 class="dk-h2" id="deals">Deals ({{ deals | length }})</h2>
+{% if can('deal_edit') %}
+<details class="dk-form"><summary style="cursor:pointer;font-weight:700;font-size:12.5px">Add a deal</summary>
+<form method="post" action="/operator-desk/leads/{{ lead.id }}/deals" style="margin-top:12px">
+  <div class="dk-grid">
+    <label class="dk-field"><span>Deal type</span>
+      <select name="deal_type">{% for d in vocab.deal_types %}<option>{{ d }}</option>{% endfor %}</select></label>
+    <label class="dk-field"><span>Estimated value</span><input name="estimated_value"></label>
+    <label class="dk-field"><span>Advance discussed</span><input name="advance_discussed"></label>
+    <label class="dk-field"><span>Distribution fee</span><input name="distribution_fee"></label>
+    <label class="dk-field"><span>Term</span><input name="term"></label>
+    <label class="dk-field"><span>Status</span>
+      <select name="status">{% for s in vocab.deal_statuses %}<option>{{ s }}</option>{% endfor %}</select></label>
+  </div>
+  <label class="dk-field" style="display:block;margin-top:10px"><span>Recoupment notes</span>
+    <textarea name="recoupment_notes"></textarea></label>
+  <div class="dk-checks">
+    <label><input type="checkbox" name="publishing_involved" value="1"> Publishing involved</label>
+    <label><input type="checkbox" name="content_id_involved" value="1"> YouTube/Content ID involved</label>
+    <label><input type="checkbox" name="counsel_involved" value="1"> Legal counsel involved</label>
+  </div>
+  <label class="dk-field" style="display:block;margin-top:10px"><span>Deal notes</span>
+    <textarea name="notes"></textarea></label>
+  <div style="margin-top:12px"><button class="dk-btn" type="submit">Add deal</button></div>
+</form>
+</details>
+{% endif %}
+{% for d in deals %}
+<div class="dk-note" style="margin-top:10px">
+  <div class="dk-note-head">
+    <b>{{ d.deal_type }}</b>
+    <span class="dk-chip {{ 'dk-chip--ok' if d.status == 'Signed' }}">{{ d.status }}</span>
+    {% if d.estimated_value %}<span>Est. {{ d.estimated_value }}</span>{% endif %}
+    {% if d.term %}<span>Term: {{ d.term }}</span>{% endif %}
+    {% if can('deal_edit') %}
+    <form class="dk-inline" method="post" action="/operator-desk/deals/{{ d.id }}/status">
+      <input type="hidden" name="back" value="/operator-desk/leads/{{ lead.id }}#deals">
+      <select class="dk-mini" name="status">{% for s in vocab.deal_statuses %}<option {{ 'selected' if d.status == s }}>{{ s }}</option>{% endfor %}</select>
+      <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px" type="submit">Set</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if d.notes %}<p class="dk-note-body">{{ d.notes }}</p>{% endif %}
+</div>
+{% endfor %}
+<p class="dk-legal">{{ legal_note }}</p>
+
+<h2 class="dk-h2" id="files">Files ({{ files | length }})</h2>
+{% if can('file_upload') %}
+<form class="dk-bar" method="post" action="/operator-desk/leads/{{ lead.id }}/files" enctype="multipart/form-data">
+  <input type="file" name="file" required>
+  <select class="dk-mini" name="category">{% for c in vocab.file_categories %}<option>{{ c }}</option>{% endfor %}</select>
+  <button class="dk-btn dk-btn--ghost" type="submit">Upload</button>
+  <span style="font-size:12px;color:var(--dk-faint)">Internal — never served publicly.</span>
+</form>
+{% endif %}
+{% if files %}
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr><th>File</th><th>Category</th><th>Uploaded by</th><th>Date</th></tr></thead>
+  <tbody>
+  {% for f in files %}
+  <tr><td><a href="/operator-desk/files/{{ f.id }}/download">{{ f.file_name }}</a></td>
+      <td>{{ f.category }}</td><td>{{ f.uploaded_by }}</td><td>{{ f.created_at[:10] }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+
+<h2 class="dk-h2">Shows &amp; meetings ({{ events | length }})</h2>
+{% for e in events %}
+<div class="dk-note"><div class="dk-note-head">
+  <b>{{ e.event_name }}</b><span class="dk-chip">{{ e.event_type }}</span>
+  <span>{{ e.date or 'date TBD' }}{{ ' · ' ~ e.venue if e.venue }}{{ ' · ' ~ e.city if e.city }}</span>
+</div></div>
+{% else %}
+<p class="dk-empty">Nothing scheduled with this lead. Add one from Shows &amp; Meetings.</p>
+{% endfor %}
+{% endblock %}

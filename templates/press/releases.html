@@ -1,0 +1,41 @@
+{% set tab = 'releases' %}
+{% extends "press/_shell.html" %}
+{% block title %}Announcements - Press Desk{% endblock %}
+{% block press %}
+
+<div class="pd-head">
+  <div>
+    <p class="pd-eyebrow">Announcements</p>
+    <h1 class="pd-h1">{{ releases | length }} written</h1>
+    <p class="pd-sub">The thing you are actually telling people. Each one becomes a page a journalist can open, with the audio, the artwork and the details in one place.</p>
+  </div>
+  <a class="pd-btn" href="/press-desk/announcements/new">Write one</a>
+</div>
+
+{% if releases %}
+<div class="pd-table-wrap"><table class="pd-table">
+  <thead><tr><th>Headline</th><th>Kind</th><th>Release date</th><th>Embargo</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for r in releases %}
+  <tr>
+    <td><a href="/press-desk/announcements/{{ r.id }}">{{ r.headline or r.title }}</a>
+        {% if r.subhead %}<div class="pd-muted">{{ r.subhead }}</div>{% endif %}</td>
+    <td>{{ r.kind }}</td>
+    <td class="pd-muted">{{ r.release_date or '—' }}</td>
+    <td class="pd-muted">{{ r.embargo_until or '—' }}</td>
+    <td><span class="pd-chip {{ 'pd-chip--gold' if r.status != 'draft' }}">{{ r.status }}</span></td>
+    <td>
+      <a class="pd-btn pd-btn--ghost pd-btn--small" href="/press-desk/announcements/{{ r.id }}">Open</a>
+      <a class="pd-btn pd-btn--ghost pd-btn--small" href="/press-desk/pitch/new">Pitch it</a>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<div class="pd-empty">
+  Nothing written yet. An announcement is one headline, one paragraph that
+  says what happened, and a link to hear it — that is genuinely most of it.
+</div>
+{% endif %}
+{% endblock %}

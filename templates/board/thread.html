@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% import "board/_macros.html" as m %}
+{% block title %}Thread · {{ t['listing_title'] }} - Street Banker{% endblock %}
+{% block head_scripts %}<link rel="stylesheet" href="/static/css/board.css?v=2">{% endblock %}
+{% block content %}
+<div class="tb" style="max-width:820px">
+  <p class="tb-eyebrow"><a href="/tour-board" style="text-decoration:none">Team-Up Board</a> · <a href="/tour-board/inbox" style="text-decoration:none">inbox</a> · thread</p>
+  <div class="tb-head">
+    <div>
+      <h1 class="tb-h1" style="font-size:18px;text-transform:none;letter-spacing:0">{{ m.kind_badge(t['listing_kind']) }} <a href="/tour-board/{{ t['listing_id'] }}" style="text-decoration:none">{{ t['listing_title'] }}</a></h1>
+      <p class="tb-lede">{{ t['poster_name'] }} (posted it) · {{ t['replier_name'] }} (replied){% if t['filled_via'] == t['id'] %} · <span class="tb-badge tb-badge--match">★ Matched on the Board</span>{% endif %}</p>
+    </div>
+  </div>
+  {% if sent %}<div class="tb-ok">Reply sent. {{ t['poster_name'] }} has been notified in Street Banker{% if t['listing_status'] %}; keep the conversation here{% endif %}.</div>{% endif %}
+  <section class="tb-pane">
+    <div class="tb-msgs" role="log" aria-label="Messages">
+      {% for msg in messages %}
+      <div class="tb-msg {{ 'is-me' if msg['from_user_id'] == user['id'] }}">{{ msg['body'] }}<small>{{ msg['from_name'] }} · {{ msg['ago'] }}</small></div>
+      {% endfor %}
+    </div>
+    {% if l and l['effective_status'] in ('open', 'filled') %}
+    <form method="post" action="/tour-board/thread/{{ t['id'] }}" accept-charset="utf-8" style="margin-top:12px">
+      <label class="tb-field"><span>Reply</span><textarea name="message" rows="3" required placeholder="Keep it here — dates, numbers, next step."></textarea></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
+        <button class="tb-btn tb-btn--fill" type="submit">Send</button>
+        {% if i_am_poster and l['effective_status'] == 'open' %}<form method="post" action="/tour-board/{{ l['id'] }}/fill"><input type="hidden" name="thread_id" value="{{ t['id'] }}"><button class="tb-btn tb-btn--ghost" type="submit">Mark filled with {{ t['replier_name'] }}</button></form>{% endif %}
+      </div>
+    </form>
+    {% if i_am_poster and l['effective_status'] == 'open' %}
+    <form method="post" action="/tour-board/{{ l['id'] }}/fill" style="margin-top:8px"><input type="hidden" name="thread_id" value="{{ t['id'] }}"><input type="hidden" name="next" value="/tour-board/thread/{{ t['id'] }}"><button class="tb-btn tb-btn--ghost tb-btn--small" type="submit">★ Mark the listing filled with {{ t['replier_name'] }}</button></form>
+    {% endif %}
+    {% else %}<p class="tb-help" style="margin-top:10px">The listing is {{ l['effective_status'] if l else 'gone' }}; this thread is read-only.</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Calendar - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+
+<div class="to-head">
+  <div>
+    <p class="to-eyebrow">Calendar</p>
+    <h1 class="to-h1" style="font-size:20px">{{ month_label }}</h1>
+  </div>
+  <div class="to-inline">
+    <a class="to-btn to-btn--ghost to-btn--small" href="?month={{ prev_m }}&view={{ view }}">‹</a>
+    <a class="to-btn to-btn--ghost to-btn--small" href="?month={{ today[:7] }}&view={{ view }}">This month</a>
+    <a class="to-btn to-btn--ghost to-btn--small" href="?month={{ next_m }}&view={{ view }}">›</a>
+    <a class="to-btn to-btn--ghost to-btn--small" href="?month={{ month }}&view={{ 'list' if view == 'month' else 'month' }}">{{ 'List' if view == 'month' else 'Month' }}</a>
+    <a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/calendar.ics">.ics</a>
+  </div>
+</div>
+
+{% if view == 'month' %}
+<div class="to-cal" role="grid" aria-label="{{ month_label }}">
+  {% for d in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}<div class="to-cal-dow">{{ d }}</div>{% endfor %}
+  {% for c in cells %}
+    {% set first = c['items'][0] if c['items'] else None %}
+    {% set fshow = show_by_id[first['show_id']] if first and first['show_id'] and first['show_id'] in show_by_id else None %}
+    <a class="to-cal-day {{ 'is-out' if not c['in_month'] }} {{ 'is-today' if c['today'] }}"
+       href="{% if fshow %}/tours/{{ tour['id'] }}/shows/{{ fshow['id'] }}{% else %}/tours/{{ tour['id'] }}/my-day?date={{ c['date'] }}{% endif %}"
+       aria-label="{{ c['date'] }}">
+      <span class="d">{{ c['day'] }}</span>
+      {% for it in c['items'][:2] %}
+        {% set s = show_by_id[it['show_id']] if it['show_id'] and it['show_id'] in show_by_id else None %}
+        <div class="ev {{ 'show' if s }}">{% if s %}{{ s['city'] or s['venue'] }}{% else %}{{ it['title'] or it['kind']|replace('_',' ')|capitalize }}{% endif %}</div>
+        {% if s and s['id'] in readiness %}<div class="pct">{{ readiness[s['id']] }}% ready</div>{% endif %}
+      {% endfor %}
+      {% if c['items'] %}<span class="dot"></span>{% endif %}
+    </a>
+  {% endfor %}
+</div>
+{% else %}
+  {% if days %}
+  <div class="to-table-wrap"><table class="to-table is-stack">
+    <thead><tr><th>Date</th><th>Type</th><th>City</th><th>Venue / title</th><th>Ready</th><th></th></tr></thead>
+    <tbody>
+    {% for d in days %}
+      {% set s = show_by_id[d['show_id']] if d['show_id'] and d['show_id'] in show_by_id else None %}
+      <tr>
+        <td data-k="Date">{{ fmt_day(d['date']) }}</td>
+        <td data-k="Type">{{ m.chip(d['kind']) }}</td>
+        <td data-k="City">{{ d['city'] or (s['city'] if s else '') or '—' }}</td>
+        <td data-k="Venue">{% if s %}<a href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}">{{ s['venue'] }}</a>{% else %}{{ d['title'] or '—' }}{% endif %}</td>
+        <td data-k="Ready">{% if s and s['id'] in readiness %}{{ m.ready(readiness[s['id']]) }}{% endif %}</td>
+        <td>{% if not s and can('edit') %}
+          <span class="to-inline">
+          <a class="to-btn to-btn--ghost to-btn--small" href="/tour-board?new=1&amp;kind=artist&amp;title={{ ('Open date ' ~ d['date'] ~ (' near ' ~ d['city'] if d['city'] else ''))|urlencode }}&amp;region={{ d['city']|urlencode }}&amp;from={{ d['date'] }}&amp;to={{ d['date'] }}" title="Post this open date to the Team-Up Board, prefilled">Post to Team-Up Board</a>
+          <form method="post" action="/tours/{{ tour['id'] }}/days/{{ d['id'] }}/edit" class="to-inline"><input type="hidden" name="action" value="delete"><button class="to-btn to-btn--ghost to-btn--small to-btn--danger" type="submit">Remove</button></form></span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+    {{ m.empty("No dates on the calendar", "Add one below or import a run of dates.", "/tours/" ~ tour['id'] ~ "/import", "Import") }}
+  {% endif %}
+{% endif %}
+
+{% if can('edit') or can('schedule') %}
+<h2 class="to-h2">Add a day</h2>
+<form method="post" action="/tours/{{ tour['id'] }}/days/add" class="to-form">
+  <div class="to-grid">
+    {{ m.field('date', 'Date', type='date', required=True) }}
+    {{ m.select('kind', 'Type', vocab['day_kinds'], value='show') }}
+    {{ m.field('city', 'City', placeholder='Nashville, TN') }}
+    {{ m.field('venue', 'Venue (show days)', placeholder='The Basement East') }}
+    {{ m.field('title', 'Title (non-show days)', placeholder='Drive to Atlanta') }}
+    {{ m.field('tz', 'Timezone', placeholder=tour['home_tz']) }}
+    {{ m.textarea('notes', 'Notes', rows=2) }}
+  </div>
+  <div class="to-bar"><button class="to-btn" type="submit">Add</button> <a class="to-btn to-btn--ghost" href="/tours/{{ tour['id'] }}/import">Import many</a></div>
+</form>
+{% endif %}
+{% endblock %}

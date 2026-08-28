@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% set route, name, blurb, status, disclaimer = m %}
+
+{% block title %}{{ name }} - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[760px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Operating System</div>
+    <div class="mt-1 flex items-center gap-3">
+      <h1 class="sb-h1">{{ name }}</h1>
+      <span class="rounded-md bg-white/10 px-2 py-0.5 text-xs font-bold uppercase text-gray-300">Preview</span>
+    </div>
+    <p class="mt-2 max-w-xl text-sm text-gray-200">{{ blurb }}</p>
+  </div>
+
+  <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-6">
+    <h2 class="sb-label text-sb-gold-bright">What this module will do</h2>
+    <ul class="mt-4 space-y-2.5">
+      {% for f in features %}
+      <li class="flex items-start gap-3 text-sm text-gray-200">
+        <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sb-gold"></span>{{ f }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% if disclaimer %}
+    <p class="mt-5 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs text-gray-300 font-medium">{{ disclaimer }}</p>
+    {% endif %}
+  </section>
+
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <div class="text-sm font-bold text-gray-100">This module is in preview</div>
+        <p class="mt-0.5 text-xs text-gray-300">The data model and workflows are designed; the engine is being built. No simulated results are shown here — when it's live, it's real.</p>
+      </div>
+      <form method="post" action="/actions/from-alert">
+        <input type="hidden" name="title" value="Set up {{ name }} when it launches">
+        <input type="hidden" name="description" value="{{ blurb }}">
+        <input type="hidden" name="category" value="general">
+        <button class="sb-btn sb-btn-secondary">Remind me — create action</button>
+      </form>
+    </div>
+  </section>
+
+  <a href="/command-center" class="inline-block text-sm font-semibold text-sb-gold-bright hover:underline">← Back to Command Center</a>
+</div>
+{% endblock %}

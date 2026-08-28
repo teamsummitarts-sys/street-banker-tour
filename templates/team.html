@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Team - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[900px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Team</div>
+    <h1 class="sb-h1 mt-1">Team</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Invite the people who run your business with you — manager, accountant, publicist. Invites are real: they get an email, create their own login, and show up here.</p>
+  </div>
+
+  <!-- Invite -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5">
+    <h2 class="sb-label text-gray-300">Invite someone</h2>
+    <form id="invite-form" class="mt-3 flex flex-wrap gap-2">
+      <input name="email" type="email" required placeholder="their@email.com" class="w-full min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none sm:w-auto">
+      <select name="role" class="rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 text-sm text-gray-200 focus:border-sb-gold focus:outline-none">
+        {% for r in roles %}<option value="{{ r }}">{{ r|capitalize }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="sb-btn sb-btn-primary">Send Invite</button>
+    </form>
+    <div id="invite-result" class="mt-3 hidden rounded-lg border px-3 py-2.5 text-xs"></div>
+    {% if not email_configured %}
+    <p class="mt-2 text-xs text-gray-300 font-medium">Email sending isn't enabled on this server — you'll get a link to send them yourself.</p>
+    {% endif %}
+  </section>
+
+  <!-- Roster -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-sb-gold">Your team</h2>
+    {% if members %}
+    <div class="mt-3 divide-y divide-white/5">
+      {% for m in members %}
+      <div class="flex flex-wrap items-center gap-3 py-3" id="member-{{ m.id }}">
+        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sb-gold/15 text-sm font-black text-sb-gold-bright">{{ (m.member_name or m.email)[0]|upper }}</span>
+        <div class="min-w-0 flex-1">
+          <div class="truncate text-sm font-bold">{{ m.member_name or m.email }}</div>
+          <div class="text-xs text-gray-300 font-medium">{{ m.email }} · {{ m.role|capitalize }}</div>
+        </div>
+        {% if m.status == 'active' %}
+        <span class="rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-green-400">Active</span>
+        {% else %}
+        <span class="rounded-full border border-white/15 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-gray-300">Invited</span>
+        {% endif %}
+        <button data-id="{{ m.id }}" class="remove-btn sb-btn sb-btn-danger sb-btn-sm">Remove</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="mt-3 text-sm text-gray-300">No team yet. Invite your first person above — they'll appear here the moment they accept.</p>
+    {% endif %}
+  </section>
+
+  <p class="px-1 text-xs text-gray-300 font-medium">Team members get their own login and appear on your roster with their role. Scoped access to your reports and dashboards ships with the Partner Portal — roles are recorded now so permissions apply the day it lands.</p>
+</div>
+
+<script>
+  document.getElementById("invite-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const res = await fetch("/team/invite", { method: "POST", body: new FormData(e.target) });
+    const data = await res.json();
+    const box = document.getElementById("invite-result");
+    box.classList.remove("hidden");
+    if (data.ok) {
+      if (data.emailed) {
+        box.className = "mt-3 rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2.5 text-xs text-green-400";
+        box.innerHTML = 'Invite emailed \u2713 &nbsp;Backup link in case it does not arrive: <span class="break-all font-mono text-gray-200">' + data.link + "</span>";
+      } else {
+        box.className = "mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-400";
+        box.innerHTML = '<span class="font-bold">The email could not be delivered</span> \u2014 the email service only sends to your own address until a domain is verified in Resend. The invite still works: copy this link and send it to them yourself.<div class="mt-2 flex items-center gap-2"><span class="break-all rounded bg-black/40 px-2 py-1 font-mono text-gray-200">' + data.link + '</span><button type="button" id="invite-copy" class="sb-btn sb-btn-secondary sb-btn-sm shrink-0">Copy</button></div>';
+        document.getElementById("invite-copy").addEventListener("click", (ev) => {
+          navigator.clipboard.writeText(data.link);
+          ev.target.textContent = "Copied \u2713";
+        });
+      }
+      e.target.reset();
+    } else {
+      box.className = "mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-xs text-red-400";
+      box.textContent = data.error || "Could not send the invite.";
+    }
+  });
+  document.querySelectorAll(".remove-btn").forEach((b) => b.addEventListener("click", async () => {
+    const res = await fetch("/team/" + b.dataset.id + "/remove", { method: "POST" });
+    if ((await res.json()).ok) document.getElementById("member-" + b.dataset.id).remove();
+  }));
+</script>
+{% endblock %}

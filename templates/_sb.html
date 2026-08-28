@@ -1,0 +1,290 @@
+{# ============================================================
+   STREET BANKER COMPONENT LIBRARY  ·  design system v1
+   ------------------------------------------------------------
+   Every page composes from these. If a page needs a pattern this
+   file does not cover, ADD IT HERE rather than styling it one-off -
+   that is the whole mechanism by which the platform stops drifting
+   back to six radii and two golds.
+
+   Styling lives in tools/tailwind-input.css under @layer components
+   (the .sb-* classes). These macros exist so the markup - the dot on
+   a badge, the reason on a disabled button, the scale beside a
+   number - cannot be forgotten.
+
+       {% import "_sb.html" as sb %}
+       {{ sb.btn("Send request", variant="primary", size="sm") }}
+
+   ============================================================ #}
+
+
+{# --- buttons ----------------------------------------------------
+   One primary per view. A disabled button MUST carry a reason:
+   `disabled_reason` is the only way to disable one, so a dead
+   control with no explanation cannot be written by accident. #}
+{% macro btn(label, href=none, variant="secondary", size=none, type="button",
+             icon=none, kbd=none, disabled_reason=none, name=none, value=none,
+             aria_label=none, extra="", title=none, id=none) -%}
+  {%- set cls = "sb-btn sb-btn-" ~ variant ~ (" sb-btn-sm" if size == "sm" else "") ~ (" " ~ extra if extra else "") -%}
+  {%- if href and not disabled_reason -%}
+    <a href="{{ href }}" class="{{ cls }}"{% if id %} id="{{ id }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %}{% if title %} title="{{ title }}"{% endif %}>
+      {%- if icon %}{{ icon }}{% endif %}{{ label }}{% if kbd %}<kbd>{{ kbd }}</kbd>{% endif -%}
+    </a>
+  {%- else -%}
+    <button type="{{ type }}" class="{{ cls }}"{% if id %} id="{{ id }}"{% endif %}
+            {%- if name %} name="{{ name }}"{% endif %}{% if value %} value="{{ value }}"{% endif %}
+            {%- if aria_label %} aria-label="{{ aria_label }}"{% endif %}
+            {%- if disabled_reason %} aria-disabled="true" disabled title="{{ disabled_reason }}"
+            {%- elif title %} title="{{ title }}"{% endif %}>
+      {%- if icon %}{{ icon }}{% endif %}{{ label }}{% if kbd %}<kbd>{{ kbd }}</kbd>{% endif -%}
+    </button>
+  {%- endif -%}
+{%- endmacro %}
+
+
+{# --- badges -----------------------------------------------------
+   tone: good | warn | crit | info | idle. The dot is not decoration:
+   it is what carries the state through colour-blindness and through
+   a greyscale print of the settlement sheet. #}
+{% macro badge(label, tone="idle", title=none) -%}
+  <span class="sb-badge sb-badge-{{ tone }}"{% if title %} title="{{ title }}"{% endif %}>{{ label }}</span>
+{%- endmacro %}
+
+
+{# --- KPI tile ---------------------------------------------------
+   "44 out of what, and is 17 good?" is a component problem, so the
+   component answers it: every metric ships with its scale, its
+   direction, its trend and its target.
+
+   For a metric with no data yet, pass `first` (and leave `value`
+   out): the tile shows the first step instead of a 0, because a
+   zero reads as failure when it actually means "not started". #}
+{% macro kpi(label, value=none, scale=none, delta=none, direction="flat",
+             target=none, href=none, spark=none, spark_tone="good",
+             first=none, first_href="#", value_tone=none, empty_label="Not started") -%}
+  {#- The empty variant carries its own link (the first step), and an <a>
+      inside an <a> is not HTML: the parser closes the outer one early and
+      the first-step link falls out of the tile into the grid. So an empty
+      tile is always a <div>, and the first step is the only link in it. -#}
+  {%- set tag = "a" if (href and not first) else "div" -%}
+  {%- set tone_hex = {"good": "var(--sb-good)", "crit": "var(--sb-crit)",
+                      "warn": "var(--sb-warn)", "info": "var(--sb-info)"} -%}
+  <{{ tag }}{% if href %} href="{{ href }}"{% endif %} class="sb-kpi{{ ' sb-kpi-empty' if first else '' }}">
+    <span class="sb-label">{{ label }}</span>
+    <span class="sb-kpi-val">
+      <span class="sb-kpi-num"{% if value_tone %} style="color:{{ tone_hex.get(value_tone, 'var(--sb-ink)') }}"{% endif %}>{{ value if not first else empty_label }}</span>
+      {%- if scale %}<span class="sb-kpi-scale">{{ scale }}</span>{% endif -%}
+    </span>
+    {%- if first %}
+      <a class="sb-kpi-first" href="{{ first_href }}">{{ first }} &rarr;</a>
+    {%- else %}
+      {%- if delta or target %}
+      <span class="sb-kpi-foot">
+        <span class="sb-kpi-delta {{ direction }}">{{ delta or "" }}</span>
+        {%- if target %}<span class="sb-kpi-target">{{ target }}</span>{% endif -%}
+      </span>
+      {%- endif %}
+      {%- if spark %}{{ sparkline(spark, spark_tone) }}{% endif -%}
+    {%- endif %}
+  </{{ tag }}>
+{%- endmacro %}
+
+
+{# Sparkline. The stroke takes the STATE colour, never gold, so trend
+   direction reads pre-attentively instead of needing a legend.
+   `points` is a list of numbers; they are scaled to fit. #}
+{% macro sparkline(points, tone="good") -%}
+  {%- set hexes = {"good": "#79B473", "crit": "#E05C4A", "warn": "#E8843F", "info": "#7FA8E8"} -%}
+  {%- set stroke = hexes.get(tone, "#79B473") -%}
+  {%- set lo = points | min -%}
+  {%- set hi = points | max -%}
+  {%- set span = (hi - lo) if (hi - lo) > 0 else 1 -%}
+  <svg viewBox="0 0 120 26" style="width:100%;height:26px;margin-top:10px" aria-hidden="true" preserveAspectRatio="none">
+    <polyline fill="none" stroke="{{ stroke }}" stroke-width="1.6" points="
+      {%- for p in points %}{{ (loop.index0 * 120 / ((points | length - 1) or 1)) | round(1) }},{{ (23 - ((p - lo) / span) * 20) | round(1) }} {% endfor -%}
+    "/>
+    <circle cx="120" cy="{{ (23 - ((points[-1] - lo) / span) * 20) | round(1) }}" r="2.6" fill="{{ stroke }}"/>
+  </svg>
+{%- endmacro %}
+
+
+{# --- priority card ----------------------------------------------
+   The most important object in the platform - the thing Command
+   Center exists to show. Severity is encoded structurally by the
+   stripe on the left edge, so a screenful of priorities is scannable
+   without reading a word.
+
+   Use with a call block for the actions:
+
+     {% call sb.priority("The Basement hasn't settled", "...",
+                         severity="crit", tag="Money", tag_tone="crit",
+                         impact="$600 · 34 days late", impact_tone="crit") %}
+       {{ sb.btn("Send request", variant="primary", size="sm") }}
+     {% endcall %}
+#}
+{% macro priority(title, body, severity="warn", tag=none, tag_tone=none,
+                  impact=none, impact_tone=none) -%}
+  <div class="sb-prio {{ severity }}">
+    {%- if tag or impact %}
+    <div class="sb-prio-top">
+      {%- if tag %}{{ badge(tag, tag_tone or severity) }}{% endif -%}
+      {%- if impact %}<span class="sb-prio-impact {{ impact_tone or '' }}">{{ impact }}</span>{% endif -%}
+    </div>
+    {%- endif %}
+    <h4 class="sb-prio-title">{{ title }}</h4>
+    {%- if body %}<p class="sb-prio-body">{{ body }}</p>{% endif %}
+    <div class="sb-prio-actions">{{ caller() if caller else "" }}</div>
+  </div>
+{%- endmacro %}
+
+
+{# --- module card ------------------------------------------------
+   No LIVE/PREVIEW badge. A tile in "your tools" is a place to go;
+   what state the module is in belongs on the module, not on the
+   door to it. `note` is the one useful fact - "2 shows saved",
+   "4 upcoming · 2 unsettled". #}
+{% macro module_card(title, note=none, href="#", icon=none) -%}
+  <a class="sb-mod" href="{{ href }}">
+    <div class="sb-mod-head">
+      <span class="sb-mod-ic">{{ icon or icons("grid") }}</span>
+      <h4 class="sb-mod-title">{{ title }}</h4>
+    </div>
+    {%- if note %}<p class="sb-mod-note">{{ note }}</p>{% endif %}
+  </a>
+{%- endmacro %}
+
+
+{# --- data table -------------------------------------------------
+   Mono tabular numerals right-aligned so money and dates form true
+   columns. Status is a badge, never a coloured word.
+
+     {% call sb.table(["Date", "Venue", "Status", ("Guarantee", "num")]) %}
+       <tr>...</tr>
+     {% endcall %}
+
+   A column given as (label, "num") is right-aligned and monospaced;
+   mark the matching <td> with class="num". #}
+{% macro table(columns, scroll=true) -%}
+  <div{% if scroll %} class="overflow-x-auto"{% endif %}>
+    <table class="sb-tbl">
+      <thead>
+        <tr>
+          {%- for c in columns -%}
+            {%- if c is string -%}
+              <th>{{ c }}</th>
+            {%- else -%}
+              <th class="{{ c[1] }}">{{ c[0] }}</th>
+            {%- endif -%}
+          {%- endfor -%}
+        </tr>
+      </thead>
+      <tbody>{{ caller() }}</tbody>
+    </table>
+  </div>
+{%- endmacro %}
+
+
+{# --- form field -------------------------------------------------
+   A real <label> above the control. The placeholder is an EXAMPLE,
+   never the label - placeholder-as-label fails the moment somebody
+   types, and that pattern was throughout the platform. #}
+{% macro field(name, label, value="", type="text", placeholder=none, hint=none,
+               required=false, id=none, options=none, rows=none, error=none,
+               autocomplete=none, extra="") -%}
+  {%- set fid = id or ("f-" ~ name) -%}
+  <div class="sb-field">
+    <label class="sb-label" for="{{ fid }}">{{ label }}{% if required %} <span aria-hidden="true">*</span>{% endif %}</label>
+    {%- if options %}
+      <select class="sb-select" id="{{ fid }}" name="{{ name }}"{% if required %} required{% endif %} {{ extra }}>
+        {%- for o in options -%}
+          {%- set ov = o[0] if o is not string else o -%}
+          {%- set ol = o[1] if o is not string else o -%}
+          <option value="{{ ov }}"{{ " selected" if ov == value else "" }}>{{ ol }}</option>
+        {%- endfor -%}
+      </select>
+    {%- elif rows %}
+      <textarea class="sb-textarea" id="{{ fid }}" name="{{ name }}" rows="{{ rows }}"
+                {%- if placeholder %} placeholder="{{ placeholder }}"{% endif %}
+                {%- if required %} required{% endif %} {{ extra }}>{{ value }}</textarea>
+    {%- else %}
+      <input class="sb-input" id="{{ fid }}" name="{{ name }}" type="{{ type }}" value="{{ value }}"
+             {%- if placeholder %} placeholder="{{ placeholder }}"{% endif %}
+             {%- if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}
+             {%- if required %} required{% endif %} {{ extra }}>
+    {%- endif %}
+    {%- if error %}<span class="sb-error">{{ error }}</span>
+    {%- elif hint %}<span class="sb-hint">{{ hint }}</span>{% endif %}
+  </div>
+{%- endmacro %}
+
+
+{# --- transport bar (the console pages) --------------------------
+   The timecode is the loudest thing in the bar - it is the one
+   number a light operator reads mid-show. #}
+{% macro transport() -%}
+  <div class="sb-transport">{{ caller() }}</div>
+{%- endmacro %}
+
+{% macro timecode(value, label="timecode", id=none) -%}
+  <div class="sb-tc">
+    <span class="sb-tc-num"{% if id %} id="{{ id }}"{% endif %}>{{ value }}</span>
+    <span class="sb-tc-lab">{{ label }}</span>
+  </div>
+{%- endmacro %}
+
+
+{# --- cue row ----------------------------------------------------
+   Blackout swatches are dashed so they are distinguishable from a
+   dark colour rather than reading as an empty cue. #}
+{% macro cue(at, colour, name, meta=none, delete_url=none, blackout=false) -%}
+  <div class="sb-cue">
+    <span class="sb-cue-t">{{ at }}</span>
+    <span class="sb-cue-sw{{ ' blackout' if blackout else '' }}"{% if not blackout %} style="background:{{ colour }}"{% endif %}></span>
+    <span>
+      <span class="sb-cue-nm">{{ name }}</span>
+      {%- if meta %}<span class="sb-cue-meta">{{ meta }}</span>{% endif -%}
+    </span>
+    {%- if delete_url %}
+      <form method="post" action="{{ delete_url }}">{{ btn("&times;" | safe, variant="ghost", size="sm", type="submit", aria_label="Delete cue at " ~ at) }}</form>
+    {%- else %}<span></span>{% endif %}
+  </div>
+{%- endmacro %}
+
+
+{# --- icon nav rail ----------------------------------------------
+   `items` is a list of (key, title, href, active). #}
+{% macro rail(items) -%}
+  <nav class="sb-rail" aria-label="Desks">
+    {%- for key, title, href, active in items %}
+      <a class="sb-rail-i{{ ' on' if active else '' }}" href="{{ href }}" title="{{ title }}" aria-label="{{ title }}"
+         {%- if active %} aria-current="page"{% endif %}>{{ icons(key) }}</a>
+    {%- endfor %}
+  </nav>
+{%- endmacro %}
+
+
+{# --- section heading -------------------------------------------- #}
+{% macro eyebrow(text) -%}
+  <p class="sb-eyebrow">{{ text }}</p>
+{%- endmacro %}
+
+
+{# --- the icon set -----------------------------------------------
+   Stroked, 24-box, 1.7 weight, matching the rail and module tiles.
+   Add here rather than pasting a path into a page. #}
+{% macro icons(name) -%}
+{%- set paths = {
+  "grid": '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  "lights": '<path d="M12 3v18M5 8v8M19 8v8"/>',
+  "calendar": '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/>',
+  "link": '<path d="M4 7h16M4 12h16M4 17h10"/>',
+  "money": '<path d="M12 2v20M17 6H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',
+  "studio": '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M7 14h.01"/>',
+  "star": '<path d="M12 3l3 6 6 .8-4.5 4.2 1.2 6L12 17.2 6.3 20l1.2-6L3 9.8 9 9z"/>',
+  "stage": '<path d="M3 20h18M6 20V9l6-5 6 5v11"/><path d="M10 20v-5h4v5"/>',
+  "board": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/>',
+  "users": '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0"/><path d="M16 6a3 3 0 010 6M17 20a6 6 0 00-2-4.5"/>',
+  "chart": '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  "check": '<path d="M4 12l5 5L20 6"/>',
+} -%}
+<svg viewBox="0 0 24 24" aria-hidden="true">{{ paths.get(name, paths["grid"]) | safe }}</svg>
+{%- endmacro %}

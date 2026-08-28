@@ -1,0 +1,43 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Schedule - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Schedule</p><h1 class="to-h1" style="font-size:20px">Every timed item on the tour</h1><p class="to-sub">Grouped by day. Items you are not meant to see are not here. Edit on the show's Schedule tab.</p></div></div>
+
+{% if by_day %}
+{% for day, rows in by_day %}
+<h2 class="to-h2">{{ fmt_day(day) }}{% if day in show_by_date %} · <a href="/tours/{{ tour['id'] }}/shows/{{ show_by_date[day]['id'] }}?tab=schedule" style="color:var(--to-amber);text-decoration:none">{{ show_by_date[day]['city'] or show_by_date[day]['venue'] }}</a>{% endif %}</h2>
+<ul class="to-timeline">
+  {% for r in rows %}
+  <li class="to-tl-item">
+    <div class="to-tl-time">{{ fmt_time(r['start_time']) or 'TBD' }}{% if r['precision'] == 'approx' %}<small>approx</small>{% endif %}</div>
+    <div><div class="to-tl-title">{{ r['title'] }} <span class="to-chip">{{ r['category']|replace('_',' ') }}</span></div>{% if r['location'] %}<div class="to-tl-where">{{ r['location'] }}</div>{% endif %}{% if r['responsible'] %}<div class="to-tl-where">{{ r['responsible'] }}</div>{% endif %}</div>
+    <div class="to-tl-flags">{% if r['confirmed'] %}<span class="ok">confirmed</span>{% else %}<span class="warn">unconfirmed</span>{% endif %}</div>
+  </li>
+  {% endfor %}
+</ul>
+{% endfor %}
+{% else %}
+  {{ m.empty("Nothing scheduled yet", "Open a show and stamp the standard day, or add items for any date below.") }}
+{% endif %}
+
+{% if can('schedule') or can('edit') %}
+<h2 class="to-h2">Add an item on any date</h2>
+<form method="post" action="/tours/{{ tour['id'] }}/schedule/add" class="to-form">
+  <div class="to-grid">
+    {{ m.field('day_date', 'Date', type='date', required=True) }}
+    <label class="to-field"><span>Show (optional)</span><select name="show_id"><option value="">— none —</option>{% for s in shows %}<option value="{{ s['id'] }}">{{ s['date'] }} {{ s['city'] or s['venue'] }}</option>{% endfor %}</select></label>
+    {{ m.field('title', 'Title', required=True) }}
+    {{ m.select('category', 'Category', vocab['schedule_categories'], 'other') }}
+    {{ m.field('start_time', 'Start', type='time') }}
+    {{ m.field('end_time', 'End', type='time') }}
+    {{ m.select('precision', 'Precision', vocab['precision'], 'exact') }}
+    {{ m.field('location', 'Location') }}
+    {{ m.field('responsible', 'Responsible') }}
+    {{ m.select('visibility', 'Visibility', vocab['visibility'], 'all') }}
+    {{ m.textarea('notes', 'Notes', rows=2) }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Add</button></div>
+</form>
+{% endif %}
+{% endblock %}

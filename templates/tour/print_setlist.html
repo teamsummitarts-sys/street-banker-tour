@@ -1,0 +1,13 @@
+{% extends "tour/_public.html" %}
+{% block title %}Set list · {{ setlist['name'] }}{% endblock %}
+{% block body %}
+<div class="to-paper" style="font-size:20px">
+  <span class="tag">{{ tour['name'] }}{% if show %} · {{ show['city'] or show['venue'] }} · {{ show['date'] }}{% endif %}</span>
+  <h2 style="font-size:18px">{{ setlist['name'] }}</h2>
+  <ol style="margin:10px 0 0 24px;line-height:1.5">{% for s in setlist['songs'] if s['section'] == 'main' %}<li><b>{{ s['title'] }}</b>{% if s['duration'] %} <span class="meta">{{ s['duration'] }}</span>{% endif %}{% if s['notes'] %} <span class="meta">— {{ s['notes'] }}</span>{% endif %}</li>{% endfor %}</ol>
+  {% set enc = setlist['songs']|selectattr('section','equalto','encore')|list %}{% if enc %}<h3 style="margin-top:14px;font-size:14px">Encore</h3><ol style="margin:4px 0 0 24px">{% for s in enc %}<li><b>{{ s['title'] }}</b></li>{% endfor %}</ol>{% endif %}
+  {% set alt = setlist['songs']|selectattr('section','equalto','alternate')|list %}{% if alt %}<h3 style="margin-top:14px;font-size:14px">Alternates</h3><ol style="margin:4px 0 0 24px">{% for s in alt %}<li>{{ s['title'] }}</li>{% endfor %}</ol>{% endif %}
+  {% if setlist['notes'] %}<p class="meta" style="margin-top:12px">{{ setlist['notes'] }}</p>{% endif %}
+</div>
+<div class="to-bar no-print"><button class="to-btn to-btn--ghost to-btn--small" onclick="window.print()">Print</button></div>
+{% endblock %}

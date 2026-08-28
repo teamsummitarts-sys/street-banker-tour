@@ -1,0 +1,92 @@
+{# Find my lane, in public. Pick the sentence that fits, get one lane and
+   the reason for it, and read all three in full underneath. No account,
+   no form, no score - the answer is a paragraph, and the other two lanes
+   stay on the page so the recommendation can be argued with. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Find your lane · Street Banker</title>
+  <meta name="description" content="Distribution, Development or Partnership: what each lane covers, and which one fits where you are.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-4xl px-6 py-14 lg:px-10 lg:py-20">
+
+  <div class="sb-label text-sb-gold">Three lanes. One system.</div>
+  <h1 class="mt-4 text-[clamp(1.8rem,5vw,2.6rem)] font-medium uppercase leading-[1.02] tracking-tight">
+    Which lane fits you?
+  </h1>
+  <p class="mt-4 max-w-xl text-base leading-relaxed text-sb-ink-2">
+    Pick the line that sounds most like where you are. You will get one lane
+    and the reason for it — and all three are set out below either way.
+  </p>
+
+  <form method="get" class="mt-8 flex flex-wrap gap-2.5">
+    {% for s in situations %}
+    <button type="submit" name="situation" value="{{ s.id }}"
+            class="rounded-sm border px-4 py-2.5 text-left text-xs font-semibold transition-colors
+                   {% if picked and picked.id == s.id %}border-sb-gold bg-sb-gold text-sb-surface-2{% else %}border-[rgb(201_168_106_/_0.24)] text-sb-ink hover:border-sb-gold hover:text-sb-gold{% endif %}"
+            {% if picked and picked.id == s.id %}aria-current="true"{% endif %}>
+      {{ s.label }}
+    </button>
+    {% endfor %}
+  </form>
+
+  {% if picked and suggested %}
+  <section class="mt-9 rounded border border-[rgb(201_168_106_/_0.24)] bg-sb-ground p-6" aria-labelledby="suggested-heading">
+    <p class="sb-label text-sb-ink-2">Suggested lane</p>
+    <h2 class="mt-2 text-[clamp(1.3rem,3vw,1.8rem)] font-medium uppercase tracking-tight" id="suggested-heading">
+      <span class="text-sb-gold">{{ suggested.num }}</span> {{ suggested.name }}
+      <span class="block text-sm font-semibold uppercase tracking-[0.16em] text-sb-gold opacity-80">{{ suggested.subline }}</span>
+    </h2>
+    <p class="mt-4 max-w-2xl text-base leading-relaxed text-sb-ink">{{ picked.why }}</p>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed text-sb-ink-2">
+      This is a starting point, not a placement. Lanes move as the work does,
+      and nothing here commits you to one.
+    </p>
+  </section>
+  {% endif %}
+
+  <h2 class="mt-14 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">All three lanes</h2>
+  <div class="mt-5 space-y-4">
+    {% for lane in lanes %}
+    <section id="{{ lane.slug }}" class="scroll-mt-28 rounded border p-6
+             {% if suggested and suggested.slug == lane.slug %}border-sb-gold bg-sb-surface-1{% else %}border-[rgb(201_168_106_/_0.24)] bg-sb-surface-1{% endif %}"
+             aria-labelledby="lane-{{ lane.slug }}">
+      <h3 class="text-[clamp(1.2rem,2.6vw,1.6rem)] font-medium uppercase tracking-tight" id="lane-{{ lane.slug }}">
+        <span class="text-sb-gold tracking-[0.18em]">{{ lane.num }}</span> {{ lane.name }}
+        <span class="sb-label block text-sb-gold opacity-80">{{ lane.subline }}</span>
+      </h3>
+      <p class="mt-3 max-w-2xl text-base leading-relaxed text-sb-ink-2">{{ lane.description }}</p>
+      <p class="mt-3 text-sm leading-relaxed text-sb-gold opacity-90">{{ lane.for_you_if }}</p>
+      <ul class="mt-4 space-y-2">
+        {% for item in lane.includes %}
+        <li class="relative pl-4 text-sm leading-relaxed text-sb-ink-2">
+          <span class="absolute left-0 top-[0.62em] h-px w-2 bg-sb-gold" aria-hidden="true"></span>{{ item }}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endfor %}
+  </div>
+
+  <div class="mt-10 flex flex-wrap gap-3">
+    <a href="/signup" class="inline-flex min-h-[48px] items-center justify-center rounded-sm bg-sb-gold px-6 text-xs font-bold uppercase tracking-[0.1em] text-sb-surface-2 transition-colors hover:bg-sb-gold-bright">Create an account</a>
+    <a href="/catalog-sweep" class="inline-flex min-h-[48px] items-center justify-center rounded-sm border border-[rgb(201_168_106_/_0.24)] px-6 text-xs font-bold uppercase tracking-[0.1em] text-sb-ink transition-colors hover:border-sb-gold hover:text-sb-gold">Run a free catalog sweep</a>
+    <a href="/submit" class="inline-flex min-h-[48px] items-center justify-center rounded-sm border border-[rgb(201_168_106_/_0.24)] px-6 text-xs font-bold uppercase tracking-[0.1em] text-sb-ink transition-colors hover:border-sb-gold hover:text-sb-gold">Talk to us about Partnership</a>
+  </div>
+</main>
+
+<footer class="mx-auto max-w-4xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/#lanes" class="font-semibold hover:text-sb-ink">← Back to Street Banker</a>
+</footer>
+</body>
+</html>

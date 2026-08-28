@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+{% block head_scripts %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+
+{% block title %}Overview - Royalty Sweep{% endblock %}
+
+{% block content %}
+
+{# One source for every figure on this page. get_earnings_trend() is six
+   hardcoded months; it describes the showcase and nobody else, so a real
+   account reads the months on its own statements or shows none. #}
+{% set rr = real_royalty %}
+{% set this_month = months[-1][1] if months else 0 %}
+{% set last_month = months[-2][1] if months|length > 1 else this_month %}
+{% set growth_pct = ((this_month - last_month) / last_month * 100) if last_month else 0 %}
+{% set remaining = (goal - tracked) if goal > tracked else 0 %}
+{% set goal_pct = ((tracked / goal) * 100) if goal else 0 %}
+{% set health = overview_health %}
+
+<div class="mx-auto max-w-6xl space-y-6">
+
+  {% set band_mode = 'overview' %}
+  {% include "_real_royalty_band.html" %}
+
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Royalty Sweep</div>
+    <h1 class="sb-h1 mt-1">Overview</h1>
+    <p class="mt-1 text-sm text-sb-ink-2">What came in, what is missing, and the next thing worth doing.</p>
+  </div>
+
+  {# The ledger line. Six cards of equal weight said everything on this
+     page mattered equally; the tracked total is the number the page
+     exists for, so it is set once, large, on the brass, and everything
+     else steps down from it. #}
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground px-5 py-6 sm:px-7">
+    <div class="flex flex-wrap items-end justify-between gap-x-10 gap-y-5">
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="sb-label text-sb-gold">Total Royalties Collected</span>
+          {% if rr %}
+          <span class="rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-green-400">From your statements</span>
+          {% elif is_showcase %}
+          <span class="rounded-full border border-sb-gold/30 bg-sb-gold/10 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-sb-gold-bright">Sample</span>
+          {% endif %}
+        </div>
+        {% if rr %}
+        <div class="mt-2 text-4xl font-black tabular-nums tracking-tight text-sb-ink sm:text-6xl">${{ "{:,.2f}".format(tracked) }}</div>
+        <p class="mt-2 text-xs text-gray-200">{{ rr.row_count }} statement row{{ '' if rr.row_count == 1 else 's' }} · {{ rr.source_count }} source{{ '' if rr.source_count == 1 else 's' }} · every figure below is computed from them.</p>
+        {% elif is_showcase %}
+        <div class="mt-2 text-4xl font-black tabular-nums tracking-tight text-sb-ink sm:text-6xl">${{ "{:,.2f}".format(total) }}</div>
+        <p class="mt-2 text-xs text-gray-200">Showcase figures, so the desk has something to demonstrate. A real account reads its own statements.</p>
+        {% else %}
+        <div class="mt-2 text-3xl font-black tracking-tight text-gray-100 sm:text-5xl">Nothing tracked yet</div>
+        <p class="mt-2 max-w-xl text-xs text-gray-200">Upload a distributor, PRO or MLC statement and this line becomes your own money — with the recovery scan, the valuation and the lane grid computed from the same rows.</p>
+        {% endif %}
+      </div>
+
+      <div class="flex flex-wrap items-end gap-x-8 gap-y-4">
+        {% if months %}
+        <div>
+          <div class="sb-label text-gray-200">This month</div>
+          <div class="mt-1 text-xl font-bold tabular-nums text-gray-100">${{ "{:,.2f}".format(this_month) }}</div>
+        </div>
+        <div>
+          <div class="sb-label text-gray-200">vs last month</div>
+          <div class="mt-1 text-xl font-bold tabular-nums {{ 'text-green-400' if growth_pct >= 0 else 'text-red-400' }}">{{ '↑' if growth_pct >= 0 else '↓' }} {{ "%.1f"|format(growth_pct|abs) }}%</div>
+        </div>
+        {% endif %}
+        <a href="{{ '/recovery' if rr else '/statements' }}"
+           class="sb-btn sb-btn-secondary sb-btn-sm">
+          {{ 'Review recovery findings →' if rr else 'Upload a statement →' }}
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <section class="rounded-2xl border border-sb-gold/15 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 p-5">
+      <div class="flex items-center justify-between">
+        <h2 class="sb-label text-sb-ink-2">Royalty Goal</h2>
+        <button type="button" id="edit-goal-btn" class="text-xs font-semibold text-amber-400 hover:underline">Edit Goal</button>
+      </div>
+      <div class="mt-3 flex items-center justify-between gap-4">
+        <div>
+          <div class="text-3xl font-bold tracking-tight tabular-nums">${{ "{:,.2f}".format(tracked) }}</div>
+          <div class="mt-1 text-xs font-semibold text-gray-200">collected against it</div>
+        </div>
+        <div class="relative h-24 w-24 shrink-0">
+          <svg viewBox="0 0 120 120" class="h-full w-full -rotate-90">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#221D18" stroke-width="10"/>
+            <circle id="goal-ring" cx="60" cy="60" r="50" fill="none" stroke="#79B473" stroke-width="10" stroke-linecap="round" stroke-dasharray="314.16"/>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <div id="goal-ring-pct" class="text-lg font-bold tabular-nums">{{ goal_pct|round|int }}%</div>
+            <div id="goal-ring-label" class="text-xs leading-tight text-gray-300 font-medium">of ${{ "{:,.0f}".format(goal) }} goal</div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 h-2 rounded-full bg-white/5">
+        <div id="goal-bar" class="h-2 rounded-full bg-sb-gold"></div>
+      </div>
+      <div class="mt-2 flex items-center justify-between text-xs text-gray-300">
+        <span>Goal: <span id="goal-amount-label">${{ "{:,.0f}".format(goal) }}</span></span>
+        <span id="goal-remaining-label">${{ "{:,.2f}".format(remaining) }} to go</span>
+      </div>
+    </section>
+
+    <a href="/recovery" class="group relative flex flex-col overflow-hidden rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5 transition-colors hover:border-amber-500/40">
+      <svg class="pointer-events-none absolute bottom-0 right-0 h-28 w-40 opacity-70" viewBox="0 0 160 110" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="moneyBar" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stop-color="#E8B950" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#E8B950" stop-opacity="0.9"/>
+          </linearGradient>
+        </defs>
+        <rect x="60"  y="70" width="14" height="34" rx="2" fill="url(#moneyBar)"/>
+        <rect x="80"  y="52" width="14" height="52" rx="2" fill="url(#moneyBar)"/>
+        <rect x="100" y="30" width="14" height="74" rx="2" fill="url(#moneyBar)"/>
+        <rect x="120" y="14" width="14" height="90" rx="2" fill="url(#moneyBar)"/>
+        <circle cx="127" cy="12" r="2.2" fill="#E8B950"/>
+        <circle cx="107" cy="28" r="1.8" fill="#E8B950" opacity="0.8"/>
+        <circle cx="140" cy="40" r="1.4" fill="#E8B950" opacity="0.6"/>
+      </svg>
+      <div class="relative flex items-center justify-between">
+        <h2 class="sb-label text-sb-ink-2">Money Left on the Table</h2>
+        <svg class="h-4 w-4 text-gray-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10A8 8 0 11 2 10a8 8 0 0116 0zM9 9a1 1 0 011-1h.01a1 1 0 010 2H10v2a1 1 0 11-2 0V9zm1-4a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>
+      </div>
+      {% if recovery_view is not none %}
+      {# A real account: its own statements or nothing at all. #}
+      {% if recovery_view.has_data %}
+      <div class="relative mt-3 text-3xl font-bold tracking-tight text-sb-ink tabular-nums">${{ "{:,.2f}".format(recovery_view.total_at_stake) }}</div>
+      <div class="relative mt-1 text-xs text-gray-200">From your statements — ${{ "{:,.2f}".format(recovery_view.actual_unattributed) }} actual, ${{ "{:,.2f}".format(recovery_view.estimated_gaps) }} estimated</div>
+      <div class="relative mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-gray-200">
+        <span>{{ recovery_view.finding_count }} finding{{ '' if recovery_view.finding_count == 1 else 's' }}</span>
+        <span>{{ recovery_view.row_count }} rows scanned</span>
+      </div>
+      {% else %}
+      <div class="relative mt-3 text-3xl font-bold tracking-tight text-gray-100 tabular-nums">Not scanned</div>
+      <div class="relative mt-1 text-xs text-gray-200">No statements uploaded, so nothing has been checked — which is not the same as nothing being missing.</div>
+      {% endif %}
+      {% else %}
+      <div class="relative mt-3 text-3xl font-bold tracking-tight text-sb-ink tabular-nums">${{ "{:,.2f}".format(money_left.total) }}</div>
+      <div class="relative mt-1 text-xs text-gray-300">Estimated uncollected royalties</div>
+      <div class="relative mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-300 font-medium">
+        <span>{{ story.missing_count }} issues found</span>
+        <span>${{ "{:,.0f}".format(money_left.high) }} high confidence</span>
+      </div>
+      {% endif %}
+      <div class="relative mt-auto pt-4">
+        <span class="inline-flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 transition-colors group-hover:bg-amber-500/20">
+          {{ 'Scan my statements' if recovery_view is not none and not recovery_view.has_data else 'Scan Now' }}
+          <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+        </span>
+      </div>
+    </a>
+
+    <section class="rounded-2xl border border-sb-gold/15 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 p-5">
+      <div class="flex items-center justify-between">
+        <h2 class="sb-label text-sb-ink-2">Royalty Health Score</h2>
+      </div>
+      <div class="mt-3 flex items-center gap-5">
+        <div class="relative h-24 w-28 shrink-0">
+          <svg viewBox="0 0 100 62" class="h-full w-full">
+            <defs>
+              <linearGradient id="healthGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#79B473"/>
+                <stop offset="50%" stop-color="#E8B950"/>
+                <stop offset="100%" stop-color="#E05C4A"/>
+              </linearGradient>
+            </defs>
+            <path d="M8 54 A42 42 0 0 1 92 54" fill="none" stroke="url(#healthGrad)" stroke-width="8" stroke-linecap="round"/>
+            <g id="health-needle" transform="rotate(0 50 54)">
+              <line x1="50" y1="54" x2="50" y2="18" stroke="#F2ECE0" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="50" cy="54" r="4" fill="#F2ECE0"/>
+            </g>
+          </svg>
+          <div class="absolute inset-x-0 bottom-0 flex flex-col items-center">
+            <div class="text-2xl font-bold tabular-nums">{{ health.score }}</div>
+            <div class="text-xs text-gray-300 font-medium">/100</div>
+          </div>
+        </div>
+        <div class="min-w-0 flex-1 space-y-1.5">
+          {% for bar in health.bars %}
+          <a href="{{ bar.route }}" class="flex items-center gap-2 text-xs transition-opacity hover:opacity-80 font-medium">
+            <span class="w-20 shrink-0 text-gray-300">{{ bar.label }}</span>
+            <span class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5">
+              <span class="block h-full rounded-full {{ 'bg-green-500' if bar.pct >= 75 else ('bg-amber-500' if bar.pct >= 50 else 'bg-red-500') }}" style="width: {{ bar.pct }}%;"></span>
+            </span>
+            <span class="w-8 shrink-0 text-right font-semibold text-gray-200">{{ bar.pct }}%</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="mt-3 flex items-center justify-between">
+        <span class="text-sm font-semibold {{ 'text-green-400' if health.score >= 75 else ('text-amber-400' if health.score >= 50 else 'text-red-400') }}">{{ health.band }}</span>
+        <a href="/catalog" class="sb-btn sb-btn-secondary sb-btn-sm">Improve Score</a>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <a href="/royalties" class="block rounded-2xl border border-sb-gold/15 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 p-5 transition-colors hover:border-amber-500/30">
+      <div class="flex items-center justify-between">
+        <h2 class="sb-label text-sb-ink-2">Earnings Trend</h2>
+        {# The range control sits with the chart it changes. At the top of
+           the page it read as a filter over everything, which it never
+           was. #}
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-gray-300" id="trend-range-label">Last 6 months</span>
+          <select id="date-range" aria-label="Chart range" class="rounded-md border border-white/10 bg-white/5 px-1.5 py-1 text-xs font-medium text-gray-200 focus:outline-none [color-scheme:dark]">
+            <option value="1">1m</option>
+            <option value="3">3m</option>
+            <option value="6" selected>6m</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-2 text-2xl font-bold tracking-tight tabular-nums">${{ "{:,.2f}".format(tracked) }}</div>
+      <div class="text-xs text-gray-300 font-medium">Total royalties</div>
+      <div class="mt-3"><canvas id="earningsChart" height="120"></canvas></div>
+      <div class="mt-4 grid grid-cols-3 gap-2 border-t border-white/5 pt-3 text-center">
+        <div>
+          <div class="text-sm font-bold sb-num">${{ "{:,.2f}".format(this_month) }}</div>
+          <div class="text-xs uppercase tracking-widest text-gray-300 font-medium">This month</div>
+        </div>
+        <div>
+          <div class="text-sm font-bold sb-num">${{ "{:,.2f}".format(last_month) }}</div>
+          <div class="text-xs uppercase tracking-widest text-gray-300 font-medium">Last month</div>
+        </div>
+        <div>
+          <div class="text-sm font-bold {{ 'text-green-400' if growth_pct >= 0 else 'text-red-400' }} tabular-nums">{{ '↑' if growth_pct >= 0 else '↓' }} {{ "%.1f"|format(growth_pct|abs) }}%</div>
+          <div class="text-xs uppercase tracking-widest text-gray-300 font-medium">Growth</div>
+        </div>
+      </div>
+    </a>
+
+    <section class="rounded-2xl border border-sb-gold/15 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 p-5">
+      <div class="flex items-center justify-between">
+        <h2 class="sb-label text-sb-ink-2">Action Center</h2>
+        <a href="/recovery" class="text-xs font-semibold text-amber-400 hover:underline">View All</a>
+      </div>
+      {% set sev_icon = {
+        'critical': ('text-red-400', 'M10 2L1 18h18L10 2z|M10 8v4|M10 14v.5'),
+        'warning':  ('text-amber-400', 'M10 2L1 18h18L10 2z|M10 8v4|M10 14v.5'),
+        'info':     ('text-gray-300', 'M10 2a8 8 0 100 16 8 8 0 000-16z|M10 9v4|M10 6v.5'),
+        'success':  ('text-green-400', 'M10 2a8 8 0 100 16 8 8 0 000-16z|M6.5 10l2.5 2.5 4.5-5'),
+      } %}
+      <div class="mt-3 space-y-1">
+        {% for item in action_center %}
+        {% set icolor, ipath = sev_icon.get(item.severity, sev_icon['info']) %}
+        <a href="{{ item.route }}" class="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-white/5">
+          <svg class="h-4 w-4 shrink-0 {{ icolor }}" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            {% for d in ipath.split('|') %}<path d="{{ d }}"/>{% endfor %}
+          </svg>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-xs font-semibold text-gray-200">{{ item.title }}</span>
+            <span class="block text-xs text-gray-300 sm:truncate font-medium">{{ item.description }}</span>
+          </span>
+          {% if item.impact > 0 %}
+          <span class="shrink-0 text-xs font-bold {{ 'text-green-400' if item.impact_positive else 'text-red-400' }} tabular-nums">
+            {{ '+' if item.impact_positive else '−' }}${{ "%.0f"|format(item.impact) }}
+          </span>
+          {% endif %}
+          <svg class="h-4 w-4 shrink-0 text-gray-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+        </a>
+        {% endfor %}
+        {% if not action_center %}
+        <div class="rounded-lg border border-dashed border-white/10 py-6 text-center text-xs text-gray-300">You're all caught up.</div>
+        {% endif %}
+      </div>
+      <a href="/recovery" class="mt-3 block rounded-md border border-amber-500/30 bg-amber-500/10 py-2 text-center text-xs font-semibold text-amber-400 transition-colors hover:bg-amber-500/20">View All Alerts</a>
+    </section>
+
+    {% set platform_logos = {
+      'Spotify':            ('bg-[#1DB954]', '<circle cx="12" cy="12" r="10" fill="black"/><path d="M7 10c3-1 6-.6 8.5.9M7.5 13c2.5-.7 4.7-.4 6.5.7M8 15.5c2-.5 3.5-.3 4.8.5" stroke="#1DB954" stroke-width="1.4" stroke-linecap="round" fill="none"/>'),
+      'Apple Music':        ('bg-[#FA243C]', '<path d="M13.5 6.5l-4 1v6.2a2 2 0 11-1-1.7V8l4-1v4.7a2 2 0 11-1-1.7" stroke="white" stroke-width="1.3" fill="none" stroke-linejoin="round"/>'),
+      'ASCAP':              ('bg-[#005EB8]', ''),
+      'YouTube Content ID': ('bg-[#FF0000]', '<rect x="4" y="7" width="16" height="10" rx="3" fill="white"/><path d="M10.5 9.5l4 2.5-4 2.5z" fill="#FF0000"/>'),
+      'SoundExchange':      ('bg-sb-warn', '<path d="M5 12h2l2-5 3 10 2-7 1 2h4" stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'),
+    } %}
+    <section class="rounded-2xl border border-sb-gold/15 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 p-5">
+      <div class="flex items-center justify-between">
+        <h2 class="sb-label text-sb-ink-2">Recent Payouts</h2>
+        <a href="/royalties" class="text-xs font-semibold text-amber-400 hover:underline">View All</a>
+      </div>
+      <div class="mt-3 space-y-1">
+        {% for p in recent_payout_rows %}
+        {% set logo = platform_logos.get(p.platform) %}
+        <button type="button" class="payout-row flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-white/5"
+                data-platform="{{ p.platform }}" data-song="{{ p.song }}" data-status="{{ p.status }}" data-amount="{{ "%.2f"|format(p.amount) }}">
+          {% if logo and logo[1] %}
+          <span class="grid h-8 w-8 shrink-0 place-items-center rounded-md {{ logo[0] }}">
+            <svg class="h-5 w-5" viewBox="0 0 24 24">{{ logo[1] | safe }}</svg>
+          </span>
+          {% else %}
+          <span class="grid h-8 w-8 shrink-0 place-items-center rounded-md {{ logo[0] if logo else 'bg-white/5' }} text-xs font-bold text-white">{{ p.platform[:2]|upper }}</span>
+          {% endif %}
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-xs font-semibold text-gray-200">{{ p.platform }}</span>
+            <span class="block truncate text-xs text-gray-300 font-medium">{{ p.date.strftime('%b %d, %Y') }}</span>
+          </span>
+          <span class="shrink-0 text-right">
+            <span class="block text-xs font-bold sb-num">${{ "{:,.2f}".format(p.amount) }}</span>
+            <span class="block text-xs font-semibold {{ 'text-green-400' if p.status == 'Paid' else 'text-amber-400' }}">{{ p.status }}</span>
+          </span>
+        </button>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  {# Real accounts measure a real window: db.roll_seen stamps the visit,
+     since_engine counts rows created after the previous one. The
+     showcase keeps the seeded version below, whose five figures are
+     constants in royalty_data. #}
+  {% if since_visit is not none %}
+  <section class="rounded-2xl border border-sb-gold/15 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="sb-label text-sb-ink-2">What Changed Since Your Last Visit</h2>
+      {% if since_visit.since %}
+      <span class="text-xs font-medium uppercase tracking-wide text-gray-200">Since {{ since_visit.since[:16].replace('T', ' ') }}</span>
+      {% endif %}
+    </div>
+
+    {% if since_visit.first_visit %}
+    <p class="mt-3 text-xs text-gray-200">This is your first visit, so there is no window to measure yet. From here on this strip counts what actually happened between visits — statements uploaded, fans captured, link traffic, cases closed.</p>
+    {% elif since_visit.quiet %}
+    <p class="mt-3 text-xs text-gray-200">Nothing new since then. No statements, no fan captures, no link traffic, no case movement — a quiet stretch reported as one, rather than a row of zeros dressed up as a dashboard.</p>
+    {% else %}
+    <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      {% for item in since_visit['items'] %}
+      {% set tone = 'text-green-400' if item.tone == 'green' else ('text-sb-gold-bright' if item.tone == 'gold' else 'text-gray-100') %}
+      <a href="{{ item.route }}" class="flex items-center gap-3 transition-opacity hover:opacity-80">
+        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 {{ tone }}">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l4-4 3 3 7-7"/><path d="M14 6h3v3"/></svg>
+        </span>
+        <span class="min-w-0">
+          <span class="block truncate text-sm font-bold tabular-nums {{ tone }}">{{ item.value }}</span>
+          <span class="block truncate text-xs font-medium text-gray-200">{{ item.label }}</span>
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if is_showcase %}
+  <section class="rounded-2xl border border-sb-gold/15 bg-gradient-to-b from-sb-surface-2 to-sb-surface-1 p-5">
+    <h2 class="sb-label text-sb-ink-2">What Changed Since Your Last Visit</h2>
+    <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      {% set lv = since_last_login %}
+      {% set metrics = [
+        ('/royalties', 'text-green-400', '$', '+$' ~ '%.2f'|format(lv.new_royalties_collected), 'New royalties collected'),
+        ('/royalties', 'text-green-400', '$', lv.new_payouts_detected|string, 'New payouts received'),
+        ('/recovery', 'text-amber-400', '!', lv.issues_needing_attention|string, 'Issues need attention'),
+        ('/catalog', 'text-green-400', '=', lv.tasks_completed|string, 'Tasks completed'),
+        ('/valuation', 'text-green-400', '^', '+$' ~ '{:,.0f}'.format(lv.catalog_value_increase), 'Catalog value increase'),
+      ] %}
+      {% for route, color, glyph, value, label in metrics %}
+      <a href="{{ route }}" class="flex items-center gap-3 transition-opacity hover:opacity-80">
+        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 {{ color }}">
+          {% if glyph == '$' %}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v.09c1.2.2 2 .96 2 1.91a1 1 0 11-2 0c0-.2-.3-.5-1-.5s-1 .3-1 .5.3.5 1 .5c1.4 0 3 .9 3 2.5 0 1.16-1 2-2 2.16V12a1 1 0 11-2 0v-.09c-1.2-.2-2-.96-2-1.91a1 1 0 112 0c0 .2.3.5 1 .5s1-.3 1-.5-.3-.5-1-.5c-1.4 0-3-.9-3-2.5 0-1.16 1-2 2-2.16V4a1 1 0 011-1z"/></svg>
+          {% elif glyph == '!' %}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L2 17h16L10 3z"/><path d="M10 8v4M10 15v.5"/></svg>
+          {% elif glyph == '=' %}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="12" height="14" rx="2"/><path d="M7 8l2 2 4-4"/></svg>
+          {% else %}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l4-4 3 3 7-7"/><path d="M14 6h3v3"/></svg>{% endif %}
+        </span>
+        <span class="min-w-0">
+          <span class="block truncate text-sm font-bold {{ color if glyph in ('$', '^') else 'text-gray-100' }} tabular-nums">{{ value }}</span>
+          <span class="block truncate text-xs text-gray-300 font-medium">{{ label }}</span>
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+
+<div id="goal-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
+  <div class="w-full max-w-sm rounded-2xl border border-white/10 bg-sb-surface-1 p-6">
+    <h3 class="text-sm font-semibold tracking-tight">Set Royalty Goal</h3>
+    <p class="mt-1 text-xs text-gray-300">Target your royalty collections. Saved on this device.</p>
+    <form id="goal-form" class="mt-4 space-y-4">
+      <label class="block text-xs text-gray-300">
+        Target amount ($)
+        <input id="goal-amount" type="number" min="1" step="0.01" required
+               class="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 focus:border-amber-500/50 focus:outline-none">
+      </label>
+      <label class="block text-xs text-gray-300">
+        Goal type
+        <select id="goal-type"
+                class="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 focus:border-amber-500/50 focus:outline-none [color-scheme:dark]">
+          <option value="monthly">Monthly</option>
+          <option value="yearly" selected>Yearly</option>
+          <option value="project">Project</option>
+        </select>
+      </label>
+      <label class="block text-xs text-gray-300">
+        Deadline (optional)
+        <input id="goal-deadline" type="date"
+               class="mt-1 w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 focus:border-amber-500/50 focus:outline-none [color-scheme:dark]">
+      </label>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" id="goal-cancel" class="sb-btn sb-btn-secondary sb-btn-sm">Cancel</button>
+        <button type="submit" class="sb-btn sb-btn-secondary sb-btn-sm">Save Goal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="payout-drawer-backdrop" class="fixed inset-0 z-40 hidden bg-black/70"></div>
+<aside id="payout-drawer" class="fixed right-0 top-0 z-50 h-full w-full max-w-sm translate-x-full overflow-y-auto border-l border-white/10 bg-sb-surface-1 p-6 transition-transform duration-300">
+  <div class="flex items-start justify-between">
+    <div>
+      <div id="payout-drawer-platform" class="text-lg font-bold tracking-tight"></div>
+      <div id="payout-drawer-song" class="mt-1 text-xs text-gray-300"></div>
+    </div>
+    <button type="button" id="payout-drawer-close" class="rounded-md border border-white/10 p-1.5 text-gray-300 transition-colors hover:bg-white/5 hover:text-white">
+      <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.3 4.3a1 1 0 011.4 0L10 8.6l4.3-4.3a1 1 0 111.4 1.4L11.4 10l4.3 4.3a1 1 0 01-1.4 1.4L10 11.4l-4.3 4.3a1 1 0 01-1.4-1.4L8.6 10 4.3 5.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+    </button>
+  </div>
+  <div class="mt-6 space-y-3">
+    <div class="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-3 py-2.5 text-sm">
+      <span class="text-gray-300">Amount</span><span id="payout-drawer-amount" class="font-bold text-amber-400"></span>
+    </div>
+    <div class="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-3 py-2.5 text-sm">
+      <span class="text-gray-300">Status</span><span id="payout-drawer-status" class="font-semibold"></span>
+    </div>
+    <div class="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-3 py-2.5 text-sm">
+      <span class="text-gray-300">Song</span><span id="payout-drawer-song2" class="font-semibold"></span>
+    </div>
+  </div>
+  <a href="/royalties" class="mt-6 block rounded-md border border-amber-500/30 bg-amber-500/10 py-2 text-center text-xs font-semibold text-amber-400 transition-colors hover:bg-amber-500/20">View in Royalties</a>
+</aside>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const TOTAL = {{ total | round(2) }};
+  const DEFAULT_GOAL = {{ goal | round(2) }};
+  const GOAL_KEY = "royaltySweep.goal";
+  const trend = {{ months | tojson }};
+
+  function renderGoalCard() {
+    let goal = DEFAULT_GOAL;
+    try {
+      const saved = JSON.parse(localStorage.getItem(GOAL_KEY) || "null");
+      if (saved && saved.amount > 0) goal = saved.amount;
+    } catch (err) {}
+    const pct = goal > 0 ? Math.min(TOTAL / goal, 1) : 0;
+    const remaining = Math.max(goal - TOTAL, 0);
+    const ring = document.getElementById("goal-ring");
+    ring.setAttribute("stroke-dashoffset", String(314.16 * (1 - pct)));
+    ring.setAttribute("stroke", pct >= 0.75 ? "#79B473" : (pct >= 0.4 ? "#E8B950" : "#E05C4A"));
+    document.getElementById("goal-ring-pct").textContent = Math.round(pct * 100) + "%";
+    document.getElementById("goal-ring-label").textContent = "of $" + Math.round(goal).toLocaleString() + " goal";
+    document.getElementById("goal-bar").style.width = (pct * 100) + "%";
+    document.getElementById("goal-amount-label").textContent = "$" + Math.round(goal).toLocaleString();
+    document.getElementById("goal-remaining-label").textContent = fmtMoney(remaining) + " to go";
+  }
+  renderGoalCard();
+
+  const goalModal = document.getElementById("goal-modal");
+  function openGoalModal() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(GOAL_KEY) || "null"); } catch (err) {}
+    document.getElementById("goal-amount").value = saved && saved.amount ? saved.amount : DEFAULT_GOAL;
+    document.getElementById("goal-type").value = saved && saved.type ? saved.type : "yearly";
+    document.getElementById("goal-deadline").value = saved && saved.deadline ? saved.deadline : "";
+    goalModal.classList.remove("hidden");
+    goalModal.classList.add("flex");
+    document.getElementById("goal-amount").focus();
+  }
+  function closeGoalModal() {
+    goalModal.classList.add("hidden");
+    goalModal.classList.remove("flex");
+  }
+  document.getElementById("edit-goal-btn").addEventListener("click", openGoalModal);
+  document.getElementById("goal-cancel").addEventListener("click", closeGoalModal);
+  goalModal.addEventListener("click", (e) => { if (e.target === goalModal) closeGoalModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeGoalModal(); });
+  document.getElementById("goal-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const amount = parseFloat(document.getElementById("goal-amount").value);
+    if (!(amount > 0)) return;
+    localStorage.setItem(GOAL_KEY, JSON.stringify({
+      amount: amount,
+      type: document.getElementById("goal-type").value,
+      deadline: document.getElementById("goal-deadline").value || null,
+    }));
+    closeGoalModal();
+    renderGoalCard();
+  });
+
+  const HEALTH_SCORE = {{ overview_health.score }};
+  const healthNeedle = document.getElementById("health-needle");
+  healthNeedle.setAttribute("transform", "rotate(" + ((HEALTH_SCORE / 100) * 180 - 90) + " 50 54)");
+
+  function fmtAxis(v) {
+    return v >= 1000 ? "$" + (v / 1000).toFixed(v % 1000 === 0 ? 0 : 1) + "K" : "$" + v;
+  }
+
+  const chart = new Chart(document.getElementById("earningsChart"), {
+    type: "line",
+    data: {
+      labels: trend.map((p) => p[0]),
+      datasets: [{
+        data: trend.map((p) => p[1]),
+        borderColor: "#E8B950",
+        backgroundColor: "rgba(234,179,8,0.08)",
+        fill: true, tension: 0.35, pointBackgroundColor: "#E8B950", pointRadius: 3,
+      }],
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: "#91836A", font: { size: 10 } }, grid: { color: "rgba(255,255,255,0.04)" } },
+        y: { ticks: { color: "#91836A", font: { size: 10 }, callback: fmtAxis }, grid: { color: "rgba(255,255,255,0.04)" } },
+      },
+    },
+  });
+
+  document.getElementById("date-range").addEventListener("change", (e) => {
+    const months = Number(e.target.value);
+    const sliced = trend.slice(-months);
+    chart.data.labels = sliced.map((p) => p[0]);
+    chart.data.datasets[0].data = sliced.map((p) => p[1]);
+    chart.update();
+    const labels = { 1: "This month", 3: "Last 3 months", 6: "Last 6 months" };
+    document.getElementById("trend-range-label").textContent = labels[months] || "Last 6 months";
+  });
+  document.getElementById("date-range").addEventListener("click", (e) => e.stopPropagation());
+
+  const payoutDrawer = document.getElementById("payout-drawer");
+  const payoutBackdrop = document.getElementById("payout-drawer-backdrop");
+  function closePayoutDrawer() {
+    payoutDrawer.classList.add("translate-x-full");
+    payoutBackdrop.classList.add("hidden");
+  }
+  document.querySelectorAll(".payout-row").forEach((row) => {
+    row.addEventListener("click", () => {
+      document.getElementById("payout-drawer-platform").textContent = row.dataset.platform;
+      document.getElementById("payout-drawer-song").textContent = row.dataset.song;
+      document.getElementById("payout-drawer-song2").textContent = row.dataset.song;
+      document.getElementById("payout-drawer-amount").textContent = fmtMoney(parseFloat(row.dataset.amount));
+      const statusEl = document.getElementById("payout-drawer-status");
+      statusEl.textContent = row.dataset.status;
+      statusEl.className = "font-semibold " + (row.dataset.status === "Paid" ? "text-green-400" : "text-amber-400");
+      payoutBackdrop.classList.remove("hidden");
+      payoutDrawer.classList.remove("translate-x-full");
+    });
+  });
+  document.getElementById("payout-drawer-close").addEventListener("click", closePayoutDrawer);
+  payoutBackdrop.addEventListener("click", closePayoutDrawer);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !payoutDrawer.classList.contains("translate-x-full")) closePayoutDrawer();
+  });
+</script>
+{% endblock %}

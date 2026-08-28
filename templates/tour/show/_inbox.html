@@ -1,0 +1,52 @@
+{% import "tour/_macros.html" as m %}
+<div class="to-note"><strong>Paste, review, then apply.</strong> The extractor reads the text with patterns — call times, hotel, Wi-Fi, parking, promoter, contacts — and proposes entries with the line each one came from. Nothing is written until you tick it. <span class="to-muted">Rule-based; there is no language model on this deployment, and a PDF must be pasted as text.</span></div>
+
+{% if extract_error %}<div class="to-note to-note--warn"><strong>{{ extract_error }}</strong></div>{% endif %}
+
+{% if extract %}
+<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/inbox" class="to-form">
+  <input type="hidden" name="action" value="apply">
+  <input type="hidden" name="text" value="{{ extract_text }}">
+  <div class="to-eyebrow">{{ extract['count'] }} proposal{{ '' if extract['count'] == 1 else 's' }} from {{ extract['lines'] }} lines · {{ extract['high'] }} confident, {{ extract['review'] }} need a look</div>
+  {% if extract['proposals'] %}
+  <div class="to-table-wrap" style="margin-top:8px"><table class="to-table">
+    <thead><tr><th></th><th>Found</th><th>Value</th><th>Confidence</th><th>Source line</th></tr></thead>
+    <tbody>
+    {% for p in extract['proposals'] %}
+    <tr>
+      <td><input type="checkbox" name="pick" value="{{ loop.index0 }}" {% if p['confidence'] == 'high' %}checked{% endif %} aria-label="Apply {{ p['label'] }}">
+        <input type="hidden" name="kind_{{ loop.index0 }}" value="{{ p['kind'] }}"><input type="hidden" name="key_{{ loop.index0 }}" value="{{ p['key'] }}"><input type="hidden" name="source_{{ loop.index0 }}" value="{{ p['source'] }}"></td>
+      <td><b>{{ p['label'] }}</b><div class="to-muted">{{ p['kind'] }}</div></td>
+      <td><input class="to-input" style="min-height:32px;padding:4px 8px" name="value_{{ loop.index0 }}" value="{{ p['value'] }}"></td>
+      <td>{% if p['confidence'] == 'high' %}<span class="to-chip to-chip--ok">high</span>{% else %}<span class="to-chip to-chip--gold">review</span>{% endif %}</td>
+      <td class="to-muted">L{{ p['line'] }}: {{ p['source'][:90] }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <div class="to-bar"><button class="to-btn" type="submit">Apply ticked proposals</button> <a class="to-btn to-btn--ghost" href="?tab=inbox">Discard</a></div>
+  {% else %}
+  <p class="to-sub">Nothing recognisable in that text. Times need a keyword on the same line (load in, soundcheck, doors, set, curfew, bus call); facts need a label (hotel:, wifi:, parking:, promoter:).</p>
+  {% endif %}
+</form>
+{% else %}
+<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/inbox" class="to-form" enctype="multipart/form-data">
+  <input type="hidden" name="action" value="extract">
+  <div class="to-grid">
+    {{ m.textarea('text', 'Paste the advance email or document text', rows=10, placeholder='Load in 3:00 PM\nSoundcheck 5:00 PM\nDoors 7:00 PM\nHotel: Hampton Inn Downtown, 123 Main St\nWiFi: venue-guest / password\nPromoter: ...') }}
+    <label class="to-field"><span>…or upload a .txt / .csv / .ics</span><input type="file" name="file" accept=".txt,.csv,.ics,.eml"></label>
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Extract proposals</button></div>
+</form>
+{% endif %}
+
+{% if imports %}
+<h2 class="to-h2">Applied before</h2>
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <tbody>
+  {% for i in imports %}
+  <tr><td data-k="When">{{ i['created'][:16]|replace('T',' ') }}</td><td data-k="Applied">{{ i['summary']['applied']|join(', ') if i['summary']['applied'] else '—' }}</td><td data-k="Skipped">{{ i['summary']['skipped'] }} skipped</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}

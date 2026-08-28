@@ -1,0 +1,115 @@
+{# Section 11 — Metadata Passport + Rights.
+
+   One release in the middle of a floor blueprint, seven records around
+   it. The photograph is the environment; the seven categories and their
+   descriptions are markup.
+
+   The example passport detail — what is stored, why it matters, what is
+   missing and the recommended action, for each of the seven — is on
+   /metadata rather than here. It was the longest block on the homepage
+   and it repeated in full what the seven one-line descriptions already
+   say in short.
+
+   The heading, the support line, the two CTAs and the trust line sit
+   over the photograph in its right third, on a gradient scrim so the
+   type stays legible without flattening the picture. Below 1024 the
+   scrim covers the whole frame instead, because a narrow crop has no
+   quiet third to sit in.
+
+   The blueprint carries no controls. It used to have seven transparent
+   hotspots over it on desktop; the row of seven named buttons beneath
+   does the same job, reads the same to a keyboard, and does not ask
+   anyone to hunt for a target on a photograph. #}
+
+{% set mp = passport %}
+{% set img = mp.image %}
+<section class="sbmp" id="metadata-passport" aria-labelledby="sbmp-heading">
+  <div class="sbmp-plan">
+    <figure class="sbmp-photo">
+      <picture>
+        {# The phone gets a crop centred on the release, with enough floor
+           marking either side to read as a blueprint. #}
+        <source media="(max-width: 767px)" type="image/avif"
+                srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                sizes="100vw">
+        <source media="(max-width: 767px)" type="image/webp"
+                srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                sizes="100vw">
+        <source media="(max-width: 767px)" type="image/jpeg"
+                srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                sizes="100vw">
+        <source type="image/avif"
+                srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                sizes="(min-width: 1700px) 1600px, 100vw">
+        <source type="image/webp"
+                srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+                sizes="(min-width: 1700px) 1600px, 100vw">
+        <img class="sbmp-img" src="{{ img.wide.stem }}-1300.jpg"
+             srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+             sizes="(min-width: 1700px) 1600px, 100vw"
+             width="{{ img.wide.width }}" height="{{ img.wide.height }}"
+             alt="{{ img.alt }}" loading="lazy" decoding="async">
+      </picture>
+
+      <span class="sbmp-scrim" aria-hidden="true"></span>
+      <div class="sbmp-over">
+      <header class="sbmp-head">
+    <p class="sbmp-eyebrow">
+      <span class="sbmp-num">{{ mp.number }}</span>
+      <span class="sbmp-rule" aria-hidden="true"></span>
+      {{ mp.eyebrow }}
+    </p>
+    <h2 class="sbmp-title" id="sbmp-heading">
+      {% for line in mp.headline %}<span>{{ line }}</span>{% endfor %}
+    </h2>
+    <p class="sbmp-support">{{ mp.support }}</p>
+    <div class="sbmp-ctas">
+      <a class="sbmp-cta" href="{{ mp.primary_cta.href }}">{{ mp.primary_cta.label }}
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+      </a>
+      <button type="button" class="sbmp-connect-btn" id="sbmp-connect-btn"
+              aria-expanded="false" aria-controls="sbmp-connect">{{ mp.secondary_cta.label }}</button>
+    </div>
+      </header>
+        {# The trust line rides with the heading rather than trailing the
+           section, so the claim and the qualifier are read together. #}
+        <p class="sbmp-over-trust">
+          <span class="sbmp-trust-line">{{ mp.trust }}</span>
+          <a class="sbmp-trust-link" href="{{ mp.trust_link.href }}">{{ mp.trust_link.label }}</a>
+        </p>
+      </div>
+    </figure>
+
+    {# The seven records, named and described in one line each. They used
+       to be buttons that swapped a detail panel below; the panel is gone,
+       so they are a list rather than seven controls that do nothing. The
+       full detail lives on /metadata. #}
+    <ol class="sbmp-cats">
+      {% for cat in mp.categories %}
+      <li class="sbmp-cat" data-category="{{ cat.slug }}">
+        <span class="sbmp-cat-num">{{ cat.num }}</span>
+        <span class="sbmp-cat-label">{{ cat.label }}</span>
+        <span class="sbmp-cat-short">{{ cat.short }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+
+  <div class="sbmp-body">
+    {# What one entry asks of everything else. Hidden, not absent. #}
+    <div class="sbmp-connect" id="sbmp-connect" hidden>
+      <p class="sbmp-connect-trigger">{{ mp.connected.trigger }}</p>
+      <ul class="sbmp-connect-list">
+        {% for area, effect in mp.connected.effects %}
+        <li><span class="sbmp-connect-area">{{ area }}</span><span>{{ effect }}</span></li>
+        {% endfor %}
+      </ul>
+      <p class="sbmp-connect-note">{{ mp.connected.note }}</p>
+    </div>
+
+    {# The qualifier stays in the body; the headline claim is on the
+       image above. #}
+    <p class="sbmp-trust"><span class="sbmp-trust-copy">{{ mp.trust_copy }}</span></p>
+  </div>
+</section>

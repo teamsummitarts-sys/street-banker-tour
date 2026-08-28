@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#0B0A08">
+  <link rel="apple-touch-icon" href="/static/img/icon-192.png">
+  <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Royalty Sweep by Street Banker{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230a0a0a' stroke='white' stroke-width='2'/%3E%3Cpath d='M13 10.5L21 16L13 21.5V10.5Z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  {# Chart.js is 69 kB and six pages draw a chart. The rest opt out
+     by simply not overriding this block. #}
+  {% block head_scripts %}{% endblock %}
+  <style>
+    /* Native select popups follow the OS light theme by default, which makes
+       our light select text unreadable (white on white). Force dark. */
+    select { color-scheme: dark; }
+    select option, select optgroup {
+      background-color: var(--sb-surface-1);
+      color: var(--sb-ink);
+    }
+
+    /* --- Rail mode -------------------------------------------------------
+       Five hubs and seventy destinations do not fit in a list you read;
+       expanded, the sidebar is a wall of names that pushes the actual page
+       right. Rail mode keeps the hubs one click away as icons and gives
+       the width back to the work. Desktop only - the phone already has a
+       drawer, and a 74px rail on a 375px screen helps nobody. */
+    .hub-rail { display: none; }
+    @media (min-width: 1024px) {
+      body.sb-rail #sb-aside { width: 4.75rem; padding-left: 0.6rem; padding-right: 0.6rem; }
+      body.sb-rail .sb-hide-rail { display: none !important; }
+      body.sb-rail #sb-nav .hub-rail { display: flex; }
+      body.sb-rail #sb-nav .hub { position: relative; }
+      body.sb-rail #sb-nav .hub-items { display: none; }
+      /* The flyout: hovering or tabbing into a hub gives back the full
+         list, so nothing becomes unreachable by collapsing.
+         Fixed to the viewport rather than to the icon: the Money hub
+         carries twenty-five pages, and anchored to a hub sitting low in
+         the rail its flyout ran off the bottom of a full-height sidebar
+         with nothing to scroll. A panel beside the rail always fits, and
+         needs no script to measure anything. */
+      body.sb-rail #sb-nav .hub:hover > .hub-items,
+      body.sb-rail #sb-nav .hub:focus-within > .hub-items {
+        display: block;
+        position: fixed;
+        left: 4.4rem;
+        top: 4.5rem;
+        z-index: 60;
+        width: 15rem;
+        max-height: calc(100vh - 5.5rem);
+        overflow-y: auto;
+        border-radius: var(--sb-r-panel);
+        border: 1px solid rgba(201, 162, 74, 0.3);
+        background: var(--sb-surface-1);
+        padding: 0.4rem;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.65);
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-sb-ground text-gray-100">
+<script>
+  /* Before paint: a sidebar that starts wide and snaps narrow is worse
+     than either width on its own. */
+  try {
+    if (localStorage.getItem("sbRail") === "1" && window.innerWidth >= 1024) {
+      document.body.classList.add("sb-rail");
+    }
+  } catch (e) {}
+</script>
+  <div class="flex min-h-screen flex-col lg:flex-row">
+    {# The app rail is for people who have an account. A signed-out visitor
+       reading a public page (/services and its detail pages render this
+       same shell) was being handed seventy destinations that every one of
+       them answered with a login wall; they get the public header instead. #}
+    {% if user_plan %}
+    <aside id="sb-aside" class="flex w-full shrink-0 flex-col border-b border-white/5 bg-sb-ground p-4 lg:h-screen lg:w-60 lg:border-b-0 lg:border-r lg:p-5">
+      <!-- Mobile: one compact row - brand + menu toggle -->
+      <div class="flex items-center justify-between lg:hidden">
+        <a href="/overview" class="flex items-center gap-2">
+          <svg width="26" height="16" viewBox="0 0 40 24" fill="none" stroke="#E8B950" stroke-width="1.6" stroke-linejoin="round"><path d="M4 20l3-11 6 7 7-11 7 11 6-7 3 11z"/></svg>
+          <span class="text-xs font-bold tracking-[0.25em] text-gray-100">ROYALTY SWEEP</span>
+        </a>
+        <div class="flex items-center gap-2">
+          <!-- The palette's only opener was Ctrl-K, which a phone has no
+               key for. Seventy destinations behind a shortcut that is not
+               on the keyboard is the same as no way to reach them. -->
+          <button id="sb-search" type="button" aria-label="Search pages"
+                  class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/15 text-gray-200">
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="M13.5 13.5L17 17"/></svg>
+          </button>
+          <button id="sb-burger" type="button" aria-label="Menu" aria-expanded="false" class="flex h-11 w-11 items-center justify-center rounded-lg border border-white/15 text-gray-200">
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5h14M3 10h14M3 15h14"/></svg>
+          </button>
+        </div>
+      </div>
+      <a href="/" class="hidden flex-col items-center transition-opacity hover:opacity-80 lg:flex">
+        <svg width="34" height="20" viewBox="0 0 40 24" fill="none" stroke="#E8B950" stroke-width="1.6" stroke-linejoin="round" class="shrink-0">
+          <path d="M4 20l3-11 6 7 7-11 7 11 6-7 3 11z"/>
+        </svg>
+        <div class="sb-hide-rail mt-1.5 text-center leading-none">
+          <div class="text-xs font-bold tracking-[0.35em] text-gray-100">ROYALTY</div>
+          <div class="mt-1 text-lg font-bold tracking-[0.3em] text-gray-100">SWEEP</div>
+        </div>
+        <div class="sb-label sb-hide-rail mt-2 text-amber-500/70">Track it. Collect it. Sweep it.</div>
+      </a>
+
+      <div id="sb-menu" class="hidden lg:contents">
+      {# Rail toggle. Desktop only, remembered per browser, and mirrored on
+         the "[" key so the width is one keystroke away either direction. #}
+      <button id="sb-rail-tgl" type="button" aria-label="Collapse sidebar" aria-pressed="false"
+              class="mt-4 hidden items-center justify-center gap-2 rounded-lg border border-white/10 px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-300 transition-colors hover:border-sb-gold/40 hover:text-white lg:flex">
+        <svg id="sb-rail-icon" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6l-4 4 4 4"/><path d="M15 4v12"/></svg>
+        <span class="sb-hide-rail">Collapse<kbd class="ml-1.5 rounded border border-white/15 px-1 text-xs text-gray-300">[</kbd></span>
+      </button>
+      <form action="/search" method="get" class="sb-hide-rail mt-6">
+        <div class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 focus-within:border-amber-500/40">
+          <svg class="h-4 w-4 shrink-0 text-gray-300" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="9" r="5.5"/><path d="M17 17l-4-4"/></svg>
+          <input type="search" name="q" placeholder="Search…" value="{{ request.args.get('q', '') if request else '' }}"
+                 class="w-full min-w-0 bg-transparent text-xs text-gray-200 placeholder-gray-300 focus:outline-none">
+        </div>
+      </form>
+
+      {% if user_plan and user_plan != 'fan' %}
+      <!-- Product world switcher -->
+      <div class="sb-hide-rail mt-5 grid grid-cols-2 gap-1.5">
+        {% for wkey, wlabel, whome, wtier in plan_worlds %}
+        {% set locked = wtier and plan_rank.get(user_plan, 1) < plan_rank.get(wtier, 0) %}
+        <a href="/world/{{ wkey }}" class="flex items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-bold uppercase tracking-wide {{ 'border-amber-500/50 bg-amber-500/15 text-amber-400' if nav_world == wkey else ('border-white/10 text-gray-300 hover:text-white' if not locked else 'border-white/5 text-gray-300') }}">
+          {{ wlabel }}
+          {% if locked %}<svg class="h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor"><path d="M6 9V6a4 4 0 118 0v3h1a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6a1 1 0 011-1zm2 0h4V6a2 2 0 10-4 0z"/></svg>{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      {% elif user_plan == 'fan' %}
+      <div class="sb-hide-rail mt-5 rounded-lg border border-sb-gold/30 bg-sb-gold/[0.06] px-3 py-2 text-center">
+        <div class="sb-label text-sb-gold-bright">Fan Account</div>
+        <a href="/billing" class="mt-1 inline-block py-1.5 text-xs font-semibold text-gray-200 hover:text-amber-300">Are you an artist? Upgrade →</a>
+      </div>
+      {% endif %}
+
+      <style>
+        .hub-closed .hub-items { display: none; }
+        .hub-tgl svg { transition: transform 0.15s; }
+        .hub-closed .hub-tgl svg { transform: rotate(-90deg); }
+        /* p-1 around a 14px chevron is a 22px target. On touch give it a
+           real 44px box; the hub header grows a little, which is the right
+           trade in a full-width drawer. */
+        @media (pointer: coarse) {
+          .hub-tgl {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+            min-height: 44px;
+          }
+        }
+      </style>
+      <nav class="mt-5 space-y-2 text-sm" id="sb-nav">
+        {# Filled by script from the pages this browser actually opened.
+           With seventy destinations, the four you were just in beat any
+           ordering we could guess. #}
+        <div id="sb-recent" class="sb-hide-rail hidden space-y-1"></div>
+        {% macro nav_item(key, href, path, label) -%}
+          <a href="{{ href }}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors {{ 'bg-amber-500/10 font-semibold text-amber-400' if active_page == key else 'text-gray-300 hover:bg-white/5 hover:text-white' }}"{% if key not in live_keys %} title="Open — but this page shows example data, not yours"{% endif %}>
+            <svg class="h-[18px] w-[18px] shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              {% for d in path.split('|') if d %}<path d="{{ d }}"/>{% endfor %}
+            </svg>
+            <span class="min-w-0 flex-1 truncate">{{ label }}</span>
+            {% if key == 'notifications' and unread_ntf %}<span class="sb-num rounded-full border border-sb-info/40 bg-sb-info/15 px-1.5 text-xs font-semibold text-sb-info">{{ unread_ntf }}</span>{% endif %}
+            {# This was a padlock. A padlock means "you cannot have this",
+               and these pages open perfectly well - the mark means the
+               page is showing sample data rather than your own. Using the
+               forbidden symbol for "not wired up yet" made the owner of
+               the product feel locked out of it. A word does the job the
+               icon was failing at. #}
+            {% if key not in live_keys %}
+            <span class="nav-lock ml-auto shrink-0 rounded bg-amber-400/15 px-1.5 py-0.5 text-xs font-black uppercase tracking-[0.12em] text-amber-300/90">
+              Sample
+            </span>
+            {% endif %}
+          </a>
+        {%- endmacro %}
+
+        {% if nav_world == 'fan' %}
+        {# Fans keep their own simple world: Community + a slim Account. #}
+        <div class="space-y-1">
+          <div class="px-3 text-xs font-semibold uppercase tracking-[0.2em] text-gray-300">{{ hubs_community[0] }}</div>
+          {% for key, href, path, label, _d in hubs_community[1] %}{{ nav_item(key, href, path, label) }}{% endfor %}
+        </div>
+        <div class="space-y-1">
+          <div class="px-3 text-xs font-semibold uppercase tracking-[0.2em] text-gray-300">Account</div>
+          {% for key, href, path, label, _d in hubs_account[1] if key in fan_account_keys %}{{ nav_item(key, href, path, label) }}{% endfor %}
+        </div>
+        {% else %}
+        {# The Ecosystem Hub model: five hubs, each with a desk page. #}
+        {% for hkey, hname, htag, hitems in hubs_nav %}
+        {% set item_keys = hitems | map(attribute='0') | list %}
+        <div class="hub" data-hub="{{ hkey }}"{% if active_page in item_keys or active_page == 'desk-' + hkey %} data-active="1"{% endif %}>
+          {# Rail mode: the hub becomes its icon, linking to its desk. The
+             full list is still one hover or one tab away. #}
+          <a href="/desk/{{ hkey }}" title="{{ hname }} — {{ htag }}"
+             class="hub-rail mb-1 h-10 w-10 items-center justify-center rounded-lg border transition-colors {{ 'border-sb-gold/50 bg-sb-gold/15 text-sb-gold-bright' if active_page in item_keys or active_page == 'desk-' + hkey else 'border-white/10 text-gray-300 hover:border-sb-gold/40 hover:text-white' }}">
+            <svg class="h-[18px] w-[18px]" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              {% for d in hub_icons.get(hkey, '').split('|') if d %}<path d="{{ d }}"/>{% endfor %}
+            </svg>
+          </a>
+          <div class="sb-hide-rail flex items-center gap-1">
+            <a href="/desk/{{ hkey }}" class="min-w-0 flex-1 truncate rounded-lg px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] transition-colors {{ 'text-amber-400' if active_page == 'desk-' + hkey else 'text-gray-300 hover:text-white' }}" title="{{ htag }}">{{ hname }}</a>
+            <button type="button" class="hub-tgl rounded p-1 text-gray-300 hover:text-white" aria-label="Toggle {{ hname }}">
+              <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8l4 4 4-4"/></svg>
+            </button>
+          </div>
+          <div class="hub-items space-y-1">
+            {% for key, href, path, label, _d in hitems %}{{ nav_item(key, href, path, label) }}{% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+        {% if nav_world == 'label' %}
+        <div class="hub" data-hub="label">
+          <a href="/services" title="{{ hubs_label[0] }}"
+             class="hub-rail mb-1 h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-gray-300 transition-colors hover:border-sb-gold/40 hover:text-white">
+            <svg class="h-[18px] w-[18px]" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              {% for d in hub_icons.get('label', '').split('|') if d %}<path d="{{ d }}"/>{% endfor %}
+            </svg>
+          </a>
+          <div class="sb-hide-rail px-3 text-xs font-semibold uppercase tracking-[0.2em] text-gray-300">{{ hubs_label[0] }}</div>
+          <div class="hub-items space-y-1">
+            {% for key, href, path, label, _d in hubs_label[1] %}{{ nav_item(key, href, path, label) }}{% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% set acct_keys = hubs_account[1] | map(attribute='0') | list %}
+        <div class="hub" data-hub="account"{% if active_page in acct_keys %} data-active="1"{% endif %}>
+          <a href="/settings" title="Account"
+             class="hub-rail relative mb-1 h-10 w-10 items-center justify-center rounded-lg border transition-colors {{ 'border-sb-gold/50 bg-sb-gold/15 text-sb-gold-bright' if active_page in acct_keys else 'border-white/10 text-gray-300 hover:border-sb-gold/40 hover:text-white' }}">
+            <svg class="h-[18px] w-[18px]" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              {% for d in hub_icons.get('account', '').split('|') if d %}<path d="{{ d }}"/>{% endfor %}
+            </svg>
+            {% if unread_ntf %}<span class="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-sb-info"></span>{% endif %}
+          </a>
+          <div class="sb-hide-rail flex items-center gap-1">
+            <span class="min-w-0 flex-1 truncate px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-gray-300">Account</span>
+            <button type="button" class="hub-tgl rounded p-1 text-gray-300 hover:text-white" aria-label="Toggle Account">
+              <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8l4 4 4-4"/></svg>
+            </button>
+          </div>
+          <div class="hub-items space-y-1">
+            {% for key, href, path, label, _d in hubs_account[1] %}{{ nav_item(key, href, path, label) }}{% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {# "Unlocking soon" said the same wrong thing the padlock did -
+           that access was being withheld. Nothing is withheld. #}
+        <div class="sb-hide-rail flex items-center gap-2 px-3 pt-1 text-xs uppercase tracking-wider text-gray-300 font-medium">
+          <span class="shrink-0 rounded bg-amber-400/15 px-1.5 py-0.5 text-xs font-black tracking-[0.12em] text-amber-300/90">Sample</span>
+          Open, but showing example data
+        </div>
+
+        {# Internal tools footer. Only rendered for a login that actually
+           holds a seat on each roster - offering everyone a link that
+           answers 403 is worse than no link at all. #}
+        {% if internal_tools %}
+        <div class="sb-hide-rail mt-3 border-t border-white/5 px-3 pt-3">
+          <div class="sb-label text-gray-300">Internal</div>
+          <div class="mt-1.5 space-y-0.5">
+            {% for tool in internal_tools %}
+              <a href="{{ tool['href'] }}" class="flex items-center gap-2 rounded-lg px-1 py-1 text-xs text-gray-300 transition-colors hover:bg-white/5 hover:text-white">
+                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-sb-gold/60"></span>
+                <span class="min-w-0 flex-1 truncate">{{ tool['label'] }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </nav>
+      <script>
+        /* Rail mode. Stored per browser, applied before paint by the
+           inline script in <head>'s sibling below - here we only wire the
+           button and the key, so a toggle never costs a page load. */
+        (function () {
+          var KEY = "sbRail";
+          var btn = document.getElementById("sb-rail-tgl");
+          var icon = document.getElementById("sb-rail-icon");
+          if (!btn) { return; }
+          function paint() {
+            var on = document.body.classList.contains("sb-rail");
+            btn.setAttribute("aria-pressed", on ? "true" : "false");
+            btn.setAttribute("aria-label", on ? "Expand sidebar" : "Collapse sidebar");
+            btn.title = on ? "Expand sidebar  [" : "Collapse sidebar  [";
+            if (icon) { icon.style.transform = on ? "scaleX(-1)" : ""; }
+          }
+          function toggle() {
+            var on = document.body.classList.toggle("sb-rail");
+            try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (e) {}
+            paint();
+          }
+          btn.addEventListener("click", toggle);
+          document.addEventListener("keydown", function (e) {
+            if (e.key !== "[" || e.ctrlKey || e.metaKey || e.altKey) { return; }
+            var t = e.target || {};
+            var tag = (t.tagName || "").toLowerCase();
+            // Never steal the key from something being typed into.
+            if (tag === "input" || tag === "textarea" || tag === "select"
+                || t.isContentEditable) { return; }
+            if (window.innerWidth < 1024) { return; }
+            e.preventDefault();
+            toggle();
+          });
+          paint();
+        })();
+
+        (function () {
+          var KEY = "sbHubs", st = {};
+          try { st = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
+          document.querySelectorAll("#sb-nav .hub").forEach(function (h) {
+            var open = h.dataset.active === "1" || st[h.dataset.hub] === 1;
+            if (!open) h.classList.add("hub-closed");
+          });
+          document.querySelectorAll("#sb-nav .hub-tgl").forEach(function (b) {
+            b.addEventListener("click", function () {
+              var h = b.closest(".hub");
+              h.classList.toggle("hub-closed");
+              st[h.dataset.hub] = h.classList.contains("hub-closed") ? 0 : 1;
+              try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {}
+            });
+          });
+        })();
+      </script>
+
+      {% if account %}
+      <div class="mt-auto hidden pt-6 lg:block">
+        <div class="sb-hide-rail flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+          <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-amber-500/40 text-xs font-bold text-amber-400">{{ account.initials }}</span>
+          <div class="min-w-0 flex-1 leading-tight">
+            <div class="truncate text-xs font-semibold text-gray-100">{{ account.name }}</div>
+            <div class="truncate text-xs text-gray-300 font-medium">{{ account.role }}</div>
+          </div>
+          <a href="/settings" class="text-gray-300 transition-colors hover:text-white" aria-label="Account settings">
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8l4 4 4-4"/></svg>
+          </a>
+        </div>
+        {% if account.plan %}
+        <div class="sb-hide-rail mt-2 flex items-center justify-between rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2">
+          <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400">
+            <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M3 8l3 2 4-5 4 5 3-2v6a1 1 0 01-1 1H4a1 1 0 01-1-1z"/></svg>
+            {{ account.plan }}
+          </div>
+        </div>
+        {# Only when there is a real figure. A signed-in artist gets None
+           from _account_with_user, because no payout date is knowable
+           until statements are uploaded, and a guessed one in the
+           persistent sidebar reads as their own money. #}
+        {% if account.next_payout %}
+        <div class="sb-hide-rail mt-1.5 px-1 text-xs text-gray-300 font-medium">Next payout: <span class="font-semibold text-gray-200">${{ "{:,.0f}".format(account.next_payout) }}</span> in {{ account.next_payout_in }}</div>
+        {% endif %}
+        {% endif %}
+      </div>
+      {% endif %}
+      </div><!-- /sb-menu -->
+    </aside>
+    {% else %}
+    {% include "partials/public_header.html" %}
+    {% endif %}
+    <main class="flex-1 p-4 sm:p-6 lg:p-8">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script>
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, (c) => (
+        { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+      ));
+    }
+
+    function fmtMoney(n) {
+      return "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function flashHighlight(el) {
+      el.classList.add("ring-2", "ring-amber-400");
+      setTimeout(() => el.classList.remove("ring-2", "ring-amber-400"), 1500);
+    }
+
+    function slugify(text) {
+      return "royaltySweep.collapsed." + text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    }
+
+    document.querySelectorAll("main section").forEach((section) => {
+      const h2 = section.querySelector("h2");
+      if (!h2) return;
+
+      let headerBlock = h2;
+      while (headerBlock.parentElement !== section) headerBlock = headerBlock.parentElement;
+
+      const bodyElements = [...section.children].filter((el) => el !== headerBlock);
+      if (bodyElements.length === 0) return;
+
+      const key = slugify(h2.textContent.trim());
+      const chevron = document.createElement("span");
+      chevron.className = "section-chevron inline-block transition-transform";
+      chevron.style.marginRight = "0.5rem";
+      chevron.innerHTML = '<svg class="inline h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.3 7.3a1 1 0 011.4 0L10 10.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-1.4 0l-4-4a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>';
+      h2.insertBefore(chevron, h2.firstChild);
+      h2.style.cursor = "pointer";
+      h2.classList.add("select-none");
+
+      function setCollapsed(collapsed) {
+        bodyElements.forEach((el) => { el.style.display = collapsed ? "none" : ""; });
+        chevron.style.transform = collapsed ? "rotate(-90deg)" : "rotate(0deg)";
+        section.classList.toggle("opacity-70", collapsed);
+      }
+
+      const stored = localStorage.getItem(key);
+      setCollapsed(stored === "true");
+
+      h2.addEventListener("click", () => {
+        const collapsed = bodyElements[0].style.display === "none";
+        const next = !collapsed;
+        setCollapsed(next);
+        localStorage.setItem(key, String(next));
+      });
+    });
+
+    if (window.location.hash) {
+      const target = document.getElementById(window.location.hash.slice(1));
+      if (target) {
+        if (target.classList.contains("opacity-70")) {
+          target.querySelector("h2")?.click();
+        }
+        setTimeout(() => {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+          flashHighlight(target);
+        }, 50);
+      }
+    }
+  </script>
+
+  <!-- Guided tour bar: follows the user page-to-page while the tour is active -->
+  <div id="tour-bar" class="fixed inset-x-0 bottom-0 z-50 hidden border-t border-sb-gold/50 bg-sb-on-gold/95 px-4 py-3 backdrop-blur" data-plan="{{ user_plan or account.plan or 'label' }}">
+    <div class="mx-auto flex max-w-[1100px] flex-wrap items-center gap-x-4 gap-y-2">
+      <div class="min-w-0 flex-1">
+        <div id="tour-step-label" class="sb-label text-sb-gold"></div>
+        <div id="tour-title" class="text-sm font-bold text-gray-100"></div>
+        <div id="tour-tip" class="mt-0.5 text-xs leading-snug text-gray-300"></div>
+      </div>
+      <div class="flex shrink-0 items-center gap-2">
+        <button id="tour-back" class="rounded-lg border border-white/15 px-3 py-2 text-xs font-bold text-gray-300 hover:bg-white/10">← Back</button>
+        <a id="tour-go" class="hidden rounded-lg bg-sb-gold-bright px-4 py-2 text-xs font-black text-sb-on-gold hover:bg-sb-gold-bright">Take me there →</a>
+        <button id="tour-next" class="hidden rounded-lg bg-sb-gold-bright px-4 py-2 text-xs font-black text-sb-on-gold hover:bg-sb-gold-bright">Done — next →</button>
+        <button id="tour-exit" class="rounded-lg border border-white/15 px-3 py-2 text-xs font-bold text-gray-300 hover:bg-white/10" title="Exit tour">✕</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const KEY = "sb-tour";
+      const plan = document.getElementById("tour-bar").dataset.plan;
+      const proOK = plan === "pro" || plan === "label";
+      const ALL = [
+        { path: "/statements", tier: "pro", title: "Find the money",
+          tip: 'Download the <a href="/walkthrough/sample-statement.csv" class="font-bold text-sb-gold-bright underline">sample statement</a>, then upload it on this page. The engine reads every line.' },
+        { path: "/recovery", tier: "pro", title: "See the findings",
+          tip: "The engine found $85.77 of unmatched revenue and coverage gaps in that file — each finding has an Open Case button." },
+        { path: "/royalty-recovery/cases", tier: "pro", title: "Work a case",
+          tip: "Open a case, mark it Submitted, then Won with a payout amount. The Recovered total climbs in real time." },
+        { path: "/notifications", tier: "pro", title: "The win lands here",
+          tip: "Every payout, pre-save, and fan capture posts a notification. This is your pulse feed." },
+        { path: "/links/new", tier: "artist", title: "Build a release",
+          tip: "Paste any Spotify track URL into Auto-Scan — it fills every platform, the title, and cover art. Set a future release date, enable fan capture, hit Publish." },
+        { path: "/links", tier: "artist", title: "Your campaign is live",
+          tip: "Open your campaign and visit its public page — countdown, pre-save, tracked buttons. Try subscribing with a test email." },
+        { path: "/links/fans", tier: "artist", title: "You own the fan data",
+          tip: "The email you captured is here with a consent log and an intent score. No platform owns this list — you do." },
+        { path: "/rollout-studio/new", tier: "artist", title: "Generate the rollout",
+          tip: "Connect your campaign, paste lyrics, pick platforms, hit Generate — dated posts across the release arc, each with its own tracked link." },
+        { path: "/deal-room", tier: "pro", title: "Paperwork behind it",
+          tip: "Generate a split agreement — a signable document lands in your vault and a deal appears on the board." },
+        { path: "/trust-score", tier: "pro", title: "Prove you're partner-ready",
+          tip: "Every factor here is verifiable account state. Signing that split agreement just moved it." },
+        { path: "/sync/clearance-packs", tier: "pro", title: "Pitch it for sync",
+          tip: "Create a clearance pack — the private link is exactly what a music supervisor sees." },
+        { path: "/revenue-os", tier: "pro", title: "Check the business",
+          tip: "Statement income against logged spend, per release. This is the honest P&L." },
+        { path: "/command-center", tier: "artist", title: "Run it from one screen",
+          tip: "Every score, alert, and open action with a fix-now link. You've now touched every core system — this is home." },
+      ];
+      const steps = ALL.filter((s) => s.tier === "artist" || proOK);
+
+      function state() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } }
+      window.sbStartTour = function () {
+        localStorage.setItem(KEY, JSON.stringify({ i: 0 }));
+        window.location.href = steps[0].path;
+      };
+
+      const st = state();
+      if (!st || typeof st.i !== "number") return;
+      const i = Math.min(st.i, steps.length - 1);
+      const step = steps[i];
+      const bar = document.getElementById("tour-bar");
+      bar.classList.remove("hidden");
+      /* The bar is fixed to the bottom, so the page needs scroll room
+         equal to its height. 96px was a guess made at desk width; on a
+         phone the bar wraps to 240-289px, and the difference was page
+         content nobody could scroll to - permanently, for as long as the
+         tour was running. Measure it instead, and again when the width
+         changes, because the wrap count changes with it. */
+      var padForBar = function () {
+        document.body.style.paddingBottom = bar.offsetHeight + "px";
+      };
+      padForBar();
+      window.addEventListener("resize", padForBar);
+      document.getElementById("tour-step-label").textContent = "Guided tour · Step " + (i + 1) + " of " + steps.length;
+      document.getElementById("tour-title").textContent = step.title;
+      document.getElementById("tour-tip").innerHTML = step.tip;
+      const here = window.location.pathname === step.path;
+      const go = document.getElementById("tour-go");
+      const next = document.getElementById("tour-next");
+      if (here) {
+        next.classList.remove("hidden");
+        if (i === steps.length - 1) next.textContent = "Finish tour ✓";
+      } else {
+        go.classList.remove("hidden");
+        go.href = step.path;
+      }
+      next.addEventListener("click", () => {
+        if (i >= steps.length - 1) {
+          localStorage.removeItem(KEY);
+          window.location.href = "/walkthrough";
+        } else {
+          localStorage.setItem(KEY, JSON.stringify({ i: i + 1 }));
+          window.location.href = steps[i + 1].path;
+        }
+      });
+      document.getElementById("tour-back").addEventListener("click", () => {
+        if (i > 0) {
+          localStorage.setItem(KEY, JSON.stringify({ i: i - 1 }));
+          window.location.href = steps[i - 1].path;
+        }
+      });
+      document.getElementById("tour-exit").addEventListener("click", () => {
+        localStorage.removeItem(KEY);
+        bar.classList.add("hidden");
+        document.body.style.paddingBottom = "";
+      });
+    })();
+  </script>
+
+  {% block scripts %}{% endblock %}
+<script>
+  (function () {
+    var b = document.getElementById("sb-burger");
+    var m = document.getElementById("sb-menu");
+    if (b && m) b.addEventListener("click", function () {
+      var open = m.classList.toggle("hidden") === false;
+      b.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  })();
+</script>
+<!-- Command palette: with five hubs and seventy destinations, finding a
+     page means knowing which hub someone filed it under. This is the
+     escape hatch. Built from the same definitions as the sidebar. -->
+<div id="cmdk" class="fixed inset-0 z-[100] hidden items-start justify-center bg-black/70 px-4 pt-[12vh] backdrop-blur-sm"
+     role="dialog" aria-modal="true" aria-label="Search pages">
+  <div class="w-full max-w-[560px] overflow-hidden rounded-2xl border border-sb-gold/30 bg-sb-surface-1 shadow-2xl">
+    <div class="flex items-center gap-2 border-b border-white/10 px-4">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#91836A" stroke-width="1.6" aria-hidden="true">
+        <circle cx="9" cy="9" r="6"/><path d="M13.5 13.5L17 17"/>
+      </svg>
+      <input id="cmdk-input" type="text" autocomplete="off" spellcheck="false"
+             placeholder="Jump to a page…" aria-controls="cmdk-list"
+             class="w-full bg-transparent py-3.5 text-sm text-white placeholder-gray-300 focus:outline-none">
+      <kbd class="hidden rounded border border-white/15 px-1.5 py-0.5 text-xs text-gray-300 sm:inline font-medium">esc</kbd>
+    </div>
+    <ul id="cmdk-list" role="listbox" aria-label="Results"
+        class="max-h-[52vh] overflow-y-auto py-1"></ul>
+    <div class="flex items-center gap-3 border-t border-white/10 px-4 py-2 text-xs text-gray-300 font-medium">
+      <span class="hidden sm:inline"><kbd class="text-gray-300">↑↓</kbd> move</span>
+      <span class="hidden sm:inline"><kbd class="text-gray-300">↵</kbd> open</span>
+      <button type="button" id="cmdk-close" class="-mx-2 px-2 py-2 font-bold text-gray-300 sm:hidden">Close</button>
+      <span class="ml-auto" id="cmdk-count"></span>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var INDEX = {{ command_index | tojson }};
+  window.SB_NAV_INDEX = INDEX;   // the recents strip reads the same list
+  var box = document.getElementById("cmdk");
+  var input = document.getElementById("cmdk-input");
+  var list = document.getElementById("cmdk-list");
+  var count = document.getElementById("cmdk-count");
+  if (!box || !input || !list) { return; }
+  var results = [], active = 0, lastFocus = null;
+
+  /* Subsequence match, so "smlk" finds "Smart Links" - the way people
+     actually type when they half-remember a name. Scored so a match at a
+     word start beats one buried mid-word. */
+  /* Subsequence over the LABEL first, then the rest as a fallback band.
+     Matching across label+group+description concatenated lets a query
+     borrow letters from the wrong field - "smlk" scored "Submit Music"
+     above "Smart Links" by taking its l from the group name. The label is
+     what people are actually typing at. */
+  function subsequence(hay, q) {
+    var i = 0, wordStart = 0;
+    for (var c = 0; c < hay.length && i < q.length; c++) {
+      if (hay[c] === q[i]) {
+        if (c === 0 || hay[c - 1] === " ") { wordStart++; }
+        i++;
+      }
+    }
+    return i < q.length ? -1 : wordStart;
+  }
+
+  function score(item, q) {
+    if (!q) { return 0; }
+    var label = item.label.toLowerCase();
+    if (label.startsWith(q)) { return 2000 - label.length; }
+    var at = label.indexOf(q);
+    if (at >= 0) {
+      /* A match at the start of a word beats one buried inside another:
+         typing "rack" wants The Rack, not T-rack-Passports. */
+      var boundary = at === 0 || label[at - 1] === " ";
+      return (boundary ? 1800 : 1600) - at;
+    }
+    var inLabel = subsequence(label, q);
+    if (inLabel >= 0) { return 1000 + inLabel * 20 - label.length * 0.1; }
+    // Only now consider the group and description, and always below any
+    // label match, so a real name never loses to a stray word in prose.
+    var rest = (item.group + " " + item.desc).toLowerCase();
+    if (rest.indexOf(q) >= 0) { return 400 - rest.indexOf(q) * 0.1; }
+    var inRest = subsequence(rest, q);
+    if (inRest >= 0) { return 100 + inRest * 5 - rest.length * 0.05; }
+    return -1;
+  }
+
+  function render() {
+    var q = input.value.trim().toLowerCase();
+    results = INDEX.map(function (item) {
+      return {item: item, s: score(item, q)};
+    }).filter(function (r) { return r.s >= 0; })
+      .sort(function (a, b) { return b.s - a.s; })
+      .slice(0, 40).map(function (r) { return r.item; });
+    if (active >= results.length) { active = Math.max(0, results.length - 1); }
+    list.innerHTML = "";
+    if (!results.length) {
+      var none = document.createElement("li");
+      none.className = "px-4 py-6 text-center text-xs text-gray-300";
+      none.textContent = "Nothing matches “" + input.value + "”.";
+      list.appendChild(none);
+      count.textContent = "";
+      return;
+    }
+    results.forEach(function (item, i) {
+      var li = document.createElement("li");
+      li.setAttribute("role", "option");
+      li.setAttribute("aria-selected", i === active ? "true" : "false");
+      li.className = "flex cursor-pointer items-baseline gap-2 px-4 py-3 text-sm sm:py-2 "
+        + (i === active ? "bg-sb-gold/15" : "");
+      li.innerHTML =
+        '<span class="font-semibold ' + (item.live ? "text-gray-100" : "text-gray-300") + '"></span>'
+        + '<span class="text-xs uppercase tracking-wider text-gray-300 font-medium"></span>'
+        + '<span class="ml-auto shrink-0 text-xs text-gray-300 font-medium"></span>';
+      li.children[0].textContent = item.label;
+      li.children[1].textContent = item.group;
+      // A locked feature says so here rather than after the click.
+      li.children[2].textContent = item.live ? item.href : "locked";
+      li.addEventListener("click", function () { go(item); });
+      li.addEventListener("mousemove", function () {
+        if (active !== i) { active = i; render(); }
+      });
+      list.appendChild(li);
+    });
+    count.textContent = results.length + " of " + INDEX.length;
+    var sel = list.children[active];
+    if (sel && sel.scrollIntoView) { sel.scrollIntoView({block: "nearest"}); }
+  }
+
+  function go(item) { window.location.href = item.href; }
+
+  function open() {
+    lastFocus = document.activeElement;
+    box.classList.remove("hidden");
+    box.classList.add("flex");
+    input.value = "";
+    active = 0;
+    render();
+    input.focus();
+  }
+
+  function close() {
+    box.classList.add("hidden");
+    box.classList.remove("flex");
+    // Put focus back where it was, or the page loses its place.
+    if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
+  }
+
+  /* Touch has no Ctrl key, so the same palette needs a control you can
+     press. Same open(), same list, same behaviour - only the way in
+     differs. */
+  var searchBtn = document.getElementById("sb-search");
+  if (searchBtn) {
+    searchBtn.addEventListener("click", function () {
+      if (box.classList.contains("hidden")) { open(); } else { close(); }
+    });
+  }
+  var closeBtn = document.getElementById("cmdk-close");
+  if (closeBtn) { closeBtn.addEventListener("click", close); }
+  // Tapping the backdrop is what everyone tries first.
+  box.addEventListener("click", function (e) {
+    if (e.target === box) { close(); }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    var k = (e.key || "").toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && k === "k") {
+      e.preventDefault();
+      if (box.classList.contains("hidden")) { open(); } else { close(); }
+      return;
+    }
+    if (box.classList.contains("hidden")) { return; }
+    if (k === "escape") { e.preventDefault(); close(); }
+    else if (k === "arrowdown") {
+      e.preventDefault();
+      if (results.length) { active = (active + 1) % results.length; render(); }
+    } else if (k === "arrowup") {
+      e.preventDefault();
+      if (results.length) {
+        active = (active - 1 + results.length) % results.length; render();
+      }
+    } else if (k === "enter") {
+      e.preventDefault();
+      if (results[active]) { go(results[active]); }
+    }
+  });
+  input.addEventListener("input", function () { active = 0; render(); });
+  box.addEventListener("mousedown", function (e) {
+    if (e.target === box) { close(); }      // click the backdrop to dismiss
+  });
+  // Anything with data-cmdk opens it, so there is a mouse route too.
+  document.querySelectorAll("[data-cmdk]").forEach(function (el) {
+    el.addEventListener("click", function (e) { e.preventDefault(); open(); });
+  });
+})();
+
+/* Recently opened. Only pages that exist in the nav index are recorded,
+   so a stale entry cannot outlive the page it points at, and the list is
+   per-browser - nothing about where somebody has been goes to the
+   server. */
+(function () {
+  var INDEX = window.SB_NAV_INDEX || [];
+  var KEY = "sbRecent";
+  var here = window.location.pathname;
+  var known = INDEX.filter(function (i) { return i.href === here; })[0];
+  var list = [];
+  try { list = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) {}
+  if (!Array.isArray(list)) { list = []; }
+  if (known) {
+    list = list.filter(function (x) { return x && x.href !== known.href; });
+    list.unshift({href: known.href, label: known.label});
+    list = list.slice(0, 6);
+    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {}
+  }
+  var box = document.getElementById("sb-recent");
+  if (!box) { return; }
+  var others = list.filter(function (x) {
+    return x && x.href && x.href !== here
+      && INDEX.some(function (i) { return i.href === x.href; });
+  }).slice(0, 4);
+  if (!others.length) { return; }
+  var head = document.createElement("div");
+  head.className = "px-3 text-xs font-semibold uppercase tracking-[0.2em] text-gray-300";
+  head.textContent = "Recent";
+  box.appendChild(head);
+  others.forEach(function (item) {
+    var a = document.createElement("a");
+    a.href = item.href;
+    a.className = "flex items-center gap-3 rounded-lg px-3 py-1.5 text-xs text-gray-300 transition-colors hover:bg-white/5 hover:text-white";
+    var dot = document.createElement("span");
+    dot.className = "h-1.5 w-1.5 shrink-0 rounded-full bg-sb-gold/60";
+    var txt = document.createElement("span");
+    txt.className = "min-w-0 flex-1 truncate";
+    txt.textContent = item.label;
+    a.appendChild(dot);
+    a.appendChild(txt);
+    box.appendChild(a);
+  });
+  box.classList.remove("hidden");
+})();
+</script>
+</body>
+</html>

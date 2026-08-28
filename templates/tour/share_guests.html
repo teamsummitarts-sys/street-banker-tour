@@ -1,0 +1,19 @@
+{% extends "tour/_public.html" %}
+{% block title %}Guest list · {{ show['venue'] }}{% endblock %}
+{% block body %}
+<div class="to-head"><div><p class="to-eyebrow">{{ tour['name'] }} · Guest list</p><h1 class="to-h1" style="font-size:20px">{{ show['venue'] }} · {{ fmt_day(show['date']) }}</h1>
+  <p class="to-sub">{{ summary['used'] }} approved spots{% if summary['allocation'] is not none %} of {{ summary['allocation'] }}{% endif %} · {{ summary['checked_in'] }} checked in</p></div></div>
+{% if rows %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Name</th><th>+</th><th>Access</th>{% if checkin %}<th>Status</th><th></th>{% endif %}</tr></thead>
+  <tbody>{% for g in rows %}<tr>
+    <td data-k="Name" style="font-size:16px"><b>{{ g['name'] }}</b>{% if g['company'] %}<div class="to-muted">{{ g['company'] }}</div>{% endif %}</td>
+    <td data-k="Count">{{ g['count'] }}</td>
+    <td data-k="Access">{{ g['ticket_type'] }}{% if g['credentials'] %} · {{ g['credentials'] }}{% endif %}{% if g['backstage'] %} · backstage{% endif %}</td>
+    {% if checkin %}<td data-k="Status">{% if g['status'] == 'checked_in' %}<span class="to-chip to-chip--ok">in</span>{% else %}<span class="to-chip to-chip--gold">expected</span>{% endif %}</td>
+    <td><form method="post" action="/tour-share/{{ token }}"><input type="hidden" name="action" value="checkin"><input type="hidden" name="guest_id" value="{{ g['id'] }}">{% if g['status'] == 'checked_in' %}<input type="hidden" name="undo" value="1"><button class="to-btn to-btn--ghost to-btn--small" type="submit">Undo</button>{% else %}<button class="to-btn" type="submit" style="min-height:44px">Check in</button>{% endif %}</form></td>{% endif %}
+  </tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<div class="to-empty">No approved guests on this list.</div>{% endif %}
+{% endblock %}
+{% block foot %}{{ 'Tap Check in as people arrive. ' if checkin }}Names and counts only; no contact details are shared.{% endblock %}

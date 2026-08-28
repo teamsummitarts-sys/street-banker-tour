@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% import "_sb.html" as sb %}
+
+{% block title %}Stage Plot - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1200px] space-y-5">
+  <div>
+    <p class="sb-label sb-label-gold">Street Banker · Touring</p>
+    <h1 class="sb-h1 mt-1">Stage Plot Designer</h1>
+    <p class="mt-2 max-w-2xl text-sm text-gray-300">Check what you bring, drag it where it sits on stage, and the input list builds itself. Export one PNG — plot on top, channel list underneath — exactly what the sound engineer asks for.</p>
+  </div>
+
+  <div class="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
+    <!-- Controls -->
+    <div class="space-y-4">
+      {# A real label above the field. "Your act name" is an example of
+         what goes in it, not a substitute for saying what it is. #}
+      <section class="sb-panel-raised p-4">
+        {{ sb.field("act_name", "Act name", id="sp-name", placeholder="Your act name",
+                    hint="Printed at the top of the exported plot.") }}
+      </section>
+
+      <section class="sb-panel p-4">
+        <h2 class="sb-label sb-label-gold">What's on stage</h2>
+        <p class="mt-2 text-sm text-gray-300">Tick it to add it. Drag items on the plot to place them.</p>
+        <div id="sp-items" class="mt-3 space-y-1.5"></div>
+      </section>
+
+      <section class="sb-panel p-4">
+        <h2 class="sb-label sb-label-gold">Input list</h2>
+        {# Channel numbers are machine values: mono and tabular so the
+           list reads as a column the engineer can scan. #}
+        <div id="sp-inputs" class="sb-num mt-2 space-y-0.5 text-sm text-gray-200"></div>
+      </section>
+
+      {# One primary per view: Save is the gold fill, Download is
+         outlined beside it. #}
+      <div class="flex flex-col gap-2">
+        {{ sb.btn("Save plot", id="sp-save", variant="primary", extra="w-full", type="button") }}
+        {{ sb.btn("Download PNG", id="sp-export", variant="secondary", extra="w-full", type="button") }}
+        <div id="sp-status" class="text-center text-sm text-gray-300"></div>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <section class="sb-panel p-4">
+      <div id="sp-canvas" class="select-none [&_svg]:h-auto [&_svg]:w-full"></div>
+    </section>
+  </div>
+</div>
+
+<script src="/static/js/stageplot.js"></script>
+<script>
+(function () {
+  "use strict";
+  var SP = window.StagePlot;
+  var ST = SP.ST;
+
+  var saved = {{ saved_plot | js_json }};
+  var state = saved && saved.items ? saved : {name: "", items: {}, pos: {}};
+
+  var canvas = document.getElementById("sp-canvas");
+
+  function renderControls() {
+    var wrap = document.getElementById("sp-items");
+    wrap.innerHTML = "";
+    SP.CATALOG.forEach(function (c) {
+      var n = state.items[c.key] || 0;
+      var row = document.createElement("div");
+      row.className = "flex items-center gap-2 rounded-lg border px-2.5 py-2 " +
+        (n ? "border-sb-gold/40 bg-sb-gold/10" : "border-white/10 bg-black/30");
+      var cb = document.createElement("input");
+      cb.type = "checkbox"; cb.checked = n > 0; cb.className = "h-4 w-4 accent-sb-gold";
+      cb.addEventListener("change", function () {
+        state.items[c.key] = cb.checked ? 1 : 0;
+        if (!cb.checked) for (var i = 1; i <= c.max; i++) delete state.pos[c.key + "-" + i];
+        render();
+      });
+      var lb = document.createElement("span");
+      lb.textContent = c.label;
+      lb.className = "flex-1 text-xs font-bold " + (n ? "text-sb-gold-bright" : "text-gray-300");
+      row.appendChild(cb); row.appendChild(lb);
+      if (c.max > 1 && n > 0) {
+        var qty = document.createElement("select");
+        qty.className = "rounded border border-white/15 bg-black/50 px-1.5 py-1 text-xs text-white";
+        for (var i = 1; i <= c.max; i++) {
+          var o = document.createElement("option");
+          o.value = i; o.textContent = "×" + i; o.selected = i === n;
+          qty.appendChild(o);
+        }
+        qty.addEventListener("change", function () {
+          state.items[c.key] = parseInt(qty.value, 10); render();
+        });
+        row.appendChild(qty);
+      }
+      wrap.appendChild(row);
+    });
+    var inp = document.getElementById("sp-inputs");
+    var chans = SP.channelList(state);
+    inp.innerHTML = chans.length
+      ? chans.map(function (ch, i) { return "<div>" + (i + 1) + ". " + SP.esc(ch) + "</div>"; }).join("")
+      : '<div class="text-gray-300">Nothing yet.</div>';
+  }
+
+  function render() {
+    canvas.innerHTML = SP.buildSvg(state);
+    renderControls();
+    wireDrag();
+  }
+
+  function wireDrag() {
+    var svg = document.getElementById("sp-svg");
+    if (!svg) return;
+    var drag = null;
+    function toSvg(e) {
+      var pt = svg.createSVGPoint();
+      pt.x = e.clientX; pt.y = e.clientY;
+      return pt.matrixTransform(svg.getScreenCTM().inverse());
+    }
+    svg.addEventListener("pointerdown", function (e) {
+      var g = e.target.closest(".sp-item");
+      if (!g) return;
+      var id = g.getAttribute("data-id");
+      var inst = SP.instances(state).filter(function (i) { return i.id === id; })[0];
+      if (!inst) return;
+      var p = toSvg(e), cur = SP.posFor(state, inst);
+      drag = {inst: inst, g: g, dx: cur[0] - p.x, dy: cur[1] - p.y, base: cur};
+      svg.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    svg.addEventListener("pointermove", function (e) {
+      if (!drag) return;
+      var p = toSvg(e), c = drag.inst.cat;
+      var x = Math.max(ST.x + c.w / 2, Math.min(ST.x + ST.w - c.w / 2, p.x + drag.dx));
+      var y = Math.max(ST.y + c.h / 2 + 14, Math.min(ST.y + ST.h - c.h / 2, p.y + drag.dy));
+      state.pos[drag.inst.id] = [Math.round(x), Math.round(y)];
+      drag.g.setAttribute("transform", "translate(" + (x - drag.base[0]) + "," + (y - drag.base[1]) + ")");
+    });
+    function up() {
+      if (!drag) return;
+      drag = null;
+      render();  // re-render at the committed position
+    }
+    svg.addEventListener("pointerup", up);
+    svg.addEventListener("pointercancel", up);
+  }
+
+  document.getElementById("sp-name").value = state.name || "";
+  document.getElementById("sp-name").addEventListener("input", function (e) {
+    state.name = e.target.value.slice(0, 60);
+    canvas.innerHTML = SP.buildSvg(state);
+    wireDrag();
+  });
+
+  var statusEl = document.getElementById("sp-status");
+  document.getElementById("sp-save").addEventListener("click", function () {
+    fetch("/stage-plot/save", {method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(state)})
+      .then(function (r) { return r.json(); })
+      .then(function (d) { statusEl.textContent = d.ok ? "Saved — it'll be here when you come back." : "Save failed — try again."; })
+      .catch(function () { statusEl.textContent = "Save failed — try again."; });
+  });
+
+  document.getElementById("sp-export").addEventListener("click", function () {
+    var svgText = SP.buildSvg(state);
+    var img = new Image();
+    var H = parseInt(svgText.match(/viewBox="0 0 1000 (\d+)"/)[1], 10);
+    img.onload = function () {
+      var cv = document.createElement("canvas");
+      cv.width = 2000; cv.height = H * 2;
+      var ctx = cv.getContext("2d");
+      ctx.drawImage(img, 0, 0, cv.width, cv.height);
+      var a = document.createElement("a");
+      a.download = (state.name || "stage-plot").toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-stage-plot.png";
+      a.href = cv.toDataURL("image/png");
+      a.click();
+      statusEl.textContent = "PNG downloaded.";
+    };
+    img.onerror = function () { statusEl.textContent = "Export failed — try again."; };
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgText);
+  });
+
+  render();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,140 @@
+{# Real statement data band. Expects: real_royalty (or None), band_mode. #}
+{% if real_royalty %}
+{% set rr = real_royalty %}
+<section class="rounded-2xl border border-sb-gold/40 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5 shadow-[0_0_50px_rgba(201,162,74,0.08)]">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h2 class="sb-label text-sb-gold-bright">Your Real Numbers
+      <span class="ml-2 rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-400">FROM YOUR STATEMENTS — {{ rr.row_count }} rows · {{ rr.source_count }} sources</span>
+    </h2>
+    <a href="/statements" class="text-xs font-semibold text-sb-gold-bright hover:underline">Manage statements →</a>
+  </div>
+
+  {% if band_mode == 'overview' %}
+  {# The tracked total is the page's ledger line now, set once and large
+     at the top; repeating it here made the same number twice in one
+     screen and neither read as the headline. #}
+  <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
+    <div><div class="sb-label text-gray-300">Unmatched Found</div>
+      <div class="mt-1 text-2xl font-black tabular-nums {{ 'text-red-400' if rr.unmatched_revenue else 'text-gray-300' }}">${{ "{:,.2f}".format(rr.unmatched_revenue) }}</div></div>
+    <div><div class="sb-label text-gray-300">Coverage Gaps</div>
+      <div class="mt-1 text-2xl font-black tabular-nums {{ 'text-amber-400' if rr.coverage_gaps else 'text-gray-300' }}">{{ rr.coverage_gaps | length }}</div></div>
+    <div><div class="sb-label text-gray-300">Top Track</div>
+      <div class="mt-1 truncate text-lg font-bold">{{ rr.by_track[0].title if rr.by_track else '—' }}</div></div>
+  </div>
+  {% if rr.unmatched_revenue or rr.coverage_gaps %}
+  <a href="/recovery" class="sb-btn sb-btn-secondary sb-btn-sm mt-3">Review recovery findings →</a>
+  {% endif %}
+
+  {% elif band_mode == 'royalties' %}
+  <div class="mt-4 grid gap-5 lg:grid-cols-2">
+    <div>
+      <div class="sb-label text-gray-300">By Source</div>
+      <div class="mt-2 space-y-2">
+        {% for s in rr.by_source %}
+        <div class="flex items-center gap-3">
+          <span class="w-28 shrink-0 truncate text-xs font-semibold text-gray-200">{{ s.source }}</span>
+          <span class="h-2 flex-1 overflow-hidden rounded-full bg-white/5"><span class="block h-full rounded-full bg-sb-gold" style="width: {{ (100 * s.amount / rr.by_source[0].amount) | round }}%;"></span></span>
+          <span class="w-20 shrink-0 text-right text-xs font-bold sb-num">${{ "{:,.2f}".format(s.amount) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <div class="sb-label text-gray-300">Monthly Trend</div>
+      {% if rr.monthly_trend %}
+      {% set peak = rr.monthly_trend | map(attribute=1) | max %}
+      <div class="mt-2 flex h-24 items-end gap-1.5">
+        {% for period, amt in rr.monthly_trend %}
+        <div class="flex-1 rounded-t bg-sb-gold-bright/80" style="height: {{ (100 * amt / (peak or 1)) | round }}%;" title="{{ period }}: ${{ amt }}"></div>
+        {% endfor %}
+      </div>
+      <div class="mt-1 flex justify-between text-xs text-gray-300 font-medium"><span>{{ rr.monthly_trend[0][0] }}</span><span>{{ rr.monthly_trend[-1][0] }}</span></div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="mt-4">
+    <div class="sb-label text-gray-300">Top Tracks</div>
+    <div class="mt-2 space-y-1.5">
+      {% for t in rr.by_track[:6] %}
+      <div class="flex items-center justify-between rounded-lg border border-white/5 bg-black/25 px-3 py-2 text-xs">
+        <span class="truncate font-semibold {{ 'text-red-400' if t.title == '(no title)' else 'text-gray-100' }}">{{ 'Unmatched rows (no title)' if t.title == '(no title)' else t.title }}</span>
+        <span class="sb-num text-gray-200">${{ "{:,.2f}".format(t.amount) }} · {{ t.sources }} source{{ 's' if t.sources != 1 }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% elif band_mode == 'recovery' %}
+  <div class="mt-4 space-y-2.5">
+    {% if rr.unmatched_revenue %}
+    <div class="rounded-xl border border-red-500/25 bg-red-500/[0.06] p-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div class="text-sm font-bold text-gray-100">Unmatched revenue in your statements</div>
+          <div class="mt-0.5 text-xs text-gray-300">${{ "{:,.2f}".format(rr.unmatched_revenue) }} across rows with no track title — money paid but not attributed. Ask your distributor for corrected metadata.</div>
+        </div>
+        <form method="post" action="/royalty-recovery/cases/from-finding" class="mr-1">
+          <input type="hidden" name="title" value="Unmatched statement revenue">
+          <input type="hidden" name="category" value="unmatched">
+          <input type="hidden" name="amount" value="{{ rr.unmatched_revenue }}">
+          <input type="hidden" name="notes" value="Statement rows with no track title - request corrected metadata from the distributor.">
+          <button class="rounded-md bg-sb-surface-2 px-3 py-1.5 text-xs font-bold text-sb-gold-bright ring-1 ring-sb-gold/50 hover:bg-black">Open case</button>
+        </form>
+        <form method="post" action="/actions/from-alert">
+          <input type="hidden" name="title" value="Claim ${{ '{:,.2f}'.format(rr.unmatched_revenue) }} unmatched statement revenue">
+          <input type="hidden" name="description" value="Statement rows without track titles — request corrected metadata from the distributor.">
+          <input type="hidden" name="category" value="royalty_recovery">
+          <button class="sb-btn sb-btn-secondary sb-btn-sm">Create recovery action</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+    {% for g in rr.coverage_gaps %}
+    <div class="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div class="text-sm font-bold text-gray-100">“{{ g.title }}” missing from {{ g.missing_sources | join(', ') }}</div>
+          <div class="mt-0.5 text-xs text-gray-300">Earning on other sources but absent here — estimated ${{ "{:,.2f}".format(g.estimated_value) }} based on its own per-source average. Estimate, not a guarantee.</div>
+        </div>
+        <form method="post" action="/royalty-recovery/cases/from-finding" class="mr-1">
+          <input type="hidden" name="title" value="Coverage gap: {{ g.title }}">
+          <input type="hidden" name="category" value="coverage_gap">
+          <input type="hidden" name="amount" value="{{ g.estimated_value }}">
+          <input type="hidden" name="notes" value="Missing from {{ g.missing_sources | join(', ') }} - verify delivery and registration.">
+          <button class="rounded-md bg-sb-surface-2 px-3 py-1.5 text-xs font-bold text-sb-gold-bright ring-1 ring-sb-gold/50 hover:bg-black">Open case</button>
+        </form>
+        <form method="post" action="/actions/from-alert">
+          <input type="hidden" name="title" value="Check {{ g.title }} on {{ g.missing_sources | join(', ') }}">
+          <input type="hidden" name="description" value="Track earns elsewhere but shows nothing from these sources — verify delivery and registration. Est. ${{ '{:,.2f}'.format(g.estimated_value) }}.">
+          <input type="hidden" name="category" value="royalty_recovery">
+          <button class="sb-btn sb-btn-secondary sb-btn-sm">Create recovery action</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+    {% if not rr.unmatched_revenue and not rr.coverage_gaps %}
+    <p class="text-xs text-green-400">No unmatched revenue or coverage gaps found in your uploaded statements — clean sweep.</p>
+    {% endif %}
+  </div>
+
+  {% elif band_mode == 'valuation' %}
+  <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div><div class="sb-label text-gray-300">Tracked Revenue</div>
+      <div class="mt-1 text-xl font-black tabular-nums">${{ "{:,.2f}".format(rr.total) }}</div></div>
+    <div><div class="sb-label text-gray-300">Annualized Pace</div>
+      <div class="mt-1 text-xl font-black tabular-nums">${{ "{:,.0f}".format(rr.annualized) }}</div></div>
+    <div><div class="sb-label text-gray-300">Catalog Signal (3–5x)</div>
+      <div class="mt-1 text-xl font-black tabular-nums text-sb-ink">${{ "{:,.0f}".format(rr.valuation.low) }}–{{ "{:,.0f}".format(rr.valuation.high) }}</div></div>
+    <div><div class="sb-label text-gray-300">Mid Estimate</div>
+      <div class="mt-1 text-xl font-black tabular-nums text-green-400">${{ "{:,.0f}".format(rr.valuation.mid) }}</div></div>
+  </div>
+  <p class="mt-3 text-xs text-gray-300 font-medium">Signal only: annualized from your uploaded statement months with a conservative independent-catalog multiple. Not an appraisal, not financial advice — real valuations weigh trend, rights, and territory depth.</p>
+  {% endif %}
+</section>
+{% elif user_plan %}
+<div class="rounded-xl border border-dashed border-sb-gold/25 px-4 py-3 text-xs text-gray-300">
+  <span class="font-bold text-sb-gold-bright">Sample data below.</span>
+  Upload a royalty statement and this page switches to your real numbers.
+  <a href="/statements" class="ml-1 font-semibold text-sb-gold-bright underline">Upload a statement →</a>
+</div>
+{% endif %}

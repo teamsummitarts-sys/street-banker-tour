@@ -1,0 +1,26 @@
+{# Movement on one score.
+
+   Expects `trend` — the dict score_history.summarise returns. Renders
+   nothing at all when there is no history and nothing to say, which is
+   the honest state for a brand-new account rather than a "0%" that reads
+   as failure.
+
+   Colour follows direction, and only direction. A falling score is not
+   an error and must not use the error red; it is information, in a
+   quieter red than a broken thing would get. #}
+{% if trend and (trend.phrase or trend.note) %}
+<p class="mt-2 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold
+          {{ 'border-green-500/30 bg-green-500/10 text-green-400'
+             if trend.delta and trend.delta.direction == 'up'
+             else ('border-red-500/25 bg-red-500/[0.07] text-red-300'
+                   if trend.delta and trend.delta.direction == 'down'
+                   else 'border-white/10 bg-white/5 text-gray-300') }}">
+  {%- if trend.delta and trend.delta.direction == 'up' %}<span aria-hidden="true">▲</span>
+  {%- elif trend.delta and trend.delta.direction == 'down' %}<span aria-hidden="true">▼</span>
+  {%- endif %}
+  <span>{{ trend.phrase or trend.note }}</span>
+  {%- if trend.delta and trend.delta.pct %}
+  <span class="text-xs font-normal opacity-70 font-medium">({{ '+' if trend.delta.change > 0 }}{{ trend.delta.pct }}%)</span>
+  {%- endif %}
+</p>
+{% endif %}

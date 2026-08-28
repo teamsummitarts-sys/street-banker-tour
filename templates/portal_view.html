@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{{ m.owner_name }} - Partner Portal{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[900px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <a href="/portal" class="sb-label text-sb-gold hover:underline">← Partner Portal</a>
+      <h1 class="sb-h1 mt-1">{{ m.owner_name }}</h1>
+    </div>
+    <span class="rounded-full border border-sb-gold/40 bg-sb-gold/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-sb-gold-bright">{{ role }} · read-only</span>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Trust Score</div>
+      <div class="mt-1 text-2xl font-black tabular-nums {{ 'text-green-400' if trust >= 80 else 'text-sb-gold-bright' }}">{{ trust }}<span class="text-sm text-gray-300">/100</span></div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Growth Score</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ growth }}<span class="text-sm text-gray-300">/100</span></div>
+    </div>
+  </div>
+
+  {% if money %}
+  <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+    <h2 class="sb-label text-sb-gold-bright">Money — from uploaded statements</h2>
+    <div class="mt-3 grid grid-cols-3 gap-3">
+      <div><div class="text-2xl font-black tabular-nums text-sb-ink">${{ "{:,.2f}".format(money.total) }}</div><div class="text-xs font-bold uppercase tracking-wide text-gray-300">Reported income</div></div>
+      <div><div class="text-2xl font-black tabular-nums">{{ money.statements }}</div><div class="text-xs font-bold uppercase tracking-wide text-gray-300">Statements</div></div>
+      <div><div class="text-2xl font-black tabular-nums">{{ money.rows }}</div><div class="text-xs font-bold uppercase tracking-wide text-gray-300">Statement lines</div></div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if promo %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-sb-gold">Promotion — first-party numbers</h2>
+    <div class="mt-3 grid grid-cols-4 gap-3">
+      <div><div class="text-2xl font-black tabular-nums">{{ promo.campaigns }}</div><div class="text-xs font-bold uppercase tracking-wide text-gray-300">Campaigns</div></div>
+      <div><div class="text-2xl font-black tabular-nums">{{ "{:,}".format(promo.views) }}</div><div class="text-xs font-bold uppercase tracking-wide text-gray-300">Link views</div></div>
+      <div><div class="text-2xl font-black tabular-nums">{{ "{:,}".format(promo.clicks) }}</div><div class="text-xs font-bold uppercase tracking-wide text-gray-300">Platform clicks</div></div>
+      <div><div class="text-2xl font-black tabular-nums text-sb-ink">{{ "{:,}".format(promo.fans) }}</div><div class="text-xs font-bold uppercase tracking-wide text-gray-300">Owned fans</div></div>
+    </div>
+  </section>
+  {% endif %}
+
+  <p class="px-1 text-xs text-gray-300 font-medium">You see what your role covers: managers see everything, accountants and attorneys see money, publicists and assistants see promotion. Everything is read-only — changes happen on the artist's own account.</p>
+</div>
+{% endblock %}

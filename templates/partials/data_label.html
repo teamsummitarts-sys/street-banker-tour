@@ -1,0 +1,57 @@
+{# One honest label for anything that is not the user's own measured data.
+
+   The rule this enforces: a number on screen must never be mistaken for
+   the artist's own. Four kinds, because they are four different claims:
+
+     sample        - invented figures, shown so the page has shape before
+                     the user has data. Says so plainly.
+     estimate      - derived from something real. MUST name that basis;
+                     an estimate with no stated basis is indistinguishable
+                     from a made-up number, which is the thing we refuse
+                     to ship.
+     preview       - the feature is built but not yet wired to the source.
+     not_connected - an integration exists but this account has not
+                     connected it, so there is nothing real to show.
+
+   Expects:
+     kind    - one of the four above
+     basis   - required for 'estimate'; what it is actually computed from
+     body    - optional; replaces the default sentence when the generic
+               wording does not fit. "None of it is yours" is right for a
+               dashboard figure and wrong for someone else's profile.
+     note    - optional extra sentence
+     action  - optional {href, label}: the thing that makes it real
+
+   Deliberately not dim-grey-on-black. A disclosure nobody reads is not a
+   disclosure, so this uses an amber rule and near-white copy and sits in
+   the reading path rather than in a footnote.
+#}
+{% set _k = kind | default('sample') %}
+{% set _copy = {
+     'sample':        ('Sample data',      'Invented figures, shown so this page has shape. None of it is yours.'),
+     'estimate':      ('Estimate',         'A calculation, not a measurement. It can be wrong.'),
+     'preview':       ('Preview',          'Built, but not yet reading from a live source.'),
+     'not_connected': ('Nothing connected', 'This account has no source linked yet, so there is nothing real to show.')
+   } %}
+{% set _title = _copy[_k][0] if _k in _copy else 'Sample data' %}
+{% set _body  = body or (_copy[_k][1] if _k in _copy else _copy['sample'][1]) %}
+<div role="note"
+     class="my-3 flex flex-wrap items-start gap-x-3 gap-y-1.5 rounded-xl border-l-4 border-l-amber-400/80
+            border-y border-r border-white/10 bg-amber-400/[0.06] px-4 py-3">
+  <span class="rounded-md bg-amber-400/20 px-2 py-0.5 text-xs font-black uppercase tracking-[0.18em] text-amber-200">
+    {{ _title }}
+  </span>
+  <p class="min-w-0 flex-1 text-xs leading-relaxed text-gray-100">
+    {{ _body }}
+    {%- if _k == 'estimate' and basis %} Based on {{ basis }}.
+    {%- elif _k == 'estimate' %} <span class="text-amber-300">Basis not stated — treat with suspicion.</span>
+    {%- endif %}
+    {%- if note %} {{ note }}{% endif %}
+  </p>
+  {%- if action and action.href %}
+  <a href="{{ action.href }}"
+     class="sb-btn sb-btn-secondary sb-btn-sm shrink-0">
+    {{ action.label | default('Make it real') }} →
+  </a>
+  {%- endif %}
+</div>

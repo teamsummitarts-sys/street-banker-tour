@@ -1,0 +1,48 @@
+{% set tab = 'contacts' %}
+{% extends "press/_shell.html" %}
+{% block title %}Import contacts - Press Desk{% endblock %}
+{% block press %}
+
+<div class="pd-head">
+  <div>
+    <p class="pd-eyebrow">Media list</p>
+    <h1 class="pd-h1">Import from CSV</h1>
+    <p class="pd-sub">Paste the rows. The first line must be a header. A row that cannot be read is skipped and named rather than silently dropped, so half a list never goes missing quietly.</p>
+  </div>
+</div>
+
+{% if result %}
+<div class="pd-note {{ 'pd-note--warn' if result['skipped'] and not result['added'] }}">
+  <strong>{{ result['added'] }} added, {{ result['skipped'] }} skipped.</strong>
+  {% if result['problems'] %}
+  <p>Every skipped row, and why:</p>
+  <ul style="margin:8px 0 0 18px;color:var(--pd-soft);font-size:12.5px;line-height:1.7">
+    {% for p in result['problems'] %}<li>{{ p }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% if result['added'] %}
+<p style="margin-bottom:16px"><a class="pd-btn" href="/press-desk/contacts">See the media list</a></p>
+{% endif %}
+{% endif %}
+
+<form method="post" class="pd-form" action="/press-desk/contacts/import">
+  <label class="pd-field">
+    <span>CSV</span>
+    <textarea name="csv" rows="12" required
+              placeholder="name,outlet,role,email,beat,city
+Dee Okafor,Nightdrive Mag,Writer,dee@example.com,new artists,London"></textarea>
+  </label>
+  <p class="pd-sub" style="margin-top:10px">
+    Recognised columns: <code>name</code>, <code>outlet</code> (or <code>publication</code>),
+    <code>role</code>, <code>email</code>, <code>beat</code> (or <code>genre</code>),
+    <code>city</code>, <code>country</code>, <code>website</code> (or <code>url</code>),
+    <code>notes</code>. Anything else in the file is ignored. A row needs a
+    name or an outlet; duplicate email addresses are skipped.
+  </p>
+  <div style="margin-top:14px" class="pd-inline">
+    <button class="pd-btn" type="submit">Import</button>
+    <a class="pd-btn pd-btn--ghost" href="/press-desk/contacts">Back to the list</a>
+  </div>
+</form>
+{% endblock %}

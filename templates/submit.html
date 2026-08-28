@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% import "_gear.html" as gear %}
+
+{% block title %}Submit Music - Street Banker{% endblock %}
+
+{% set lb = label %}
+{% set panel = 'relative overflow-hidden rounded-2xl border border-sb-gold/40 bg-gradient-to-b from-sb-surface-2 to-sb-ground shadow-[0_0_60px_rgba(201,162,74,0.07),inset_0_1px_0_rgba(255,255,255,0.05)]' %}
+
+{% macro gold_rule_header(text) %}
+<div class="flex items-center gap-4 px-10 pt-6 pb-4">
+  <span class="h-px flex-1 bg-sb-gold/40"></span>
+  <span class="sb-label text-sb-gold-bright">{{ text }}</span>
+  <span class="h-px flex-1 bg-sb-gold/40"></span>
+</div>
+{% endmacro %}
+
+{% block content %}
+{% if submit_page_img %}
+<!-- Text-free designed art + ALL copy as real positioned HTML.
+     Percent coordinates scale with the image; nudge values to fine-align. -->
+<div class="mx-auto max-w-[940px]">
+
+  <!-- Editorial header (HTML above the art; page + art are both near-black) -->
+  <div class="pt-6 pb-2 text-center">
+    <div class="sb-label text-sb-gold">Street Banker — A&amp;R Desk</div>
+    <h1 class="mt-4 text-5xl font-extrabold uppercase leading-[0.92] tracking-tight sm:text-6xl">
+      <span class="text-gray-100">Send Us</span><br>
+      <span class="bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(216,178,90,0.25)]">Your Sound.</span>
+    </h1>
+    <p class="mx-auto mt-5 max-w-md text-base leading-relaxed text-gray-200">
+      No forms. No fees. No gatekeeping robots. A real person at Street Banker listens to everything that lands on our desk.
+    </p>
+  </div>
+
+  <div class="relative" style="font-size: clamp(7px, 1.5vw, 14.5px);">
+    <img src="{{ submit_page_img }}" alt="Street Banker A&R desk — turntable, meters, and patchbay" class="block h-auto w-full">
+
+    <!-- Vinyl gold label -->
+    <span class="pointer-events-none absolute flex flex-col items-center justify-center text-center"
+          style="left: 16.5%; top: 22.3%; width: 13%; height: 4.6%;">
+      <span class="text-[0.72em] font-extrabold uppercase tracking-[0.12em] text-sb-on-gold">Street Banker</span>
+      <span class="text-[0.5em] font-bold uppercase tracking-[0.28em] text-sb-on-gold/70">A&amp;R Desk</span>
+    </span>
+
+    <!-- Turntable panel: right-side copy -->
+    <div class="absolute" style="left: 49%; top: 14.6%; width: 43%;">
+      <div class="text-[0.78em] font-semibold uppercase tracking-[0.28em] text-sb-gold">Now accepting demos</div>
+      <h2 class="mt-[0.6em] text-[1.9em] font-extrabold uppercase leading-[1.08] tracking-tight text-white">Every record starts as a demo somebody almost didn't send.</h2>
+      <p class="mt-[0.9em] text-[0.95em] leading-[1.55] text-gray-200">Synthwave to soul, bedroom demo to mixed master — if it moves, we want to hear it. If it's a fit, we'll reach out about distribution, marketing, or a full label deal.</p>
+    </div>
+
+    <!-- Buttons on the plates -->
+    <a href="mailto:{{ lb.brand.submissions_emails[0] }}?subject=Demo Submission"
+       class="absolute flex items-center justify-center font-bold text-sb-on-gold transition-transform hover:scale-[1.02]"
+       style="left: 50.4%; top: 34.2%; width: 20.4%; height: 4.6%; font-size: 1.05em;" aria-label="Email your demo">Email Your Demo&nbsp;&rsaquo;</a>
+    <a href="/epk"
+       class="absolute flex items-center justify-center font-semibold text-gray-100 transition-colors hover:text-sb-gold-bright"
+       style="left: 72.7%; top: 34.2%; width: 19.6%; height: 4.6%; font-size: 1em;" aria-label="Build an EPK first">Build an EPK first</a>
+
+    <!-- How It Works -->
+    <span class="absolute left-0 top-[44.6%] flex w-full justify-center text-[0.85em] font-bold uppercase tracking-[0.35em] text-sb-gold-bright">How It Works</span>
+    {% for n, plate_left, col_left, title, body in [
+      ('01', 16.9, 4.8, 'Make it easy to love', 'A link or two attachments beats a zip of 40 stems. Lead with your best song.'),
+      ('02', 47.3, 35.3, 'Tell us who you are', 'A few lines, your numbers if you have them, links to your world. An EPK is perfect.'),
+      ('03', 78.0, 66.0, 'Press send', 'That\'s it. A human listens. If it\'s a fit, you\'ll hear from us directly.'),
+    ] %}
+    <span class="absolute flex items-center justify-center text-[0.8em] font-bold tracking-[0.2em] text-sb-gold-bright"
+          style="left: {{ plate_left }}%; top: 56.3%; width: 5.6%; height: 2.2%;">{{ n }}</span>
+    <span class="absolute flex justify-center text-center text-[0.95em] font-extrabold uppercase tracking-wide text-white"
+          style="left: {{ col_left }}%; top: 59.2%; width: 30%;">{{ title }}</span>
+    <p class="absolute text-center text-[0.78em] leading-[1.5] text-gray-200"
+       style="left: {{ col_left + 1 }}%; top: 62.3%; width: 28%;">{{ body }}</p>
+    {% endfor %}
+
+    <!-- Patchbay -->
+    <span class="absolute left-0 top-[67.4%] flex w-full justify-center text-[0.78em] font-bold uppercase tracking-[0.3em] text-sb-gold-bright">Send It To The Desk</span>
+    <span class="absolute flex items-center justify-center text-[0.62em] font-bold uppercase tracking-[0.2em] text-sb-gold"
+          style="left: 6.2%; top: 69.2%; width: 7.4%; height: 1.9%;">Output</span>
+    <span class="absolute flex items-center justify-center text-[0.62em] font-bold uppercase tracking-[0.2em] text-sb-gold"
+          style="left: 6.2%; top: 73.3%; width: 7.4%; height: 1.9%;">Send</span>
+    <span class="absolute flex items-center justify-center gap-[0.8em]" style="left: 6.2%; top: 77.3%; width: 7.4%; height: 1.6%;">
+      <a href="mailto:{{ lb.brand.submissions_emails[0] }}?subject=Demo Submission (streaming link)" class="text-[0.6em] font-bold tracking-[0.12em] text-sb-gold-bright hover:underline">LINK</a>
+      <a href="mailto:{{ lb.brand.submissions_emails[0] }}?subject=Demo Submission (MP3 attached)" class="text-[0.6em] font-bold tracking-[0.12em] text-sb-gold-bright hover:underline">MP3</a>
+    </span>
+    <div class="pointer-events-none absolute flex flex-col items-center text-center" style="left: 77%; top: 70.2%; width: 16.5%;">
+      <span class="text-[1.05em] font-extrabold uppercase tracking-[0.25em] text-sb-gold-bright">Patchbay</span>
+      <span class="mt-[0.7em] text-[0.62em] font-semibold uppercase tracking-[0.28em] text-gray-200">Street Banker</span>
+      <span class="mt-[0.25em] text-[0.56em] font-semibold uppercase tracking-[0.3em] text-gray-300">A&amp;R Desk</span>
+    </div>
+    <span class="pointer-events-none absolute flex items-center text-[0.55em] font-semibold uppercase tracking-[0.18em] text-gray-300"
+          style="left: 80.7%; top: 77%; width: 8%; height: 1.5%;">Signal</span>
+
+    <!-- The Desk -->
+    <span class="absolute left-0 top-[83.3%] flex w-full justify-center text-[0.78em] font-bold uppercase tracking-[0.3em] text-sb-gold-bright">The Desk</span>
+    <a href="mailto:{{ lb.brand.submissions_emails[0] }}?subject=Demo Submission"
+       class="absolute flex items-center justify-center text-[1em] font-semibold text-sb-gold-bright hover:underline"
+       style="left: 7.4%; top: 85.5%; width: 40.6%; height: 3.6%;">{{ lb.brand.submissions_emails[0] }}</a>
+    <a href="mailto:{{ lb.brand.submissions_emails[1] }}?subject=Demo Submission"
+       class="absolute flex items-center justify-center text-[1em] font-semibold text-sb-gold-bright hover:underline"
+       style="left: 51.5%; top: 85.5%; width: 41%; height: 3.6%;">{{ lb.brand.submissions_emails[1] }}</a>
+    <span class="absolute flex justify-center text-center text-[0.72em] leading-[1.5] text-gray-300"
+          style="left: 15%; top: 89.8%; width: 70%;">Reviewed by the Street Banker team. No automation, no auto-responders — we can't reply to everything, but we do play everything.</span>
+  </div>
+</div>
+{% else %}
+<div class="mx-auto max-w-4xl">
+
+  <!-- Editorial header -->
+  <div class="pt-6 text-center">
+    <div class="sb-label text-sb-gold">Street Banker — A&amp;R Desk</div>
+    <h1 class="mt-4 text-5xl font-extrabold uppercase leading-[0.92] tracking-tight sm:text-6xl">
+      <span class="text-gray-100">Send Us</span><br>
+      <span class="bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(216,178,90,0.25)]">Your Sound.</span>
+    </h1>
+    <p class="mx-auto mt-5 max-w-md text-base leading-relaxed text-gray-200">
+      No forms. No fees. No gatekeeping robots. A real person at Street Banker listens to everything that lands on our desk.
+    </p>
+  </div>
+
+  <!-- Turntable / pitch panel -->
+  <div class="mt-12 {{ panel }}">
+    {{ gear.corner_screws() }}
+    <div class="grid grid-cols-1 items-center gap-8 p-8 sm:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:p-10">
+      {% if turntable_img %}
+      <figure class="overflow-hidden rounded-xl border border-sb-gold/25">
+        <img src="{{ turntable_img }}" alt="Street Banker A&R Desk turntable" class="block h-auto w-full" loading="lazy">
+      </figure>
+      {% else %}
+      <!-- Code-drawn deck fallback until the design's turntable crop lands -->
+      <div class="relative mx-auto w-full max-w-[360px]">
+        <div class="relative rounded-2xl border border-white/10 bg-gradient-to-b from-sb-surface-3 to-sb-surface-1 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_24px_48px_rgba(0,0,0,0.5)]">
+          <div class="flex items-center">
+            <div class="relative flex-1" style="filter: drop-shadow(0 10px 24px rgba(0,0,0,0.5));">
+              <div class="absolute -inset-[6%] rounded-full border border-white/10 bg-sb-ground"></div>
+              <div class="relative">
+                <div class="animate-[spin_10s_linear_infinite]">
+                  <svg viewBox="0 0 200 200" aria-hidden="true">
+                    <defs>
+                      <radialGradient id="vinylbody" cx="0.5" cy="0.5" r="0.5">
+                        <stop offset="0.35" stop-color="#131110"/><stop offset="0.8" stop-color="#131110"/><stop offset="1" stop-color="#0B0A08"/>
+                      </radialGradient>
+                      <radialGradient id="goldlabel" cx="0.38" cy="0.34" r="0.85">
+                        <stop offset="0" stop-color="#E8B950"/><stop offset="0.55" stop-color="#E8B950"/><stop offset="1" stop-color="#8A6E30"/>
+                      </radialGradient>
+                    </defs>
+                    <circle cx="100" cy="100" r="96" fill="url(#vinylbody)"/>
+                    <circle cx="100" cy="100" r="96" fill="none" stroke="#ffffff1c" stroke-width="1"/>
+                    {% for r in range(40, 94, 3) %}
+                    <circle cx="100" cy="100" r="{{ r }}" fill="none" stroke="{{ '#ffffff10' if loop.index % 4 == 0 else '#ffffff07' }}" stroke-width="1"/>
+                    {% endfor %}
+                    {% for r in [50, 63, 78, 90] %}
+                    <circle cx="100" cy="100" r="{{ r }}" fill="none" stroke="#00000055" stroke-width="1.6"/>
+                    {% endfor %}
+                    <circle cx="100" cy="100" r="33" fill="url(#goldlabel)"/>
+                    <circle cx="100" cy="100" r="33" fill="none" stroke="#00000035"/>
+                    <text x="100" y="93" text-anchor="middle" font-size="11.5" font-weight="800" letter-spacing="1.5" fill="#14100A" font-family="sans-serif">STREET</text>
+                    <text x="100" y="106" text-anchor="middle" font-size="11.5" font-weight="800" letter-spacing="1.5" fill="#14100A" font-family="sans-serif">BANKER</text>
+                    <text x="100" y="118" text-anchor="middle" font-size="5.5" font-weight="600" letter-spacing="2.4" fill="#1c1302a0" font-family="sans-serif">A&amp;R DESK</text>
+                    <circle cx="100" cy="100" r="3.5" fill="#0B0A08"/>
+                  </svg>
+                </div>
+                <svg viewBox="0 0 200 200" aria-hidden="true" class="pointer-events-none absolute inset-0">
+                  <defs>
+                    <linearGradient id="sheenfade" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stop-color="#ffffff" stop-opacity="0.24"/><stop offset="0.5" stop-color="#ffffff" stop-opacity="0.04"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M43 26 A94 94 0 0 1 157 26 L146 44 A72 72 0 0 0 54 44 Z" fill="url(#sheenfade)"/>
+                </svg>
+              </div>
+            </div>
+            <svg viewBox="0 0 90 210" aria-hidden="true" class="relative z-10 -ml-8 w-[76px] shrink-0">
+              <defs>
+                <linearGradient id="armmetal" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#F2ECE0"/><stop offset="0.5" stop-color="#A99B84"/><stop offset="1" stop-color="#91836A"/>
+                </linearGradient>
+              </defs>
+              <line x1="62" y1="36" x2="80" y2="18" stroke="#3A3226" stroke-width="9" stroke-linecap="round"/>
+              <circle cx="80" cy="18" r="8" fill="#221D18" stroke="#ffffff25"/>
+              <circle cx="58" cy="42" r="17" fill="#1A1714" stroke="#ffffff1e"/>
+              <circle cx="58" cy="42" r="8" fill="#3A3226" stroke="#ffffff30"/>
+              <line x1="58" y1="42" x2="20" y2="152" stroke="url(#armmetal)" stroke-width="4.5" stroke-linecap="round"/>
+              <g transform="rotate(19 20 152)">
+                <rect x="11" y="147" width="18" height="10" rx="2.5" fill="#C9A24A"/>
+                <rect x="14" y="157" width="4" height="5" rx="1" fill="#F2ECE0"/>
+              </g>
+            </svg>
+          </div>
+          <div class="mt-4 flex items-center justify-between px-1">
+            <span class="flex items-center gap-2"><span class="h-2 w-2 animate-pulse rounded-full bg-transparent shadow-[0_0_8px_rgba(251,191,36,0.8)] border"></span><span class="sb-label text-gray-200">Power</span></span>
+            <span class="sb-label text-sb-gold">Street Banker A&amp;R Desk</span>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div>
+        <div class="sb-label text-sb-gold">Now accepting demos</div>
+        <h2 class="mt-3 text-2xl font-extrabold uppercase leading-tight tracking-tight text-white sm:text-3xl">Every record starts as a demo somebody almost didn't send.</h2>
+        <p class="mt-4 text-sm leading-relaxed text-gray-200">
+          Synthwave to soul, bedroom demo to mixed master — if it moves, we want to hear it.
+          If it's a fit, we'll reach out about distribution, marketing, or a full label deal.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a href="mailto:{{ lb.brand.submissions_emails[0] }}?subject=Demo Submission" class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-6 py-3 text-sm font-bold text-sb-on-gold shadow-[0_4px_18px_rgba(216,178,90,0.35)] transition-transform hover:scale-[1.02]">
+            Email Your Demo
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.3 5.3a1 1 0 011.4 0l4 4a1 1 0 010 1.4l-4 4a1 1 0 11-1.4-1.4L10.6 10 7.3 6.7a1 1 0 010-1.4z" clip-rule="evenodd"/></svg>
+          </a>
+          <a href="/epk" class="sb-btn sb-btn-secondary items-center gap-2">Build an EPK first</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- How it works: black + gold rack panel -->
+  <div class="mt-10 {{ panel }}">
+    {{ gear.corner_screws() }}
+    {{ gold_rule_header('How It Works') }}
+    <div class="grid grid-cols-1 divide-y divide-sb-gold/20 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      {% for hw, n, title, body in [
+        ('vu', '01', 'Make it easy to love', 'A link or two attachments beats a zip of 40 stems. Lead with your best song.'),
+        ('knob', '02', 'Tell us who you are', 'A few lines, your numbers if you have them, links to your world. An EPK is perfect.'),
+        ('led', '03', 'Press send', 'That\'s it. A human listens. If it\'s a fit, you\'ll hear from us directly.'),
+      ] %}
+      <div class="flex flex-col items-center px-6 py-8 text-center">
+        <div class="flex h-28 items-center">
+          {% if hw == 'vu' %}{{ gear.mini_vu(needle=62, cls='h-28') }}
+          {% elif hw == 'knob' %}{{ gear.knob(angle=35, cls='h-28 w-28', min_label='DEMO', max_label='MASTER', dark=True) }}
+          {% else %}{{ gear.led_bars(lit=4, cls='h-28') }}{% endif %}
+        </div>
+        <div class="mt-4">{{ gear.label_plate(n, gold=True) }}</div>
+        <div class="mt-3 text-sm font-extrabold uppercase tracking-wide text-white">{{ title }}</div>
+        <span class="mt-1.5 h-0.5 w-8 rounded bg-sb-gold"></span>
+        <p class="mt-2 max-w-[260px] text-sm leading-relaxed text-gray-200">{{ body }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="h-4"></div>
+  </div>
+
+  <!-- Send it to the desk: gold patchbay -->
+  <div class="mt-10 {{ panel }}">
+    {{ gear.corner_screws() }}
+    {{ gold_rule_header('Send It To The Desk') }}
+    <div class="px-6 sm:px-10">
+      {{ gear.patchbay_gold(from_idx=0, to_idx=2, n=10) }}
+    </div>
+    <div class="flex items-center gap-2 px-10 pb-5">
+      <a href="mailto:{{ lb.brand.submissions_emails[0] }}?subject=Demo Submission (streaming link)" class="sb-btn sb-btn-secondary sb-btn-sm">Link</a>
+      <a href="mailto:{{ lb.brand.submissions_emails[0] }}?subject=Demo Submission (MP3 attached)" class="sb-btn sb-btn-secondary sb-btn-sm">MP3</a>
+      <span class="sb-label ml-auto text-gray-300">Route your signal — link or file, both land here</span>
+    </div>
+  </div>
+
+  <!-- The desk -->
+  <div class="mt-10 {{ panel }}">
+    {{ gear.corner_screws() }}
+    {{ gold_rule_header('The Desk') }}
+    <div class="px-8 pb-7 text-center">
+      <div class="flex flex-col items-center gap-1 sm:flex-row sm:justify-center sm:gap-6">
+        {% for email in lb.brand.submissions_emails %}
+        <a href="mailto:{{ email }}?subject=Demo Submission" class="text-base font-semibold text-sb-gold-bright hover:underline">{{ email }}</a>
+        {% if not loop.last %}<span class="hidden text-sb-gold/50 sm:inline">|</span>{% endif %}
+        {% endfor %}
+      </div>
+      <p class="mx-auto mt-3 max-w-lg text-xs leading-relaxed text-gray-200">Reviewed by the Street Banker team. No automation, no out-of-office auto-responders. We can't reply to everything, but we do play everything.</p>
+      <div class="mx-auto mt-5 grid h-11 w-11 place-items-center rounded-full border border-sb-gold/60">
+        <span class="font-serif text-base font-bold tracking-tight text-sb-gold-bright">SB</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="h-10"></div>
+</div>
+{% endif %}
+{% endblock %}

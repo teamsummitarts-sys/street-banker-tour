@@ -1,0 +1,30 @@
+{% extends "tour/_shell.html" %}
+{% block title %}{{ show['venue'] }} · {{ show['date'] }} - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+
+<div class="to-head">
+  <div>
+    <p class="to-eyebrow">Show Command · #{{ show['show_number'] }} of {{ shows|length }}</p>
+    <h1 class="to-h1" style="font-size:22px">{{ show['venue'] }}</h1>
+    <p class="to-sub">{{ fmt_day(show['date']) }}{% if show['city'] %} · {{ show['city'] }}{% endif %}{% if show['tz'] %} · <span class="to-muted">{{ show['tz'] }}</span>{% endif %} · {{ m.chip(show['status']) }}</p>
+  </div>
+  <div class="to-inline">
+    {{ m.ready(readiness['pct']) }}
+    {% if prev_show %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/shows/{{ prev_show['id'] }}?tab={{ tab }}">‹ {{ prev_show['city'] or prev_show['venue'] }}</a>{% endif %}
+    {% if next_show %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/shows/{{ next_show['id'] }}?tab={{ tab }}">{{ next_show['city'] or next_show['venue'] }} ›</a>{% endif %}
+    <a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/day-sheet" target="_blank" rel="noopener">Day sheet</a>
+  </div>
+</div>
+
+<nav class="to-tabs" aria-label="Show sections" style="margin-top:-4px">
+  {% for key, label in show_tabs %}
+    {% set need = {'money':'financials','merch':'merch','guests':'guests','vip':'vip','marketing':'marketing','content':'content','inbox':'advance','files':'files'}[key] if key in ('money','merch','guests','vip','marketing','content','inbox','files') else None %}
+    {% if not need or can(need) %}
+    <a class="to-tab {{ 'is-on' if tab == key }}" href="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}?tab={{ key }}">{{ label }}</a>
+    {% endif %}
+  {% endfor %}
+</nav>
+
+{% include "tour/show/_" ~ tab ~ ".html" %}
+{% endblock %}

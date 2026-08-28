@@ -1,0 +1,23 @@
+{% import "tour/_macros.html" as m %}
+{% if tasks %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Task</th><th>Priority</th><th>Due</th><th>Status</th><th></th></tr></thead>
+  <tbody>{% for t in tasks %}<tr><td data-k="Task"><b>{{ t['title'] }}</b>{% if t['description'] %}<div class="to-muted">{{ t['description'] }}</div>{% endif %}</td><td data-k="Priority">{{ t['priority'] }}</td><td data-k="Due">{{ t['due_date'] or '—' }}</td><td data-k="Status">{{ m.chip(t['status']) }}</td>
+    <td>{% if t['status'] in ('new','in_progress') and (can('edit') or can('schedule') or can('advance') or can('production')) %}<form method="post" action="/tours/{{ tour['id'] }}/tasks/{{ t['id'] }}/status"><input type="hidden" name="status" value="complete"><button class="to-btn to-btn--small" type="submit">Done</button></form>{% endif %}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}
+  {{ m.empty("No tasks on this show", "Tasks here are the same Street Banker actions you see in Command Center, tagged to this date.") }}
+{% endif %}
+{% if can('edit') or can('schedule') or can('advance') or can('production') %}
+<form method="post" action="/tours/{{ tour['id'] }}/tasks/add" class="to-form" style="margin-top:10px">
+  <input type="hidden" name="show_id" value="{{ show['id'] }}">
+  <div class="to-grid">
+    {{ m.field('title', 'Task', required=True) }}
+    {{ m.field('assignee', 'Assignee', placeholder='name') }}
+    {{ m.select('priority', 'Priority', ['high','medium','low'], 'medium') }}
+    {{ m.field('due_date', 'Due', show['date'], type='date') }}
+    {{ m.textarea('description', 'Details', rows=1) }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Add task</button></div>
+</form>
+{% endif %}

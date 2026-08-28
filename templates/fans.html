@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Fan Dashboard - Royalty Sweep{% endblock %}
+
+{% set fd = fans %}
+
+{% block content %}
+<div class="mx-auto max-w-[1200px] space-y-5">
+  <div>
+    <h1 class="sb-h1">Fan Dashboard</h1>
+    {% if fd.is_real %}
+      <p class="mt-1 max-w-3xl text-sm text-gray-300">
+        The people who gave you their email on a smart link, how engaged they
+        are, and where they came from. Every number here is from your own
+        records.
+      </p>
+    {% else %}
+      <p class="mt-1 text-sm text-gray-300">Turn listeners into superfans — who your most valuable fans are and what they spend on.</p>
+    {% endif %}
+  </div>
+
+{% if fd.is_real %}
+  {# ---------------------------------------------------------------------
+     Real account. Everything below reads ml_fans, ml_consents and ml_events
+     for this user. There is deliberately no lifetime value, spend, or
+     leaderboard-by-amount: ml_fans has no spend column and the app has no
+     purchase feed, so every one of those figures used to be invented. A
+     fan-value number an artist might act on is not a thing to guess at.
+     --------------------------------------------------------------------- #}
+
+  {% if not fd.has_data %}
+    <section class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-6">
+      <h2 class="sb-label text-gray-300">No fans captured yet</h2>
+      <p class="mt-2 max-w-2xl text-sm text-gray-300">{{ fd.reason }}</p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <a class="sb-btn sb-btn-primary" href="/links/new">Create a smart link</a>
+        <a class="sb-btn sb-btn-secondary" href="/links">See your links</a>
+      </div>
+    </section>
+  {% else %}
+
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Fans captured</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-sb-ink">{{ "{:,}".format(fd.summary.total_fans) }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">People who gave you an email</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">With consent on file</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ "{:,}".format(fd.summary.consented) }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">Recorded, with the wording shown</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">QR scans</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ "{:,}".format(fd.summary.qr_scans) }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">Counted apart from ordinary visits</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Pre-saves</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ "{:,}".format(fd.summary.presaves) }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">Across every campaign</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">How engaged they are</h2>
+      <p class="mt-2 text-xs text-gray-300 font-medium">
+        The bands your smart links already score fans into — not invented tiers.
+      </p>
+      <div class="mt-4 space-y-4">
+        {% for s in fd.segments %}
+        <div class="rounded-xl border border-white/5 bg-white/5 p-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-sm font-semibold text-gray-100">{{ s.segment }}</span>
+            <span class="text-xs text-gray-300">{{ "{:,}".format(s.count) }} fans · {{ s.share }}%</span>
+          </div>
+          <div class="mt-3 h-2.5 overflow-hidden rounded-full bg-white/5">
+            <div class="h-2.5 bg-amber-500" style="width: {{ s.share }}%;"></div>
+          </div>
+          <div class="mt-1.5 flex flex-wrap gap-3 text-xs text-gray-300 font-medium">
+            <span>{{ s.avg_visits }} avg visits</span>
+            <span>{{ s.avg_clicks }} avg clicks</span>
+            <span>{{ "{:,}".format(s.presaves) }} pre-saves</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 class="sb-label text-gray-300">Most engaged</h2>
+        <a class="text-xs text-gray-300 font-medium underline" href="/links/fans">Full CRM</a>
+      </div>
+      <p class="mt-2 text-xs text-gray-300 font-medium">
+        Ranked by the same intent score the CRM uses, so the two pages cannot
+        disagree about who is most engaged.
+      </p>
+      <div class="mt-3 space-y-2">
+        {% for f in fd.top_fans %}
+        <div class="flex items-center gap-3 rounded-lg border border-white/5 bg-white/5 px-3 py-2">
+          <span class="w-5 text-center text-xs font-bold text-gray-300">{{ loop.index }}</span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-semibold text-gray-100">{{ f.name or f.email }}</span>
+            <span class="text-xs text-gray-300 font-medium">
+              {{ f.intent_level }} · {{ f.visits }} visits · {{ f.clicks }} clicks
+            </span>
+          </span>
+          <span class="shrink-0 text-sm font-bold sb-num text-sb-ink">{{ f.intent_score }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <p class="px-1 max-w-3xl text-xs text-gray-300 font-medium">
+    These are your own fan records, held because somebody gave you their email
+    on one of your links. There is no spend or lifetime-value figure here
+    because the app holds no purchase data — it would have to be guessed, and a
+    fan-value number you might act on is not worth guessing. Manage, export or
+    delete individual records in the <a class="underline" href="/links/fans">Fan CRM</a>.
+  </p>
+  {% endif %}
+
+{% else %}
+  {# ---------------------------------------------------------------------
+     Showcase only. Reached by the demo account or a signed-out visitor, and
+     labelled as invented at the bottom. A real account never sees this.
+     --------------------------------------------------------------------- #}
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="rounded-2xl border border-amber-500/15 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Superfans</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-sb-ink">{{ "{:,}".format(fd.summary.superfans) }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Total Fans</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">{{ "{:,}".format(fd.summary.total_fans) }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Avg. Fan LTV</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums">${{ "{:,.2f}".format(fd.summary.avg_ltv) }}</div>
+    </div>
+    <div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <div class="sb-label text-gray-300">Follower Growth</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-green-400">+{{ fd.summary.follower_growth }}</div>
+      <div class="mt-1 text-xs text-gray-300 font-medium">Last 7 days</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Fan Segments</h2>
+      <div class="mt-4 space-y-4">
+        {% for s in fd.segments %}
+        <div class="rounded-xl border border-white/5 bg-white/5 p-4">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-gray-100">{{ s.segment }}</span>
+            <span class="text-xs text-gray-300">{{ "{:,}".format(s.count) }} fans · ${{ "{:,.2f}".format(s.ltv) }} LTV</span>
+          </div>
+          <div class="mt-3 flex h-2.5 overflow-hidden rounded-full bg-white/5">
+            <div class="h-2.5 bg-amber-500" style="width: {{ s.merch }}%;" title="Merch"></div>
+            <div class="h-2.5 bg-blue-500" style="width: {{ s.tickets }}%;" title="Tickets"></div>
+            <div class="h-2.5 bg-green-500" style="width: {{ s.digital }}%;" title="Digital"></div>
+          </div>
+          <div class="mt-1.5 flex flex-wrap gap-3 text-xs text-gray-300 font-medium">
+            <span><span class="text-amber-400">■</span> Merch {{ s.merch }}%</span>
+            <span><span class="text-blue-400">■</span> Tickets {{ s.tickets }}%</span>
+            <span><span class="text-green-400">■</span> Digital {{ s.digital }}%</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-white/5 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-300">Fan Leaderboard</h2>
+      <div class="mt-3 space-y-2">
+        {% for f in fd.leaderboard %}
+        <div class="flex items-center gap-3 rounded-lg border border-white/5 bg-white/5 px-3 py-2">
+          <span class="w-5 text-center text-xs font-bold text-gray-300">{{ loop.index }}</span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-semibold text-gray-100">{{ f.fan }}</span>
+            <span class="text-xs text-gray-300 font-medium">{{ f.tier }}</span>
+          </span>
+          <span class="shrink-0 text-sm font-bold sb-num text-sb-ink">${{ "{:,.2f}".format(f.spend) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+  {# The old wording claimed the app does not track individual fans. It does -
+     the Fan CRM holds named records with intent scores - so the disclaimer is
+     scoped to THIS panel and points at the real thing. #}
+  <p class="px-1 max-w-3xl text-xs text-gray-300 font-medium">
+    Illustrative example figures, not anybody's fans. Your own fan records —
+    the people who gave you an email on a smart link — are in the
+    <a class="underline" href="/links/fans">Fan CRM</a>.
+  </p>
+{% endif %}
+</div>
+{% endblock %}

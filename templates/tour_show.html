@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}{{ show.venue }} - Tour Hub - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1100px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <a href="/tour" class="text-xs font-bold text-gray-300 hover:text-sb-gold-bright">← Tour Hub</a>
+      <h1 class="sb-h1 mt-1">{{ show.venue }}</h1>
+      <p class="mt-0.5 text-sm text-gray-300">{{ show.date }}{% if show.city %} · {{ show.city }}{% endif %}</p>
+    </div>
+    <form method="post" action="/tour/{{ show.id }}/status">
+      <select name="status" onchange="this.form.submit()"
+              class="rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-200">
+        {% for st in statuses %}
+        <option value="{{ st }}" {{ 'selected' if st == show.status }}>{{ st }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+
+  {% if request.args.get('sent') %}
+  <div class="rounded-2xl border border-green-500/25 bg-green-500/10 px-4 py-3 text-sm"><span class="font-bold text-green-400">Advance sent</span><span class="text-gray-200"> to the venue contact. Replies come to your own inbox.</span></div>
+  {% elif request.args.get('email_fail') %}
+  <div class="rounded-2xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-sm text-amber-400/90">The advance couldn't be emailed — add a contact email below, and note the email service only delivers to your own address until a domain is verified in Resend. The Copy button always works.</div>
+  {% endif %}
+
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+    <!-- Left: advance form + settlement -->
+    <div class="space-y-5">
+      <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5">
+        <h2 class="sb-label text-gray-300">Advance details</h2>
+        <p class="mt-1 text-xs text-gray-300">Fill what you know — the email on the right asks the venue for the rest.</p>
+        <form method="post" action="/tour/{{ show.id }}/advance" class="mt-3 space-y-4">
+          {% for group, title in [('contacts', 'Contacts'), ('schedule', 'Schedule'), ('logistics', 'Logistics'), ('money', 'Money')] %}
+          <div>
+            <div class="sb-label text-sb-gold">{{ title }}</div>
+            <div class="mt-2 grid gap-2.5 sm:grid-cols-2">
+              {% for key, label, g, ask in fields %}{% if g == group %}
+              <div>
+                <label class="sb-label text-gray-300">{{ label }}</label>
+                <input name="{{ key }}" value="{{ show.advance.get(key, '') }}"
+                       class="mt-1 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+              </div>
+              {% endif %}{% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+          <button class="sb-btn sb-btn-primary">Save Advance</button>
+        </form>
+      </section>
+
+      <!-- Settlement -->
+      <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+        <h2 class="sb-label text-sb-gold">Settlement</h2>
+        <p class="mt-1 text-xs text-gray-300">What the night actually paid. Math is shown with its work — not financial advice.</p>
+        <form method="post" action="/tour/{{ show.id }}/settlement" class="mt-3 space-y-3">
+          <div class="grid gap-2.5 sm:grid-cols-3">
+            <div>
+              <label class="sb-label text-gray-300">Deal type</label>
+              <select name="deal_type" class="mt-1 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white">
+                {% for dt, dl in [('flat', 'Flat guarantee'), ('split', 'Door split only'), ('guarantee_split', 'Guarantee + door split')] %}
+                <option value="{{ dt }}" {{ 'selected' if show.settlement.get('deal_type') == dt }}>{{ dl }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% for key, label in [('guarantee', 'Guarantee $'), ('door_gross', 'Door gross $'), ('split_pct', 'Your door %'), ('merch_gross', 'Merch gross $'), ('merch_cut_pct', 'House merch cut %'), ('expenses', 'Expenses $')] %}
+            <div>
+              <label class="sb-label text-gray-300">{{ label }}</label>
+              <input name="{{ key }}" type="number" step="0.01" min="0" value="{{ show.settlement.get(key, '') }}"
+                     class="mt-1 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm sb-num text-white">
+            </div>
+            {% endfor %}
+          </div>
+          <div class="rounded-xl border border-sb-gold/25 bg-sb-surface-2 px-4 py-3 text-sm">
+            <div class="grid grid-cols-2 gap-1 text-xs text-gray-300 sm:grid-cols-4">
+              <div>Guarantee <span class="block font-bold text-gray-200">${{ '%.2f' % totals.guarantee }}</span></div>
+              <div>Door share <span class="block font-bold text-gray-200">${{ '%.2f' % totals.door_share }}</span></div>
+              <div>Merch net <span class="block font-bold text-gray-200">${{ '%.2f' % totals.merch_net }}</span></div>
+              <div>Expenses <span class="block font-bold text-gray-200">−${{ '%.2f' % totals.expenses }}</span></div>
+            </div>
+            <div class="mt-2 border-t border-white/10 pt-2 text-sm font-black text-sb-gold-bright">Walked with: ${{ '%.2f' % totals.walk }}</div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button class="sb-btn sb-btn-secondary sb-btn-sm">Save Settlement</button>
+            <button name="mark_settled" value="1" class="sb-btn sb-btn-primary sb-btn-sm">Save &amp; Mark Settled</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <!-- Right: progress, email, share -->
+    <div class="space-y-5">
+      <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+        <div class="flex items-center justify-between">
+          <h2 class="sb-label text-sb-gold">Advance progress</h2>
+          <span class="text-sm font-black sb-num text-sb-ink">{{ prog.pct }}%</span>
+        </div>
+        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+          <div class="h-full rounded-full bg-gradient-to-r from-sb-gold-deep to-sb-gold-bright" style="width: {{ prog.pct }}%"></div>
+        </div>
+        <div class="mt-3 space-y-1">
+          {% for item in checklist %}
+          <div class="flex items-center gap-2 text-xs {{ 'text-gray-200' if item.done else 'text-gray-300' }} font-medium">
+            <span class="{{ 'text-green-400' if item.done else 'text-gray-300' }}">{{ '✓' if item.done else '○' }}</span>{{ item.label }}
+          </div>
+          {% endfor %}
+        </div>
+        {% if prog.core_ready and show.status in ('hold', 'confirmed') %}
+        <form method="post" action="/tour/{{ show.id }}/status" class="mt-3">
+          <input type="hidden" name="status" value="advanced">
+          <button class="sb-btn sb-btn-primary sb-btn-sm w-full">Core details locked — mark Advanced</button>
+        </form>
+        {% endif %}
+      </section>
+
+      <section class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-5">
+        <h2 class="sb-label text-gray-300">Advance Builder</h2>
+        <p class="mt-1 text-xs text-gray-300 font-medium">Built rule-for-rule from this page's data — it confirms what you've saved and asks only what's missing. Review before sending; it's a generator, not a chatbot.</p>
+        <div class="mt-2 text-xs font-bold text-gray-300">{{ email_preview.subject }}</div>
+        <pre id="adv-body" class="mt-2 max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg border border-white/10 bg-black/40 p-3 text-xs leading-relaxed text-gray-200 font-medium">{{ email_preview.body }}</pre>
+        <div class="mt-2 flex flex-wrap gap-2">
+          <button id="adv-copy" class="sb-btn sb-btn-secondary sb-btn-sm">Copy email</button>
+          {% if email_live and show.advance.get('contact_email') %}
+          <form method="post" action="/tour/{{ show.id }}/send-advance">
+            <button class="sb-btn sb-btn-primary sb-btn-sm">Send to {{ show.advance.contact_email }}</button>
+          </form>
+          {% elif not show.advance.get('contact_email') %}
+          <span class="self-center text-xs text-gray-300 font-medium">Add a contact email to send from here.</span>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+        <h2 class="sb-label text-sb-gold">Show-day link for the venue</h2>
+        <p class="mt-1 text-xs text-gray-300 font-medium">One URL with your schedule, contacts, stage plot, and input list — no login needed. Money never appears on it.</p>
+        {% if share_url %}
+        <div class="mt-2 break-all rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-xs text-sb-gold-bright font-medium" id="share-url">{{ share_url }}</div>
+        <div class="mt-2 flex gap-2">
+          <button id="share-copy" class="sb-btn sb-btn-secondary sb-btn-sm">Copy link</button>
+          <a href="{{ share_url }}" target="_blank" class="sb-btn sb-btn-secondary sb-btn-sm">Open ↗</a>
+          <form method="post" action="/tour/{{ show.id }}/share">
+            <button class="sb-btn sb-btn-secondary sb-btn-sm" title="Rotates the URL — the old link stops working">New link</button>
+          </form>
+        </div>
+        {% if rider_url %}
+        <div class="mt-4 border-t border-white/5 pt-3">
+          <h3 class="sb-label text-sb-gold">Tech Rider (print / PDF)</h3>
+          <p class="mt-1 text-xs text-gray-300 font-medium">Stage plot, input list, schedule, backline, and your light rig on one printable page — email it to the venue's stage manager. Same token as the show-day link.</p>
+          <div class="mt-2 break-all rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-xs text-sb-gold-bright font-medium">{{ rider_url }}</div>
+          <a href="{{ rider_url }}" target="_blank" class="sb-btn sb-btn-secondary sb-btn-sm mt-2">Open Tech Rider ↗</a>
+        </div>
+        {% endif %}
+        {% else %}
+        <form method="post" action="/tour/{{ show.id }}/share" class="mt-2">
+          <button class="sb-btn sb-btn-primary sb-btn-sm">Create show-day link</button>
+        </form>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  function wireCopy(btnId, getText) {
+    var b = document.getElementById(btnId);
+    if (!b) return;
+    b.addEventListener("click", function () {
+      navigator.clipboard.writeText(getText()).then(function () {
+        var t = b.textContent; b.textContent = "Copied ✓";
+        setTimeout(function () { b.textContent = t; }, 1500);
+      });
+    });
+  }
+  wireCopy("adv-copy", function () {
+    return {{ email_preview.subject | tojson }} + "\n\n" + document.getElementById("adv-body").textContent;
+  });
+  wireCopy("share-copy", function () {
+    return document.getElementById("share-url").textContent.trim();
+  });
+})();
+</script>
+{% endblock %}

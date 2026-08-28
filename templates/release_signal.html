@@ -1,0 +1,110 @@
+{# Release Signal — the public page.
+
+   No provider is connected, so this page explains what the read will
+   contain and does not accept a file. Taking an upload and returning
+   invented genres would be the exact thing the brief forbids. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Release Signal · Street Banker</title>
+  <meta name="description" content="A quick read on a record: sound, positioning, creative direction and the strongest next moves. What it reads, what it will not claim, and how you correct it.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+  <link rel="stylesheet" href="/static/css/product-tour.css?v=2">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-4xl px-6 py-14 lg:px-10 lg:py-20">
+
+  <div class="flex flex-wrap items-center gap-3">
+    <p class="sb-label text-sb-gold">{{ rs.name }}</p>
+    <span class="sbst-chip sbst-{{ cap('release_signal').status }}">{{ cap('release_signal').label }}</span>
+  </div>
+  <h1 class="mt-4 max-w-2xl text-[clamp(2rem,5.4vw,3.2rem)] font-semibold uppercase leading-[1.04] tracking-tight">
+    {{ rs.headline }}
+  </h1>
+  <p class="mt-5 max-w-2xl text-base leading-relaxed text-sb-ink-2">{{ rs.support }}</p>
+
+  {% if not rs.enabled %}
+  <div class="mt-8 rounded border border-[rgb(201_168_106_/_0.3)] bg-sb-surface-1 p-5" role="note">
+    <p class="text-sm font-semibold uppercase tracking-[0.12em] text-sb-gold">Not connected yet</p>
+    <p class="mt-2 max-w-2xl text-sm leading-relaxed text-sb-ink-2">{{ rs.disabled_reason }}</p>
+  </div>
+  {% endif %}
+
+  <section class="mt-14" aria-labelledby="rs-outputs">
+    <h2 id="rs-outputs" class="text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">What the read contains</h2>
+    <ol class="mt-5">
+      {% for key, title, body in rs.outputs %}
+      <li class="sbst-step">
+        <div class="sbst-num">{{ "%02d"|format(loop.index) }}</div>
+        <div>
+          <h3 class="text-base font-semibold text-sb-ink">{{ title }}</h3>
+          <p class="mt-1.5 max-w-2xl text-sm leading-relaxed text-sb-ink-2">{{ body }}</p>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section class="mt-14 border-t border-[rgb(201_168_106_/_0.22)] pt-10" aria-labelledby="rs-axes">
+    <h2 id="rs-axes" class="text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">Three kinds of comparison, kept apart</h2>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed text-sb-ink-2">
+      Collapsing these into one "similar artists" list is how an artist ends
+      up positioned against someone they sound nothing like. A shared
+      audience and a shared production style are different claims.
+    </p>
+    <div class="mt-6 grid gap-x-8 sm:grid-cols-3">
+      {% for key, title, body in rs.axes %}
+      <div class="border-t border-[rgb(238_232_220_/_0.08)] py-4">
+        <h3 class="text-sm font-semibold uppercase tracking-[0.1em] text-sb-ink">{{ title }}</h3>
+        <p class="mt-1.5 text-sm leading-relaxed text-sb-ink-2">{{ body }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="mt-14 border-t border-[rgb(201_168_106_/_0.22)] pt-10" aria-labelledby="rs-correct">
+    <h2 id="rs-correct" class="text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">You correct it</h2>
+    <p class="mt-3 max-w-2xl text-sm leading-relaxed text-sb-ink-2">
+      A read you cannot argue with is a verdict. Your corrections are what
+      make the result worth feeding into the Artist Twin, Creative Studio,
+      Rollout Engine and the rest of the plan.
+    </p>
+    <ul class="mt-5 flex flex-wrap gap-2">
+      {% for key, label in rs.corrections %}
+      <li class="rounded-sm border border-[rgb(201_168_106_/_0.22)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-sb-ink-2">{{ label }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="mt-14 border-t border-[rgb(201_168_106_/_0.22)] pt-10" aria-labelledby="rs-limits">
+    <h2 id="rs-limits" class="text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">What it will not tell you</h2>
+    <ul class="mt-4 space-y-2.5">
+      {% for limit in rs.limits %}
+      <li class="border-t border-[rgb(238_232_220_/_0.07)] pt-2.5 text-sm leading-relaxed text-sb-ink-2">{{ limit }}</li>
+      {% endfor %}
+    </ul>
+    <p class="mt-5 max-w-2xl text-sm font-semibold leading-relaxed text-sb-ink">
+      No hit score. No viral probability. No industry approval. No algorithm
+      score. Confidence is a band with a reason attached, never a percentage.
+    </p>
+  </section>
+
+  <div class="mt-14 flex flex-wrap gap-3 border-t border-[rgb(201_168_106_/_0.22)] pt-10">
+    <a href="/start" class="inline-flex min-h-[52px] items-center justify-center rounded-sm bg-sb-gold px-7 text-xs font-bold uppercase tracking-[0.14em] text-sb-surface-2 transition-colors hover:bg-sb-gold-bright">Build the release plan</a>
+    <a href="/artist-twin/start" class="inline-flex min-h-[52px] items-center justify-center rounded-sm border border-[rgb(238_232_220_/_0.34)] px-7 text-xs font-bold uppercase tracking-[0.14em] text-sb-ink transition-colors hover:border-sb-gold hover:text-sb-gold">Meet the Artist Twin</a>
+  </div>
+</main>
+
+<footer class="mx-auto max-w-4xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/#artist-eq" class="font-semibold hover:text-sb-ink">&larr; Back to Street Banker</a>
+</footer>
+</body>
+</html>

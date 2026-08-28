@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Royalty Sweep{% endblock %}
+
+{% set nd = notifications_data %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="sb-h1">Notifications</h1>
+      <p class="mt-1 text-sm text-gray-300"><span id="unread-count">{{ nd.unread }}</span> unread of {{ nd.total }}</p>
+    </div>
+    <button type="button" id="mark-all-btn" class="rounded-lg border border-white/10 px-4 py-2 text-sm font-semibold text-gray-200 transition-colors hover:bg-white/5 {{ 'hidden' if nd.unread == 0 }}">Mark all read</button>
+  </div>
+
+  <div id="notifications-list" class="space-y-2">
+    {% for n in nd.notifications %}
+    <div class="notification-item flex items-start gap-3 rounded-xl border border-white/5 {{ 'bg-white/[0.02]' if n.read else 'bg-white/5' }} px-4 py-3" data-id="{{ n.id }}" data-read="{{ 'true' if n.read else 'false' }}">
+      <span class="notif-dot mt-1.5 h-2 w-2 shrink-0 rounded-full {{ 'bg-transparent' if n.read else 'bg-amber-400' }}"></span>
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide {{ n.tone }}">{{ n.category }}</span>
+          <span class="text-sm font-semibold {{ 'text-gray-300' if n.read else 'text-gray-100' }}">{{ n.title }}</span>
+        </div>
+        <p class="mt-1 text-xs text-gray-300">{{ n.description }}</p>
+        <div class="mt-2 flex items-center gap-3">
+          {% if n.route %}<a href="{{ n.route }}" class="text-xs font-semibold text-amber-400 hover:underline">View</a>{% endif %}
+          <button type="button" class="mark-read-btn text-xs font-semibold text-gray-300 hover:text-white {{ 'hidden' if n.read }}">Mark read</button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const unreadEl = document.getElementById("unread-count");
+  const markAllBtn = document.getElementById("mark-all-btn");
+
+  function markItemRead(item) {
+    if (item.dataset.read === "true") return;
+    item.dataset.read = "true";
+    item.classList.remove("bg-white/5");
+    item.classList.add("bg-white/[0.02]");
+    item.querySelector(".notif-dot").classList.remove("bg-amber-400");
+    item.querySelector(".notif-dot").classList.add("bg-transparent");
+    const btn = item.querySelector(".mark-read-btn");
+    if (btn) btn.classList.add("hidden");
+    const title = item.querySelector(".text-sm");
+    title.classList.remove("text-gray-100");
+    title.classList.add("text-gray-300");
+    unreadEl.textContent = String(Math.max(0, Number(unreadEl.textContent) - 1));
+    if (Number(unreadEl.textContent) === 0) markAllBtn.classList.add("hidden");
+  }
+
+  document.querySelectorAll(".mark-read-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const item = btn.closest(".notification-item");
+      await fetch(`/notifications/${item.dataset.id}/read`, { method: "POST" });
+      markItemRead(item);
+    });
+  });
+
+  markAllBtn.addEventListener("click", async () => {
+    await fetch("/notifications/read-all", { method: "POST" });
+    document.querySelectorAll(".notification-item").forEach(markItemRead);
+  });
+</script>
+{% endblock %}

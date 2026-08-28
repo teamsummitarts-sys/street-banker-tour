@@ -1,0 +1,73 @@
+{# The public product tour. Twelve steps, one example release, no login. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Product tour · Street Banker</title>
+  <meta name="description" content="One example artist, one release, twelve steps — what Street Banker does at each stage, and what it does not do yet.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+  <link rel="stylesheet" href="/static/css/product-tour.css?v=2">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-5xl px-6 py-14 lg:px-10 lg:py-20">
+
+  <div class="sb-label text-sb-gold">Street Banker</div>
+  <h1 class="mt-4 max-w-3xl text-[clamp(2rem,5.2vw,3.2rem)] font-semibold uppercase leading-[1.04] tracking-tight">
+    Walk the whole system.
+  </h1>
+  <p class="mt-5 max-w-2xl text-base leading-relaxed text-sb-ink-2">{{ tour.lead }}</p>
+
+  <section class="sbst-key mt-8" aria-labelledby="key-title">
+    <h2 id="key-title" class="sb-label text-sb-ink-2">What the labels mean</h2>
+    <ul class="mt-3 grid gap-2 text-xs leading-relaxed text-sb-ink-2 sm:grid-cols-2">
+      <li><span class="sbst-chip sbst-live">Live</span> Working in the product today.</li>
+      <li><span class="sbst-chip sbst-example">Example</span> A worked example, not an artist's data.</li>
+      <li><span class="sbst-chip sbst-partner">Partner delivered</span> Carried out through a distribution partner.</li>
+      <li><span class="sbst-chip sbst-integration-ready">Integration ready</span> Built here; the outside connection is not live.</li>
+      <li><span class="sbst-chip sbst-coming-soon">Coming soon</span> Not built yet.</li>
+      <li><span class="sbst-chip sbst-verify">Requires verification</span> A finding a person must check before it is acted on.</li>
+    </ul>
+  </section>
+
+  <ol class="mt-12">
+    {% for step in tour.steps %}
+    <li class="sbst-step" id="step-{{ step.slug }}">
+      <div class="sbst-num">{{ "%02d"|format(loop.index) }}</div>
+      <div>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <span class="sb-label text-sb-gold">{{ step.module }}</span>
+          <span class="sbst-chip sbst-{{ step.status }}">{{ tour.status_labels[step.status] }}</span>
+        </div>
+        <h2 class="mt-2 text-xl font-semibold leading-snug text-sb-ink">{{ step.title }}</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-sb-ink-2">{{ step.body }}</p>
+        <a href="{{ step.href }}" class="sbst-link mt-3">{{ step.link }} &rarr;</a>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+
+  <section class="mt-16 border-t border-[rgb(201_168_106_/_0.22)] pt-10" aria-labelledby="tour-end">
+    <h2 id="tour-end" class="text-[clamp(1.4rem,3vw,2rem)] font-semibold uppercase tracking-tight">That is the system.</h2>
+    <p class="mt-3 max-w-xl text-base leading-relaxed text-sb-ink-2">
+      Nothing above required an account, and neither does the plan at the end
+      of it. You need one when you want to keep what you have made.
+    </p>
+    <div class="mt-7 flex flex-wrap gap-3">
+      <a href="/start" class="inline-flex min-h-[52px] items-center justify-center rounded-sm bg-sb-gold px-7 text-xs font-bold uppercase tracking-[0.14em] text-sb-surface-2 transition-colors hover:bg-sb-gold-bright">Build my Street Banker</a>
+      <a href="/artist-control" class="inline-flex min-h-[52px] items-center justify-center rounded-sm border border-[rgb(238_232_220_/_0.34)] px-7 text-xs font-bold uppercase tracking-[0.14em] text-sb-ink transition-colors hover:border-sb-gold hover:text-sb-gold">Read the artist control policy</a>
+    </div>
+  </section>
+</main>
+
+<footer class="mx-auto max-w-5xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/" class="font-semibold hover:text-sb-ink">&larr; Back to Street Banker</a>
+</footer>
+</body>
+</html>

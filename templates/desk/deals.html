@@ -1,0 +1,41 @@
+{% set nav = 'deals' %}
+{% extends "desk/layout.html" %}
+{% block title %}Deal Desk{% endblock %}
+{% block main %}
+<h1 class="dk-h1">Deal Desk</h1>
+<p class="dk-sub">Every deal in motion, by lead. Add deals from the lead's own page.</p>
+<p class="dk-legal">{{ legal_note }}</p>
+
+{% if deals %}
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr><th>Lead</th><th>Deal type</th><th>Status</th><th>Est. value</th><th>Advance</th><th>Fee</th><th>Term</th><th>Flags</th><th>Notes</th><th></th></tr></thead>
+  <tbody>
+  {% for d in deals %}
+  <tr>
+    <td><a href="/operator-desk/leads/{{ d.lead_id }}">{{ d.artist_name or 'Lead' }}</a></td>
+    <td>{{ d.deal_type }}</td>
+    <td><span class="dk-chip {{ 'dk-chip--ok' if d.status == 'Signed' }} {{ 'dk-chip--warn' if d.status == 'Passed' }}">{{ d.status }}</span></td>
+    <td>{{ d.estimated_value or '—' }}</td>
+    <td>{{ d.advance_discussed or '—' }}</td>
+    <td>{{ d.distribution_fee or '—' }}</td>
+    <td>{{ d.term or '—' }}</td>
+    <td style="font-size:12px">
+      {% if d.publishing_involved %}<span class="dk-chip">Publishing</span>{% endif %}
+      {% if d.content_id_involved %}<span class="dk-chip">Content ID</span>{% endif %}
+      {% if d.counsel_involved %}<span class="dk-chip">Counsel</span>{% endif %}
+    </td>
+    <td style="font-size:12px">{{ d.notes or '—' }}</td>
+    <td>{% if can('deal_edit') %}
+      <form class="dk-inline" method="post" action="/operator-desk/deals/{{ d.id }}/status">
+        <input type="hidden" name="back" value="/operator-desk/deals">
+        <select class="dk-mini" name="status">{% for s in vocab.deal_statuses %}<option {{ 'selected' if d.status == s }}>{{ s }}</option>{% endfor %}</select>
+        <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px" type="submit">Set</button>
+      </form>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="dk-empty">No deals yet. Open a lead and add one from its Deal section.</p>
+{% endif %}
+{% endblock %}

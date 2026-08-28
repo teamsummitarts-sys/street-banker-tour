@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% import "board/_macros.html" as m %}
+{% block title %}Team-Up inbox - Street Banker{% endblock %}
+{% block head_scripts %}<link rel="stylesheet" href="/static/css/board.css?v=2">{% endblock %}
+{% block content %}
+<div class="tb" style="max-width:900px">
+  <p class="tb-eyebrow"><a href="/tour-board" style="text-decoration:none">Team-Up Board</a> · inbox</p>
+  <div class="tb-head"><div><h1 class="tb-h1">Replies</h1><p class="tb-lede">Every thread you're part of — listings you posted and listings you answered. Unread counts clear when you open a thread.</p></div></div>
+  <section class="tb-pane">
+    {% if threads %}
+    {% for t in threads %}
+    <a class="tb-thread-row" href="/tour-board/thread/{{ t['id'] }}">
+      <span><b>{{ t['listing_title'] }}</b> <span class="tb-help">{{ 'you posted' if t['i_am_poster'] else 'you replied' }} · with {{ t['other_name'] }}</span>{% if t['my_unread'] %} <span class="tb-unread">{{ t['my_unread'] }}</span>{% endif %}<div class="sub">{{ t['last_body'] }}</div></span>
+      <span class="tb-help">{{ t['message_count'] }} · {{ t['ago'] }}</span>
+    </a>
+    {% endfor %}
+    {% else %}<div class="tb-empty"><b>No threads yet.</b><br>Reply to a listing, or post one and wait for the replies to land here.</div>{% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% import "tour/_macros.html" as m %}
+{% set rows = rows if rows is defined else travel %}
+{% if rows %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>Date</th><th>Leg</th><th>From → To</th><th>Times</th><th>Who</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for t in rows %}
+  <tr>
+    <td data-k="Date">{{ t['day_date'] }}</td>
+    <td data-k="Leg"><b>{{ t['mode']|capitalize }}</b> {{ t['carrier'] }} {{ t['number'] }}{% if t['vehicle'] %}<div class="to-muted">{{ t['vehicle'] }}</div>{% endif %}{% if t['driver'] %}<div class="to-muted">Driver {{ t['driver'] }}{% if t['phone'] %} · {{ t['phone'] }}{% endif %}</div>{% endif %}{% if t['confirmation'] %}<div class="to-muted">Conf. {{ t['confirmation'] }}</div>{% endif %}</td>
+    <td data-k="Route">{{ t['dep_loc'] or t['pickup'] or '—' }} → {{ t['arr_loc'] or t['destination'] or '—' }}{% if t['terminal'] %}<div class="to-muted">{{ t['terminal'] }}</div>{% endif %}</td>
+    <td data-k="Times">{% if t['dep_time'] %}dep {{ fmt_time(t['dep_time']) }}{% if t['dep_tz'] %} <span class="to-muted">{{ t['dep_tz'] }}</span>{% endif %}{% endif %}{% if t['arr_time'] %}<div>arr {{ fmt_time(t['arr_time']) }}{% if t['arr_tz'] %} <span class="to-muted">{{ t['arr_tz'] }}</span>{% endif %}</div>{% endif %}</td>
+    <td data-k="Who">{% if 'all' in t['travelers'] %}everyone{% else %}{{ people|selectattr('id', 'in', t['travelers'])|map(attribute='name')|join(', ') }}{% endif %}</td>
+    <td data-k="Status">{{ m.chip(t['status']) }}{% if t['visibility'] != 'all' %} <span class="to-chip to-chip--gold">{{ t['visibility'] }}</span>{% endif %}</td>
+    <td>{% if can('travel') %}<a class="to-btn to-btn--ghost to-btn--small" href="/tours/{{ tour['id'] }}/travel?edit={{ t['id'] }}">Edit</a>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+  {{ m.empty("No travel entered", "Flights, ground, bus and rail legs go here with who is on them. Rows marked private are only seen by the people named on them.") }}
+{% endif %}

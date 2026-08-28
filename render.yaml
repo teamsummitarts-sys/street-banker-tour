@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: street-banker-v2-staging
+    runtime: python
+    plan: starter
+    autoDeploy: false
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 180
+    envVars:
+      # V2 is an isolated staging service. Never attach the production disk,
+      # database, storage bucket, Stripe account, or provider credentials.
+      - key: APP_ENV
+        value: staging
+      - key: PUBLIC_BASE_URL
+        value: https://street-banker-v2-staging.onrender.com
+      # Sessions survive restarts; Render generates a strong random value.
+      - key: SECRET_KEY
+        generateValue: true
+      # Rotate the demo showcase account's password: set the value in the
+      # Render dashboard (Environment tab). Never commit it.
+      - key: DEMO_PASSWORD
+        sync: false
+      # Persistent storage (Starter instance + 1GB disk): database and all
+      # uploads (documents, covers, EPK photos, sync audio) live under this
+      # path together, so the one disk below covers everything.
+      - key: DATABASE_PATH
+        value: /var/data/streetbanker-v2.db
+    disk:
+      name: street-banker-v2-staging-data
+      mountPath: /var/data
+      sizeGB: 1

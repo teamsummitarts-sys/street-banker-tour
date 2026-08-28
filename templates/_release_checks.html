@@ -1,0 +1,61 @@
+{# Shared release checklist: campaign picker + score + derived checks.
+   Expects: campaigns, c, checks, score, page_path #}
+<form method="get" class="flex flex-wrap items-center gap-2">
+  <label class="sb-label text-gray-300">Release</label>
+  <select name="campaign" onchange="this.form.submit()" class="rounded-lg border border-white/10 bg-sb-surface-1 px-3 py-2 text-sm text-gray-100 [color-scheme:dark]">
+    {% for camp in campaigns %}<option value="{{ camp.id }}" {{ 'selected' if c and camp.id == c.id }}>{{ camp.title }}{% if camp.release_date %} ({{ camp.release_date }}){% endif %}</option>{% endfor %}
+  </select>
+</form>
+
+{% if not campaigns %}
+<div class="rounded-2xl border border-dashed border-sb-gold/30 py-10 text-center">
+  <div class="text-sm font-bold text-gray-200">No releases yet</div>
+  <p class="mx-auto mt-1 max-w-md text-xs text-gray-300">Releases live as Smart Link campaigns. Create one and the checklist activates.</p>
+  <a href="/links/new" class="sb-btn sb-btn-secondary mt-4">Create a release campaign</a>
+</div>
+{% elif c %}
+<div class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <div class="text-sm font-bold text-gray-100">{{ c.title }}</div>
+      <div class="text-xs text-gray-300 font-medium">{{ c.artist_name }}{% if c.release_date %} · drops {{ c.release_date }}{% endif %} · <a href="/l/{{ c.slug }}" target="_blank" class="text-sb-gold-bright hover:underline">/l/{{ c.slug }}</a></div>
+    </div>
+    {# Segmented readiness dial: one segment per check, lit when that
+       check passes — hover a segment to see which one it is. #}
+    {% set n = checks | length %}
+    <svg viewBox="0 0 96 96" class="h-24 w-24 shrink-0" role="img" aria-label="{{ score }} percent ready">
+      {% for label, ok, rec, link, category in checks %}
+      <circle cx="48" cy="48" r="42" fill="none" stroke-width="8" stroke-linecap="butt"
+              stroke="{{ '#79B473' if ok else '#221D18' }}"
+              stroke-dasharray="{{ (263.9 / n - 3) | round(2) }} 263.9"
+              transform="rotate({{ (loop.index0 * 360 / n - 90) | round(1) }} 48 48)">
+        <title>{{ label }} — {{ 'done' if ok else 'open' }}</title>
+      </circle>
+      {% endfor %}
+      <text x="48" y="46" text-anchor="middle" font-size="20" font-weight="900" fill="{{ '#79B473' if score >= 75 else '#E8B950' }}">{{ score }}%</text>
+      <text x="48" y="60" text-anchor="middle" font-size="7" font-weight="700" fill="#91836A" style="text-transform:uppercase;letter-spacing:.2em">ready</text>
+    </svg>
+  </div>
+</div>
+
+<div class="space-y-2">
+  {% for label, ok, rec, link, category in checks %}
+  <div data-cat="{{ category }}" class="check-row flex flex-wrap items-center gap-3 rounded-xl border {{ 'border-green-500/20 bg-green-500/[0.04]' if ok else 'border-white/10 bg-sb-surface-1' }} px-4 py-3 transition-colors">
+    <span class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-black {{ 'bg-green-500/20 text-green-400' if ok else 'bg-white/10 text-gray-300' }}">{{ '✓' if ok else '·' }}</span>
+    <div class="min-w-0 flex-1">
+      <div class="text-sm font-semibold {{ 'text-gray-200' if ok else 'text-gray-100' }}">{{ label }}</div>
+      {% if not ok %}<div class="text-xs text-gray-300 font-medium">{{ rec }}</div>{% endif %}
+    </div>
+    {% if not ok %}
+    <a href="{{ link }}" class="sb-btn sb-btn-secondary sb-btn-sm shrink-0">Fix →</a>
+    <form method="post" action="/actions/from-alert" class="shrink-0">
+      <input type="hidden" name="title" value="{{ c.title }}: {{ label }}">
+      <input type="hidden" name="description" value="{{ rec }}">
+      <input type="hidden" name="category" value="{{ category }}">
+      <button class="sb-btn sb-btn-secondary sb-btn-sm">Create action</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

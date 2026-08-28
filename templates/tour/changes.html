@@ -1,0 +1,21 @@
+{% extends "tour/_shell.html" %}
+{% block title %}What changed - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">What changed</p><h1 class="to-h1" style="font-size:20px">Who changed what, and whether it was seen</h1><p class="to-sub">Information, Important, Critical. Critical changes ask everyone to acknowledge; admins see who has.</p></div>
+  <div class="to-inline"><a class="to-tab {{ 'is-on' if level == 'important' }}" href="?level=important">Important+</a><a class="to-tab {{ 'is-on' if level == 'critical' }}" href="?level=critical">Critical</a><a class="to-tab {{ 'is-on' if level == 'all' }}" href="?level=all">Everything</a></div></div>
+{% if rows %}
+{% for c in rows %}
+<div class="to-change">
+  <span class="sev {{ c['severity'] }}"></span>
+  <div>
+    <div><b>{{ c['entity_type']|replace('_',' ')|capitalize }}</b>{% if c['entity_label'] %} · {{ c['entity_label'] }}{% endif %} · {{ c['field']|replace('_',' ') }}</div>
+    <div><del>{{ c['before'] or '—' }}</del> <ins>{{ c['after'] or '—' }}</ins></div>
+    <small>{{ c['created'][:16]|replace('T',' ') }} UTC · {{ c['actor_name'] or 'system' }}{% if c['source'] != 'manual' %} · via {{ c['source'] }}{% endif %}{% if acks[c['id']] is defined %} · you: {{ acks[c['id']] }}{% endif %}</small>
+    {% if c['id'] in roster %}<small>Acknowledged by: {% set acked = roster[c['id']]|selectattr('state','equalto','acknowledged')|list %}{% if acked %}{% for a in acked %}{{ name_by_user[a['viewer_id']] if a['viewer_id'] in name_by_user else 'member' }}{{ ', ' if not loop.last }}{% endfor %}{% else %}nobody yet{% endif %} · seen by {{ roster[c['id']]|length }}</small>{% endif %}
+  </div>
+  <div>{{ m.sev(c['severity']) }}{% if c['severity'] == 'critical' and acks[c['id']] != 'acknowledged' %}<form method="post" action="/tours/{{ tour['id'] }}/changes/{{ c['id'] }}/ack" style="margin-top:6px"><button class="to-btn to-btn--small" type="submit">Acknowledge</button></form>{% endif %}</div>
+</div>
+{% endfor %}
+{% else %}{{ m.empty("Nothing at this level yet", "Time, place, hotel and travel edits land here with before and after.") }}{% endif %}
+{% endblock %}

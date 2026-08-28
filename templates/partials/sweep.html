@@ -1,0 +1,100 @@
+{# Section 9 — Royalty Sweep.
+
+   The heading, the primary CTA and the trust line sit centred over the
+   archive photograph; the five stages and the example case stay below
+   it. Not the left-image/right-copy shape of Sections 7 and 8, and not a
+   dashboard: the picture is an evidence table, and everything that means
+   anything is markup over and under it.
+
+   The "See how the sweep works" toggle deliberately stays below with the
+   panel it opens. A disclosure button on the picture would reveal
+   something a screenful further down. #}
+
+{% set sw = sweep %}
+{% set img = sw.image %}
+<section class="sbsw" id="royalty-sweep-section" aria-labelledby="sbsw-heading">
+  <figure class="sbsw-photo">
+    <picture>
+      {# The phone keeps the deck, the drives and the documents; anything
+         wider keeps the whole table. #}
+      <source media="(max-width: 767px)" type="image/avif"
+              srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/webp"
+              srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/jpeg"
+              srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source type="image/avif"
+              srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source type="image/webp"
+              srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <img class="sbsw-img" src="{{ img.wide.stem }}-1400.jpg"
+           srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+           sizes="100vw"
+           width="{{ img.wide.width }}" height="{{ img.wide.height }}"
+           alt="{{ img.alt }}" loading="lazy" decoding="async">
+    </picture>
+    <span class="sbsw-scrim" aria-hidden="true"></span>
+    <div class="sbsw-over">
+    <header class="sbsw-head">
+    <p class="sbsw-eyebrow">{{ sw.eyebrow }}</p>
+    <h2 class="sbsw-title" id="sbsw-heading">
+      {% for line in sw.headline %}<span>{{ line }}</span>{% endfor %}
+    </h2>
+    <p class="sbsw-support">{{ sw.support }}</p>
+    </header>
+      <div class="sbsw-over-cta">
+        <a class="sbsw-cta" href="{{ sw.primary_cta.href }}">{{ sw.primary_cta.label }}
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+        </a>
+      </div>
+      <p class="sbsw-trust">
+        <span class="sbsw-trust-line">{{ sw.trust }}</span>
+        <span class="sbsw-trust-copy">{{ sw.trust_copy }}</span>
+        <a class="sbsw-method" href="{{ sw.method_link.href }}">{{ sw.method_link.label }}</a>
+      </p>
+    </div>
+  </figure>
+
+  <div class="sbsw-foot">
+    <ol class="sbsw-flow">
+      {% for num, name, detail in sw.workflow %}
+      <li class="sbsw-stage" data-stage="{{ name | lower }}">
+        <span class="sbsw-num">{{ num }}</span>
+        <span class="sbsw-stage-name">{{ name }}</span>
+        <span class="sbsw-stage-detail">{{ detail }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+
+    <div class="sbsw-ctas">
+      <button type="button" class="sbsw-example-btn" id="sbsw-example-btn"
+              aria-expanded="false" aria-controls="sbsw-example">{{ sw.secondary_cta.label }}</button>
+    </div>
+
+    {# One example case, labelled as one, carrying no figure. Hidden, not
+       absent, so it reads with no script at all. #}
+    <div class="sbsw-example" id="sbsw-example" hidden>
+      <p class="sbsw-example-head">
+        <span class="sbsw-example-tag">{{ sw.example.label }}</span>
+        <span class="sbsw-example-status">{{ sw.example.status }}</span>
+      </p>
+      <dl class="sbsw-example-fields">
+        {% for label, value in sw.example.fields %}
+        <dt>{{ label }}</dt><dd>{{ value }}</dd>
+        {% endfor %}
+        <dt>Information needed</dt>
+        <dd>
+          <ul>{% for item in sw.example.needed %}<li>{{ item }}</li>{% endfor %}</ul>
+        </dd>
+        <dt>Recommended action</dt><dd>{{ sw.example.action }}</dd>
+      </dl>
+      <p class="sbsw-example-note">{{ sw.example.note }}</p>
+    </div>
+  </div>
+</section>

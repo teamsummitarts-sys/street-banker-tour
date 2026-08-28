@@ -1,0 +1,116 @@
+{# Section 8 — Rollout Engine.
+
+   The photograph runs the full width and the copy sits over its right
+   side behind a gradient, so there is no edge where the picture stops
+   and the panel starts. The calendars on that wall are texture; every
+   date, status and capability that means anything is markup.
+
+   Section 7 is a photograph in a column. This one is a photograph the
+   section is made of. #}
+
+{% set ro = rollout %}
+{% set img = ro.image %}
+<section class="sbro" id="rollout-engine" aria-labelledby="sbro-heading">
+  <div class="sbro-stage">
+    <picture class="sbro-photo">
+      {# The phone keeps the person marking the calendar; anything wider
+         keeps the room around them. #}
+      <source media="(max-width: 767px)" type="image/avif"
+              srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/webp"
+              srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/jpeg"
+              srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source type="image/avif"
+              srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source type="image/webp"
+              srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <img class="sbro-img" src="{{ img.wide.stem }}-940.jpg"
+           srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+           sizes="100vw"
+           width="{{ img.wide.width }}" height="{{ img.wide.height }}"
+           alt="{{ img.alt }}" loading="lazy" decoding="async">
+    </picture>
+    <span class="sbro-veil" aria-hidden="true"></span>
+
+    <div class="sbro-inner">
+      <div class="sbro-copy">
+        <div class="sbro-head">
+        <p class="sbro-eyebrow">
+          <span class="sbro-num">{{ ro.number }}</span>
+          <span class="sbro-rule" aria-hidden="true"></span>
+          {{ ro.eyebrow }}
+        </p>
+        <h2 class="sbro-title" id="sbro-heading">
+          {% for line in ro.headline %}<span>{{ line }}</span>{% endfor %}
+        </h2>
+        <p class="sbro-support">{{ ro.support }}</p>
+
+        <div class="sbro-ctas">
+          <a class="sbro-cta" href="{{ ro.primary_cta.href }}">{{ ro.primary_cta.label }}
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+          </a>
+          <button type="button" class="sbro-sample-btn" id="sbro-sample-btn"
+                  aria-expanded="false" aria-controls="sbro-sample">{{ ro.secondary_cta.label }}</button>
+        </div>
+        </div><!-- /head: the photograph slots in here on a phone -->
+
+        {# Four capabilities, thin rules between them - not four cards. #}
+        <ul class="sbro-caps">
+          {% for cap in ro.capabilities %}
+          <li>
+            <button type="button" class="sbro-cap" data-cap="{{ cap.id }}">
+              <span class="sbro-cap-label">{{ cap.label }}</span>
+              <span class="sbro-cap-line">{{ cap.line }}</span>
+            </button>
+          </li>
+          {% endfor %}
+        </ul>
+
+        {# PLAN → BUILD → SCHEDULE → LAUNCH → ADAPT, as a line rather than
+           a diagram. Each stage names itself; the detail is on request. #}
+        <div class="sbro-flow">
+          <ol class="sbro-flow-row">
+            {% for step, detail in ro.workflow %}
+            <li>
+              <button type="button" class="sbro-stage-btn" data-stage="{{ step | lower }}"
+                      aria-describedby="sbro-flow-detail">{{ step }}</button>
+            </li>
+            {% endfor %}
+          </ol>
+          <p class="sbro-flow-detail" id="sbro-flow-detail" aria-live="polite">
+            <span class="sbro-flow-text">{{ ro.workflow[0][1] }}</span>
+          </p>
+          {# The same detail, readable with no pointer and no script. #}
+          <dl class="sbro-flow-fallback">
+            {% for step, detail in ro.workflow %}<dt>{{ step }}</dt><dd>{{ detail }}</dd>{% endfor %}
+          </dl>
+        </div>
+
+        {# The example campaign. Hidden, not absent. #}
+        <div class="sbro-sample" id="sbro-sample" hidden>
+          <p class="sbro-sample-head">
+            <span class="sbro-sample-tag">{{ ro.sample.label }}</span>
+            <span class="sbro-sample-len">{{ ro.sample.length }}</span>
+          </p>
+          <ol class="sbro-sample-list">
+            {% for day, item, status in ro.sample['items'] %}
+            <li>
+              <span class="sbro-day">{{ day }}</span>
+              <span class="sbro-item">{{ item }}</span>
+              <span class="sbro-status sbro-status--{{ status | lower | replace(' ', '-') }}">{{ status }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+          <p class="sbro-sample-note">{{ ro.sample.note }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

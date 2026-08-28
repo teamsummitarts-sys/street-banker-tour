@@ -1,0 +1,59 @@
+{% extends "signal/_shell.html" %}
+{% block title %}Audio Briefs{% endblock %}
+{% block main %}
+  <p class="sg-eyebrow">{{ org['name'] }}</p>
+  <h1 class="sg-h1">Audio Briefs</h1>
+  <p class="sg-lede">
+    The week's alerts, read aloud. Every sentence is assembled from the alert
+    rows themselves — nothing in a brief is summarised or inferred, and when
+    nothing crossed a threshold the brief says so rather than filling the time.
+  </p>
+
+  {% if not audio_on %}
+    <p class="sg-empty">
+      Audio Briefs are switched off on this deployment. They need
+      <code>AUDIO_INTELLIGENCE_ENABLED</code> and
+      <code>SIGNAL_AUDIO_BRIEFS_ENABLED</code>.
+    </p>
+  {% else %}
+    <form class="sg-rail" method="post" action="/signal/briefs/new">
+      <label class="sg-field"><span>Cover the last</span>
+        <select class="sg-select" name="window">
+          <option value="1">24 hours</option>
+          <option value="7" selected>7 days</option>
+          <option value="30">30 days</option>
+        </select>
+      </label>
+      <button class="sg-btn" type="submit">Write a brief</button>
+    </form>
+    <p class="sg-lede">
+      Writing a brief is free — it only reads the database. Turning one into
+      speech is charged per character by the provider.
+    </p>
+  {% endif %}
+
+  {% if briefs %}
+    <h2 class="sg-h2">Briefs</h2>
+    <table class="sg-table">
+      <thead><tr><th>Brief</th><th>Covers</th><th>Alerts</th><th>Audio</th></tr></thead>
+      <tbody>
+        {% for b in briefs %}
+          <tr>
+            <td><a href="/signal/briefs/{{ b.id }}">{{ b.title }}</a></td>
+            <td>{{ b.window_days }} days</td>
+            <td class="sg-num">{{ b.item_count }}</td>
+            <td>
+              {% if b.audio_asset_id %}
+                {{ 'silent demo' if b.is_mock else 'ready' }}
+              {% else %}
+                not spoken
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="sg-empty">No briefs yet.</p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Shows - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Shows</p><h1 class="to-h1" style="font-size:20px">{{ shows|length }} date{{ '' if shows|length == 1 else 's' }}</h1></div></div>
+
+{% if shows %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>#</th><th>Date</th><th>City</th><th>Venue</th><th>Status</th><th>Ready</th><th>Missing</th></tr></thead>
+  <tbody>
+  {% for s in shows %}
+  <tr>
+    <td data-k="#">{{ s['show_number'] }}</td>
+    <td data-k="Date"><a href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}">{{ fmt_day(s['date']) }}</a></td>
+    <td data-k="City">{{ s['city'] or '—' }}</td>
+    <td data-k="Venue"><a href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}"><b>{{ s['venue'] }}</b></a></td>
+    <td data-k="Status">{{ m.chip(s['status']) }}</td>
+    <td data-k="Ready">{{ m.ready(readiness[s['id']]['pct']) }}</td>
+    <td data-k="Missing" class="to-muted">{% for i in readiness[s['id']]['missing'][:4] %}{{ i['label']|lower }}{{ ', ' if not loop.last }}{% endfor %}{% if readiness[s['id']]['missing']|length > 4 %} +{{ readiness[s['id']]['missing']|length - 4 }}{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+  {{ m.empty("No shows on this tour", "Add a show day from the calendar, or import your dates.", "/tours/" ~ tour['id'] ~ "/calendar", "Calendar") }}
+{% endif %}
+
+{% if unattached %}
+<h2 class="to-h2">Shows in your Tour Hub not on this tour</h2>
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <tbody>
+  {% for s in unattached %}
+  <tr><td data-k="Date">{{ s['date'] }}</td><td data-k="Venue">{{ s['venue'] }}{% if s['city'] %}, {{ s['city'] }}{% endif %}</td>
+    <td><form method="post" action="/tours/{{ tour['id'] }}/shows/attach" class="to-inline"><input type="hidden" name="show_id" value="{{ s['id'] }}"><button class="to-btn to-btn--small" type="submit">Add to tour</button></form></td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+{% endblock %}

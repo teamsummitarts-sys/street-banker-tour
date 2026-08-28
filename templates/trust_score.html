@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Trust Score - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker · Trust Score</div>
+      <h1 class="sb-h1 mt-1">Trust Score</h1>
+      {% include "partials/score_trend.html" %}
+      <p class="mt-1 max-w-2xl text-sm text-gray-300">The number a label, supervisor, or partner checks before they check your music: is the business behind this artist in order? Every factor is verifiable account state.</p>
+    </div>
+    <a href="/artist-profile" class="sb-btn sb-btn-secondary">Artist Profile →</a>
+  </div>
+
+  <!-- Score plate -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-6 shadow-[0_0_60px_rgba(201,162,74,0.07)]">
+    <div class="flex flex-wrap items-center justify-between gap-6">
+      <div class="flex items-center gap-5">
+        <!-- Segmented ring: one segment per real factor -->
+        <div class="relative h-28 w-28 shrink-0">
+          <svg viewBox="0 0 100 100" class="h-full w-full -rotate-90">
+            {% set n = t.factors | length %}
+            {% set seg = (263.9 / n - 3.5) | round(1) %}
+            {% for name, pts, note in t.factors %}
+            <circle cx="50" cy="50" r="42" fill="none" stroke-width="9" stroke-linecap="butt"
+                    stroke="{{ '#79B473' if pts >= 7 else ('#E8B950' if pts >= 5 else ('#E05C4A' if pts > 0 else '#221D18')) }}"
+                    stroke-dasharray="{{ seg }} 400"
+                    transform="rotate({{ (loop.index0 * 360 / n) | round(1) }} 50 50)">
+              <title>{{ name }} — {{ pts }}/10</title>
+            </circle>
+            {% endfor %}
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span id="t-total" data-total="{{ t.total }}" class="text-3xl font-black tabular-nums {{ 'text-green-400' if t.total >= 80 else 'text-sb-gold-bright' }}">{{ t.total }}</span>
+            <span class="text-xs text-gray-300 font-medium">/100</span>
+          </div>
+        </div>
+        <div>
+          <div class="sb-label text-gray-300">Street Banker Trust Score</div>
+          <div class="mt-1 text-xs font-bold uppercase tracking-wide {{ 'text-green-400' if t.verdict == 'Partner-ready' else 'text-sb-gold-bright' }}">{{ t.verdict }}</div>
+          <div id="t-whatif" class="mt-1.5 hidden text-xs font-bold text-sky-400">What-if: <span id="t-whatif-total" class="sb-num"></span>/100 with the checked work done</div>
+          <a href="/deal-room/onesheet" class="mt-1.5 inline-block text-xs font-bold text-sb-gold-bright hover:underline">See what a partner sees — your One-Sheet →</a>
+        </div>
+      </div>
+      <!-- Badge preview -->
+      <div class="rounded-xl border border-sb-gold/40 bg-black/40 p-4 text-center">
+        <div class="mx-auto grid h-16 w-16 place-items-center rounded-full border-2 {{ 'border-green-500/60 text-green-400' if t.total >= 80 else 'border-sb-gold/60 text-sb-gold-bright' }} text-xl font-black tabular-nums">{{ t.total }}</div>
+        <div class="sb-label mt-2 text-gray-300">Verified by<br><span class="text-sb-gold-bright">Street Banker</span></div>
+        <div class="mt-1 text-xs text-gray-300 font-medium">Public badge ships with Partner Portal</div>
+      </div>
+    </div>
+    <div class="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+      {% for name, pts, note in t.factors %}
+      <div>
+        <div class="flex items-baseline justify-between">
+          <span class="text-xs font-bold uppercase tracking-wide text-gray-200">{{ name }}</span>
+          <span class="text-xs font-black tabular-nums {{ 'text-green-400' if pts >= 7 else ('text-sb-gold-bright' if pts >= 5 else 'text-red-400/80') }}">{{ pts }}/10</span>
+        </div>
+        <div class="mt-1 flex gap-[3px]">
+          {% for i in range(10) %}
+          <span class="h-2.5 flex-1 rounded {{ ('bg-green-500' if pts >= 7 else ('bg-sb-gold-bright' if pts >= 5 else 'bg-red-500/70')) if i < pts else 'bg-white/10' }}"></span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Blockers -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-300">Blocking Factors</h2>
+    {% if t.blockers %}
+    <div class="mt-3 space-y-2.5">
+      {% for name, pts, note in t.blockers %}
+      <div class="rounded-lg border {{ 'border-red-500/30' if pts == 0 else 'border-amber-500/30' }} bg-white/5 p-3">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-gray-100">{{ name }}</span>
+          <span class="rounded px-1.5 py-0.5 text-xs font-bold tabular-nums {{ 'bg-red-500/15 text-red-400' if pts == 0 else 'bg-amber-500/15 text-amber-400' }}">{{ pts }}/10{{ ' · critical' if pts == 0 }}</span>
+        </div>
+        <div class="mt-0.5 text-xs text-gray-300 font-medium">{{ note }}</div>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          <form method="post" action="/actions/from-alert">
+            <input type="hidden" name="title" value="Raise trust score: {{ name }}">
+            <input type="hidden" name="description" value="{{ note }}">
+            <input type="hidden" name="category" value="rights">
+            <button class="sb-btn sb-btn-secondary sb-btn-sm">Create action</button>
+          </form>
+          <label class="flex cursor-pointer items-center gap-1.5 text-xs font-bold text-sky-400/90">
+            <input type="checkbox" class="whatif-box h-3 w-3 accent-sky-400" data-delta="{{ 10 - pts }}">What if done? (+{{ 10 - pts }})
+          </label>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="mt-3 text-xs text-gray-300 font-medium">Factors update themselves — connect statements, document splits, or add metadata anywhere in the app and the score recomputes on the next load. The what-if total is straight arithmetic on the real weights.</p>
+    {% else %}
+    <p class="mt-3 text-xs text-green-400">No blocking factors — this account holds up to diligence.</p>
+    {% endif %}
+  </section>
+
+  <p class="text-xs text-gray-300 font-medium">Trust Score reflects verifiable platform state: metadata, documents, consents, and activity. It is not a credit score and makes no financial representations.</p>
+</div>
+
+<script>
+  // What-if forecast: pure arithmetic on the real per-factor weights.
+  (function () {
+    var totalEl = document.getElementById("t-total");
+    var strip = document.getElementById("t-whatif");
+    var stripTotal = document.getElementById("t-whatif-total");
+    if (!totalEl || !strip) return;
+    var base = parseInt(totalEl.dataset.total, 10) || 0;
+    function recalc() {
+      var extra = 0;
+      document.querySelectorAll(".whatif-box:checked").forEach(function (b) {
+        extra += parseInt(b.dataset.delta, 10) || 0;
+      });
+      if (extra > 0) {
+        stripTotal.textContent = Math.min(100, base + extra);
+        strip.classList.remove("hidden");
+      } else {
+        strip.classList.add("hidden");
+      }
+    }
+    document.querySelectorAll(".whatif-box").forEach(function (b) {
+      b.addEventListener("change", recalc);
+    });
+  })();
+</script>
+{% endblock %}

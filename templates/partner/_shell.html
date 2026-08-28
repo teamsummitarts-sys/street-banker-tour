@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ partner.name }} · Partner OS{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-[1100px] space-y-5">
+  <header class="space-y-1">
+    <p class="font-mono text-xs uppercase tracking-[0.18em] text-sb-ink-3">Partner OS</p>
+    <h1 class="text-2xl font-black tracking-tight text-sb-ink">{{ partner.name }}</h1>
+    <p class="text-sm text-sb-ink-2">
+      You are signed in as {{ role_label }}.
+      {% if partner.domain %}This tenant answers at {{ partner.domain }}.{% endif %}
+    </p>
+  </header>
+  <nav class="flex flex-wrap gap-2">
+    <a href="/partner/" class="sw px-3 py-1.5 text-xs">Overview</a>
+    {% if can('roster_view') %}<a href="/partner/roster" class="sw px-3 py-1.5 text-xs">Roster</a>{% endif %}
+    <a href="/partner/audit" class="sw px-3 py-1.5 text-xs">Activity</a>
+  </nav>
+  {% block partner_body %}{% endblock %}
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% set nav = 'agents' %}
+{% extends "desk/layout.html" %}
+{% block title %}Voice Agent{% endblock %}
+{% block main %}
+<h1 class="dk-h1">Voice Agent</h1>
+<p class="dk-sub">An agent that can answer a line: take details, answer questions it has been given answers to, and put a caller through to a person. It is not a person, not an artist, and not anybody with a name — those are enforced when you save, not left to review.</p>
+
+{% if unmet %}
+  {# The most important thing on this page, so it sits above everything else.
+     An agent that quietly refuses to escalate is worse than no agent, and
+     nobody would spot it in a session list. #}
+  <p class="dk-empty" style="margin-top:16px;border-style:solid">
+    <strong>{{ unmet|length }} caller{{ '' if unmet|length == 1 else 's' }} asked for a person and did not get one.</strong>
+    {% for s in unmet[:5] %}
+      <a href="/operator-desk/agents/sessions/{{ s.id }}">Session {{ s.id[:8] }}</a>{% if not loop.last %}, {% endif %}
+    {% endfor %}
+  </p>
+{% endif %}
+
+{% if not agent_on %}
+  <p class="dk-empty" style="margin-top:16px">The voice agent is switched off on this deployment. It needs <code>AUDIO_INTELLIGENCE_ENABLED</code> and <code>AUDIO_OPERATOR_ENABLED</code>.</p>
+{% elif can('manage_users') %}
+<form class="dk-form" method="post" action="/operator-desk/agents/new" style="margin-top:16px">
+  <div class="dk-grid">
+    <label class="dk-field"><span>Name *</span>
+      <input type="text" name="name" required placeholder="Front desk"></label>
+    <label class="dk-field"><span>How a caller reaches a human *</span>
+      <input type="text" name="human_contact" required placeholder="Operations team, ops@example.net"></label>
+  </div>
+  <label class="dk-field" style="margin-top:12px"><span>What it is for</span>
+    <textarea name="purpose" rows="2" placeholder="Answer distribution questions and take contact details."></textarea></label>
+  <label class="dk-field" style="margin-top:12px">
+    <span>Greeting * — must tell the caller they are speaking to an AI</span>
+    <textarea name="greeting" rows="3" required
+      placeholder="You are speaking with an AI assistant for the label. I can answer questions or put you through to a person."></textarea></label>
+  <p class="dk-sub">Checked against the words that will actually be spoken, not a box beside them. A caller who does not know cannot consent to it.</p>
+  <label class="dk-field" style="margin-top:12px">
+    <span>Role it performs — never a person's name</span>
+    <textarea name="persona_note" rows="2" placeholder="A calm front-desk assistant."></textarea></label>
+  <p class="dk-sub">An agent may not take the identity of a real person, on this roster or off it. Describe the role instead.</p>
+  <div class="dk-grid" style="margin-top:12px">
+    <label class="dk-field"><span>What it may answer — one per line</span>
+      <textarea name="knowledge" rows="4"></textarea></label>
+    <label class="dk-field"><span>What it must never do — one per line</span>
+      <textarea name="may_not" rows="4"></textarea></label>
+  </div>
+  <div style="margin-top:12px"><button class="dk-btn" type="submit">Create as a draft</button></div>
+  <p class="dk-sub" style="margin-top:8px">Created as a draft. Nothing speaks to anybody until you activate it.</p>
+</form>
+{% endif %}
+
+{% if profiles %}
+<div class="dk-table-wrap" style="margin-top:16px"><table class="dk-table">
+  <thead><tr><th>Agent</th><th>Status</th><th>Human exit</th><th>Never</th><th></th></tr></thead>
+  <tbody>
+  {% for p in profiles %}
+  <tr>
+    <td>{{ p.name }}<div style="font-size:12px;color:var(--dk-faint)">{{ p.purpose[:70] }}</div></td>
+    <td><span class="dk-chip">{{ p.status }}</span></td>
+    <td>{{ p.human_contact }}</td>
+    <td>{{ p.may_not|length }}</td>
+    <td>
+      {% if can('manage_users') %}
+        {% if p.status != 'active' %}
+        <form method="post" action="/operator-desk/agents/{{ p.id }}/activate" style="display:inline">
+          <button class="dk-btn" style="min-height:26px;padding:0 10px;font-size:12px" type="submit">Activate</button></form>
+        {% else %}
+        <form method="post" action="/operator-desk/agents/{{ p.id }}/suspend" style="display:inline">
+          <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px" type="submit">Suspend</button></form>
+        {% endif %}
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="dk-empty" style="margin-top:16px">No agents configured.</p>
+{% endif %}
+
+{% if sessions %}
+<h2 class="dk-h1" style="font-size:18px;margin-top:24px">Recent calls</h2>
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr><th>Session</th><th>Status</th><th>Disclosed</th><th>Asked for a person</th><th>Length</th></tr></thead>
+  <tbody>
+  {% for s in sessions %}
+  <tr>
+    <td><a href="/operator-desk/agents/sessions/{{ s.id }}">{{ s.id[:8] }}</a></td>
+    <td><span class="dk-chip">{{ s.status }}</span></td>
+    <td>{{ 'yes' if s.disclosed else 'NO' }}</td>
+    <td>{{ 'yes' if s.human_requested else '—' }}</td>
+    <td>{{ s.duration_seconds }}s</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+{% endblock %}

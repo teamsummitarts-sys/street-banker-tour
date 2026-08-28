@@ -1,0 +1,78 @@
+{# The run, for somebody playing it.
+
+   Every other share link is one show handed to one person for one job.
+   This one is the whole tour, because a band member's question is never
+   "what happens tonight" — it is "where am I on the 14th and what time
+   does the van leave on the 15th".
+
+   What it deliberately does not carry: guarantees, settlement, merch
+   splits, room assignments, confirmation numbers, anyone's phone number,
+   and the guest list. A tour is shared with the band; the deal is not. #}
+{% extends "tour/_public.html" %}
+{% block title %}{{ tour['name'] }} - itinerary{% endblock %}
+{% block body %}
+<div class="to-head">
+  <div>
+    <p class="to-eyebrow">{{ tour['artist_name'] or tour['name'] }}</p>
+    <h1 class="to-h1" style="font-size:20px">{{ tour['name'] }}</h1>
+    <p class="to-sub">
+      {{ shows|length }} show{{ '' if shows|length == 1 else 's' }}
+      {%- if tour['start_date'] %} · {{ fmt_day(tour['start_date']) }} to {{ fmt_day(tour['end_date']) }}{% endif %}.
+      Times are local to each city. This page updates when the tour does — keep the link rather than a screenshot.
+    </p>
+  </div>
+</div>
+
+{% if not rows %}
+  <p class="to-sub">Nothing on the itinerary yet.</p>
+{% else %}
+<ol class="to-route" style="margin-top:12px">
+  {% for r in rows %}
+  <li{% if r['date'] == today %} class="leg"{% endif %}>
+    <span>
+      {{ fmt_day(r['date']) }}
+      {%- if r['date'] == today %} <span class="to-chip to-chip--gold">today</span>{% endif %}
+    </span>
+    <span>
+      {% if r['kind'] == 'show' %}
+        <b>{{ r['city'] or r['venue'] }}</b>
+        <span class="to-muted">{{ r['venue'] }}</span>
+        {%- if r['address'] %}<br><span class="to-muted" style="font-size:12px">{{ r['address'] }}</span>{% endif %}
+        {%- if r['support'] %}<br><span class="to-muted" style="font-size:12px">Bill: {{ r['support'] }}</span>{% endif %}
+        {% if r['schedule'] %}
+        <br>
+        {% for it in r['schedule'] %}<span class="to-muted" style="font-size:12px">{{ fmt_time(it['start_time']) }} {{ it['title'] }}{{ ' · ' if not loop.last }}</span>{% endfor %}
+        {% endif %}
+      {% else %}
+        <b>{{ r['kind']|capitalize }}{% if r['city'] %} — {{ r['city'] }}{% endif %}</b>
+        {%- if r['label'] %} <span class="to-muted">{{ r['label'] }}</span>{% endif %}
+      {% endif %}
+
+      {% if r['travel'] %}
+        <br>
+        {% for t in r['travel'] %}
+        <span class="to-muted" style="font-size:12px">
+          {%- if t['dep_time'] %}{{ fmt_time(t['dep_time']) }} {% endif %}
+          {{- {'air':'flight','ground':'drive','bus':'bus','rail':'train'}.get(t['mode'], t['mode']) }}
+          {%- if t['dep_loc'] %} from {{ t['dep_loc'] }}{% endif %}
+          {%- if t['arr_loc'] %} to {{ t['arr_loc'] }}{% endif %}
+          {%- if t['pickup'] %} · pickup {{ t['pickup'] }}{% endif %}
+        </span>{{ ' · ' if not loop.last }}
+        {% endfor %}
+      {% endif %}
+
+      {% if r['hotel'] %}
+        <br><span class="to-muted" style="font-size:12px">Hotel: {{ r['hotel']['property'] }}{% if r['hotel']['address'] %} — {{ r['hotel']['address'] }}{% endif %}</span>
+      {% endif %}
+    </span>
+    <span></span>
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
+
+<p class="to-sub" style="margin-top:22px">
+  Room assignments, confirmation numbers, phone numbers and anything to do with money are not on this page.
+  Ask the tour manager for those.
+</p>
+{% endblock %}

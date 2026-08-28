@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Referrals - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[800px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Growth</div>
+    <h1 class="sb-h1 mt-1">Referrals</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Give a month, get $9. Anyone who signs up from your link gets their <span class="text-gray-200">first month free</span> on any paid plan — and when they convert, a <span class="text-gray-200">$9.00 credit</span> lands on your Stripe balance and offsets your next invoices.</p>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-4">
+      <div class="sb-label text-gray-300">Signed up from your link</div>
+      <div class="mt-1 text-2xl font-black tabular-nums">{{ stats.signups }}</div>
+    </div>
+    <div class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-4">
+      <div class="sb-label text-gray-300">Converted · credits applied</div>
+      <div class="mt-1 text-2xl font-black tabular-nums text-sb-ink">{{ stats.converted }}</div>
+    </div>
+  </div>
+
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5">
+    <h2 class="sb-label text-gray-300">Your link</h2>
+    <div class="mt-2 flex flex-wrap gap-2">
+      <input id="ref-link" readonly value="{{ ref_link }}" onclick="this.select()"
+             class="min-w-0 flex-1 rounded-lg border border-white/15 bg-black/40 px-3 py-2.5 font-mono text-xs text-sb-gold-bright focus:outline-none">
+      <button id="ref-copy" class="sb-btn sb-btn-primary">Copy</button>
+    </div>
+    <p class="mt-2 text-xs text-gray-300 font-medium">Drop it in group chats, bios, and the merch table QR. It never expires.</p>
+  </section>
+
+  <div class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5 text-xs leading-relaxed text-gray-300 font-medium">
+    <span class="font-bold uppercase tracking-wide text-gray-300">How it settles, honestly:</span>
+    credits are applied through Stripe only — the moment your referral's first payment clears, Stripe adds $9.00 to your customer balance{% if not stripe_live %} (Stripe isn't configured on this server yet, so conversions can't complete for now){% endif %}. If you don't have billing set up yet, your earned credits apply automatically the first time you subscribe. No gift cards, no points, no expiry games.
+  </div>
+</div>
+
+<script>
+document.getElementById("ref-copy").addEventListener("click", function () {
+  var el = document.getElementById("ref-link");
+  navigator.clipboard.writeText(el.value).then(function () {
+    var b = document.getElementById("ref-copy");
+    b.textContent = "Copied ✓";
+    setTimeout(function () { b.textContent = "Copy"; }, 1500);
+  });
+});
+</script>
+{% endblock %}

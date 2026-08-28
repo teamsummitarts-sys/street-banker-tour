@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Sync Clearance Packs - Street Banker{% endblock %}
+
+{% set clear_tone = {'cleared': 'bg-green-500/15 text-green-400', 'pending': 'bg-amber-500/15 text-amber-400', 'unconfirmed': 'bg-white/10 text-gray-300'} %}
+
+{% block content %}
+<div class="mx-auto max-w-[1100px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Royalty Sweep · Sync Engine</div>
+    <h1 class="sb-h1 mt-1">Sync Clearance Packs</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">One private link per track: audio, tempo/key/mood, and clearance status — everything a music supervisor needs to say yes fast.</p>
+  </div>
+
+  {% if error %}<div class="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-400">{{ error }}</div>{% endif %}
+
+  <!-- New pack -->
+  <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+    <h2 class="sb-label text-sb-gold-bright">New Pack</h2>
+    {% set field = 'w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none' %}
+    <form method="post" enctype="multipart/form-data" class="mt-3 space-y-3">
+      <div class="grid gap-2 sm:grid-cols-2">
+        <input name="title" required placeholder="Track title *" class="{{ field }}">
+        <input name="artist_name" placeholder="Artist name" class="{{ field }}">
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <input name="bpm" placeholder="BPM" class="{{ field }}">
+        <input name="song_key" placeholder="Key (e.g. A min)" class="{{ field }}">
+        <input name="moods" placeholder="Moods (dark, driving, neon)" class="{{ field }}">
+      </div>
+      <div class="grid gap-2 sm:grid-cols-3">
+        <div><label class="sb-label text-gray-300">Master clearance</label>
+          <select name="master_status" class="{{ field }} mt-1 [color-scheme:dark]">
+            <option value="cleared">Cleared — I control 100%</option>
+            <option value="pending">Pending — splits in progress</option>
+            <option value="unconfirmed" selected>Unconfirmed</option>
+          </select></div>
+        <div><label class="sb-label text-gray-300">Publishing clearance</label>
+          <select name="publishing_status" class="{{ field }} mt-1 [color-scheme:dark]">
+            <option value="cleared">Cleared — I control 100%</option>
+            <option value="pending">Pending — splits in progress</option>
+            <option value="unconfirmed" selected>Unconfirmed</option>
+          </select></div>
+        <div><label class="sb-label text-gray-300">Licensing contact email</label>
+          <input name="contact_email" type="email" placeholder="you@example.com" class="{{ field }} mt-1"></div>
+      </div>
+      <input name="ownership_note" placeholder="Ownership note (e.g. one-stop: master + publishing, no samples)" class="{{ field }}">
+      <div class="grid gap-2 sm:grid-cols-3">
+        {% for name, label in [('main_audio', 'Main audio *'), ('instrumental_audio', 'Instrumental'), ('clean_audio', 'Clean version')] %}
+        <div><label class="sb-label text-gray-300">{{ label }}</label>
+          <input type="file" name="{{ name }}" accept=".mp3,.wav,.m4a,.aiff,.aif,.flac" class="mt-1 w-full text-xs text-gray-300 file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-solid file:border-sb-gold/40 file:bg-sb-gold/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-sb-gold-bright"></div>
+        {% endfor %}
+      </div>
+      <button class="rounded-lg bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-6 py-2.5 text-sm font-bold text-sb-on-gold shadow-[0_4px_18px_rgba(216,178,90,0.3)] hover:scale-[1.02]">Create Pack</button>
+    </form>
+  </section>
+
+  <!-- Packs -->
+  {% if packs %}
+  <div class="space-y-3">
+    {% for p in packs %}
+    <div class="rounded-2xl border {{ 'border-white/5 opacity-60' if p.status == 'archived' else 'border-white/10' }} bg-sb-surface-1 p-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="min-w-0 flex-1 truncate text-sm font-bold text-gray-100">{{ p.title }}{% if p.artist_name %} <span class="font-normal text-gray-300">— {{ p.artist_name }}</span>{% endif %}</span>
+        <span class="rounded px-1.5 py-0.5 text-xs font-bold uppercase {{ clear_tone.get(p.master_status) }}">Master {{ p.master_status }}</span>
+        <span class="rounded px-1.5 py-0.5 text-xs font-bold uppercase {{ clear_tone.get(p.publishing_status) }}">Pub {{ p.publishing_status }}</span>
+        <span class="text-xs sb-num text-gray-300 font-medium">{{ p.views }} views</span>
+      </div>
+      <div class="mt-2 flex flex-wrap items-center gap-2">
+        <input readonly value="{{ request.url_root.rstrip('/') }}/s/{{ p.slug }}" class="pack-url w-full flex-1 rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-gray-200 focus:outline-none sm:w-auto font-medium">
+        <button type="button" class="copy-pack sb-btn sb-btn-secondary sb-btn-sm shrink-0">Copy</button>
+        <a href="/s/{{ p.slug }}" target="_blank" class="sb-btn sb-btn-secondary sb-btn-sm shrink-0">Preview</a>
+        <form method="post" class="shrink-0">
+          <input type="hidden" name="pack_id" value="{{ p.id }}">
+          {% if p.status == 'active' %}
+          <button name="status" value="archived" class="sb-btn sb-btn-secondary sb-btn-sm">Archive</button>
+          {% else %}
+          <button name="status" value="active" class="rounded-md border border-green-500/40 bg-green-500/10 px-3 py-1.5 text-xs font-bold text-green-400">Reactivate</button>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-sb-gold/30 py-10 text-center">
+    <div class="text-sm font-bold text-gray-200">No packs yet</div>
+    <p class="mx-auto mt-1 max-w-md text-xs text-gray-300">Create one pack per pitch-ready track — the private link is what you send supervisors, music houses, and trailer editors.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll(".copy-pack").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const input = btn.parentElement.querySelector(".pack-url");
+      try { await navigator.clipboard.writeText(input.value); } catch (e) { input.select(); document.execCommand("copy"); }
+      btn.textContent = "Copied ✓"; setTimeout(() => { btn.textContent = "Copy"; }, 1500);
+    });
+  });
+</script>
+{% endblock %}

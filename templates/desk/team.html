@@ -1,0 +1,82 @@
+{% set nav = 'team' %}
+{% extends "desk/layout.html" %}
+{% block title %}Team & Settings{% endblock %}
+{% block main %}
+<h1 class="dk-h1">Team &amp; Settings</h1>
+<p class="dk-sub">Who can open the Desk and what they can do once inside. Access is by email — a person signs in to Street Banker with that address and the Desk recognizes them.</p>
+
+<h2 class="dk-h2">Add a person</h2>
+<form class="dk-bar" method="post" action="/operator-desk/team">
+  <input type="hidden" name="action" value="add">
+  <input class="dk-search" name="name" placeholder="Name" required style="max-width:180px">
+  <input class="dk-search" name="email" type="email" placeholder="Email they sign in with" style="max-width:260px">
+  <select class="dk-mini" name="role">{% for r in vocab.roles %}<option value="{{ r }}" {{ 'selected' if r == 'member' }}>{{ vocab.role_labels[r] }}</option>{% endfor %}</select>
+  <button class="dk-btn" type="submit">Add</button>
+</form>
+<p style="font-size:12px;color:var(--dk-faint);margin-top:6px">Adding an email authorizes it — the person also needs a Street Banker account with that exact address. If they don't have one yet, send them to <a href="/signup" style="color:var(--dk-gold)">create an account</a> with it first; the roster below shows whether their sign-in exists yet. No email = a name that can be assigned leads and tasks, but can't sign in.</p>
+
+<h2 class="dk-h2">Roster</h2>
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead>
+  <tbody>
+  {% for u in users %}
+  <tr>
+    <td>{{ u.name }}{% if u.id == me.id %} <span class="dk-chip dk-chip--amber">you</span>{% endif %}</td>
+    <td>
+      {% if u.id != me.id %}
+      <form class="dk-inline" method="post" action="/operator-desk/team">
+        <input type="hidden" name="action" value="email">
+        <input type="hidden" name="user_id" value="{{ u.id }}">
+        <input class="dk-mini" type="email" name="email" value="{{ u.email or '' }}" placeholder="sign-in email"
+               style="padding:5px 8px;border:1px solid var(--dk-rule);border-radius:var(--sb-r-control);background:var(--dk-paper);width:190px">
+        <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px" type="submit">Set</button>
+      </form>
+      {% if u.email %}
+        {% if linked[u.id] %}<span class="dk-chip dk-chip--ok">account linked</span>
+        {% else %}<span class="dk-chip dk-chip--warn">no account yet</span>{% endif %}
+      {% endif %}
+      {% else %}{{ u.email or '—' }}{% endif %}
+    </td>
+    <td><span class="dk-chip dk-chip--ink">{{ vocab.role_labels[u.role] }}</span></td>
+    <td><span class="dk-chip {{ 'dk-chip--ok' if u.status == 'active' else 'dk-chip--warn' }}">{{ u.status }}</span></td>
+    <td>{{ u.last_login[:10] if u.last_login else '—' }}</td>
+    <td>
+      {% if u.id != me.id %}
+      <form class="dk-inline" method="post" action="/operator-desk/team">
+        <input type="hidden" name="action" value="role">
+        <input type="hidden" name="user_id" value="{{ u.id }}">
+        <select class="dk-mini" name="role">{% for r in vocab.roles %}<option value="{{ r }}" {{ 'selected' if u.role == r }}>{{ vocab.role_labels[r] }}</option>{% endfor %}</select>
+        <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px" type="submit">Set role</button>
+      </form>
+      <form class="dk-inline" method="post" action="/operator-desk/team">
+        <input type="hidden" name="action" value="status">
+        <input type="hidden" name="user_id" value="{{ u.id }}">
+        <input type="hidden" name="status" value="{{ 'disabled' if u.status == 'active' else 'active' }}">
+        <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px" type="submit">{{ 'Disable' if u.status == 'active' else 'Reactivate' }}</button>
+      </form>
+      <form class="dk-inline" method="post" action="/operator-desk/team"
+            onsubmit="return confirm('Remove {{ u.name }} from the Desk roster?')">
+        <input type="hidden" name="action" value="remove">
+        <input type="hidden" name="user_id" value="{{ u.id }}">
+        <button class="dk-btn dk-btn--ghost" style="min-height:26px;padding:0 10px;font-size:12px" type="submit">Remove</button>
+      </form>
+      {% else %}
+      <span style="font-size:12px;color:var(--dk-faint)">You can't change your own access.</span>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+<h2 class="dk-h2">What each role can do</h2>
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr><th>Role</th><th>Access</th></tr></thead>
+  <tbody>
+    <tr><td>Owner</td><td>Everything — including deleting leads, exporting data, the activity log, and this page.</td></tr>
+    <tr><td>Admin</td><td>Add and edit any lead, move stages, run deals, assign tasks. No deletes, exports, or team changes.</td></tr>
+    <tr><td>Team Member</td><td>Add notes, tasks, events, and files anywhere; edit only leads assigned to them. Tasks they create are assigned to themselves.</td></tr>
+    <tr><td>Viewer</td><td>Read everything, change nothing.</td></tr>
+  </tbody>
+</table></div>
+{% endblock %}

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ artist_name }} — Artist Hub</title>
+  <meta property="og:title" content="{{ artist_name }}">
+  {% if data.tagline %}<meta property="og:description" content="{{ data.tagline }}">{% endif %}
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+</head>
+{# The lamp over the stage, as a drawn backdrop rather than one flat
+   gradient: brass wash at the crown, two faint arcs under it, grain over
+   the whole thing. The gradient stays underneath as the fallback if the
+   asset ever fails to load. #}
+<body class="min-h-screen text-gray-100 antialiased"
+      style="background-color: var(--sb-ground);
+             background-image: url('/static/img/hub-backdrop.svg'),
+                               radial-gradient(ellipse 80% 40% at 50% -5%, rgba(201,162,74,0.14), transparent 60%);
+             background-repeat: no-repeat, no-repeat;
+             background-size: 100% auto, auto;
+             background-position: top center, top center;">
+  <main class="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-10 pt-12">
+    <div class="text-center">
+      {% if prof.photo %}
+      <span class="mx-auto block h-[104px] w-[104px] rounded-full p-[3px]" style="background: conic-gradient(from 200deg, var(--sb-gold-bright), var(--sb-gold-deep), var(--sb-gold-bright), var(--sb-gold-deep), var(--sb-gold-bright)); box-shadow: 0 0 34px rgba(216,178,90,0.35);">
+        <img src="{{ prof.photo }}" alt="{{ artist_name }}" class="h-full w-full rounded-full border-2 border-sb-ground object-cover">
+      </span>
+      {% endif %}
+      <h1 class="sb-h1 mt-4">{{ artist_name }}</h1>
+      <span class="mx-auto mt-2 block h-px w-16 bg-gradient-to-r from-transparent via-sb-gold-bright to-transparent"></span>
+      {% if data.tagline %}<p class="mt-1.5 text-sm text-gray-300">{{ data.tagline }}</p>{% endif %}
+      {% if data.location %}<p class="sb-label mt-0.5 text-gray-300">{{ data.location }}</p>{% endif %}
+    </div>
+
+    {% if campaigns %}
+    {# The newest release is what someone arriving from a bio link came
+       for. Five identical stacked buttons made it the same size as a
+       three-year-old single, so the latest one carries the cover and the
+       weight, and the back catalogue stays a quiet list under it. #}
+    {% set latest = campaigns[0] %}
+    <div class="mt-7">
+      <div class="sb-label text-sb-gold-bright">Latest</div>
+      <a href="/l/{{ latest.slug }}" class="mt-2 block overflow-hidden rounded-2xl border border-sb-gold/40 bg-gradient-to-b from-sb-surface-2 to-sb-ground transition-colors hover:border-sb-gold-bright/40">
+        {% if latest.cover_url %}
+        <img src="{{ latest.cover_url }}" alt="" class="aspect-square w-full object-cover">
+        {% endif %}
+        <span class="flex items-center justify-between gap-3 px-4 py-3.5">
+          <span class="min-w-0">
+            <span class="block truncate text-base font-black uppercase tracking-tight">{{ latest.title }}</span>
+            <span class="block text-xs font-medium text-gray-300">{{ latest.release_type or 'Single' }}{% if latest.release_date %} · {{ latest.release_date }}{% endif %}</span>
+          </span>
+          <span class="shrink-0 rounded-lg bg-gradient-to-b from-sb-gold-bright to-sb-gold-deep px-3 py-2 text-xs font-black uppercase tracking-wide text-sb-on-gold">Listen</span>
+        </span>
+      </a>
+    </div>
+
+    {% if campaigns | length > 1 %}
+    <div class="mt-6 space-y-2.5">
+      <div class="sb-label text-sb-gold-bright">More music</div>
+      {% for c in campaigns[1:] %}
+      <a href="/l/{{ c.slug }}" class="sb-btn sb-btn-secondary">{{ c.title }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if club %}
+    <div class="mt-6">
+      <div class="sb-label text-sb-gold-bright">Fan Club</div>
+      <a href="/club/{{ slug }}" class="mt-2 block rounded-xl bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-4 py-4 text-center text-sm font-black uppercase tracking-wide text-sb-on-gold transition-transform hover:scale-[1.01]">Join {{ club.name or 'the club' }} — ${{ "%g"|format(club.price_cents / 100) }}/mo</a>
+    </div>
+    {% endif %}
+
+    {% if shows %}
+    <div class="mt-6">
+      <div class="sb-label text-sb-gold-bright">Shows</div>
+      <div class="mt-2 divide-y divide-white/5 rounded-xl border border-sb-gold/25 bg-gradient-to-b from-sb-surface-2 to-sb-ground px-4">
+        {% for s in shows %}
+        <div class="flex items-baseline justify-between gap-3 py-3">
+          <span class="shrink-0 text-xs font-black sb-num text-sb-ink">{{ s.date }}</span>
+          <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ s.venue }}</span>
+          <span class="shrink-0 text-xs text-gray-300 font-medium">{{ s.city }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if store_url or merch %}
+    <div class="mt-6">
+      <div class="sb-label text-sb-gold-bright">Merch</div>
+      {% for m in merch %}
+      <a href="{{ m.url }}" target="_blank" rel="noopener" class="sb-btn sb-btn-secondary mt-2 items-center justify-between">
+        <span class="truncate">{{ m.title }}</span>{% if m.price %}<span class="shrink-0 text-sb-gold-bright">{{ m.price }}</span>{% endif %}
+      </a>
+      {% endfor %}
+      {% if store_url %}
+      <a href="{{ store_url }}" target="_blank" rel="noopener" class="sb-btn sb-btn-secondary mt-2">Full store ↗</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if not campaigns and not club and not shows and not merch and not store_url %}
+    {# A hub with nothing on it is still somebody's link in somebody's
+       bio. Send the visitor to the one page that always has something. #}
+    <div class="mt-8 rounded-2xl border border-dashed border-sb-gold/30 px-5 py-8 text-center">
+      <p class="text-xs text-gray-200">No releases or shows posted here yet.</p>
+      <a href="/epk/{{ slug }}" class="sb-btn sb-btn-secondary sb-btn-sm mt-3">See the press kit →</a>
+    </div>
+    {% endif %}
+
+    <a href="/epk/{{ slug }}" class="mt-6 block text-center text-xs font-bold text-gray-300 hover:text-sb-gold-bright">Press kit &amp; booking →</a>
+
+    <footer class="mt-auto pt-10 text-center">
+      <a href="/" class="inline-flex items-center gap-2 opacity-60 transition-opacity hover:opacity-100">
+        <span class="sb-label text-gray-300">Powered by</span>
+        <img src="/static/img/streetbanker-logo.svg" alt="Street Banker" class="h-5 w-auto">
+      </a>
+    </footer>
+  </main>
+</body>
+</html>

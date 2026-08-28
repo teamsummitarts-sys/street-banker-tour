@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roster invite — Street Banker</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+</head>
+<body class="min-h-screen bg-sb-ground text-gray-100 antialiased">
+  <main class="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-12">
+    <div class="text-center">
+      <img src="/static/img/streetbanker-logo.svg" alt="Street Banker" class="mx-auto h-8 w-auto opacity-90">
+    </div>
+
+    {% if invalid %}
+    <div class="mt-8 rounded-2xl border border-white/10 bg-black/40 p-6 text-center">
+      <p class="text-sm text-gray-200">This invite link isn't valid anymore — it may have been accepted already or withdrawn. Ask the label to send a fresh one.</p>
+    </div>
+    {% else %}
+    <div class="mt-8 rounded-2xl border border-sb-gold-bright/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-6">
+      <div class="sb-label text-sb-gold-bright">Roster invite</div>
+      <h1 class="mt-2 text-xl font-black leading-snug">{{ invite.label_name }} wants you on their roster</h1>
+      <p class="mt-2 text-xs leading-relaxed text-gray-300">Accepting gives <span class="text-gray-200">{{ invite.label_name }}</span> a read-only view of your numbers — statements, fans, links, shows. They never get your login, and you can be removed from the roster at any time.</p>
+
+      {% if error %}<p class="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400 font-medium">{{ error }}</p>{% endif %}
+
+      {% if has_account and not signed_in_as_invited %}
+      <div class="mt-4 space-y-2.5">
+        <p class="text-xs text-gray-300 font-medium">This invitation belongs to an existing account. Sign in as <span class="font-bold text-gray-100">{{ invite.email }}</span> before accepting it.</p>
+        <a href="/login?next={{ request.path }}" class="block w-full rounded-xl bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-5 py-3.5 text-center text-sm font-black uppercase tracking-wide text-sb-on-gold transition-transform hover:scale-[1.01]">Sign in to accept</a>
+      </div>
+      {% else %}
+      <form method="post" class="mt-4 space-y-2.5">
+        {% if not has_account %}
+        <input name="name" required placeholder="Your artist name"
+               class="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white placeholder-gray-300 focus:border-white/40 focus:outline-none">
+        <input name="password" type="password" required placeholder="Create a password (6+ characters)"
+               class="w-full rounded-xl border border-white/15 bg-black/50 px-4 py-3 text-sm text-white placeholder-gray-300 focus:border-white/40 focus:outline-none">
+        <p class="text-xs text-gray-300 font-medium">This creates your free Street Banker account for {{ invite.email }}.</p>
+        {% else %}
+        <p class="text-xs text-gray-300 font-medium">You are signed in as <span class="font-bold text-gray-200">{{ invite.email }}</span>. Accepting connects this account to the roster.</p>
+        {% endif %}
+        <button class="w-full rounded-xl bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-5 py-3.5 text-sm font-black uppercase tracking-wide text-sb-on-gold transition-transform hover:scale-[1.01]">Accept &amp; Join the Roster</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </main>
+</body>
+</html>

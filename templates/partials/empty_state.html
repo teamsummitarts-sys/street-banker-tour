@@ -1,0 +1,44 @@
+{# One empty state, four motifs.
+
+   Every "nothing here yet" panel in the app was a dashed rectangle with
+   two sentences in it. That is fine once and thin four times, and the
+   dashed rectangle is doing no work: it says "absence" and nothing about
+   what is absent.
+
+   These are line drawings of the thing that is missing - a statement
+   page, a scanning lens, a filed document, a tray - in brass on the page
+   colour. Small, quiet, and drawn rather than photographed, so an empty
+   account never looks like a broken one.
+
+   Expects: motif (statement|scan|document|tray), title, body, and
+   optionally body2, cta_href / cta_label. #}
+<div class="rounded-2xl border border-dashed border-sb-gold/30 bg-sb-surface-2 px-6 py-10 text-center">
+  <svg class="mx-auto h-16 w-16" viewBox="0 0 64 64" fill="none" stroke="#C9A24A" stroke-width="1.4"
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    {% if motif == 'statement' %}
+    <path d="M16 8h22l10 10v38a2 2 0 01-2 2H16a2 2 0 01-2-2V10a2 2 0 012-2z"/>
+    <path d="M38 8v10h10" opacity="0.7"/>
+    <path d="M22 28h20M22 36h20M22 44h12" opacity="0.55"/>
+    <path d="M40 50l4 4 8-9" stroke="#E8B950"/>
+    {% elif motif == 'scan' %}
+    <circle cx="28" cy="28" r="14"/>
+    <path d="M38 38l12 12" stroke="#E8B950"/>
+    <path d="M22 28h12M28 22v12" opacity="0.6"/>
+    <path d="M8 14V8h6M56 14V8h-6M8 50v6h6M56 50v6h-6" opacity="0.45"/>
+    {% elif motif == 'document' %}
+    <path d="M12 20h16l4 5h20a2 2 0 012 2v25a2 2 0 01-2 2H12a2 2 0 01-2-2V22a2 2 0 012-2z"/>
+    <path d="M10 34h44" opacity="0.5"/>
+    <path d="M26 44h12" opacity="0.6" stroke="#E8B950"/>
+    {% else %}
+    <path d="M10 34l6-18h32l6 18v16a2 2 0 01-2 2H12a2 2 0 01-2-2z"/>
+    <path d="M10 34h12l3 5h14l3-5h12" opacity="0.7" stroke="#E8B950"/>
+    <path d="M24 24h16" opacity="0.45"/>
+    {% endif %}
+  </svg>
+  <div class="mt-4 text-sm font-bold text-gray-100">{{ title }}</div>
+  <p class="mx-auto mt-2 max-w-lg text-xs text-gray-200">{{ body }}</p>
+  {% if body2 %}<p class="mx-auto mt-2 max-w-lg text-xs text-gray-200">{{ body2 }}</p>{% endif %}
+  {% if cta_href %}
+  <a href="{{ cta_href }}" class="sb-btn sb-btn-secondary sb-btn-sm mt-4">{{ cta_label }}</a>
+  {% endif %}
+</div>

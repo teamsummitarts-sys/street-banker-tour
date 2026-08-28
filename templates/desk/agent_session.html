@@ -1,0 +1,50 @@
+{% set nav = 'agents' %}
+{% extends "desk/layout.html" %}
+{% block title %}Call {{ session.id[:8] }}{% endblock %}
+{% block main %}
+<p class="dk-sub"><a href="/operator-desk/agents">&larr; Voice Agent</a></p>
+<h1 class="dk-h1">Call {{ session.id[:8] }}</h1>
+<p class="dk-sub">
+  {{ profile.name if profile else 'Unknown agent' }} ·
+  <span class="dk-chip">{{ session.status }}</span> ·
+  {{ session.duration_seconds }}s
+  {% if session.is_mock %}· <strong>scripted demo, no call was placed</strong>{% endif %}
+</p>
+
+{% if not session.disclosed %}
+  {# Read from the agent's own turns, never from a flag somebody set. #}
+  <p class="dk-empty" style="margin-top:12px;border-style:solid">
+    <strong>The agent did not disclose that it was an AI in this call.</strong>
+    That is read from what it actually said, not from the configuration. If it
+    happens more than once, suspend the agent.
+  </p>
+{% endif %}
+
+{% if session.human_requested and session.status != 'escalated' %}
+  <p class="dk-empty" style="margin-top:12px;border-style:solid">
+    <strong>The caller asked for a person and did not get one.</strong>
+    {% if can('note_add') %}
+    <form method="post" action="/operator-desk/agents/sessions/{{ session.id }}/escalate" style="margin-top:8px">
+      <button class="dk-btn" type="submit">Pick this up</button>
+    </form>
+    <span style="font-size:12px">Creates a high-priority call-back task under your name.</span>
+    {% endif %}
+  </p>
+{% elif session.escalated_to %}
+  <p class="dk-sub" style="margin-top:12px">Picked up by {{ session.escalated_to }}.</p>
+{% endif %}
+
+<h2 class="dk-h1" style="font-size:18px;margin-top:24px">What was said</h2>
+{% if session.transcript %}
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr><th style="width:110px">Who</th><th>Said</th></tr></thead>
+  <tbody>
+  {% for t in session.transcript %}
+  <tr><td>{{ t.role|title }}</td><td>{{ t.text }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="dk-empty">No transcript was recorded for this call.</p>
+{% endif %}
+{% endblock %}

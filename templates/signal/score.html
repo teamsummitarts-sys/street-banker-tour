@@ -1,0 +1,60 @@
+{% extends "signal/_shell.html" %}
+{% block title %}{{ label }} · {{ a['canonical_name'] }}{% endblock %}
+{% block main %}
+  <p class="sg-eyebrow"><a href="/signal/artist/{{ a['id'] }}">{{ a['canonical_name'] }}</a> · score detail</p>
+  <h1 class="sg-h1">{{ label }} — {{ s['value']|round|int }}</h1>
+  <p class="sg-lede">
+    Version {{ s['version'] }} · cohort <b>{{ s['cohort'] }}</b> · computed {{ s['computed_at'][:16]|replace('T', ' ') }} UTC
+    {%- if percentile is not none %} · ahead of {{ percentile }}% of that cohort{% endif %}.
+    Data quality: {{ s['data_quality'] }}.
+  </p>
+
+  <div class="sg-expl" style="margin-top:16px">
+    {% set e = s['explanation'] %}
+    {% if e['contributions'] %}
+      <table class="sg-contrib">
+        <thead><tr><th scope="col">Input</th><th scope="col">Value</th><th scope="col">Weight</th><th scope="col">Points</th><th scope="col"><span class="sg-sr">Bar</span></th></tr></thead>
+        <tbody>
+        {% for name, c in e['contributions'].items() %}
+          <tr>
+            <td>{{ name|replace('_', ' ')|capitalize }}</td>
+            <td>{{ c['value'] }}</td><td>{{ (c['weight'] * 100)|round|int }}%</td><td>{{ c['points'] }}</td>
+            <td><span class="sg-meter"><i style="width:{{ c['value'] }}%"></i></span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% elif e['parts'] %}
+      <table class="sg-contrib">
+        <thead><tr><th scope="col">Component</th><th scope="col">Value</th></tr></thead>
+        <tbody>
+        {% for name, v in e['parts'].items() %}
+          <tr><td>{{ name|replace('_', ' ')|capitalize }}</td><td>{{ v }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    {% if e['status'] %}<p style="margin-top:10px"><span class="sg-pill is-gold">{{ e['status'] }}</span> {{ e['detail'] or '' }}</p>{% endif %}
+    {% if e['reading'] %}<p style="margin-top:10px">{{ e['reading'] }}</p>{% endif %}
+    {% if e['caution'] %}<p class="sg-note">{{ e['caution'] }}</p>{% endif %}
+    {% if e['missing'] %}
+      <p class="sg-note">Not available for this artist: {{ e['missing']|join(', ') }}. Missing inputs are
+        excluded and the remaining weights renormalised — they never become a zero that reads as a fact.</p>
+    {% endif %}
+  </div>
+
+  {% if history|length > 1 %}
+    <h2 class="sg-h2">History</h2>
+    <div class="sg-table-wrap"><table class="sg-table">
+      <thead><tr><th scope="col">Computed</th><th scope="col" class="sg-num">Value</th><th scope="col">Version</th></tr></thead>
+      <tbody>
+        {% for h in history %}
+          <tr><td>{{ h['computed_at'][:16]|replace('T', ' ') }}</td>
+            <td class="sg-num">{{ h['value']|round|int }}</td><td>{{ h['version'] }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="sg-note">Scores are never overwritten, so what Signal believed at any past moment stays answerable.</p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Recovery - Royalty Sweep{% endblock %}
+
+{% block content %}
+{% set rv = recovery_view %}
+<div class="mx-auto max-w-[1100px] space-y-5">
+
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker</div>
+    <h1 class="sb-h1 mt-1">Recovery</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-200">Every finding on this page is computed from the statements you uploaded. Nothing is sampled, assumed, or carried over from another account.</p>
+  </div>
+
+  {% if not rv.has_data %}
+  {% with motif = 'scan',
+          title = 'Nothing scanned yet',
+          body = 'This page has no statements to read, so it has not found that your royalties are clean — it has found nothing at all. Those are different things, and only one of them would be worth telling you.',
+          body2 = 'Upload a distributor, PRO or MLC statement CSV and the scan runs on your own rows: money paid without a track title, and tracks earning on some sources and silent on others.',
+          cta_href = '/statements', cta_label = 'Upload a statement →' %}
+    {% include "partials/empty_state.html" %}
+  {% endwith %}
+
+  {% else %}
+
+  <div class="rounded-xl border border-green-500/25 bg-green-500/10 px-4 py-2.5 text-xs font-semibold text-green-400">
+    Scanned {{ rv.row_count }} statement row{{ '' if rv.row_count == 1 else 's' }} across {{ rv.source_count }} source{{ '' if rv.source_count == 1 else 's' }}{% if rv.period_count %} and {{ rv.period_count }} period{{ '' if rv.period_count == 1 else 's' }}{% endif %} — ${{ "{:,.2f}".format(rv.tracked_total) }} tracked.
+  </div>
+
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="rounded-2xl border border-red-500/25 bg-sb-surface-2 p-5">
+      <div class="sb-label text-gray-200">Unattributed — actual</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums {{ 'text-red-400' if rv.actual_unattributed else 'text-gray-100' }}">${{ "{:,.2f}".format(rv.actual_unattributed) }}</div>
+      <div class="mt-1 text-xs font-medium text-gray-200">Paid to you, no track named</div>
+    </div>
+    <div class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+      <div class="sb-label text-gray-200">Coverage gaps — estimate</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums {{ 'text-sb-gold-bright' if rv.estimated_gaps else 'text-gray-100' }}">${{ "{:,.2f}".format(rv.estimated_gaps) }}</div>
+      <div class="mt-1 text-xs font-medium text-gray-200">Worth checking, not owed</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-2 p-5">
+      <div class="sb-label text-gray-200">Findings</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-gray-100">{{ rv.finding_count }}</div>
+      <div class="mt-1 text-xs font-medium text-gray-200">Across your uploads</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-2 p-5">
+      <div class="sb-label text-gray-200">Recordings affected</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-gray-100">{{ rv.affected_recordings }}</div>
+      <div class="mt-1 text-xs font-medium text-gray-200">Named tracks with a gap</div>
+    </div>
+  </div>
+
+  {% if rv.findings %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h2 class="sb-label text-gray-200">Findings</h2>
+        <p class="mt-1 text-sm text-gray-200">Actual first — money the statement says was paid — then the estimates.</p>
+      </div>
+      <a href="/reports/recovery.csv" class="sb-btn sb-btn-secondary sb-btn-sm">Download CSV</a>
+    </div>
+
+    <div class="mt-4 space-y-2.5">
+      {% for f in rv.findings %}
+      <div class="rounded-xl border {{ 'border-red-500/25 bg-red-500/[0.05]' if f.basis == 'Actual' else 'border-sb-gold/20 bg-sb-gold/[0.04]' }} p-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wide {{ 'bg-red-500/15 text-red-400' if f.basis == 'Actual' else 'bg-sb-gold/15 text-sb-gold-bright' }}">{{ f.basis }}</span>
+              <span class="rounded-full border border-white/15 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-gray-200">{{ f.confidence }} confidence</span>
+              <span class="text-sm font-bold text-gray-100">{{ f.issue_type }}{% if f.track %} — “{{ f.track }}”{% endif %}</span>
+            </div>
+            <p class="mt-1 text-xs text-gray-200">{{ f.detail }}</p>
+            <p class="mt-1 text-xs font-semibold text-gray-200">Next step: {{ f.action }}</p>
+          </div>
+          <div class="shrink-0 text-right">
+            <div class="text-lg font-black tabular-nums {{ 'text-red-400' if f.basis == 'Actual' else 'text-sb-gold-bright' }}">${{ "{:,.2f}".format(f.amount) }}</div>
+            <div class="text-xs font-medium uppercase tracking-wide text-gray-200">{{ 'On your statement' if f.basis == 'Actual' else 'Estimated' }}</div>
+          </div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          {% if f.has_case %}
+          <a href="/royalty-recovery/cases" class="rounded-md border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-xs font-bold text-green-400">Case open →</a>
+          {% else %}
+          <form method="post" action="/royalty-recovery/cases/from-finding">
+            <input type="hidden" name="title" value="{{ f.case_title }}">
+            <input type="hidden" name="category" value="{{ f.case_category }}">
+            <input type="hidden" name="amount" value="{{ f.amount }}">
+            <input type="hidden" name="notes" value="{{ f.detail }} {{ f.action }}.">
+            <button class="rounded-md bg-sb-surface-2 px-3 py-1.5 text-xs font-bold text-sb-gold-bright ring-1 ring-sb-gold/50 hover:bg-black">Open case</button>
+          </form>
+          {% endif %}
+          <form method="post" action="/actions/from-alert">
+            <input type="hidden" name="title" value="{{ f.action }}: {{ f.case_title }}">
+            <input type="hidden" name="description" value="{{ f.detail }}">
+            <input type="hidden" name="category" value="royalty_recovery">
+            <button class="sb-btn sb-btn-secondary sb-btn-sm">Create recovery action</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-200">Where it sits</h2>
+      <p class="mt-1 text-sm text-gray-200">Unattributed money is filed under the source that paid it; a gap under the source that is silent.</p>
+      <div class="mt-3 space-y-2">
+        {% for s in rv.by_source %}
+        <div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="truncate font-semibold text-gray-100">{{ s.source }}</span>
+            <span class="ml-2 shrink-0 font-bold sb-num text-sb-ink">${{ "{:,.2f}".format(s.amount) }}</span>
+          </div>
+          <div class="mt-1 h-1.5 rounded-full bg-white/5">
+            <div class="h-1.5 rounded-full bg-sb-gold" style="width: {{ (100 * s.amount / rv.by_source[0].amount) | round }}%;"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+      <h2 class="sb-label text-gray-200">Unattributed by period</h2>
+      {% if rv.unattributed_by_period %}
+      <p class="mt-1 text-sm text-gray-200">When the untitled rows were paid. A run of these usually points at one broken delivery.</p>
+      {% set peak = rv.unattributed_by_period | map(attribute='amount') | max %}
+      <div class="mt-3 space-y-1.5">
+        {% for p in rv.unattributed_by_period %}
+        <div class="flex items-center gap-3 text-xs">
+          <span class="w-20 shrink-0 font-semibold text-gray-100">{{ p.period }}</span>
+          <span class="h-2 flex-1 overflow-hidden rounded-full bg-white/5"><span class="block h-full rounded-full bg-red-500/70" style="width: {{ (100 * p.amount / (peak or 1)) | round }}%;"></span></span>
+          <span class="w-20 shrink-0 text-right font-bold sb-num text-gray-100">${{ "{:,.2f}".format(p.amount) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="mt-3 text-xs text-gray-200">Every row in your statements carries a track title, so there is no unattributed revenue to date. That is the good outcome.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  {% else %}
+  <section class="rounded-2xl border border-green-500/25 bg-sb-surface-1 p-6">
+    <div class="text-sm font-bold text-green-400">Clean sweep on what you have uploaded</div>
+    <p class="mt-1 max-w-2xl text-xs text-gray-200">Every row carries a track title, and every track earns on every source in your statements. That is a real result on real rows — it is not a claim about sources you have not uploaded.</p>
+  </section>
+  {% endif %}
+
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 class="sb-label text-gray-200">Cases</h2>
+        <p class="mt-1 text-sm text-gray-200">Findings you have taken up, tracked to a result.</p>
+      </div>
+      <a href="/royalty-recovery/cases" class="sb-btn sb-btn-secondary sb-btn-sm">Open case desk →</a>
+    </div>
+    <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div><div class="sb-label text-gray-200">In pipeline</div>
+        <div class="mt-1 text-xl font-black tabular-nums text-sb-ink">${{ "{:,.2f}".format(rv.cases.pipeline) }}</div></div>
+      <div><div class="sb-label text-gray-200">Recovered</div>
+        <div class="mt-1 text-xl font-black tabular-nums text-green-400">${{ "{:,.2f}".format(rv.cases.recovered) }}</div></div>
+      <div><div class="sb-label text-gray-200">Open cases</div>
+        <div class="mt-1 text-xl font-black tabular-nums text-gray-100">{{ rv.cases.open | length }}</div></div>
+    </div>
+    {% if rv.cases.open %}
+    <div class="mt-3 space-y-1.5">
+      {% for c in rv.cases.open[:6] %}
+      <a href="/royalty-recovery/cases" class="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-3 py-2 text-xs hover:bg-white/10">
+        <span class="min-w-0 flex-1 truncate font-semibold text-gray-100">{{ c.title }}</span>
+        <span class="ml-3 shrink-0 rounded-full border border-white/15 px-2 py-0.5 text-xs font-bold uppercase text-gray-200">{{ c.status }}</span>
+        <span class="ml-3 shrink-0 font-bold sb-num text-sb-ink">${{ "{:,.2f}".format(c.estimated_amount) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-2 p-5">
+    <h2 class="sb-label text-gray-200">What this scan can and cannot see</h2>
+    <ul class="mt-2 space-y-1 text-xs text-gray-200">
+      <li>· It reads your uploaded statement rows. Revenue from a source you have never uploaded is invisible to it, and its absence here is not evidence that nothing is missing there.</li>
+      <li>· Unattributed revenue is taken straight off your statement. Coverage-gap amounts are estimates built from the track's own per-source average.</li>
+      <li>· It does not query PROs, The MLC, SoundExchange or distributors directly — no public feed exists for that, so no figure here is a registration status.</li>
+    </ul>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

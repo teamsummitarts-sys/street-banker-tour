@@ -1,0 +1,97 @@
+{# One template for About, Contact and Partner Network.
+
+   Typography only. These three pages exist to answer a question and get
+   out of the way, and none of them has a photograph worth carrying. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page_title }} · Street Banker</title>
+  <meta name="description" content="{{ page_description }}">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+  <link rel="stylesheet" href="/static/css/product-tour.css?v=2">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-3xl px-6 py-14 lg:px-10 lg:py-20">
+
+  <p class="sb-label text-sb-gold">{{ pg.eyebrow }}</p>
+  <h1 class="mt-4 text-[clamp(2rem,5.4vw,3.2rem)] font-semibold uppercase leading-[1.04] tracking-tight">
+    {% for line in pg.headline %}<span class="block">{{ line }}</span>{% endfor %}
+  </h1>
+  <p class="mt-5 max-w-2xl text-base leading-relaxed text-sb-ink-2">{{ pg.lead }}</p>
+
+  {# --- About: prose sections ------------------------------------------- #}
+  {% if pg.sections %}
+  <div class="mt-12 space-y-9">
+    {% for title, body in pg.sections %}
+    <section class="border-t border-[rgb(201_168_106_/_0.22)] pt-6">
+      <h2 class="text-base font-semibold uppercase tracking-[0.12em] text-sb-ink">{{ title }}</h2>
+      <p class="mt-2.5 max-w-2xl text-base leading-relaxed text-sb-ink-2">{{ body }}</p>
+    </section>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# --- Contact: one address, then where each thing actually goes -------- #}
+  {% if pg.email %}
+  <p class="mt-10 text-base">
+    <a href="mailto:{{ pg.email }}" class="border-b border-[rgb(201_168_106_/_0.5)] font-semibold text-sb-gold transition-colors hover:border-sb-gold hover:text-sb-gold-bright">{{ pg.email }}</a>
+  </p>
+  <div class="mt-11 space-y-7">
+    {% for title, body, link in pg.routes %}
+    <section class="border-t border-[rgb(201_168_106_/_0.22)] pt-5">
+      <h2 class="text-sm font-semibold uppercase tracking-[0.11em] text-sb-ink">{{ title }}</h2>
+      <p class="mt-2 max-w-2xl text-sm leading-relaxed text-sb-ink-2">{{ body }}</p>
+      {% if link %}<a href="{{ link.href }}" class="sbst-link mt-3">{{ link.label }} &rarr;</a>{% endif %}
+    </section>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# --- Partners: what exists, then what we are looking for -------------- #}
+  {% if pg.current %}
+  <h2 class="sb-label mt-12 text-sb-gold">Working today</h2>
+  <div class="mt-4 space-y-5">
+    {% for title, status, body in pg.current %}
+    <section class="border-t border-[rgb(201_168_106_/_0.22)] pt-5">
+      <div class="flex flex-wrap items-center gap-3">
+        <h3 class="text-sm font-semibold uppercase tracking-[0.11em] text-sb-ink">{{ title }}</h3>
+        <span class="sbst-chip sbst-partner">{{ status }}</span>
+      </div>
+      <p class="mt-2 max-w-2xl text-sm leading-relaxed text-sb-ink-2">{{ body }}</p>
+    </section>
+    {% endfor %}
+  </div>
+
+  <h2 class="sb-label mt-12 text-sb-gold">What we are looking for</h2>
+  <div class="mt-4 grid gap-x-8 sm:grid-cols-2">
+    {% for title, body in pg.wanted %}
+    <section class="border-t border-[rgb(238_232_220_/_0.08)] py-4">
+      <h3 class="text-sm font-semibold text-sb-ink">{{ title }}</h3>
+      <p class="mt-1.5 text-sm leading-relaxed text-sb-ink-2">{{ body }}</p>
+    </section>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if pg.note %}
+  <p class="mt-10 max-w-2xl text-sm leading-relaxed text-sb-ink-2">{{ pg.note }}</p>
+  {% endif %}
+
+  {% if pg.cta %}
+  <a href="{{ pg.cta.href }}" class="mt-10 inline-flex min-h-[52px] items-center justify-center rounded-sm bg-sb-gold px-7 text-xs font-bold uppercase tracking-[0.14em] text-sb-surface-2 transition-colors hover:bg-sb-gold-bright">{{ pg.cta.label }}</a>
+  {% endif %}
+</main>
+
+<footer class="mx-auto max-w-3xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/" class="font-semibold hover:text-sb-ink">&larr; Back to Street Banker</a>
+</footer>
+</body>
+</html>

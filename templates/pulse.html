@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}Artist Pulse - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker · Artist Pulse</div>
+      <h1 class="sb-h1 mt-1">Artist Pulse</h1>
+      <p class="mt-1 max-w-2xl text-sm text-gray-300">Your live numbers, straight from the platforms — Spotify followers, popularity, and current top tracks, plus your Deezer fan count. No screenshots, no guesswork.</p>
+    </div>
+    {% if profile %}
+    <button id="pulse-clear" class="sb-btn sb-btn-secondary">Change Artist</button>
+    {% endif %}
+  </div>
+
+  {% if not pulse_configured %}
+  <!-- Honest state: no Spotify credentials on this server -->
+  <section class="rounded-2xl border border-amber-500/30 bg-sb-surface-2 p-6">
+    <div class="sb-label text-sb-gold-bright">Not Connected</div>
+    <p class="mt-2 max-w-xl text-sm text-gray-200">Artist Pulse reads live data with the Spotify API credentials on the server. They aren't configured here, so there's nothing to show — this page never displays sample numbers as if they were yours.</p>
+  </section>
+
+  {% elif not profile %}
+  <!-- Pick your artist -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-6">
+    <div class="sb-label text-gray-300">One-time setup</div>
+    <h2 class="mt-1 text-lg font-bold">Find yourself on Spotify</h2>
+    <p class="mt-1 max-w-xl text-sm text-gray-300">Search your artist name and pick your profile. Everything on this page then tracks that artist live.</p>
+    <div class="mt-4 flex max-w-md gap-2">
+      <input id="pulse-q" placeholder="Artist name…" class="w-full rounded-lg border border-white/15 bg-black/40 px-4 py-2.5 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+      <button id="pulse-search" class="sb-btn sb-btn-primary shrink-0">Search</button>
+    </div>
+    <div id="pulse-results" class="mt-4 grid gap-2 sm:grid-cols-2"></div>
+    <div id="pulse-error" class="mt-3 hidden text-xs font-semibold text-red-400"></div>
+  </section>
+
+  {% elif not pulse %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-2 p-6">
+    <p class="text-sm text-gray-200">Spotify didn't return data for <span class="font-bold">{{ profile.artist_name }}</span> just now. That's usually temporary — reload in a minute, or pick the artist again.</p>
+  </section>
+
+  {% else %}
+  <!-- Live pulse -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-6 shadow-[0_0_60px_rgba(201,162,74,0.07)]">
+    <div class="flex flex-wrap items-center gap-5">
+      {% if pulse.image %}<img src="{{ pulse.image }}" alt="{{ pulse.name }}" class="h-20 w-20 rounded-full border border-sb-gold/40 object-cover">{% endif %}
+      <div class="min-w-0">
+        <h2 class="truncate text-2xl font-black">{{ pulse.name }}</h2>
+        {% if pulse.genres %}<div class="mt-1 flex flex-wrap gap-1.5">
+          {% for g in pulse.genres[:4] %}<span class="rounded-full border border-white/15 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-gray-200">{{ g }}</span>{% endfor %}
+        </div>{% endif %}
+      </div>
+      {% if pulse.url %}<a href="{{ pulse.url }}" target="_blank" rel="noopener" class="ml-auto rounded-lg border border-[#1DB954]/50 bg-[#1DB954]/10 px-4 py-2 text-xs font-bold text-[#1DB954] hover:bg-[#1DB954]/20">Open on Spotify ↗</a>{% endif %}
+    </div>
+
+    <div class="mt-6 grid gap-4 sm:grid-cols-3">
+      <div class="rounded-xl border border-white/10 bg-black/40 p-4">
+        <div class="sb-label text-gray-300">Spotify Followers</div>
+        <div class="mt-1 text-3xl font-black tabular-nums text-sb-ink">{{ "{:,}".format(pulse.followers) }}</div>
+      </div>
+      <div class="rounded-xl border border-white/10 bg-black/40 p-4">
+        <div class="sb-label text-gray-300">Popularity Score</div>
+        <div class="mt-1 flex items-baseline gap-1.5"><span class="text-3xl font-black tabular-nums">{{ pulse.popularity }}</span><span class="text-sm text-gray-300">/100</span></div>
+        <div class="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div class="h-full rounded-full bg-sb-gold" style="width: {{ pulse.popularity }}%;"></div></div>
+      </div>
+      <div class="rounded-xl border border-white/10 bg-black/40 p-4">
+        <div class="sb-label text-gray-300">Deezer Fans</div>
+        {% if deezer %}
+        <div class="mt-1 text-3xl font-black tabular-nums">{{ "{:,}".format(deezer.fans) }}</div>
+        {% else %}
+        <div class="mt-1 text-sm text-gray-300">No Deezer match found for this name.</div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {% if pulse.top_tracks %}
+  <section class="rounded-2xl border border-white/10 bg-sb-ground p-6">
+    <div class="flex items-baseline justify-between">
+      <h3 class="sb-label text-sb-gold">Top Tracks — as Spotify ranks them right now</h3>
+    </div>
+    <div class="mt-4 divide-y divide-white/5">
+      {% for t in pulse.top_tracks %}
+      <div class="flex items-center gap-4 py-2.5">
+        <span class="w-6 shrink-0 text-right text-sm font-black sb-num text-gray-300">{{ loop.index }}</span>
+        <div class="min-w-0 flex-1">
+          <div class="truncate text-sm font-bold">{% if t.url %}<a href="{{ t.url }}" target="_blank" rel="noopener" class="hover:text-sb-gold-bright">{{ t.name }}</a>{% else %}{{ t.name }}{% endif %}</div>
+          <div class="truncate text-xs text-gray-300 font-medium">{{ t.album }}</div>
+        </div>
+        <div class="flex w-32 shrink-0 items-center gap-2">
+          <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10"><div class="h-full rounded-full bg-sb-gold" style="width: {{ t.popularity }}%;"></div></div>
+          <span class="w-6 text-right text-xs font-bold sb-num text-gray-300">{{ t.popularity }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if milestone %}
+  <!-- Milestone: detected from your own snapshot history -->
+  <section class="rounded-2xl border border-sb-gold/50 bg-sb-surface-2 p-5">
+    <div class="flex flex-wrap items-center gap-4">
+      <div class="min-w-0 flex-1">
+        <div class="sb-label text-gray-300">Milestone crossed</div>
+        <div class="mt-0.5 text-2xl font-black text-sb-ink">{{ "{:,}".format(milestone) }} Spotify followers</div>
+        <p class="mt-1 text-xs text-gray-300">Detected from your own snapshot history — your earliest snapshot on file was below this line, today you're at {{ "{:,}".format(pulse.followers) }}.</p>
+      </div>
+      <button id="flex-btn" class="sb-btn sb-btn-primary shrink-0">Download story graphic</button>
+    </div>
+    <canvas id="flex-canvas" width="1080" height="1920" class="hidden"></canvas>
+  </section>
+  {% endif %}
+
+  {% if snaps and snaps | length > 1 %}
+  <!-- Layered trendline: every line is your own recorded snapshots -->
+  <section class="rounded-2xl border border-white/10 bg-sb-ground p-6">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h3 class="sb-label text-sb-gold">Pulse Graph — {{ snaps | length }} daily snapshots</h3>
+      <div class="flex gap-2 text-xs font-bold uppercase">
+        <label class="flex cursor-pointer items-center gap-1.5"><input type="checkbox" class="tl-toggle h-3 w-3 accent-sb-gold-bright" data-line="tl-followers" checked><span class="text-sb-gold-bright">Spotify followers</span></label>
+        <label class="flex cursor-pointer items-center gap-1.5"><input type="checkbox" class="tl-toggle h-3 w-3 accent-sb-gold-bright" data-line="tl-pop" checked><span class="text-sky-400">Popularity</span></label>
+        <label class="flex cursor-pointer items-center gap-1.5"><input type="checkbox" class="tl-toggle h-3 w-3 accent-sb-gold-bright" data-line="tl-deezer"><span class="text-purple-400">Deezer fans</span></label>
+      </div>
+    </div>
+    {% set n = snaps | length %}
+    {% set fmax = (snaps | map(attribute='followers') | max) or 1 %}
+    {% set fmin = snaps | map(attribute='followers') | min %}
+    {% set dmax = (snaps | map(attribute='deezer_fans') | max) or 1 %}
+    {% set dmin = snaps | map(attribute='deezer_fans') | min %}
+    <svg viewBox="0 0 600 160" class="mt-3 w-full">
+      {% for key, cls, vmin, vmax, color in [('followers', 'tl-followers', fmin, fmax, '#E8B950'), ('popularity', 'tl-pop', 0, 100, '#7FA8E8'), ('deezer_fans', 'tl-deezer', dmin, dmax, '#7FA8E8')] %}
+      <polyline id="{{ cls }}" fill="none" stroke="{{ color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" {{ 'style=display:none' if cls == 'tl-deezer' }}
+        points="{% for sn in snaps %}{{ (10 + loop.index0 * 580 / ([n - 1, 1] | max)) | round(1) }},{{ (150 - ((sn[key] - vmin) / ([(vmax - vmin), 1] | max) * 135)) | round(1) }} {% endfor %}">
+        <title>{{ key }}: {{ snaps[0][key] }} → {{ snaps[-1][key] }}</title>
+      </polyline>
+      {% endfor %}
+    </svg>
+    <div class="mt-1 flex justify-between text-xs sb-num text-gray-300 font-medium"><span>{{ snaps[0].day }}</span><span>{{ snaps[-1].day }}</span></div>
+    <p class="mt-2 text-xs text-gray-300 font-medium">Each line is scaled to its own range so shapes are comparable — hover a line for its real start → end values.{% if my_delta7 is not none %} Followers over the last 7 days: <span class="font-bold {{ 'text-green-400' if my_delta7 >= 0 else 'text-red-400' }}">{{ '%+d' | format(my_delta7) }}</span>.{% endif %} TikTok / Apple / YouTube lines aren't shown because those platforms don't offer public artist-stats APIs — no line is better than a fake one.</p>
+  </section>
+  {% endif %}
+
+  <!-- Peer watch: public numbers for artists you pin -->
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-6">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h3 class="sb-label text-sb-gold">Peer Watch</h3>
+      <span class="text-xs text-gray-300 font-medium">Public Spotify numbers, snapshotted whenever this page loads — pin up to 3</span>
+    </div>
+    {% if peers %}
+    <div class="mt-3 space-y-2">
+      {% if pulse %}
+      <div class="flex items-center gap-3 rounded-xl border border-sb-gold/40 bg-sb-surface-2 px-4 py-3">
+        {% if pulse.image %}<img src="{{ pulse.image }}" class="h-9 w-9 rounded-full object-cover" alt="">{% endif %}
+        <span class="min-w-0 flex-1 truncate text-sm font-black text-sb-gold-bright">{{ pulse.name }} (you)</span>
+        <span class="w-28 shrink-0 text-right text-sm font-black sb-num">{{ "{:,}".format(pulse.followers) }}</span>
+        <span class="w-14 shrink-0 text-right text-xs sb-num text-gray-300 font-medium">{{ pulse.popularity }}/100</span>
+        <span class="w-20 shrink-0 text-right text-xs font-bold tabular-nums {{ 'text-green-400' if my_delta7 and my_delta7 > 0 else 'text-gray-300' }}">{{ ('%+d' | format(my_delta7)) if my_delta7 is not none else '—' }} 7d</span>
+      </div>
+      {% endif %}
+      {% for pr in peers %}
+      <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+        {% if pr.image %}<img src="{{ pr.image }}" class="h-9 w-9 rounded-full object-cover" alt="">{% else %}<span class="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-sm">♪</span>{% endif %}
+        <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ pr.name }}</span>
+        <span class="w-28 shrink-0 text-right text-sm font-black sb-num">{{ "{:,}".format(pr.followers) if pr.followers is not none else '—' }}</span>
+        <span class="w-14 shrink-0 text-right text-xs sb-num text-gray-300 font-medium">{{ (pr.popularity ~ '/100') if pr.popularity is not none else '' }}</span>
+        <span class="w-20 shrink-0 text-right text-xs font-bold tabular-nums {{ 'text-green-400' if pr.delta7 and pr.delta7 > 0 else 'text-gray-300' }}">{{ ('%+d' | format(pr.delta7)) if pr.delta7 is not none else '—' }} 7d</span>
+        <button class="peer-remove shrink-0 text-xs text-gray-300 hover:text-red-400" data-id="{{ pr.artist_id }}" title="Remove">✕</button>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="mt-2 text-xs text-gray-300 font-medium">7d deltas appear once a peer has a week of snapshots on file — numbers accrue from the day you pin them.</p>
+    {% else %}
+    <p class="mt-2 text-sm text-gray-300">No peers pinned. Search below and pin artists in your scene — their public follower counts snapshot alongside yours so the comparison is measured, not imagined.</p>
+    {% endif %}
+    <div class="mt-3 flex max-w-md gap-2">
+      <input id="peer-q" placeholder="Search an artist to pin…" class="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-300 focus:border-sb-gold focus:outline-none">
+      <button id="peer-search" class="sb-btn sb-btn-secondary shrink-0">Search</button>
+    </div>
+    <div id="peer-results" class="mt-3 grid gap-2 sm:grid-cols-2"></div>
+    <div id="peer-error" class="mt-2 hidden text-xs font-semibold text-red-400"></div>
+  </section>
+
+  <p class="px-1 text-xs text-gray-300 font-medium">Live data from the Spotify Web API{% if deezer %} and Deezer{% endif %}, refreshed every 6 hours. Popularity is Spotify's own 0–100 signal based on recent plays.</p>
+  {% endif %}
+</div>
+
+<script>
+  const q = document.getElementById("pulse-q");
+  const searchBtn = document.getElementById("pulse-search");
+  if (searchBtn) {
+    const run = async () => {
+      const err = document.getElementById("pulse-error");
+      err.classList.add("hidden");
+      const res = await fetch("/pulse/search?q=" + encodeURIComponent(q.value));
+      const data = await res.json();
+      const box = document.getElementById("pulse-results");
+      box.innerHTML = "";
+      if (!data.results.length) {
+        err.textContent = "No artists found — check the spelling.";
+        err.classList.remove("hidden");
+        return;
+      }
+      data.results.forEach((a) => {
+        const b = document.createElement("button");
+        b.className = "flex items-center gap-3 rounded-xl border border-white/10 bg-black/40 p-3 text-left hover:border-sb-gold/50";
+        b.innerHTML = (a.image ? '<img src="' + a.image + '" class="h-10 w-10 rounded-full object-cover">' : '<span class="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-sm">♪</span>')
+          + '<span class="min-w-0"><span class="block truncate text-sm font-bold"></span>'
+          + '<span class="block text-xs text-gray-300 font-medium">' + a.followers.toLocaleString() + ' followers'
+          + (a.genres && a.genres.length ? ' · ' + a.genres.slice(0, 2).join(", ") : '') + '</span></span>';
+        b.querySelector(".font-bold").textContent = a.name;
+        b.addEventListener("click", async () => {
+          await fetch("/pulse/select", { method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: a.id, name: a.name, image: a.image }) });
+          window.location.reload();
+        });
+        box.appendChild(b);
+      });
+    };
+    searchBtn.addEventListener("click", run);
+    q.addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
+  }
+  // Peer watch: search, pin, remove
+  const peerBtn = document.getElementById("peer-search");
+  if (peerBtn) {
+    const pq = document.getElementById("peer-q");
+    const runPeer = async () => {
+      const err = document.getElementById("peer-error");
+      err.classList.add("hidden");
+      const res = await fetch("/pulse/search?q=" + encodeURIComponent(pq.value));
+      const data = await res.json();
+      const box = document.getElementById("peer-results");
+      box.innerHTML = "";
+      (data.results || []).forEach((a) => {
+        const b = document.createElement("button");
+        b.className = "flex items-center gap-3 rounded-xl border border-white/10 bg-black/40 p-3 text-left hover:border-sb-gold/50";
+        b.innerHTML = (a.image ? '<img src="' + a.image + '" class="h-9 w-9 rounded-full object-cover">' : '<span class="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-sm">♪</span>')
+          + '<span class="min-w-0"><span class="block truncate text-sm font-bold"></span>'
+          + '<span class="block text-xs text-gray-300 font-medium">' + a.followers.toLocaleString() + ' followers</span></span>'
+          + '<span class="ml-auto shrink-0 text-xs font-black uppercase text-sb-gold-bright">Pin</span>';
+        b.querySelector(".font-bold").textContent = a.name;
+        b.addEventListener("click", async () => {
+          const r = await fetch("/pulse/peer/add", { method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: a.id, name: a.name, image: a.image }) });
+          const d = await r.json();
+          if (d.ok) window.location.reload();
+          else { err.textContent = d.error; err.classList.remove("hidden"); }
+        });
+        box.appendChild(b);
+      });
+    };
+    peerBtn.addEventListener("click", runPeer);
+    pq.addEventListener("keydown", (e) => { if (e.key === "Enter") runPeer(); });
+  }
+  document.querySelectorAll(".peer-remove").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      await fetch("/pulse/peer/" + btn.dataset.id + "/remove", { method: "POST" });
+      window.location.reload();
+    });
+  });
+
+  // Trendline toggles
+  document.querySelectorAll(".tl-toggle").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const line = document.getElementById(cb.dataset.line);
+      if (line) line.style.display = cb.checked ? "" : "none";
+    });
+  });
+
+  // Milestone story graphic: drawn locally from your real number
+  const flexBtn = document.getElementById("flex-btn");
+  if (flexBtn) flexBtn.addEventListener("click", () => {
+    const cv = document.getElementById("flex-canvas");
+    const g = cv.getContext("2d");
+    const W = 1080, H = 1920;
+    g.fillStyle = "#0B0A08"; g.fillRect(0, 0, W, H);
+    const grad = g.createRadialGradient(W/2, H*0.38, 80, W/2, H*0.38, 700);
+    grad.addColorStop(0, "rgba(201,162,74,0.28)"); grad.addColorStop(1, "rgba(201,162,74,0)");
+    g.fillStyle = grad; g.fillRect(0, 0, W, H);
+    g.strokeStyle = "#C9A24A"; g.lineWidth = 10;
+    g.beginPath(); g.arc(W/2, H*0.38, 360, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = "rgba(232,198,103,0.35)"; g.lineWidth = 2;
+    g.beginPath(); g.arc(W/2, H*0.38, 390, 0, Math.PI * 2); g.stroke();
+    g.textAlign = "center"; g.fillStyle = "#E8B950";
+    g.font = "900 150px system-ui, sans-serif";
+    g.fillText({{ ('{:,}'.format(milestone) | tojson) if milestone else "''" }}, W/2, H*0.38 + 10);
+    g.fillStyle = "#A99B84"; g.font = "700 44px system-ui, sans-serif";
+    g.fillText("S P O T I F Y   F O L L O W E R S", W/2, H*0.38 + 110);
+    g.fillStyle = "#ffffff"; g.font = "900 72px system-ui, sans-serif";
+    g.fillText({{ pulse.name | tojson if pulse else "''" }}, W/2, H*0.62);
+    g.fillStyle = "#A99B84"; g.font = "600 40px system-ui, sans-serif";
+    g.fillText("thank you — " + new Date().toISOString().slice(0, 10), W/2, H*0.62 + 70);
+    g.fillStyle = "#91836A"; g.font = "700 34px system-ui, sans-serif";
+    g.fillText(".street banker", W/2, H - 110);
+    const a = document.createElement("a");
+    a.download = "milestone.png";
+    a.href = cv.toDataURL("image/png");
+    a.click();
+  });
+
+  const clearBtn = document.getElementById("pulse-clear");
+  if (clearBtn) clearBtn.addEventListener("click", async () => {
+    await fetch("/pulse/clear", { method: "POST" });
+    window.location.reload();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "tour/_public.html" %}
+{% block title %}Day sheet · {{ show['venue'] }} · {{ show['date'] }}{% endblock %}
+{% block body %}
+<div class="to-paper">
+  <span class="tag">Day sheet · {{ tour['name'] }}</span>
+  <h2 style="font-size:22px">{{ fmt_day(show['date']) }} — {{ show['city'] or '' }}</h2>
+  <h3 style="font-size:16px;font-weight:600">{{ show['venue'] }}{% if venue and venue['address'] %} · {{ venue['address'] }}{% if venue['city'] %}, {{ venue['city'] }}{% endif %}{% endif %}</h3>
+  <p class="meta">{% if show['tz'] %}All times {{ show['tz'] }}. {% endif %}{% if show['capacity'] %}Capacity {{ show['capacity'] }}. {% endif %}{% if show['promoter'] %}Promoter {{ show['promoter'] }}.{% endif %}</p>
+
+  <h3 style="margin-top:16px">Schedule</h3>
+  {% if schedule %}
+  <table><thead><tr><th style="width:90px">Time</th><th>Item</th><th>Where</th><th></th></tr></thead><tbody>
+  {% for r in schedule %}<tr><td><b>{{ fmt_time(r['start_time']) or 'TBD' }}</b>{% if r['precision'] == 'approx' %} <span class="meta">approx</span>{% endif %}</td><td>{{ r['title'] }}{% if r['notes'] %}<div class="meta">{{ r['notes'] }}</div>{% endif %}</td><td>{{ r['location'] }}</td><td class="meta">{{ 'confirmed' if r['confirmed'] else 'unconfirmed' }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% else %}<p class="meta">No schedule entered.</p>{% endif %}
+
+  {% if travel %}<h3 style="margin-top:16px">Travel</h3>
+  <table><tbody>{% for t in travel %}<tr><td style="width:90px"><b>{{ fmt_time(t['dep_time']) or '—' }}</b></td><td>{{ t['mode']|capitalize }} {{ t['carrier'] }} {{ t['number'] }}: {{ t['dep_loc'] or t['pickup'] }} → {{ t['arr_loc'] or t['destination'] }}{% if t['driver'] %} · {{ t['driver'] }} {{ t['phone'] }}{% endif %}</td></tr>{% endfor %}</tbody></table>{% endif %}
+
+  {% if lodging %}<h3 style="margin-top:16px">Hotel</h3>
+  {% for l in lodging %}<p><b>{{ l['property'] }}</b>{% if l['address'] %}, {{ l['address'] }}{% endif %}{% if l['city'] %}, {{ l['city'] }}{% endif %} · in {{ l['checkin'] }}{% if l['checkout'] %}, out {{ l['checkout'] }}{% endif %}{% if l['confirmation'] %} · conf. {{ l['confirmation'] }}{% endif %}{% if l['wifi'] %} · Wi-Fi {{ l['wifi'] }}{% endif %}</p>{% endfor %}{% endif %}
+
+  {% if wifi or parking or curfew %}<h3 style="margin-top:16px">Venue notes</h3>
+  <p>{% if wifi %}<b>Wi-Fi:</b> {{ wifi }} {% endif %}{% if parking %}<b>Parking:</b> {{ parking }} {% endif %}{% if curfew %}<b>Curfew:</b> {{ curfew }}{% endif %}</p>{% endif %}
+
+  {% if people %}<h3 style="margin-top:16px">Contacts</h3>
+  <table><tbody>{% for p in people %}<tr><td style="width:40%"><b>{{ p['name'] }}</b></td><td>{{ p['role'] or p['category'] }}</td><td>{{ p['phone'] }}</td></tr>{% endfor %}</tbody></table>{% endif %}
+
+  {% if setlists %}<h3 style="margin-top:16px">Set list</h3>
+  {% for sl in setlists %}<p class="meta">{{ sl['name'] }}</p><ol style="margin:4px 0 0 18px">{% for s in sl['songs'] %}<li>{{ s['title'] }}{% if s['section'] == 'encore' %} <span class="meta">encore</span>{% endif %}</li>{% endfor %}</ol>{% endfor %}{% endif %}
+  <p class="meta" style="margin-top:18px">{% if public %}Shared day sheet — no financial or private details are included.{% else %}Printed from Street Banker TOUR.{% endif %}</p>
+</div>
+<div class="to-bar no-print"><button class="to-btn to-btn--ghost to-btn--small" onclick="window.print()">Print / Save as PDF</button></div>
+{% endblock %}

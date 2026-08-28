@@ -1,0 +1,114 @@
+{# DISTRIBUTE NOW — the public release-readiness check.
+
+   The distribution section had two buttons pointing at the same page, so
+   "Distribute now" and "View distribution guide" were the same click.
+   This is what the first one should open: tick what you already have and
+   find out what a release still needs before it can be delivered.
+
+   Works with JavaScript off — the form posts and the server counts. With
+   JavaScript on it counts as you tick. No account either way: an account
+   is for saving the answer, not for getting it. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Release readiness check · Street Banker</title>
+  <meta name="description" content="Tick what you have and see what your release still needs before it can be delivered. No account required.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+  <link rel="stylesheet" href="/static/css/product-tour.css?v=2">
+  <link rel="stylesheet" href="/static/css/release-check.css?v=2">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-4xl px-6 py-14 lg:px-10 lg:py-20">
+
+  <p class="sb-label text-sb-gold">Global Distribution</p>
+  <h1 class="mt-4 max-w-2xl text-[clamp(2rem,5.4vw,3.2rem)] font-semibold uppercase leading-[1.04] tracking-tight">
+    Is the release ready?
+  </h1>
+  <p class="mt-5 max-w-2xl text-base leading-relaxed text-sb-ink-2">
+    Tick what you already have. Street Banker shows what is still missing
+    before a release can go out, and what each missing piece blocks.
+  </p>
+
+  <form method="get" action="/release-check" id="sbrc-form" class="mt-11">
+    {# The readout. Server-rendered from the query string, then updated
+       live by the script. Not a score and not a prediction — a count. #}
+    <div class="sbrc-readout" id="sbrc-readout"
+         role="status" aria-live="polite" aria-atomic="true">
+      <div>
+        <div class="sb-label text-sb-ink-2">Release readiness</div>
+        <div class="mt-1.5 text-[clamp(1.4rem,3vw,2rem)] font-semibold uppercase tracking-tight text-sb-ink"
+             id="sbrc-state">{{ state }}</div>
+      </div>
+      <div class="text-right">
+        <div class="sb-label text-sb-ink-2">Complete</div>
+        <div class="mt-1.5 text-[clamp(1.4rem,3vw,2rem)] font-semibold sb-num text-sb-gold">
+          <span id="sbrc-done">{{ done }}</span><span class="text-sb-ink-3">/{{ total }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="sbrc-track" aria-hidden="true">
+      <div class="sbrc-fill" id="sbrc-fill" style="width: {{ pct }}%"></div>
+    </div>
+    <p class="mt-2.5 text-xs leading-relaxed text-sb-ink-2">
+      A completion count, not a judgment about the record. It says whether the
+      package is deliverable — nothing about how it will perform.
+    </p>
+
+    <div class="mt-10 space-y-8">
+      {% for group, entries in checklist %}
+      <fieldset class="border-t border-[rgb(201_168_106_/_0.22)] pt-5">
+        <legend class="sb-label text-sb-gold">{{ group }}</legend>
+        <div class="mt-3 grid gap-x-8 sm:grid-cols-2">
+          {% for entry in entries %}
+          {% set slug = (group ~ '-' ~ entry) | lower | replace(' ', '-') | replace(',', '') %}
+          <label class="sbrc-item" for="{{ slug }}">
+            <input type="checkbox" id="{{ slug }}" name="have" value="{{ slug }}"
+                   class="sbrc-box" {{ 'checked' if slug in have }}>
+            <span>{{ entry }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      {% endfor %}
+    </div>
+
+    {# No-JS path. The script hides this and counts live instead. #}
+    <noscript>
+      <button type="submit" class="mt-8 inline-flex min-h-[52px] items-center justify-center rounded-sm bg-sb-gold px-7 text-xs font-bold uppercase tracking-[0.14em] text-sb-surface-2">Check readiness</button>
+    </noscript>
+  </form>
+
+  <section class="mt-14 border-t border-[rgb(201_168_106_/_0.22)] pt-9" aria-labelledby="sbrc-next">
+    <h2 id="sbrc-next" class="text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">What happens next</h2>
+    <p class="mt-3 max-w-2xl text-base leading-relaxed text-sb-ink-2">
+      Street Banker assembles and validates the package. Delivery goes out
+      through the distribution partnership rather than a direct line from
+      this application, and your agreement governs the masters and the
+      metadata.
+    </p>
+    <div class="mt-7 flex flex-wrap gap-3">
+      <a href="/signup" class="inline-flex min-h-[52px] items-center justify-center rounded-sm bg-sb-gold px-7 text-xs font-bold uppercase tracking-[0.14em] text-sb-surface-2 transition-colors hover:bg-sb-gold-bright">Create an account to build the release</a>
+      <a href="/distribution#guide" class="inline-flex min-h-[52px] items-center justify-center rounded-sm border border-[rgb(238_232_220_/_0.34)] px-7 text-xs font-bold uppercase tracking-[0.14em] text-sb-ink transition-colors hover:border-sb-gold hover:text-sb-gold">Read the distribution guide</a>
+    </div>
+    <p class="mt-4 text-xs text-sb-ink-2">
+      Nothing on this page is saved. An account is for keeping the answer,
+      not for getting it.
+    </p>
+  </section>
+</main>
+
+<footer class="mx-auto max-w-4xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/#global-distribution" class="font-semibold hover:text-sb-ink">&larr; Back to Street Banker</a>
+</footer>
+
+<script src="/static/js/release-check.js?v=1" defer></script>
+</body>
+</html>

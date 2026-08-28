@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Discover - Street Banker{% endblock %}
+
+{% set d = discover %}
+
+{% block content %}
+<style>
+  /* The play affordance fades in on hover. On a touch screen it never
+     does, so the tile is playable but gives no sign of it - the tap
+     works, nobody knows to try. Show it faintly instead, and let the
+     playing state light it fully as before. */
+  @media (hover: none) {
+    .preview-play { opacity: 0.55; }
+  }
+</style>
+
+<style>
+  /* Playing indicator: three bars pulse while a real preview is audible */
+  .preview-play .viz { display: none; position: absolute; left: 10px; bottom: 10px;
+                       gap: 3px; align-items: flex-end; height: 16px; }
+  .preview-play.playing .viz { display: flex; }
+  .viz i { width: 3px; background: var(--sb-gold-bright); border-radius: var(--sb-r-control);
+           animation: vz 0.7s ease-in-out infinite; box-shadow: 0 0 4px rgba(232,198,103,0.7); }
+  .viz i:nth-child(2) { animation-delay: 0.22s; }
+  .viz i:nth-child(3) { animation-delay: 0.44s; }
+  @keyframes vz { 0%, 100% { height: 5px; } 50% { height: 16px; } }
+</style>
+<div class="mx-auto max-w-[1400px] space-y-6">
+  <div>
+    <h1 class="sb-h1">Discover</h1>
+    <p class="mt-1 text-sm text-gray-200">Search real music with playable previews — or browse the community feed by genre and mood.</p>
+  </div>
+
+  <!-- Real music search (iTunes catalog, 30s previews) -->
+  <form method="get" action="/discover" class="flex flex-wrap items-center gap-2">
+    <div class="flex min-w-[240px] flex-1 items-center gap-2 rounded-xl border border-sb-gold/40 bg-white/5 px-4 py-3 focus-within:border-sb-gold/80">
+      <svg class="h-5 w-5 shrink-0 text-sb-gold" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="9" r="5.5"/><path d="M17 17l-4-4"/></svg>
+      <input name="q" value="{{ real_query }}" placeholder="Search any artist or song — press play on real previews…"
+             class="w-full min-w-0 bg-transparent text-sm text-gray-100 placeholder-gray-300 focus:outline-none">
+    </div>
+    <button type="submit" class="rounded-xl bg-gradient-to-b from-sb-gold-bright via-sb-gold-bright to-sb-gold-deep px-5 py-3 text-sm font-bold text-sb-on-gold transition-transform hover:scale-[1.02]">Search</button>
+  </form>
+
+  {% if real_query %}
+  <section>
+    <div class="flex items-center justify-between">
+      <h2 class="sb-label text-sb-gold-bright">Results for "{{ real_query }}"</h2>
+      <span class="text-xs text-gray-300 font-medium">{{ real_results | length }} tracks · previews via iTunes</span>
+    </div>
+    {% if real_results %}
+    <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {% for t in real_results %}
+      <div class="group overflow-hidden rounded-xl border border-sb-gold/25 bg-sb-surface-1">
+        <div class="relative aspect-square">
+          <img src="{{ t.art }}" alt="{{ t.title }}" class="h-full w-full object-cover" loading="lazy">
+          {% if t.preview %}
+          <button type="button" class="preview-play absolute inset-0 grid place-items-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100 [&.playing]:opacity-100" data-src="{{ t.preview }}" aria-label="Play preview">
+            <span class="play-icon grid h-12 w-12 place-items-center rounded-full bg-sb-gold text-sb-on-gold shadow-lg">
+              <svg class="icon-play h-5 w-5 translate-x-0.5" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4l10 6-10 6z"/></svg>
+              <svg class="icon-pause hidden h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4h3v12H6zM11 4h3v12h-3z"/></svg>
+            </span>
+            <span class="viz"><i></i><i></i><i></i></span>
+          </button>
+          {% endif %}
+        </div>
+        <div class="p-2.5">
+          <div class="truncate text-xs font-semibold text-gray-100">{{ t.title }}</div>
+          <div class="truncate text-xs text-gray-300 font-medium">{{ t.artist }}</div>
+          <div class="mt-1.5 flex items-center justify-between gap-2">
+            <button type="button" class="add-to-catalog sb-btn sb-btn-secondary sb-btn-sm"
+                    data-title="{{ t.title }}" data-artist="{{ t.artist }}" data-album="{{ t.album }}"
+                    data-art="{{ t.art }}" data-preview="{{ t.preview }}" data-url="{{ t.url }}">+ Catalog</button>
+            {% if t.url %}<a href="{{ t.url }}" target="_blank" rel="noopener noreferrer" class="truncate text-xs text-sb-gold hover:underline font-medium">Open ↗</a>{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="mt-3 rounded-xl border border-dashed border-white/10 py-8 text-center text-xs text-gray-300">
+      No tracks found for "{{ real_query }}" — check the spelling, or try an artist name like
+      <a href="/discover?q=Daft+Punk" class="font-semibold text-sb-gold-bright hover:underline">Daft Punk</a> or a song title.
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <!-- Genre browse -->
+  <section>
+    <div class="flex items-center justify-between">
+      <h2 class="sb-label text-gray-300">Browse by Genre</h2>
+      {% if d.filters.genre != 'All' or d.filters.mood != 'All' %}<a href="/discover" class="text-xs font-semibold text-amber-400 hover:underline">Clear filters</a>{% endif %}
+    </div>
+    <div class="mt-3 flex flex-wrap gap-1.5">
+      <a href="/discover" class="rounded-full border px-3 py-1 text-xs font-semibold {{ 'border-amber-500/40 bg-amber-500/15 text-amber-400' if d.filters.genre == 'All' else 'border-white/10 text-gray-300 hover:text-white' }}">All</a>
+      {% for g in d.genres %}
+      <a href="/discover?genre={{ g.name }}{% if d.filters.mood != 'All' %}&mood={{ d.filters.mood }}{% endif %}" class="rounded-full border px-3 py-1 text-xs font-semibold {{ 'border-amber-500/40 bg-amber-500/15 text-amber-400' if d.filters.genre == g.name else 'border-white/10 text-gray-300 hover:text-white' }}">{{ g.name }} <span class="text-gray-300">{{ g.count }}</span></a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Mood browse -->
+  <section>
+    <h2 class="sb-label text-gray-300">By Mood</h2>
+    <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {% for m in d.moods %}
+      <a href="/discover?mood={{ m.id }}{% if d.filters.genre != 'All' %}&genre={{ d.filters.genre }}{% endif %}" class="relative overflow-hidden rounded-xl border {{ 'border-amber-400' if d.filters.mood == m.id else 'border-white/10' }}">
+        <div class="flex h-16 items-end p-2.5" style="background: linear-gradient(135deg, {{ m.from }}, {{ m.to }});">
+          <span class="text-xs font-bold text-white drop-shadow">{{ m.name }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Track feed -->
+  <section>
+    <div class="flex items-center justify-between">
+      <h2 class="sb-label text-gray-300">
+        {% if d.filters.genre != 'All' or d.filters.mood != 'All' %}Results{% else %}Trending Now{% endif %}
+      </h2>
+      <span class="text-xs text-gray-300 font-medium">{{ d.result_count }} track{{ '' if d.result_count == 1 else 's' }}</span>
+    </div>
+    <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {% for t in d.tracks %}
+      <div class="group overflow-hidden rounded-xl border border-white/5 bg-sb-surface-1">
+        <div class="relative aspect-square" style="background: linear-gradient(135deg, {{ t.from }}, {{ t.to }});">
+          {% if t.art %}<img src="{{ t.art }}" alt="{{ t.title }} cover" class="absolute inset-0 h-full w-full object-cover" loading="lazy">{% endif %}
+          {% if t.new %}<span class="absolute left-2 top-2 rounded-full bg-transparent px-1.5 py-0.5 text-xs font-bold uppercase text-sb-ink-3 border">New</span>{% endif %}
+          <button type="button" class="like-btn absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/40 text-white transition-colors hover:bg-black/60" data-id="{{ t.id }}" aria-label="Save">
+            <svg class="h-3.5 w-3.5 {{ 'text-red-400' if t.liked else 'text-white' }}" viewBox="0 0 20 20" fill="{{ 'currentColor' if t.liked else 'none' }}" stroke="currentColor" stroke-width="1.6"><path d="M10 16s-6-4-6-8a3.2 3.2 0 016-1 3.2 3.2 0 016 1c0 4-6 8-6 8z"/></svg>
+          </button>
+          <span class="absolute bottom-2 left-2 rounded bg-black/40 px-1.5 py-0.5 text-xs font-semibold text-white">▶ {{ t.plays_fmt }}</span>
+        </div>
+        <div class="p-2.5">
+          <div class="truncate text-xs font-semibold text-gray-100">{{ t.title }}</div>
+          <a href="/network/{{ t.artist_id }}" class="block truncate text-xs text-gray-300 hover:text-amber-400 font-medium">{{ t.artist }}</a>
+          <div class="mt-1 text-xs text-gray-300 font-medium">{{ t.genre }}</div>
+        </div>
+      </div>
+      {% endfor %}
+      {% if not d.tracks %}
+      <div class="col-span-full rounded-xl border border-dashed border-white/10 py-10 text-center text-xs text-gray-300">
+        <p>No tracks match those filters.</p>
+        <p class="mt-2">Try:
+          {% for g in d.genres[:3] %}
+          <a href="/discover?genre={{ g.name }}" class="sb-btn sb-btn-secondary mx-1">{{ g.name }}</a>
+          {% endfor %}
+          <a href="/discover" class="sb-btn sb-btn-secondary mx-1">Clear all</a>
+        </p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+    <!-- New releases -->
+    <section>
+      <h2 class="sb-label text-gray-300">New Releases</h2>
+      <div class="mt-3 space-y-2">
+        {% for t in d.new_releases %}
+        <div class="flex items-center gap-3 rounded-lg border border-white/5 bg-sb-surface-1 px-3 py-2">
+          <span class="h-10 w-10 shrink-0 overflow-hidden rounded" style="background: linear-gradient(135deg, {{ t.from }}, {{ t.to }});">{% if t.art %}<img src="{{ t.art }}" alt="" class="h-full w-full object-cover" loading="lazy">{% endif %}</span>
+          <span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold text-gray-100">{{ t.title }}</span><a href="/network/{{ t.artist_id }}" class="block truncate text-xs text-gray-300 hover:text-amber-400 font-medium">{{ t.artist }} · {{ t.genre }}</a></span>
+          <span class="shrink-0 text-xs text-gray-300 font-medium">▶ {{ t.plays_fmt }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Artist spotlights -->
+    <section>
+      <h2 class="sb-label text-gray-300">Artist Spotlights</h2>
+      <div class="mt-3 space-y-2">
+        {% for a in d.spotlights %}
+        <div class="flex items-center gap-3 rounded-lg border border-white/5 bg-sb-surface-1 px-3 py-2">
+          <a href="/network/{{ a.id }}" class="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-amber-500/40 text-xs font-bold text-amber-400">
+            {%- if a.avatar %}<img src="{{ a.avatar }}" alt="{{ a.name }}" class="h-full w-full object-cover" loading="lazy">{% else %}{{ a.initials }}{% endif -%}
+          </a>
+          <span class="min-w-0 flex-1"><a href="/network/{{ a.id }}" class="block truncate text-sm font-semibold text-gray-100 hover:text-amber-400">{{ a.name }}</a><span class="text-xs text-gray-300 font-medium">{{ a.genre }}</span></span>
+          <button type="button" class="follow-btn shrink-0 rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors {{ 'border-green-500/20 bg-green-500/10 text-green-400' if a.following else 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' }}" data-id="{{ a.id }}">{{ 'Following' if a.following else 'Follow' }}</button>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+  <p class="px-1 text-xs text-gray-300 font-medium">Fan discovery preview — tracks reference real network artists; play counts are illustrative. Likes &amp; follows save for your session.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Shared audio player for real 30s previews — one plays at a time.
+  const player = new Audio();
+  let activeBtn = null;
+  function stopActive() {
+    if (!activeBtn) return;
+    activeBtn.classList.remove("playing");
+    activeBtn.querySelector(".icon-play").classList.remove("hidden");
+    activeBtn.querySelector(".icon-pause").classList.add("hidden");
+    activeBtn = null;
+  }
+  player.addEventListener("ended", stopActive);
+  document.querySelectorAll(".preview-play").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (activeBtn === btn) { player.pause(); stopActive(); return; }
+      stopActive();
+      player.src = btn.dataset.src;
+      player.play();
+      btn.classList.add("playing");
+      btn.querySelector(".icon-play").classList.add("hidden");
+      btn.querySelector(".icon-pause").classList.remove("hidden");
+      activeBtn = btn;
+    });
+  });
+
+  // Pull a real search result into the signed-in user's catalog.
+  document.querySelectorAll(".add-to-catalog").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      const d = btn.dataset;
+      const res = await fetch("/catalog/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: d.title, artist: d.artist, album: d.album,
+                               art: d.art, preview: d.preview, url: d.url }),
+      });
+      if (res.status === 401) {
+        window.location.href = "/login?next=" + encodeURIComponent(window.location.pathname + window.location.search);
+        return;
+      }
+      if (res.ok) {
+        const data = await res.json();
+        const m = data.meta || {};
+        btn.textContent = (m.isrc || m.upc) ? "✓ Added + metadata" : "✓ In Catalog";
+        btn.classList.add("border-green-500/30", "bg-green-500/10", "text-green-400");
+      } else if (res.status === 409) {
+        btn.textContent = "Already added";
+      } else {
+        btn.textContent = "Try again";
+        btn.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll(".like-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const res = await fetch(`/discover/like/${btn.dataset.id}`, { method: "POST" });
+      const data = await res.json();
+      if (!data.ok) return;
+      const svg = btn.querySelector("svg");
+      if (data.liked) { svg.setAttribute("fill", "currentColor"); svg.classList.add("text-red-400"); svg.classList.remove("text-white"); }
+      else { svg.setAttribute("fill", "none"); svg.classList.remove("text-red-400"); svg.classList.add("text-white"); }
+    });
+  });
+
+  document.querySelectorAll(".follow-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const res = await fetch(`/discover/follow/${btn.dataset.id}`, { method: "POST" });
+      const data = await res.json();
+      if (!data.ok) return;
+      if (data.following) { btn.textContent = "Following"; btn.className = "follow-btn shrink-0 rounded-md border px-2.5 py-1 text-xs font-semibold border-green-500/20 bg-green-500/10 text-green-400"; }
+      else { btn.textContent = "Follow"; btn.className = "follow-btn shrink-0 rounded-md border px-2.5 py-1 text-xs font-semibold border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"; }
+    });
+  });
+</script>
+{% endblock %}

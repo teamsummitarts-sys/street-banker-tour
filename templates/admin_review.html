@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Review Queue - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1100px] space-y-5">
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker · Curation Desk</div>
+    <h1 class="sb-h1 mt-1">Review Queue</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-300">Every artist account on the platform, ranked by qualification score. The score gets them seen — a person makes the call on placement, pitching support, and upstream review.</p>
+  </div>
+
+  {% if queue %}
+  <div class="space-y-2.5">
+    {% for a in queue %}
+    <div class="rounded-2xl border {{ 'border-green-500/25' if a.recommendation == 'High potential' else 'border-white/10' }} bg-sb-surface-1 p-4">
+      <div class="flex flex-wrap items-center gap-4">
+        <div class="grid h-12 w-12 shrink-0 place-items-center rounded-xl {{ 'bg-green-500/15 text-green-400' if a.total >= 75 else 'bg-sb-gold/15 text-sb-gold-bright' }} text-lg font-black tabular-nums">{{ a.total }}</div>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-sm font-bold text-gray-100">{{ a.name }}</span>
+            <span class="rounded bg-white/10 px-1.5 py-0.5 text-xs font-bold uppercase text-gray-300">{{ a.plan }}</span>
+            <span class="rounded px-1.5 py-0.5 text-xs font-bold uppercase {{ 'bg-green-500/15 text-green-400' if a.recommendation == 'High potential' else ('bg-sb-gold/15 text-sb-gold-bright' if 'Approve' in a.recommendation else 'bg-white/10 text-gray-300') }}">{{ a.recommendation }}</span>
+          </div>
+          <div class="mt-0.5 truncate text-xs text-gray-300 font-medium">{{ a.email }}</div>
+          {% if a.badges %}
+          <div class="mt-1.5 flex flex-wrap gap-1">
+            {% for b in a.badges %}<span class="rounded border border-sb-gold/30 px-1.5 py-0.5 text-xs font-bold uppercase text-sb-gold-bright/80">{{ b }}</span>{% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% if a.missing %}
+        <div class="max-w-[220px] shrink-0 text-right">
+          <div class="text-xs font-bold uppercase tracking-wide text-gray-300">Missing</div>
+          <div class="text-xs text-gray-300 font-medium">{{ a.missing | join(' · ') }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-white/10 py-10 text-center text-xs text-gray-300">No artist accounts to review yet.</div>
+  {% endif %}
+
+  <p class="text-xs text-gray-300 font-medium">Internal curation view — visible to Label accounts. Approve/decline workflows and reviewer notes land with the Partner Portal.</p>
+</div>
+{% endblock %}

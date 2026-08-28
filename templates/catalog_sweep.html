@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Run a free catalog sweep — Street Banker</title>
+  <meta name="description" content="Tell us what to look at and see what a catalog sweep checks, before creating an account.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+</head>
+<body class="min-h-screen bg-white text-sb-surface-2 antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-3xl px-6 py-14 lg:px-10 lg:py-20">
+
+  {% if not result %}
+  <div class="sb-label text-sb-gold-deep">Free catalog sweep</div>
+  <h1 class="mt-4 text-[clamp(2rem,6vw,3rem)] font-black uppercase leading-[0.95] tracking-tight">
+    Tell us what to look at.
+  </h1>
+  <p class="mt-5 max-w-xl text-base leading-relaxed text-sb-line-strong">
+    No account needed to start. Answer three things and the next screen shows
+    you exactly what a sweep checks, what it can find from your own royalty
+    statements, and what it cannot know until it reads them.
+  </p>
+
+  {% if error %}
+  <p class="mt-6 rounded-md border border-red-500/30 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{{ error }}</p>
+  {% endif %}
+
+  <form method="post" class="mt-9 space-y-5">
+    <label class="block">
+      <span class="sb-label text-sb-ink-3">Artist or catalog name</span>
+      <input name="catalog" required autofocus value="{{ form.catalog or '' }}"
+             class="mt-2 w-full rounded-md border border-sb-surface-2/20 bg-white px-4 py-3 text-base text-sb-surface-2 focus:border-sb-gold-deep focus:outline-none focus:ring-2 focus:ring-sb-gold/40">
+    </label>
+
+    <label class="block">
+      <span class="sb-label text-sb-ink-3">Profile or catalog link</span>
+      <input name="url" type="url" placeholder="https://open.spotify.com/artist/…" value="{{ form.url or '' }}"
+             class="mt-2 w-full rounded-md border border-sb-surface-2/20 bg-white px-4 py-3 text-base text-sb-surface-2 placeholder-sb-ink-2 focus:border-sb-gold-deep focus:outline-none focus:ring-2 focus:ring-sb-gold/40">
+      <span class="mt-1 block text-xs text-sb-ink-3">Optional. It tells us where to look when you connect a source later.</span>
+    </label>
+
+    <fieldset>
+      <legend class="sb-label text-sb-ink-3">You are a…</legend>
+      <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {% for key, label in roles %}
+        <label class="flex cursor-pointer items-center gap-2 rounded-md border border-sb-surface-2/15 px-3 py-3 text-sm font-semibold hover:border-sb-gold-deep">
+          <input type="radio" name="role" value="{{ key }}" class="accent-sb-gold-deep"
+                 {{ 'checked' if (form.role or 'artist') == key }}>
+          {{ label }}
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+
+    <button class="inline-flex items-center justify-center rounded-md bg-sb-surface-2 px-8 py-3.5 text-sm font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-sb-surface-3">
+      Continue
+    </button>
+    <p class="text-xs text-sb-ink-3">
+      Nothing is charged and no account is created by this step.
+    </p>
+  </form>
+
+  {% else %}
+  {# The honest result. Nothing was scanned, so nothing claims it was. #}
+  <div class="sb-label text-sb-gold-deep">Preliminary catalog coverage check</div>
+  <h1 class="mt-4 text-[clamp(1.8rem,5vw,2.6rem)] font-black uppercase leading-[0.98] tracking-tight">
+    {{ result.catalog }}
+  </h1>
+
+  <div class="mt-6 rounded-lg border-2 border-sb-surface-2/15 bg-sb-ink p-5">
+    <div class="text-sm font-black uppercase tracking-wide text-sb-surface-2">No scan has run</div>
+    <p class="mt-2 text-sm leading-relaxed text-sb-line-strong">
+      This is a coverage check, not a scan: nothing here has read a platform,
+      queried a society, or looked at a payout. Street Banker finds missing
+      money by reading royalty statements you upload — until it has those,
+      any figure on this page would be invented, so there isn't one.
+    </p>
+  </div>
+
+  <h2 class="mt-10 text-lg font-black uppercase tracking-tight">What the sweep checks, once it has your statements</h2>
+  <ul class="mt-4 space-y-3">
+    {% for item in result.checks %}
+    <li class="flex gap-3 rounded-md border border-sb-surface-2/10 bg-white px-4 py-3">
+      <span class="mt-0.5 shrink-0 text-sb-gold-deep" aria-hidden="true">→</span>
+      <span>
+        <span class="block text-sm font-bold">{{ item.title }}</span>
+        <span class="block text-sm text-sb-ink-3">{{ item.detail }}</span>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <h2 class="mt-10 text-lg font-black uppercase tracking-tight">What it cannot see</h2>
+  <ul class="mt-4 space-y-2 text-sm text-sb-ink-3">
+    {% for line in result.limits %}
+    <li class="flex gap-2"><span aria-hidden="true">·</span><span>{{ line }}</span></li>
+    {% endfor %}
+  </ul>
+
+  <div class="mt-10 rounded-lg bg-sb-surface-2 p-6 text-white">
+    <div class="text-sm font-black uppercase tracking-wide">Save this and run the real thing</div>
+    <p class="mt-2 max-w-xl text-sm leading-relaxed text-gray-200">
+      Creating an account is what lets you upload a statement, which is what
+      turns this into findings with amounts on them. As a {{ result.role_label|lower }},
+      the fastest first upload is your most recent distributor statement.
+    </p>
+    <div class="mt-5 flex flex-wrap gap-3">
+      <a href="/signup" class="sb-btn sb-btn-primary items-center justify-center">Create an account</a>
+      <a href="/catalog-sweep" class="sb-btn sb-btn-secondary items-center justify-center">Check another catalog</a>
+    </div>
+  </div>
+  {% endif %}
+
+</main>
+
+<footer class="mx-auto max-w-3xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/" class="font-semibold hover:text-sb-surface-2">← Back to Street Banker</a>
+</footer>
+</body>
+</html>

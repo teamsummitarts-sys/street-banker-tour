@@ -1,0 +1,25 @@
+{% extends "tour/_public.html" %}
+{% block title %}Settlement · {{ show['venue'] }} · {{ show['date'] }}{% endblock %}
+{% block body %}
+<div class="to-paper">
+  <span class="tag">Settlement summary · {{ tour['name'] }}</span>
+  <h2 style="font-size:20px">{{ show['venue'] }} — {{ fmt_day(show['date']) }}{% if show['city'] %}, {{ show['city'] }}{% endif %}</h2>
+  <p class="meta">Deal: {{ money['deal']|replace('_',' ') }}{% if show['promoter'] %} · Promoter {{ show['promoter'] }}{% endif %} · {{ show['currency'] or tour['currency'] }}</p>
+  <table style="margin-top:12px"><tbody>
+    <tr><th>Guarantee</th><td style="text-align:right">{{ '%.2f'|format(money['guarantee']) }}</td></tr>
+    {% if money['backend'] %}<tr><th>Backend ({{ show['backend_pct'] }}% of adjusted gross)</th><td style="text-align:right">{{ '%.2f'|format(money['backend']) }}</td></tr>{% endif %}
+    <tr><th>Earned</th><td style="text-align:right"><b>{{ '%.2f'|format(money['earned']) }}</b></td></tr>
+    <tr><th>Merch net</th><td style="text-align:right">{{ '%.2f'|format(money['merch_net']) }}</td></tr>
+    <tr><th>VIP</th><td style="text-align:right">{{ '%.2f'|format(money['vip']) }}</td></tr>
+    <tr><th>Expenses (fields + ledger)</th><td style="text-align:right">−{{ '%.2f'|format(money['expenses']) }}</td></tr>
+    <tr><th>Estimated net</th><td style="text-align:right"><b>{{ '%.2f'|format(money['estimated_net']) }}</b></td></tr>
+    {% if money['settlement'] %}<tr><th>Settlement amount</th><td style="text-align:right">{{ '%.2f'|format(money['settlement']) }}</td></tr>{% endif %}
+    <tr><th>Collected (incl. deposit)</th><td style="text-align:right">{{ '%.2f'|format(money['collected']) }}</td></tr>
+    <tr><th>Outstanding</th><td style="text-align:right">{{ '%.2f'|format(money['outstanding']) }}</td></tr>
+  </tbody></table>
+  {% if expenses %}<h3 style="margin-top:16px">Expense ledger</h3><table><tbody>{% for e in expenses %}<tr><td>{{ e['spend_date'] }}</td><td>{{ e['vendor'] }}</td><td>{{ e['category'] }}</td><td style="text-align:right">{{ e['amount'] }}</td></tr>{% endfor %}</tbody></table>{% endif %}
+  {% if merch %}<h3 style="margin-top:16px">Merch</h3><table><thead><tr><th>Product</th><th>Sold</th><th>Gross</th><th>Venue %</th></tr></thead><tbody>{% for c in merch %}<tr><td>{{ c['product_name'] }}</td><td>{{ c['sold'] }}</td><td>{{ c['gross'] }}</td><td>{{ c['venue_pct'] }}</td></tr>{% endfor %}</tbody></table>{% endif %}
+  <p class="meta" style="margin-top:18px">Status: {{ show['settlement_status'] or 'open' }}. Figures are as entered in Street Banker; this is a summary, not an invoice.</p>
+</div>
+<div class="to-bar no-print"><button class="to-btn to-btn--ghost to-btn--small" onclick="window.print()">Print / Save as PDF</button></div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar · {{ c.title }} - Rollout Engine{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Rollout Engine · Calendar</div>
+      <h1 class="sb-h1 mt-1">{{ c.title }}</h1>
+      <p class="mt-1 text-sm text-gray-300">Every scheduled post by date. Change dates from the Posts page.</p>
+    </div>
+    <a href="/rollout-studio/{{ c.id }}" class="sb-btn sb-btn-secondary">← Overview</a>
+  </div>
+
+  {% if by_date %}
+  <div class="space-y-4">
+    {% for day, day_posts in by_date %}
+    <section class="rounded-2xl border {{ 'border-sb-gold/40 bg-sb-surface-2' if day == c.release_date else 'border-white/10 bg-sb-surface-1' }} p-5">
+      <div class="flex items-center gap-3">
+        <h2 class="text-sm font-black tabular-nums {{ 'text-sb-gold-bright' if day == c.release_date else 'text-gray-200' }}">{{ day }}</h2>
+        {% if day == c.release_date %}<span class="rounded bg-sb-gold/20 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-sb-gold-bright">Release Day</span>{% endif %}
+      </div>
+      <div class="mt-3 grid gap-2 sm:grid-cols-2">
+        {% for p in day_posts %}
+        <div class="rounded-lg border border-white/5 bg-white/5 px-3 py-2.5 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-gray-200">{{ platform_names.get(p.platform, p.platform) }}</span>
+            <span class="rounded bg-sb-gold/15 px-1.5 py-0.5 text-xs font-bold uppercase text-sb-gold-bright">{{ phase_names.get(p.phase, p.phase) }}</span>
+            <span class="ml-auto text-xs font-bold uppercase {{ 'text-green-400' if p.status in ('approved', 'posted') else 'text-gray-300' }}">{{ p.status }}</span>
+          </div>
+          <p class="mt-1 line-clamp-2 text-gray-300">{{ p.caption }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-white/10 py-8 text-center text-xs text-gray-300">No scheduled posts — generate the rollout first.</div>
+  {% endif %}
+</div>
+{% endblock %}

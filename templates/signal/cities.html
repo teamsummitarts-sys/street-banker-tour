@@ -1,0 +1,38 @@
+{% extends "signal/_shell.html" %}
+{% block title %}City Ignition{% endblock %}
+{% block main %}
+  <p class="sg-eyebrow">Discovery</p>
+  <h1 class="sg-h1">City Ignition</h1>
+  <p class="sg-lede">
+    Markets where more than one artist is accelerating at once. A single city moving is an artist
+    story; several adjacent cities moving together is a scene — and a reason to shift spend, routing
+    or relationship work.
+  </p>
+
+  {% if ignitions %}
+    {% for e in ignitions %}
+      <h2 class="sg-h2">{{ e['city'] }}{% if e['region'] %}, {{ e['region'] }}{% endif %}
+        <span class="sg-pill is-gold">{{ e['count'] }} artist{{ '' if e['count'] == 1 else 's' }} accelerating</span></h2>
+      <div class="sg-table-wrap"><table class="sg-table">
+        <thead><tr><th scope="col">Artist</th><th scope="col" class="sg-num">Local listeners</th>
+          <th scope="col" class="sg-num">28d</th><th scope="col" class="sg-num">SB Momentum</th></tr></thead>
+        <tbody>
+          {% for x in e['artists'] %}
+            <tr>
+              <td><a class="sg-artist-name" href="/signal/artist/{{ x['artist']['id'] }}">{{ x['artist']['canonical_name'] }}</a>
+                <span class="sg-artist-meta">{{ x['artist']['genre'] or 'Genre unknown' }}</span></td>
+              <td class="sg-num">{{ '{:,}'.format(x['listeners']) }}</td>
+              <td class="sg-num"><span class="sg-delta up">+{{ x['change'] }}%</span></td>
+              <td class="sg-num">{{ x['momentum'] }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    {% endfor %}
+  {% else %}
+    <div class="sg-empty">
+      <b>No market is showing coordinated acceleration right now.</b><br>
+      This board only fires when a city has artists moving above its threshold.
+    </div>
+  {% endif %}
+{% endblock %}

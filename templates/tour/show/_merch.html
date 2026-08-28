@@ -1,0 +1,27 @@
+{% import "tour/_macros.html" as m %}
+{% if products %}
+<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/merch">
+<div class="to-table-wrap"><table class="to-table">
+  <thead><tr><th>Product</th><th>Open</th><th>Close</th><th>Sold</th><th>Gross</th><th>Venue %</th><th>Taxes</th><th>Fees</th><th>Settled</th></tr></thead>
+  <tbody>
+  {% for p in products %}{% set c = counts[p['id']] if p['id'] in counts else {} %}
+  <tr>
+    <td><b>{{ p['name'] }}</b>{% if p['price'] %}<div class="to-muted">{{ p['price'] }}</div>{% endif %}</td>
+    <td><input class="to-input" style="width:70px;min-height:32px;padding:4px 6px" name="opening__{{ p['id'] }}" value="{{ c['opening'] if c else '' }}" inputmode="numeric"></td>
+    <td><input class="to-input" style="width:70px;min-height:32px;padding:4px 6px" name="closing__{{ p['id'] }}" value="{{ c['closing'] if c else '' }}" inputmode="numeric"></td>
+    <td><input class="to-input" style="width:70px;min-height:32px;padding:4px 6px" name="sold__{{ p['id'] }}" value="{{ c['sold'] if c else '' }}" inputmode="numeric"></td>
+    <td><input class="to-input" style="width:90px;min-height:32px;padding:4px 6px" name="gross__{{ p['id'] }}" value="{{ c['gross'] if c else '' }}" inputmode="decimal"></td>
+    <td><input class="to-input" style="width:60px;min-height:32px;padding:4px 6px" name="venue_pct__{{ p['id'] }}" value="{{ c['venue_pct'] if c else '' }}"></td>
+    <td><input class="to-input" style="width:70px;min-height:32px;padding:4px 6px" name="taxes__{{ p['id'] }}" value="{{ c['taxes'] if c else '' }}"></td>
+    <td><input class="to-input" style="width:70px;min-height:32px;padding:4px 6px" name="fees__{{ p['id'] }}" value="{{ c['fees'] if c else '' }}"></td>
+    <td><input type="checkbox" name="settled__{{ p['id'] }}" value="1" {% if c and c['settled'] %}checked{% endif %}></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<p class="to-sub">Leave Sold blank and it is computed from open − close; leave Gross blank and it is sold × price. Nothing else is assumed.</p>
+<div class="to-bar"><button class="to-btn" type="submit">Save counts</button></div>
+</form>
+{% else %}
+  {{ m.empty("No merch products on this tour", "Add products (and tour inventory) once, then count them in and out at every show.", "/tours/" ~ tour['id'] ~ "/merch", "Merch setup") }}
+{% endif %}

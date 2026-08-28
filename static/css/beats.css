@@ -1,0 +1,218 @@
+/* Beats — hand-written (the Tailwind build is frozen). bt-* only.
+ *
+ * The glass here is a thin frosted panel over a warm near-black, not a
+ * blue haze: this page sits inside the same near-black shell as the rest
+ * of Street Banker, and a cool glass would read as a different product.
+ * Backdrop-filter is a progressive enhancement — every panel has a solid
+ * background underneath it, so a browser that ignores the filter gets a
+ * flat card rather than unreadable text over a photograph.
+ */
+
+.bt {
+  --bt-gold: var(--sb-gold);
+  --bt-amber: var(--sb-gold-bright);
+  --bt-badge: var(--sb-gold-bright);
+  --bt-ink: var(--sb-ground);
+  --bt-panel: var(--sb-surface-1);
+  --bt-rule: rgb(255 255 255 / 0.10);
+  --bt-line: rgb(201 162 74 / 0.32);
+  --bt-copy: var(--sb-ink);
+  --bt-soft: var(--sb-ink-2);
+  --bt-ok: var(--sb-good);
+  --bt-warn: var(--sb-crit);
+  --bt-live: var(--sb-crit);
+  color: var(--bt-copy);
+  max-width: 1180px;
+  margin: 0 auto;
+  font-size: 13px;
+}
+.bt *:focus-visible { outline: 2px solid var(--bt-amber); outline-offset: 2px; border-radius: var(--sb-r-control); }
+.bt .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* --- glass ------------------------------------------------------------ */
+.bt-glass {
+  position: relative;
+  border: 1px solid var(--bt-rule);
+  border-radius: var(--sb-r-panel);
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.055), rgb(255 255 255 / 0.018) 46%, rgb(0 0 0 / 0.16));
+  background-color: rgb(19 17 20 / 0.86);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 18px 40px -28px rgb(0 0 0 / 0.9);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .bt-glass { backdrop-filter: blur(14px) saturate(1.15); background-color: rgb(19 17 20 / 0.62); }
+}
+.bt-glass--gold { border-color: var(--bt-line); background-color: rgb(24 20 11 / 0.88); }
+@supports (backdrop-filter: blur(1px)) {
+  .bt-glass--gold { background-color: rgb(24 20 11 / 0.66); }
+}
+
+/* --- head ------------------------------------------------------------- */
+.bt-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; margin-bottom: 16px; }
+.bt-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: var(--bt-gold); margin: 0 0 5px; }
+.bt-h1 { font-family: var(--sb-display); font-size: 28px; font-weight: 800; font-stretch: 112%; line-height: 1.1; text-transform: uppercase; letter-spacing: 0; margin: 0; margin: 0; }
+.bt-lede { margin: 6px 0 0; max-width: 68ch; color: var(--bt-soft); font-size: 12.5px; line-height: 1.6; }
+.bt-h2 { font-family: var(--sb-mono); font-size: 12px; font-weight: 500; letter-spacing: 0.13em; text-transform: uppercase; color: var(--bt-gold); margin: 0 0 10px; }
+
+/* --- buttons ---------------------------------------------------------- */
+.bt-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 0 14px;
+  border-radius: var(--sb-r-panel); border: 1px solid var(--bt-line); background: transparent; color: var(--bt-amber);
+  font: inherit; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; cursor: pointer; white-space: nowrap; text-decoration: none; }
+.bt-btn:hover { background: rgb(201 162 74 / 0.10); }
+.bt-btn--fill { background: var(--bt-badge); border-color: var(--bt-badge); color: var(--sb-on-gold); }
+.bt-btn--fill:hover { background: var(--sb-gold-bright); }
+.bt-btn--ghost { border-color: var(--bt-rule); color: var(--bt-copy); }
+.bt-btn--ghost:hover { border-color: var(--bt-line); }
+.bt-btn--small { min-height: 30px; padding: 0 10px; font-size: 12px; }
+.bt-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+.bt-input, .bt-select, .bt-area {
+  width: 100%; min-height: 36px; padding: 0 11px; border-radius: var(--sb-r-panel);
+  border: 1px solid var(--bt-rule); background: rgb(255 255 255 / 0.05);
+  color: var(--bt-copy); font: inherit; font-size: 12.5px;
+}
+.bt-area { min-height: 76px; padding: 9px 11px; line-height: 1.55; resize: vertical; }
+.bt-input::placeholder, .bt-area::placeholder { color: var(--sb-ink-3); }
+.bt-input:focus, .bt-select:focus, .bt-area:focus { border-color: var(--bt-line); outline: none; }
+.bt-field { display: flex; flex-direction: column; gap: 5px; }
+.bt-field > span { font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--bt-soft); }
+.bt-hint { font-size: 12px; line-height: 1.55; color: var(--bt-soft); margin: 0; }
+
+/* --- the state line --------------------------------------------------- *
+ * Not a disclaimer in fine print: it is the product's actual state, and
+ * it flips to green on its own the day a fingerprinting vendor is
+ * configured. The headline stays visible; only the explanation folds. */
+.bt-state { display: block; padding: 12px 15px; margin-bottom: 16px; }
+.bt-state summary { display: flex; align-items: center; gap: 9px; cursor: pointer; list-style: none; font-size: 12px; font-weight: 700; color: var(--bt-amber); }
+.bt-state summary::-webkit-details-marker { display: none; }
+.bt-state summary::after { content: "why"; margin-left: auto; font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--bt-soft); }
+.bt-state[open] summary::after { content: "close"; }
+.bt-state p { margin: 10px 0 0; font-size: 12px; line-height: 1.6; color: var(--bt-soft); max-width: 76ch; }
+.bt-state.is-on summary { color: var(--bt-ok); }
+.bt-state.is-on { border-color: rgb(110 231 160 / 0.3); }
+
+/* --- LED --------------------------------------------------------------- *
+ * A lamp, not a pill. Colour alone never carries the meaning: every LED
+ * is followed by its word, so it reads the same to a colour-blind eye. */
+.bt-led { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--bt-soft); white-space: nowrap; }
+.bt-led i { width: 8px; height: 8px; border-radius: var(--sb-r-pill); background: var(--sb-line-strong); flex: none; }
+.bt-led--free i { background: var(--bt-ok); box-shadow: 0 0 9px rgb(110 231 160 / 0.8); }
+.bt-led--free { color: var(--bt-ok); }
+.bt-led--leased i { background: var(--bt-badge); box-shadow: 0 0 9px rgb(216 178 90 / 0.75); }
+.bt-led--leased { color: var(--bt-amber); }
+.bt-led--sold i { background: var(--bt-live); box-shadow: 0 0 9px rgb(255 77 77 / 0.75); }
+.bt-led--sold { color: var(--sb-crit); }
+
+/* --- counters --------------------------------------------------------- */
+.bt-counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.bt-count { padding: 14px 16px; }
+.bt-count dt { font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--bt-soft); margin: 0; }
+.bt-count dd { margin: 6px 0 0; font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--bt-copy); line-height: 1; }
+.bt-count dd.is-gold { color: var(--bt-amber); }
+.bt-count dd.is-ok { color: var(--bt-ok); }
+
+/* --- drop zone -------------------------------------------------------- */
+.bt-drop { padding: 22px; text-align: center; border-style: dashed; border-width: 2px; border-color: var(--bt-rule); }
+.bt-drop.is-over { border-color: var(--bt-amber); background-color: rgb(201 162 74 / 0.10); }
+.bt-drop p { margin: 6px 0 0; }
+.bt-queue { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; text-align: left; }
+.bt-q { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 9px 12px; border: 1px solid var(--bt-rule); border-radius: var(--sb-r-panel); background: rgb(255 255 255 / 0.03); }
+.bt-q b { font-size: 12px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt-q span { font-size: 12px; color: var(--bt-soft); }
+.bt-q.is-bad { border-color: rgb(240 165 142 / 0.5); }
+.bt-q.is-bad span { color: var(--bt-warn); }
+.bt-q.is-done span { color: var(--bt-ok); }
+.bt-bar { grid-column: 1 / -1; height: 3px; border-radius: var(--sb-r-pill); background: rgb(255 255 255 / 0.08); overflow: hidden; }
+.bt-bar i { display: block; height: 100%; width: 0; background: var(--bt-amber); transition: width 140ms linear; }
+
+/* --- beat rows -------------------------------------------------------- */
+.bt-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.bt-row { display: grid; grid-template-columns: 40px minmax(0, 1.6fr) minmax(0, 1.6fr) auto; gap: 12px; align-items: center; padding: 11px 13px; }
+@media (max-width: 860px) { .bt-row { grid-template-columns: 40px minmax(0, 1fr); } .bt-row .bt-wave-wrap, .bt-row .bt-row-right { grid-column: 1 / -1; } }
+.bt-play { width: 40px; height: 40px; border-radius: var(--sb-r-pill); border: 1px solid var(--bt-line); background: rgb(201 162 74 / 0.12);
+  color: var(--bt-amber); cursor: pointer; display: grid; place-items: center; font-size: 13px; }
+.bt-play:hover { background: rgb(201 162 74 / 0.22); }
+.bt-play[disabled] { opacity: 0.35; cursor: not-allowed; }
+.bt-title { display: block; font-size: 13.5px; font-weight: 700; color: var(--bt-copy); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt-title:hover { color: var(--bt-amber); }
+.bt-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 3px 0 0; font-size: 12px; color: var(--bt-soft); }
+.bt-meta .is-measured { color: var(--bt-amber); }
+.bt-wave-wrap { min-width: 0; }
+.bt-wave { display: block; width: 100%; height: 38px; cursor: pointer; border-radius: var(--sb-r-control); background: rgb(0 0 0 / 0.28); }
+.bt-row-right { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 14px; }
+.bt-fee { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--bt-amber); }
+
+/* --- side drawer ------------------------------------------------------- */
+.bt-scrim { position: fixed; inset: 0; z-index: 60; background: rgb(0 0 0 / 0.62); }
+.bt-scrim[hidden], .bt-drawer[hidden], .bt-modal[hidden] { display: none; }
+@supports (backdrop-filter: blur(1px)) { .bt-scrim { backdrop-filter: blur(2px); } }
+.bt-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 61; width: min(420px, 100vw);
+  display: flex; flex-direction: column; gap: 14px; padding: 20px; overflow-y: auto;
+  border-radius: 0; border-right: 0; border-top: 0; border-bottom: 0;
+  background-color: rgb(15 13 16 / 0.97); }
+@media (max-width: 480px) { .bt-drawer { width: 100vw; } }
+.bt-drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.bt-x { width: 32px; height: 32px; border-radius: var(--sb-r-panel); border: 1px solid var(--bt-rule); background: transparent;
+  color: var(--bt-soft); cursor: pointer; font-size: 15px; line-height: 1; flex: none; }
+.bt-x:hover { color: var(--bt-copy); border-color: var(--bt-line); }
+
+/* --- modal -------------------------------------------------------------- */
+.bt-modal { position: fixed; z-index: 61; inset: 50% auto auto 50%; transform: translate(-50%, -50%);
+  width: min(620px, calc(100vw - 28px)); max-height: min(86vh, 780px); overflow-y: auto; padding: 20px;
+  background-color: rgb(15 13 16 / 0.97); }
+.bt-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 560px) { .bt-grid2 { grid-template-columns: 1fr; } }
+.bt-preset { display: flex; flex-wrap: wrap; gap: 7px; }
+.bt-preset button[aria-pressed="true"] { background: rgb(201 162 74 / 0.18); border-color: var(--bt-gold); color: var(--bt-amber); }
+.bt-terms { font-family: var(--sb-mono); font-size: 12px; line-height: 1.65; white-space: pre-wrap; }
+
+/* --- share links --------------------------------------------------------- */
+.bt-links { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.bt-link { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bt-link .bt-input { flex: 1 1 240px; min-width: 0; font-family: var(--sb-mono); font-size: 12px; }
+
+/* --- tabs ---------------------------------------------------------------- */
+.bt-tabs { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--bt-rule); margin-bottom: 16px; }
+.bt-tab { appearance: none; border: 0; background: none; padding: 9px 13px; cursor: pointer; color: var(--bt-soft);
+  font: inherit; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; align-items: center; gap: 7px; }
+.bt-tab:hover { color: var(--bt-copy); }
+.bt-tab[aria-selected="true"] { color: var(--bt-amber); border-bottom-color: var(--bt-amber); }
+.bt-tab[data-locked] { color: var(--sb-ink-3); }
+.bt-tab[data-locked]:hover { color: var(--sb-ink-2); }
+.bt-lock { width: 11px; height: 11px; flex: none; }
+
+/* --- the locked panel ----------------------------------------------------- *
+ * It says what it would do and that it does not do it yet. No fake rows,
+ * no greyed-out switches that imply a working thing behind a paywall. */
+.bt-locked { padding: 22px; }
+.bt-locked ul { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 9px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.bt-locked li { padding: 11px 13px; border: 1px solid var(--bt-rule); border-radius: var(--sb-r-panel); background: rgb(255 255 255 / 0.03); font-size: 12px; line-height: 1.55; }
+.bt-locked li b { display: block; color: var(--bt-copy); font-size: 12.5px; margin-bottom: 3px; }
+
+/* --- empty state ---------------------------------------------------------- */
+.bt-empty { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 24px; align-items: center; padding: 26px; }
+@media (max-width: 720px) { .bt-empty { grid-template-columns: 1fr; text-align: left; } }
+.bt-empty-art { position: relative; aspect-ratio: 4 / 3; border-radius: var(--sb-r-panel); overflow: hidden; border: 1px solid var(--bt-rule); background: var(--sb-surface-1); }
+.bt-empty-art img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0.82; }
+.bt-empty-art::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgb(10 10 10 / 0.05), rgb(10 10 10 / 0.62)); }
+.bt-empty h2 { margin: 0 0 8px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.bt-empty p { margin: 0 0 14px; color: var(--bt-soft); font-size: 12.5px; line-height: 1.62; max-width: 56ch; }
+
+/* --- the share page ------------------------------------------------------- */
+.bts-body { margin: 0; min-height: 100vh; background: var(--bt-ink, var(--sb-ground));
+  font-family: var(--sb-text);
+  -webkit-font-smoothing: antialiased; }
+.bts { padding: 30px clamp(14px, 5vw, 44px) 60px; max-width: 760px; }
+.bts-player { padding: 20px; margin: 20px 0; }
+.bts-transport { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.bts-big { width: 60px; height: 60px; border-radius: var(--sb-r-pill); border: 1px solid var(--bt-badge);
+  background: var(--bt-badge); color: var(--sb-on-gold); font-size: 19px; cursor: pointer; display: grid; place-items: center; flex: none; }
+.bts-big:hover { background: var(--sb-gold-bright); }
+.bts-clock { font: 800 15px/1 var(--sb-mono); font-variant-numeric: tabular-nums; color: var(--bt-amber); }
+.bts-facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 16px 0 0; padding: 0; list-style: none; }
+.bts-facts div { min-width: 88px; }
+.bts-facts dt { font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--bt-soft); margin: 0; }
+.bts-facts dd { margin: 4px 0 0; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--bt-copy); }
+.bts-foot { margin: 34px 0 0; padding-top: 14px; border-top: 1px solid var(--bt-rule); font-size: 12px; color: var(--bt-soft); }

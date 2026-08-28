@@ -1,0 +1,29 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Content - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Content Command</p><h1 class="to-h1" style="font-size:20px">The shot list, every night</h1><p class="to-sub">Sixteen default items per show — arrival, venue, crowd line, soundcheck, hero performance, post-show… Assign, set a due time, move status, attach the file. Nothing posts anywhere from here.</p></div></div>
+{% if shows %}
+{% for s in shows %}
+<details {% if loop.first %}open{% endif %} style="margin-bottom:8px">
+  <summary style="cursor:pointer;font-weight:800;padding:8px 0">{{ s['date'] }} · {{ s['city'] or s['venue'] }} <span class="to-muted" style="font-weight:500">· {% set items = by_show[s['id']] if s['id'] in by_show else [] %}{{ items|selectattr('assignee')|list|length }} of {{ items|length }} assigned · {{ items|rejectattr('status','equalto','planned')|list|length }} captured or further</span></summary>
+  <div class="to-table-wrap"><table class="to-table">
+    <thead><tr><th>Item</th><th>Assignee</th><th>Due</th><th>Status</th><th>File</th><th></th></tr></thead>
+    <tbody>
+    {% for c in items %}
+    <tr>
+      <td>{{ c['item']|replace('_',' ')|capitalize }}</td>
+      <td><form method="post" action="/tours/{{ tour['id'] }}/content/{{ c['id'] }}" enctype="multipart/form-data" class="to-inline" id="cf-{{ c['id'] }}">
+        <select name="assignee" class="to-input" style="min-height:32px;padding:4px 6px;width:auto"><option value="">—</option>{% for p in people %}<option value="{{ p['name'] }}" {% if p['name'] == c['assignee'] %}selected{% endif %}>{{ p['name'] }}</option>{% endfor %}</select></td>
+      <td><input form="cf-{{ c['id'] }}" type="time" name="due_time" value="{{ c['due_time'] }}" class="to-input" style="min-height:32px;padding:4px 6px;width:110px"></td>
+      <td><select form="cf-{{ c['id'] }}" name="status" class="to-input" style="min-height:32px;padding:4px 6px;width:auto">{% for st in statuses %}<option value="{{ st }}" {% if st == c['status'] %}selected{% endif %}>{{ st|capitalize }}</option>{% endfor %}</select></td>
+      <td>{% if c['file_id'] %}<a href="/tours/{{ tour['id'] }}/files/{{ c['file_id'] }}/download">file</a>{% endif %}{% if can('files') %}<input form="cf-{{ c['id'] }}" type="file" name="file" class="to-input" style="min-height:32px;padding:4px 6px;width:170px">{% endif %}</td>
+      <td><button form="cf-{{ c['id'] }}" class="to-btn to-btn--small" type="submit">Save</button></form></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</details>
+{% endfor %}
+{% else %}{{ m.empty("No shows yet", "The content plan is per show.") }}{% endif %}
+{% endblock %}

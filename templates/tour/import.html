@@ -1,0 +1,55 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Import - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Import</p><h1 class="to-h1" style="font-size:20px">Bring dates in</h1><p class="to-sub">CSV (date, city, venue, type, notes…), an .ics calendar export, or a pasted list with one date per line. You see every row and its verdict before anything is created. Conflicts are shown. A date you already have can be <b>filled in</b> from the sheet rather than skipped — useful when a hold has since confirmed, or when the first import predated the columns. Nothing is scraped from anywhere.</p></div></div>
+
+{% if preview is defined %}
+<form method="post" action="/tours/{{ tour['id'] }}/import" class="to-form">
+  <input type="hidden" name="action" value="confirm"><input type="hidden" name="source" value="{{ source }}"><input type="hidden" name="text" value="{{ text }}">
+  {% set dupes = preview | selectattr('verdict', 'equalto', 'duplicate') | list %}
+  {% if dupes %}
+  <label style="display:flex;gap:9px;align-items:flex-start;margin:0 0 14px;padding:11px 13px;border:1px solid var(--to-line);border-radius:var(--sb-r-panel)">
+    <input type="checkbox" name="fill_existing" value="1" checked>
+    <span>
+      <b>Fill in the {{ dupes|length }} date{{ '' if dupes|length == 1 else 's' }} already on this tour.</b>
+      <span class="to-muted" style="display:block;font-size:12px;margin-top:3px">
+        Only fields the show has not got — a fee, a merch rate, a ticket link, the bill, a confirmed status.
+        Nothing you have already typed is overwritten, and a status never moves backwards.
+      </span>
+    </span>
+  </label>
+  {% endif %}
+  <div class="to-eyebrow">{{ preview|length }} row{{ '' if preview|length == 1 else 's' }} read{% if filename %} from {{ filename }}{% endif %}{% if problems %} · {{ problems|length }} line{{ '' if problems|length == 1 else 's' }} skipped{% endif %}</div>
+  {% if problems %}<div class="to-note to-note--warn" style="margin-top:8px"><strong>Skipped lines</strong>{% for p in problems[:10] %}<p>{{ p }}</p>{% endfor %}</div>{% endif %}
+  {% if preview %}
+  <div class="to-table-wrap"><table class="to-table">
+    <thead><tr><th></th><th>Date</th><th>Type</th><th>City</th><th>Venue</th><th>Verdict</th></tr></thead>
+    <tbody>{% for r in preview %}<tr>
+      <td><input type="checkbox" name="pick" value="{{ loop.index0 }}" {% if r['verdict'] == 'new' or (r['verdict'] == 'duplicate' and r.get('match_id')) %}checked{% endif %} {% if r['verdict'] == 'duplicate' and not r.get('match_id') %}disabled{% endif %}></td>
+      <td>{{ r['date'] }}</td><td>{{ r['kind'] }}</td><td>{{ r['city'] or '—' }}</td><td>{{ r['venue'] or '—' }}{% if r['notes'] %}<div class="to-muted">{{ r['notes'][:80] }}</div>{% endif %}</td>
+      <td>{% if r['verdict'] == 'new' %}<span class="to-chip to-chip--ok">new</span>{% elif r['verdict'] == 'duplicate' %}<span class="to-chip">already on tour</span>{% if r.get('match_id') and (r.get('fee') or r.get('merch') or r.get('ticket_url') or r.get('support') or r.get('status')) %} <span class="to-muted">carries deal detail</span>{% endif %}{% else %}<span class="to-chip to-chip--warn">conflict</span> <span class="to-muted">same date: {{ r['conflict_with']['venue'] or r['conflict_with']['kind'] }}</span>{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Create the ticked rows</button> <a class="to-btn to-btn--ghost" href="/tours/{{ tour['id'] }}/import">Start over</a></div>
+  {% else %}<p class="to-sub">No rows could be read. <a href="/tours/{{ tour['id'] }}/import">Try again</a>.</p>{% endif %}
+</form>
+{% else %}
+<form method="post" action="/tours/{{ tour['id'] }}/import" enctype="multipart/form-data" class="to-form">
+  <input type="hidden" name="action" value="preview">
+  <div class="to-grid">
+    <label class="to-field"><span>Format</span><select name="source"><option value="paste">Pasted list</option><option value="csv">CSV</option><option value="ics">Calendar (.ics)</option></select></label>
+    <label class="to-field"><span>Upload (.csv or .ics)</span><input type="file" name="file" accept=".csv,.ics,.txt"></label>
+    {{ m.textarea('text', 'Or paste here', rows=8, placeholder='2026-09-12 — Nashville, TN | The Basement East\n2026-09-13 — Atlanta, GA | Terminal West\n2026-09-14 — travel day\n\nCSV:\ndate,city,venue,type\n2026-09-12,Nashville,The Basement East,show') }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Preview</button></div>
+</form>
+{% endif %}
+
+{% if history %}
+<h2 class="to-h2">Import history</h2>
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <tbody>{% for i in history %}<tr><td data-k="When">{{ i['created'][:16]|replace('T',' ') }}</td><td data-k="Source">{{ i['source'] }}{% if i['filename'] %} · {{ i['filename'] }}{% endif %}</td><td data-k="Result">{% if 'created' in i['summary'] %}{{ i['summary']['created']['shows'] }} shows, {{ i['summary']['created']['days'] }} days, {{ i['summary']['created']['skipped'] }} skipped{% elif 'applied' in i['summary'] %}{{ i['summary']['applied']|length }} applied{% endif %}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% endblock %}

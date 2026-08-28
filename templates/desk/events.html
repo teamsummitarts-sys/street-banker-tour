@@ -1,0 +1,57 @@
+{% set nav = 'events' %}
+{% extends "desk/layout.html" %}
+{% block title %}Shows & Meetings{% endblock %}
+{% block main %}
+<h1 class="dk-h1">Shows &amp; Meetings</h1>
+<p class="dk-sub">Bookings, calls, dinners — anything with a date and people attached.</p>
+
+{% if can('event_add') %}
+<form class="dk-form" method="post" action="/operator-desk/events">
+  <div class="dk-grid">
+    <label class="dk-field"><span>Event name *</span><input name="event_name" required></label>
+    <label class="dk-field"><span>Type</span>
+      <select name="event_type">{% for t in vocab.event_types %}<option>{{ t }}</option>{% endfor %}</select></label>
+    <label class="dk-field"><span>Date</span><input name="date" type="date"></label>
+    <label class="dk-field"><span>Time</span><input name="time" placeholder="7:30 PM"></label>
+    <label class="dk-field"><span>Venue</span><input name="venue"></label>
+    <label class="dk-field"><span>City</span><input name="city"></label>
+    <label class="dk-field"><span>Related lead</span>
+      <select name="lead_id"><option value="">—</option>
+        {% for l in leads %}<option value="{{ l.id }}">{{ l.artist_name }}</option>{% endfor %}</select></label>
+    <label class="dk-field"><span>Attendees (comma-separated)</span><input name="attendees" placeholder="LJ, Warren"></label>
+    <label class="dk-field"><span>Assigned to</span>
+      <select name="assigned_to"><option value="">—</option>
+        {% for n in vocab.team %}<option>{{ n }}</option>{% endfor %}</select></label>
+    <label class="dk-field" style="grid-column:1/-1"><span>Notes</span><textarea name="notes" rows="2"></textarea></label>
+  </div>
+  <div class="dk-checks" style="margin-top:10px">
+    <label><input type="checkbox" name="follow_up_needed" value="1"> Follow-up needed after this</label>
+  </div>
+  <div style="margin-top:12px"><button class="dk-btn" type="submit">Add event</button></div>
+</form>
+{% endif %}
+
+{% if events %}
+<div class="dk-table-wrap" style="margin-top:16px"><table class="dk-table">
+  <thead><tr><th>Date</th><th>Time</th><th>Event</th><th>Type</th><th>Venue</th><th>City</th><th>Lead</th><th>Attendees</th><th>Assigned</th><th>Notes</th></tr></thead>
+  <tbody>
+  {% for e in events %}
+  <tr>
+    <td>{{ e.date or '—' }}</td>
+    <td>{{ e.time or '—' }}</td>
+    <td>{{ e.event_name }}{% if e.follow_up_needed %} <span class="dk-chip dk-chip--amber">follow up</span>{% endif %}</td>
+    <td><span class="dk-chip">{{ e.event_type }}</span></td>
+    <td>{{ e.venue or '—' }}</td>
+    <td>{{ e.city or '—' }}</td>
+    <td>{% if e.lead_id %}<a href="/operator-desk/leads/{{ e.lead_id }}">{{ e.artist_name or 'Lead' }}</a>{% else %}—{% endif %}</td>
+    <td>{{ e.attendees | join(', ') or '—' }}</td>
+    <td>{{ e.assigned_to or '—' }}</td>
+    <td style="font-size:12px">{{ e.notes or '—' }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="dk-empty" style="margin-top:16px">Nothing on the calendar yet.</p>
+{% endif %}
+{% endblock %}

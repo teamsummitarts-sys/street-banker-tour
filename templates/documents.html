@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Documents Vault - Royalty Sweep{% endblock %}
+
+{% block content %}
+{% set dv = documents_view %}
+<div class="mx-auto max-w-[1100px] space-y-5">
+
+  <div>
+    <div class="sb-label text-sb-gold">Street Banker</div>
+    <h1 class="sb-h1 mt-1">Documents Vault</h1>
+    <p class="mt-1 max-w-2xl text-sm text-gray-200">The paperwork that proves who gets paid — split sheets, producer agreements, licenses — stored against the recordings they cover. Every count on this page is a file that is actually in here.</p>
+  </div>
+
+  <section class="rounded-2xl border border-sb-gold/40 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-5">
+    <h2 class="sb-label text-sb-gold-bright">Add to your vault
+      <span class="ml-2 rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-400">PRIVATE — {{ dv.doc_count }} file{{ '' if dv.doc_count == 1 else 's' }} stored</span>
+    </h2>
+    {% if doc_error %}<div class="mt-2 text-xs font-semibold text-red-400">{{ doc_error }}</div>{% endif %}
+    <form method="post" enctype="multipart/form-data" class="mt-3 grid gap-2 sm:grid-cols-[2fr_1fr_1fr_1fr_auto]">
+      <input type="file" name="document" required accept=".pdf,.doc,.docx,.txt,.csv,.png,.jpg,.jpeg,.webp" class="w-full text-xs text-gray-200 file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-solid file:border-sb-gold/40 file:bg-sb-gold/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-sb-gold-bright">
+      <select name="doc_type" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-100 [color-scheme:dark]">
+        {% for t in doc_types %}<option>{{ t }}</option>{% endfor %}
+      </select>
+      <select name="track" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-100 [color-scheme:dark]">
+        <option value="">Whole catalog</option>
+        {% for t in dv.tracks %}<option value="{{ t.title }}">{{ t.title }}</option>{% endfor %}
+      </select>
+      <input name="note" placeholder="Note (e.g. signed 50/50 with producer)" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none">
+      <button class="sb-btn sb-btn-secondary sb-btn-sm">Upload</button>
+    </form>
+    {% if not dv.has_tracks %}
+    <p class="mt-2 text-xs text-gray-200">No recordings named on this account yet, so everything files under the whole catalog. Add tracks in <a href="/catalog" class="font-semibold text-sb-gold-bright underline">Catalog</a> or upload a statement and titles appear here.</p>
+    {% endif %}
+
+    {% if dv.docs %}
+    <div class="mt-4 space-y-2">
+      {% for d in dv.docs %}
+      <div class="flex flex-wrap items-center gap-3 rounded-lg border border-white/5 bg-black/30 px-3 py-2.5 text-xs">
+        <span class="rounded bg-sb-gold/15 px-1.5 py-0.5 text-xs font-bold uppercase text-sb-gold-bright">{{ d.doc_type }}</span>
+        <a href="{{ d.path | media_url }}" target="_blank" class="min-w-0 flex-1 truncate font-semibold text-gray-100 hover:underline">{{ d.filename }}</a>
+        {% if d.track %}<span class="shrink-0 rounded border border-white/15 px-1.5 py-0.5 text-xs font-semibold text-gray-200">{{ d.track }}</span>{% endif %}
+        {% if d.note %}<span class="truncate text-gray-200">{{ d.note }}</span>{% endif %}
+        <span class="shrink-0 sb-num text-gray-200">{{ d.created[:10] }}</span>
+        <form method="post" action="/documents/{{ d.id }}/delete" class="shrink-0">
+          <button class="text-gray-200 hover:text-red-400" title="Delete">✕</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="mt-3 text-xs text-gray-200">Nothing stored yet — splits, producer agreements and licenses belong here, not in your texts.</p>
+    {% endif %}
+  </section>
+
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-5">
+      <div class="sb-label text-gray-200">Per-track coverage</div>
+      {% if dv.coverage_pct is none %}
+      <div class="mt-2 text-2xl font-bold text-gray-100">—</div>
+      <div class="mt-1 text-xs font-medium text-gray-200">No recordings named yet</div>
+      {% else %}
+      <div class="mt-2 text-2xl font-bold tabular-nums text-sb-ink">{{ dv.coverage_pct }}%</div>
+      <div class="mt-2 h-1.5 rounded-full bg-white/5"><div class="h-1.5 rounded-full bg-sb-gold" style="width: {{ dv.coverage_pct }}%;"></div></div>
+      <div class="mt-1 text-xs font-medium text-gray-200">{{ dv.covered_slots }} of {{ dv.total_slots }} asked for</div>
+      {% endif %}
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-2 p-5">
+      <div class="sb-label text-gray-200">Files stored</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-gray-100">{{ dv.doc_count }}</div>
+      <div class="mt-1 text-xs font-medium text-gray-200">Uploaded by you</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-2 p-5">
+      <div class="sb-label text-gray-200">Recordings tracked</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-gray-100">{{ dv.tracks | length }}</div>
+      <div class="mt-1 text-xs font-medium text-gray-200">From catalog and statements</div>
+    </div>
+    <div class="rounded-2xl border border-white/10 bg-sb-surface-2 p-5">
+      <div class="sb-label text-gray-200">Catalog paperwork</div>
+      <div class="mt-2 text-2xl font-bold tabular-nums text-gray-100">{{ dv.catalog_cover | length - dv.catalog_missing | length }}<span class="text-base text-gray-200">/{{ dv.catalog_cover | length }}</span></div>
+      <div class="mt-1 text-xs font-medium text-gray-200">{{ dv.catalog_missing | join(', ') if dv.catalog_missing else 'All on file' }}</div>
+    </div>
+  </div>
+
+  {% if dv.has_tracks %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-200">Paperwork by Recording</h2>
+    <p class="mt-1 text-sm text-gray-200">Thinnest first. A tick means a file in this vault is filed against that recording — nothing else.</p>
+    <div class="mt-4 space-y-3">
+      {% for e in dv.entries %}
+      <div class="rounded-xl border border-white/5 bg-white/5 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="min-w-0">
+            <div class="truncate font-semibold text-gray-100">{{ e.title }}</div>
+            <div class="text-xs uppercase tracking-wide text-gray-200">{{ e.sources | join(' · ') }}</div>
+          </div>
+          {% if e.missing_count == 0 %}
+          <span class="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-400">Everything asked for</span>
+          {% else %}
+          <span class="rounded-full border border-sb-gold/30 bg-sb-gold/10 px-2 py-0.5 text-xs font-semibold text-sb-gold-bright">{{ e.missing_count }} not on file</span>
+          {% endif %}
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          {% for ty in e.types %}
+          <span class="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium {{ 'border-green-500/20 bg-green-500/5 text-green-400' if ty.present else 'border-white/10 text-gray-200' }}">
+            {% if ty.present %}
+            <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7 7a1 1 0 01-1.4 0l-3-3a1 1 0 111.4-1.4L9 11.6l6.3-6.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+            {% else %}
+            <svg class="h-3 w-3" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l8 8M14 6l-8 8"/></svg>
+            {% endif %}
+            {{ ty.type }}
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if dv.unfiled %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <h2 class="sb-label text-gray-200">Filed to the whole catalog</h2>
+    <p class="mt-1 text-sm text-gray-200">{{ dv.unfiled | length }} file{{ '' if dv.unfiled | length == 1 else 's' }} not tied to one recording. Distribution and publishing agreements belong here; a split sheet usually does not, and one filed this way is not counted against any track above.</p>
+    <div class="mt-3 flex flex-wrap gap-2">
+      {% for d in dv.unfiled %}
+      <span class="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-gray-100">{{ d.doc_type }} · {{ d.filename }}</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if dv.unmatched %}
+  <section class="rounded-2xl border border-amber-500/25 bg-sb-surface-2 p-5">
+    <h2 class="sb-label text-sb-gold-bright">Filed against a title this account no longer names</h2>
+    <p class="mt-1 text-sm text-gray-200">These point at recordings that are not in your catalog, your Artist OS tracks, or any uploaded statement — usually a renamed track or a typo. They are stored, but they are not counting toward anything.</p>
+    <div class="mt-3 flex flex-wrap gap-2">
+      {% for d in dv.unmatched %}
+      <span class="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-gray-100">{{ d.track }} · {{ d.filename }}</span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-2 p-5">
+    <h2 class="sb-label text-gray-200">What coverage here does and does not mean</h2>
+    <ul class="mt-2 space-y-1 text-xs text-gray-200">
+      <li>· It counts files in this vault against a short checklist: {{ documents_per_track_types | join(', ') }} per recording, and {{ documents_catalog_types | join(', ') }} for the catalog.</li>
+      <li>· 100% means every file this product asked for is stored. It is not a legal opinion, and nobody here has read the documents or checked that they are signed.</li>
+      <li>· Paperwork you hold somewhere else is invisible to this page. So is anything a collaborator holds.</li>
+    </ul>
+  </section>
+</div>
+{% endblock %}

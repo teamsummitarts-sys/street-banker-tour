@@ -1,0 +1,40 @@
+{% import "tour/_macros.html" as m %}
+<div class="to-split">
+  <div>
+    {% if setlists %}
+      {% for sl in setlists %}
+      <div class="to-panel" style="margin-bottom:10px">
+        <div class="to-head" style="margin-bottom:6px"><div style="font-weight:800">{{ sl['name'] }} <span class="to-muted">· {{ sl['songs']|length }} songs</span></div>
+          <div class="to-inline"><a class="to-btn to-btn--ghost to-btn--small" target="_blank" rel="noopener" href="/tours/{{ tour['id'] }}/setlists/{{ sl['id'] }}/print">Print</a>
+          {% if can('edit') or can('production') %}<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/setlist"><input type="hidden" name="action" value="delete"><input type="hidden" name="setlist_id" value="{{ sl['id'] }}"><button class="to-btn to-btn--ghost to-btn--small to-btn--danger" type="submit">Delete</button></form>{% endif %}</div></div>
+        {% if can('edit') or can('production') %}
+        <form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/setlist">
+          <input type="hidden" name="action" value="save"><input type="hidden" name="setlist_id" value="{{ sl['id'] }}">
+          <label class="to-field"><span>One song per line · "(3:45)" for a duration · prefix "Encore:" or "Alt:"</span>
+            <textarea name="items" rows="{{ [sl['songs']|length + 3, 8]|max }}">{% for s in sl['songs'] %}{% if s['section'] == 'encore' %}Encore: {% elif s['section'] == 'alternate' %}Alt: {% endif %}{{ s['title'] }}{% if s['duration'] %} ({{ s['duration'] }}){% endif %}
+{% endfor %}</textarea></label>
+          <div class="to-bar" style="margin-bottom:0"><button class="to-btn to-btn--small" type="submit">Save set list</button></div>
+        </form>
+        {% else %}
+        <ol style="margin:0;padding-left:20px">{% for s in sl['songs'] %}<li>{{ s['title'] }}{% if s['duration'] %} <span class="to-muted">{{ s['duration'] }}</span>{% endif %}{% if s['section'] != 'main' %} <span class="to-chip">{{ s['section'] }}</span>{% endif %}{% if s['os_track_id'] %} <span class="to-chip to-chip--ok">catalog</span>{% endif %}</li>{% endfor %}</ol>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      {{ m.empty("No set list for this show", "Start one, or copy a tour-wide list. Titles matching your catalog (" ~ tracks|length ~ " tracks) link automatically.") }}
+    {% endif %}
+  </div>
+  {% if can('edit') or can('production') %}
+  <aside>
+    <form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/setlist" class="to-form"><input type="hidden" name="action" value="new">
+      {{ m.field('name', 'New set list', 'Main set') }}
+      <div class="to-bar" style="margin-bottom:0"><button class="to-btn to-btn--small" type="submit">Create</button></div></form>
+    {% if tour_setlists %}
+    <form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/setlist" class="to-form" style="margin-top:10px"><input type="hidden" name="action" value="copy">
+      <label class="to-field"><span>Copy a tour list</span><select name="setlist_id">{% for s in tour_setlists %}<option value="{{ s['id'] }}">{{ s['name'] }}</option>{% endfor %}</select></label>
+      <div class="to-bar" style="margin-bottom:0"><button class="to-btn to-btn--ghost to-btn--small" type="submit">Copy here</button></div></form>
+    {% endif %}
+    {% if tracks %}<div class="to-panel" style="margin-top:10px"><div class="to-eyebrow">Your catalog</div><div class="to-muted" style="font-size:12px">{% for t in tracks[:30] %}{{ t['title'] }}{{ ' · ' if not loop.last }}{% endfor %}</div></div>{% endif %}
+  </aside>
+  {% endif %}
+</div>

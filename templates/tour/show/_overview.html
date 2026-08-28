@@ -1,0 +1,74 @@
+{% import "tour/_macros.html" as m %}
+<div class="to-split is-three">
+  <aside>
+    <div class="to-panel is-warm">
+      <div class="to-eyebrow">Readiness</div>
+      <div style="display:flex;align-items:baseline;gap:10px">{{ m.ready(readiness['pct']) }}<span class="to-muted">{{ readiness['done'] }} of {{ readiness['total'] }}</span></div>
+      <div class="to-meter" style="margin:8px 0 10px"><i style="width:{{ readiness['pct'] }}%"></i></div>
+      <ul class="to-check">
+        {% for c in readiness['checks'] %}
+        <li class="{{ 'ok' if c['state'] is sameas true else ('warn' if c['state'] == 'waiting' else ('na' if c['state'] is none else 'no')) }}">
+          <span class="mark">{{ '✓' if c['state'] is sameas true else ('…' if c['state'] == 'waiting' else ('–' if c['state'] is none else '×')) }}</span>
+          <span>{{ c['label'] }}<small>{{ c['detail'] }}</small></span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </aside>
+
+  <div>
+    <h2 class="to-h2" style="margin-top:0">Today's times</h2>
+    {% if schedule %}
+    <ul class="to-timeline">
+      {% for r in schedule %}
+      <li class="to-tl-item">
+        <div class="to-tl-time">{{ fmt_time(r['start_time']) or 'TBD' }}{% if r['precision'] == 'approx' %}<small>approx</small>{% endif %}</div>
+        <div><div class="to-tl-title">{{ r['title'] }}</div>{% if r['location'] %}<div class="to-tl-where">{{ r['location'] }}</div>{% endif %}</div>
+        <div class="to-tl-flags">{% if r['confirmed'] %}<span class="ok">confirmed</span>{% else %}<span class="warn">unconfirmed</span>{% endif %}</div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      {{ m.empty("No times yet", "Stamp the standard show day (load-in, soundcheck, doors, set, curfew, bus call) and adjust, or add items one by one.", "/tours/" ~ tour['id'] ~ "/shows/" ~ show['id'] ~ "?tab=schedule", "Schedule") }}
+    {% endif %}
+
+    <h2 class="to-h2">Travel & hotel</h2>
+    {% if travel or lodging %}
+      {% for t in travel %}
+      <div style="padding:7px 0;border-bottom:1px solid var(--to-rule);font-size:13px"><b>{{ t['mode']|capitalize }} {{ t['number'] }}</b> {{ t['dep_loc'] or t['pickup'] }} → {{ t['arr_loc'] or t['destination'] }} {% if t['dep_time'] %}· dep {{ fmt_time(t['dep_time']) }}{% endif %} {{ m.chip(t['status']) }}</div>
+      {% endfor %}
+      {% for l in lodging %}
+      <div style="padding:7px 0;border-bottom:1px solid var(--to-rule);font-size:13px"><b>{{ l['property'] }}</b> {{ l['address'] }} · in {{ l['checkin'] }} {{ m.chip(l['status']) }}</div>
+      {% endfor %}
+    {% else %}
+      <p class="to-sub">No travel or hotel entered for this date.</p>
+    {% endif %}
+
+    <h2 class="to-h2">Advance</h2>
+    <div class="to-meter"><i style="width:{{ advance_progress['pct'] }}%"></i></div>
+    <p class="to-sub">{{ advance_progress['done'] }} of {{ advance_progress['total'] }} items complete{% if advance_progress['waiting'] %}, {{ advance_progress['waiting'] }} waiting on the venue{% endif %}. <a href="?tab=advance">Open the advance</a>.</p>
+  </div>
+
+  <aside>
+    <div class="to-panel">
+      <div class="to-eyebrow">Venue</div>
+      <div style="font-weight:800">{{ show['venue'] }}</div>
+      {% if venue %}<div class="to-muted">{{ venue['address'] }}{% if venue['city'] %}, {{ venue['city'] }}{% endif %}</div>{% if venue['capacity'] %}<div class="to-muted">Cap {{ venue['capacity'] }}</div>{% endif %}{% else %}<div class="to-muted">No venue record linked. <a href="?tab=venue">Link or create one</a>.</div>{% endif %}
+      {% if show['promoter'] %}<div class="to-muted" style="margin-top:6px">Promoter: {{ show['promoter'] }}</div>{% endif %}
+    </div>
+    {% if guests %}
+    <div class="to-panel" style="margin-top:12px">
+      <div class="to-eyebrow">Guest list</div>
+      <div><b style="font-size:20px">{{ guests['used'] }}</b>{% if guests['allocation'] is not none %} <span class="to-muted">of {{ guests['allocation'] }}</span>{% endif %}{% if guests['over'] %} <span class="to-chip to-chip--warn">over</span>{% endif %}</div>
+      <div class="to-muted">{{ guests['pending'] }} pending{% if show['guest_cutoff'] %} · cutoff {{ show['guest_cutoff'] }}{% endif %}</div>
+    </div>
+    {% endif %}
+    {% if can('edit') %}
+    <form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/ext" class="to-panel" style="margin-top:12px">
+      <div class="to-eyebrow">Status</div>
+      <div class="to-field"><select name="status">{% for s in vocab['show_statuses'] %}<option value="{{ s }}" {% if s == show['status'] %}selected{% endif %}>{{ s|capitalize }}</option>{% endfor %}</select></div>
+      <div class="to-bar" style="margin-bottom:0"><button class="to-btn to-btn--small" type="submit">Update</button></div>
+    </form>
+    {% endif %}
+  </aside>
+</div>

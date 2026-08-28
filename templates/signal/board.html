@@ -1,0 +1,45 @@
+{% extends "signal/_shell.html" %}
+{% from "signal/_macros.html" import board_table %}
+{% block title %}{{ board_title }}{% endblock %}
+{% block main %}
+  <div class="sg-head">
+    <div>
+      <p class="sg-eyebrow">Discovery</p>
+      <h1 class="sg-h1">{{ board_title }}</h1>
+      <p class="sg-lede">{{ board_lede }}</p>
+    </div>
+    <a class="sg-btn sg-btn--ghost sg-btn--small" href="/signal/export/board.csv">Export CSV</a>
+  </div>
+
+  {% if mandates is defined and mandates %}
+    <form class="sg-rail" method="get">
+      <label class="sg-field">
+        <span>Filter by mandate</span>
+        <select class="sg-select" name="mandate">
+          <option value="">Every artist</option>
+          {% for m in mandates %}
+            <option value="{{ m['id'] }}" {% if active_mandate and active_mandate['id'] == m['id'] %}selected{% endif %}>{{ m['name'] }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button class="sg-btn sg-btn--small" type="submit">Apply</button>
+      {% if active_mandate %}<a class="sg-btn sg-btn--ghost sg-btn--small" href="/signal/deal-ready">Clear</a>{% endif %}
+    </form>
+  {% endif %}
+
+  {% if rows %}
+    <p class="sg-h2">{{ rows|length }} artist{{ '' if rows|length == 1 else 's' }}</p>
+    {{ board_table(rows, sg_can) }}
+    <p class="sg-note">
+      Every score is cohort-relative — an artist is measured against others at the same career
+      stage, audience band and genre, never against a superstar. Click any number to see the
+      inputs, weights and what data was missing.
+    </p>
+  {% else %}
+    <div class="sg-empty">
+      <b>Nothing meets this board's bar right now.</b><br>
+      That is a real answer, not an error — this board only shows artists whose movement clears
+      its threshold. Widen the window, or check Data sources to confirm the universe is fresh.
+    </div>
+  {% endif %}
+{% endblock %}

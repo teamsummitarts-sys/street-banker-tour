@@ -1,0 +1,19 @@
+{% import "tour/_macros.html" as m %}
+{% if files %}
+<div class="to-table-wrap"><table class="to-table is-stack">
+  <thead><tr><th>File</th><th>Category</th><th>Visibility</th><th>By</th><th>When</th><th></th></tr></thead>
+  <tbody>{% for f in files %}<tr><td data-k="File"><a href="/tours/{{ tour['id'] }}/files/{{ f['id'] }}/download">{{ f['file_name'] }}</a> <span class="to-muted">v{{ f['version'] }}</span></td><td data-k="Category">{{ f['category']|replace('_',' ') }}</td><td data-k="Visibility">{{ f['visibility'] }}</td><td data-k="By">{{ f['uploaded_by'] }}</td><td data-k="When">{{ f['created'][:10] }}</td>
+    <td><form method="post" action="/tours/{{ tour['id'] }}/files/{{ f['id'] }}/delete"><button class="to-btn to-btn--ghost to-btn--small to-btn--danger" type="submit">✕</button></form></td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}
+  {{ m.empty("No files on this show", "Contracts, riders, venue maps, settlement sheets. Money documents need the financials permission to see; private ones stay with admins.") }}
+{% endif %}
+<form method="post" action="/tours/{{ tour['id'] }}/files/upload" enctype="multipart/form-data" class="to-form" style="margin-top:10px">
+  <input type="hidden" name="entity_type" value="show"><input type="hidden" name="entity_id" value="{{ show['id'] }}">
+  <div class="to-grid">
+    <label class="to-field"><span>File</span><input type="file" name="file" required></label>
+    {{ m.select('category', 'Category', vocab['file_categories'], 'other') }}
+    {{ m.select('visibility', 'Visibility', vocab['visibility'], 'all') }}
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Upload</button></div>
+</form>

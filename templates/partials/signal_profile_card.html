@@ -1,0 +1,71 @@
+{# Command Center — ARTIST SIGNAL PROFILE. Compact card: the saved EQ mix
+   as a small curve, the lane, top three priorities, last-updated date.
+   Everything shown is what the artist set - selected, never measured.
+   Rendered only when a validated server-side profile exists. #}
+{% if signal %}
+<div class="rounded-2xl border border-white/5 bg-sb-surface-1 p-4" id="cc-signal">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="sb-label text-sb-gold">Artist Signal Profile</div>
+    <div class="text-xs text-gray-300 font-medium">Updated {{ signal.updated }} · {{ signal.profile.preset }}</div>
+  </div>
+  <div class="mt-3 grid grid-cols-1 items-center gap-4 sm:grid-cols-[300px_minmax(0,1fr)_auto]">
+    <svg viewBox="0 0 300 66" class="h-14 w-full max-w-[300px]" role="img"
+         aria-label="Your saved priority curve">
+      <line x1="0" y1="33" x2="300" y2="33" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+      <polyline points="{{ signal.points }}" fill="none" stroke="#E8B950"
+                stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div class="min-w-0 text-sm">
+      <div class="font-bold text-gray-100">{{ signal.profile.recommendedLane or "Custom program" }}</div>
+      <div class="mt-0.5 truncate text-xs text-gray-300">{{ signal.profile.topPriorities | join(" · ") }}</div>
+    </div>
+    <div class="flex shrink-0 gap-2">
+      <a href="/#artist-eq" class="sb-btn sb-btn-secondary sb-btn-sm">Retune my priorities</a>
+      <details class="relative">
+        <summary class="cursor-pointer list-none rounded-lg border border-white/15 px-3 py-2 text-xs font-bold uppercase tracking-[0.1em] text-gray-200 hover:border-white/30">View my program</summary>
+        <div class="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-white/10 bg-sb-surface-2 p-4 text-left shadow-2xl">
+          <div class="sb-label text-gray-300">Recommended modules</div>
+          <ul class="mt-1.5 space-y-1 text-xs text-gray-200">
+            {% for m in signal.profile.recommendedModules %}<li>· {{ m }}</li>{% endfor %}
+          </ul>
+          <div class="sb-label mt-3 text-gray-300">First actions</div>
+          <ol class="mt-1.5 list-decimal space-y-1 pl-4 text-xs text-gray-200">
+            {% for a in signal.profile.firstActions %}<li>{{ a }}</li>{% endfor %}
+          </ol>
+        </div>
+      </details>
+    </div>
+  </div>
+  {% if signal.stale %}
+  <div class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-sb-gold/25 bg-sb-gold/[0.06] px-3 py-2" id="cc-signal-stale">
+    <p class="text-xs text-gray-200"><span class="font-bold text-sb-gold-bright">Has your mix changed?</span> Retune your Artist Signal Profile to keep your program aligned.</p>
+    <div class="flex gap-2">
+      <a href="/#artist-eq" class="sb-label text-sb-gold-bright hover:underline">Retune my mix</a>
+      <button type="button" class="sb-label text-gray-300 hover:text-white"
+              onclick="this.closest('#cc-signal-stale').remove(); try { localStorage.setItem('sbSignalStaleDismissed', Date.now()); } catch (e) {}">Not now</button>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{# Keep the account copy of the profile current: if this browser holds a
+   newer local mix (set on the homepage before or after signing in), push
+   it up once. Fails silently - the card just shows the last synced copy. #}
+<script>
+(function () {
+  try {
+    var raw = localStorage.getItem("streetBankerArtistSignalProfile");
+    if (!raw) { return; }
+    var local = JSON.parse(raw);
+    if (!local || !local.priorities) { return; }
+    var serverUpdated = {{ (signal.profile.updatedAt if signal else "") | tojson }};
+    if (serverUpdated && local.updatedAt && local.updatedAt <= serverUpdated) { return; }
+    fetch("/api/artist-signal-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(local)
+    }).catch(function () {});
+  } catch (e) {}
+})();
+</script>

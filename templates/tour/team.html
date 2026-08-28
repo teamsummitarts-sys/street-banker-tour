@@ -1,0 +1,42 @@
+{% extends "tour/_shell.html" %}
+{% block title %}Team - {{ tour['name'] }} - Street Banker{% endblock %}
+{% block tour_body %}
+{% import "tour/_macros.html" as m %}
+<div class="to-head"><div><p class="to-eyebrow">Team & access</p><h1 class="to-h1" style="font-size:20px">Who can open this tour, and what they can touch</h1><p class="to-sub">Invite by email with a role preset, then adjust the individual permissions. Financials is its own permission. Permissions are checked on the server for every page, export and answer — not just hidden in menus.</p></div></div>
+
+{% if not email_live %}<div class="to-note"><strong>Invitation emails are not being sent from this deployment.</strong> Copy each join link below and send it yourself; the link is the invitation.</div>{% endif %}
+
+<form method="post" action="/tours/{{ tour['id'] }}/team/invite" class="to-form">
+  <div class="to-grid">
+    {{ m.field('email', 'Email', type='email', required=True) }}
+    {{ m.field('name', 'Name') }}
+    <label class="to-field"><span>Role preset</span><select name="role">{% for r in vocab['role_presets'] %}<option value="{{ r }}">{{ r|replace('_',' ')|capitalize }}</option>{% endfor %}</select></label>
+    <label class="to-field"><span>Link to a person in the directory</span><select name="person_id"><option value="">—</option>{% for p in people %}<option value="{{ p['id'] }}">{{ p['name'] }}</option>{% endfor %}</select></label>
+    <div class="to-wide"><span class="to-eyebrow" style="font-size:12px">Permissions (leave all unticked to use the preset)</span>
+      <div class="to-checks">{% for s in vocab['scopes'] %}{% if s != 'admin' or viewer['is_owner'] %}<label><input type="checkbox" name="scopes" value="{{ s }}"> {{ s }}</label>{% endif %}{% endfor %}</div></div>
+  </div>
+  <div class="to-bar" style="margin-bottom:0"><button class="to-btn" type="submit">Invite</button></div>
+</form>
+
+{% if members %}
+<h2 class="to-h2">Members</h2>
+{% for mm in members %}
+<details class="to-panel" style="margin-bottom:8px">
+  <summary style="cursor:pointer"><b>{{ mm['name'] or mm['email'] }}</b> <span class="to-muted">{{ mm['email'] }} · {{ mm['role']|replace('_',' ') }}</span> {{ m.chip('confirmed' if mm['status'] == 'active' else 'pending') }}{% if mm['status'] == 'invited' %} <span class="to-muted">invited, not yet joined</span>{% endif %}</summary>
+  {% if mm['join_url'] %}<div style="margin-top:8px"><span class="to-muted">Join link:</span> <input class="to-input" readonly value="{{ mm['join_url'] }}" onclick="this.select()" style="min-height:32px;padding:4px 8px;font-size:12px"></div>{% endif %}
+  {# One form, two submit buttons, and the action rides on the BUTTON - a
+     hidden action input here would be serialised first and shadow the
+     Remove button's value. #}
+  <form method="post" action="/tours/{{ tour['id'] }}/team/{{ mm['id'] }}" style="margin-top:8px">
+    <div class="to-grid">
+      <label class="to-field"><span>Role</span><select name="role">{% for r in vocab['role_presets'] %}<option value="{{ r }}" {% if r == mm['role'] %}selected{% endif %}>{{ r|replace('_',' ')|capitalize }}</option>{% endfor %}</select></label>
+      <label class="to-field"><span>Person</span><select name="person_id"><option value="">—</option>{% for p in people %}<option value="{{ p['id'] }}" {% if p['id'] == mm['person_id'] %}selected{% endif %}>{{ p['name'] }}</option>{% endfor %}</select></label>
+      <div class="to-wide to-checks">{% for s in vocab['scopes'] %}{% if s != 'admin' or viewer['is_owner'] %}<label><input type="checkbox" name="scopes" value="{{ s }}" {% if s in mm['scopes'] %}checked{% endif %}> {{ s }}</label>{% endif %}{% endfor %}</div>
+    </div>
+    <div class="to-bar" style="margin-bottom:0"><button class="to-btn to-btn--small" type="submit" name="action" value="scopes">Save permissions</button>
+      <button class="to-btn to-btn--ghost to-btn--small to-btn--danger" type="submit" name="action" value="remove">Remove from tour</button></div>
+  </form>
+</details>
+{% endfor %}
+{% else %}{{ m.empty("Nobody invited yet", "You are the only person who can open this tour.") }}{% endif %}
+{% endblock %}

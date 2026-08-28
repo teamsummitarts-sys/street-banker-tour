@@ -1,0 +1,32 @@
+{% set nav = 'activity' %}
+{% extends "desk/layout.html" %}
+{% block title %}Activity Log{% endblock %}
+{% block main %}
+<h1 class="dk-h1">Activity Log</h1>
+<p class="dk-sub">Every change, by who, when. Owner-only.</p>
+
+{% if entries %}
+<div class="dk-table-wrap"><table class="dk-table">
+  <thead><tr><th>When</th><th>Who</th><th>Action</th><th>What</th><th>Detail</th></tr></thead>
+  <tbody>
+  {% for a in entries %}
+  <tr>
+    <td style="white-space:nowrap">{{ a.created_at[:16].replace('T', ' ') }}</td>
+    <td>{{ a.user_name }}</td>
+    <td><span class="dk-chip">{{ a.action }}</span></td>
+    <td>{{ a.entity_type }}</td>
+    <td style="font-size:12px">
+      {%- if a.metadata -%}
+        {%- for k in a.metadata -%}
+          {{ k }}: {{ a.metadata[k] }}{{ ' · ' if not loop.last }}
+        {%- endfor -%}
+      {%- else -%}—{%- endif -%}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+<p class="dk-empty">No activity recorded yet.</p>
+{% endif %}
+{% endblock %}

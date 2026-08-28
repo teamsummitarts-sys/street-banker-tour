@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% import "board/_macros.html" as m %}
+{% block title %}{{ l['title'] }} - Team-Up Board - Street Banker{% endblock %}
+{% block head_scripts %}<link rel="stylesheet" href="/static/css/board.css?v=2">{% endblock %}
+{% block content %}
+<div class="tb">
+  <p class="tb-eyebrow"><a href="/tour-board" style="text-decoration:none">Team-Up Board</a> · listing</p>
+  {% if coach %}<div class="tb-coach{% if coach['err'] %} tb-coach-err{% endif %}" role="status"><b>{{ coach['head'] }}</b> {{ coach['items']|join(' ') }} <a href="/tour-board/{{ l['id'] }}/edit">Edit the listing</a>.</div>{% endif %}
+  {% if request.args.get('renewed') %}<div class="tb-ok">Renewed — back on the board for another 60 days.</div>{% endif %}
+  {{ m.card(l, user, {l['user_id']: chips}, {}, show_reply=False) }}
+
+  {% if mine %}
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0">
+    <a class="tb-btn tb-btn--ghost tb-btn--small" href="/tour-board/{{ l['id'] }}/edit">Edit</a>
+    {% if l['effective_status'] == 'open' %}
+      <form method="post" action="/tour-board/{{ l['id'] }}/close"><button class="tb-btn tb-btn--ghost tb-btn--small" type="submit">Close</button></form>
+      <form method="post" action="/tour-board/{{ l['id'] }}/fill"><button class="tb-btn tb-btn--ghost tb-btn--small" type="submit">Mark filled</button></form>
+    {% else %}
+      <form method="post" action="/tour-board/{{ l['id'] }}/renew"><button class="tb-btn tb-btn--small" type="submit">{{ 'Renew' if l['effective_status'] == 'expired' else 'Reopen' }} for 60 days</button></form>
+    {% endif %}
+    <form method="post" action="/tour-board/{{ l['id'] }}/delete" onsubmit="return confirm('Delete this listing and its threads?')"><button class="tb-btn tb-btn--ghost tb-btn--small tb-btn--danger" type="submit">Delete</button></form>
+  </div>
+  <section class="tb-pane" style="margin-top:6px">
+    <h2 class="tb-h2">Replies {% if threads %}<span class="tb-help" style="letter-spacing:0;text-transform:none">{{ threads|length }} thread{{ '' if threads|length == 1 else 's' }} — only you see these</span>{% endif %}</h2>
+    {% if threads %}
+      {% for t in threads %}
+      <a class="tb-thread-row" href="/tour-board/thread/{{ t['id'] }}">
+        <span><b>{{ t['replier_name'] }}</b>{% if t['poster_unread'] %} <span class="tb-unread">{{ t['poster_unread'] }}</span>{% endif %}{% if l['filled_via'] == t['id'] %} <span class="tb-badge tb-badge--match">★ matched</span>{% endif %}<div class="sub">{{ t['last_body'] }}</div></span>
+        <span class="tb-help">{{ t['message_count'] }} · {{ t['ago'] }}</span>
+      </a>
+      {% if l['effective_status'] == 'open' %}<form method="post" action="/tour-board/{{ l['id'] }}/fill" style="margin:-4px 0 8px"><input type="hidden" name="thread_id" value="{{ t['id'] }}"><button class="tb-btn tb-btn--ghost tb-btn--small" type="submit">Filled with {{ t['replier_name'] }}</button></form>{% endif %}
+      {% endfor %}
+    {% else %}<p class="tb-help">No replies yet. Listings with a date window and a draw range get answered first.</p>{% endif %}
+  </section>
+  {% elif l['effective_status'] == 'open' %}
+  <section class="tb-pane is-warm" id="reply" style="margin-top:10px">
+    <h2 class="tb-h2">{{ 'Continue your thread' if my_thread else 'Reply in Street Banker' }}</h2>
+    {% if my_thread %}
+      <p class="tb-help">You already replied — <a href="/tour-board/thread/{{ my_thread['id'] }}">open the thread</a>{% if my_thread['replier_unread'] %} · <span class="tb-unread">{{ my_thread['replier_unread'] }}</span> new{% endif %}.</p>
+    {% else %}
+    <form method="post" action="/tour-board/{{ l['id'] }}/reply" accept-charset="utf-8">
+      <label class="tb-field"><span>Message to {{ l['poster_name'] }}</span>
+        <textarea name="message" rows="4" required placeholder="Who you are, your draw or room, and what you're proposing."></textarea></label>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px">
+        <button class="tb-btn tb-btn--fill" type="submit">Send reply</button>
+        <span class="tb-help">Starts a private thread here — your name and message only; no email address is shared.</span>
+      </div>
+    </form>
+    {% endif %}
+  </section>
+  {% else %}
+  <p class="tb-help" style="margin-top:10px">This listing is {{ l['effective_status'] }}; replies are closed.</p>
+  {% endif %}
+  <p style="margin-top:14px"><a class="tb-btn tb-btn--ghost tb-btn--small" href="/tour-board">← Back to the board</a></p>
+</div>
+<script src="/static/js/board.js?v=1" defer></script>
+{% endblock %}

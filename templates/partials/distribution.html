@@ -1,0 +1,89 @@
+{# Section 10 — Global Distribution.
+
+   The heading sits centred over the bench of release materials; below it
+   come the partner line and five capabilities, and that is the section.
+
+   The five-stage workflow and the "Ready to release?" block were removed
+   from the homepage. Both live on /distribution, which the View
+   distribution guide button opens, and the workflow in particular was
+   printing each stage twice - once in the live detail line and again in
+   the screen-reader fallback beneath it.
+
+   The example release checklist used to live here. It is the same list
+   the Distribute Now button opens at /release-check, where a visitor can
+   actually tick it, so keeping a static copy on the homepage was saying
+   the same thing twice and saying it worse.
+
+   Every claim on this page was checked before it was written. Street
+   Banker prepares and validates the release; delivery goes out through
+   the distribution partnership, and the section says so rather than
+   implying a direct line to a platform that does not exist. #}
+
+{% set ds = distro %}
+{% set img = ds.image %}
+<section class="sbds" id="global-distribution" aria-labelledby="sbds-heading">
+  <figure class="sbds-photo">
+    <picture>
+      {# The phone keeps the passport, the masters, the stems and the
+         checklist; anything wider keeps the whole bench. #}
+      <source media="(max-width: 767px)" type="image/avif"
+              srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/webp"
+              srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source media="(max-width: 767px)" type="image/jpeg"
+              srcset="{% for w in img.close.widths %}{{ img.close.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source type="image/avif"
+              srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.avif {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <source type="image/webp"
+              srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.webp {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+              sizes="100vw">
+      <img class="sbds-img" src="{{ img.wide.stem }}-1180.jpg"
+           srcset="{% for w in img.wide.widths %}{{ img.wide.stem }}-{{ w }}.jpg {{ w }}w{{ ', ' if not loop.last }}{% endfor %}"
+           sizes="100vw"
+           width="{{ img.wide.width }}" height="{{ img.wide.height }}"
+           alt="{{ img.alt }}" loading="lazy" decoding="async">
+    </picture>
+    <span class="sbds-scrim" aria-hidden="true"></span>
+    <div class="sbds-over">
+    <header class="sbds-head">
+    <p class="sbds-eyebrow">
+      <span class="sbds-num">{{ ds.number }}</span>
+      <span class="sbds-rule" aria-hidden="true"></span>
+      {{ ds.eyebrow }}
+    </p>
+    <h2 class="sbds-title" id="sbds-heading">
+      {% for line in ds.headline %}<span>{{ line }}</span>{% endfor %}
+    </h2>
+    <p class="sbds-support">{{ ds.support }}</p>
+    <div class="sbds-ctas">
+      <a class="sbds-cta" href="{{ ds.primary_cta.href }}">{{ ds.primary_cta.label }}
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+      </a>
+      <a class="sbds-guide" href="{{ ds.guide_cta.href }}">{{ ds.guide_cta.label }}</a>
+    </div>
+    <p class="sbds-trust">{{ ds.trust }}</p>
+    </header>
+    </div>
+  </figure>
+
+  <div class="sbds-body">
+    {# Who actually delivers. Stated once, plainly, near the top. #}
+    <p class="sbds-partner">{{ ds.partner.line }}</p>
+
+    <ol class="sbds-caps">
+      {% for num, name, detail in ds.capabilities %}
+      <li class="sbds-cap" data-cap="{{ name | lower | replace(' ', '-') }}">
+        <span class="sbds-cap-num">{{ num }}</span>
+        <span class="sbds-cap-name">{{ name }}</span>
+        <span class="sbds-cap-detail">{{ detail }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+
+  </div>
+</section>

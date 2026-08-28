@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Metadata Passport - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1000px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker · Metadata Passport</div>
+      <h1 class="sb-h1 mt-1">Metadata Passport</h1>
+      <p class="mt-1 max-w-2xl text-sm text-gray-300">Identifier and credit completeness for every track in your catalog — the fields that decide whether your money finds you. Identifiers auto-pull from Deezer and MusicBrainz when you add tracks.</p>
+    </div>
+    {% if rows %}
+    <a href="/metadata-passport/export.csv" class="sb-btn sb-btn-primary">Export CSV</a>
+    {% endif %}
+  </div>
+
+  {% if not rows %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-6">
+    <p class="text-sm text-gray-200">No tracks in your catalog yet. <a href="/catalog" class="font-bold text-sb-gold-bright hover:underline">Add your first track</a> — ISRCs, UPCs, labels, and credits pull in automatically.</p>
+  </section>
+  {% else %}
+
+  <!-- Overall readiness -->
+  <section class="rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground p-6">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div class="sb-label text-gray-300">Catalog Completeness</div>
+        <div class="mt-1 flex items-baseline gap-2">
+          <span class="text-5xl font-black tabular-nums {{ 'text-green-400' if overall >= 85 else 'text-sb-gold-bright' }}">{{ overall }}%</span>
+          <span class="text-sm text-gray-300">across {{ rows|length }} track{{ 's' if rows|length != 1 }}</span>
+        </div>
+      </div>
+      <div class="max-w-xs text-xs leading-relaxed text-gray-300 font-medium">Complete metadata is what registries, DSPs, and collection societies match against. Every missing field below is a place your royalties can leak.</div>
+    </div>
+  </section>
+
+  <!-- Per-track passport -->
+  {% for r in rows %}
+  <section class="rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <div class="flex flex-wrap items-center gap-3">
+      {% if r.track.art %}<img src="{{ r.track.art }}" alt="" class="h-11 w-11 rounded-lg object-cover">{% endif %}
+      <div class="min-w-0 flex-1">
+        <div class="truncate text-sm font-bold">{{ r.track.title }}</div>
+        <div class="text-xs text-gray-300 font-medium">{{ r.track.artist }}</div>
+      </div>
+      <span class="text-sm font-black tabular-nums {{ 'text-green-400' if r.pct == 100 else 'text-sb-gold-bright' }}">{{ r.done }}/{{ r.total }} fields</span>
+    </div>
+    <div class="mt-3 flex flex-wrap gap-1.5">
+      {% for f in r.fields %}
+      <span title="{{ f.value or 'Missing' }}" class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold {{ 'border-green-500/30 bg-green-500/10 text-green-400' if f.ok else 'border-red-500/25 bg-red-500/5 text-red-400/80' }}">
+        {{ '✓' if f.ok else '✕' }} {{ f.label }}
+      </span>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+  {% endif %}
+
+  <p class="px-1 text-xs text-gray-300 font-medium">Sourced from Deezer and MusicBrainz public data plus your own entries. The CSV export carries titles, identifiers, and credits for registrations and distributor uploads.</p>
+</div>
+
+<div class="mx-auto mt-5 max-w-[1100px]">
+  <section class="rounded-2xl border border-sb-gold/30 bg-sb-surface-2 p-5">
+    <div class="flex items-center justify-between">
+      <h2 class="sb-label text-sb-gold-bright">Per-Track Passports (Artist OS)</h2>
+      <a href="/tracks" class="text-xs font-bold text-sb-gold-bright hover:underline">Open Track Passports →</a>
+    </div>
+    {% if os_rows %}
+    <div class="mt-3 space-y-2">
+      {% for r in os_rows %}
+      <a href="/tracks/{{ r.t.id }}" class="flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3 hover:border-sb-gold/40">
+        <span class="h-2.5 w-2.5 shrink-0 rounded-full {{ 'bg-red-500' if r.rep.overall == 'red' else 'bg-amber-400' if r.rep.overall == 'yellow' else 'bg-green-500' }}"></span>
+        <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ r.t.title }}</span>
+        <span class="text-xs sb-num text-gray-300 font-medium">{{ r.rep.pct }}% · {{ r.rep.reds }} red</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="mt-3 text-sm text-gray-300">No per-track passports yet — the full 26-field rights passport lives in Track Passports.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

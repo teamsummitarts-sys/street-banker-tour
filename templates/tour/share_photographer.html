@@ -1,0 +1,13 @@
+{% extends "tour/_public.html" %}
+{% block title %}Photographer brief · {{ show['venue'] }}{% endblock %}
+{% block body %}
+<div class="to-paper">
+  <span class="tag">Photographer brief · {{ tour['name'] }}</span>
+  <h2 style="font-size:20px">{{ fmt_day(show['date']) }} — {{ show['venue'] }}{% if show['city'] %}, {{ show['city'] }}{% endif %}</h2>
+  {% if venue and venue['address'] %}<p class="meta">{{ venue['address'] }}, {{ venue['city'] }}</p>{% endif %}
+  <h3 style="margin-top:14px">Times</h3>
+  {% if schedule %}<table><tbody>{% for r in schedule %}<tr><td style="width:90px"><b>{{ fmt_time(r['start_time']) or 'TBD' }}</b></td><td>{{ r['title'] }}</td><td class="meta">{{ r['location'] }}</td></tr>{% endfor %}</tbody></table>{% else %}<p class="meta">No times entered yet.</p>{% endif %}
+  <h3 style="margin-top:14px">Shot list</h3>
+  <table><tbody>{% for c in content %}<tr><td>{{ c['item']|replace('_',' ')|capitalize }}</td><td class="meta">{{ c['assignee'] or '' }}</td><td class="meta">{{ fmt_time(c['due_time']) if c['due_time'] else '' }}</td><td class="meta">{{ c['status'] }}</td></tr>{% endfor %}</tbody></table>
+</div>
+{% endblock %}

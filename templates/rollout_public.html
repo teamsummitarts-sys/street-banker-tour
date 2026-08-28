@@ -1,0 +1,93 @@
+{# Rollout Engine, explained before an account is asked for, with the
+   example campaign printed in full. Grouped by what is true: in the app
+   today, schedule-ready rather than published for you, and coming soon.
+   Nothing here posts itself, and the page says so. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rollout Engine · Street Banker</title>
+  <meta name="description" content="Release calendars, content schedules, tour routing and follow-through — what Rollout Engine does today, and what it does not do for you.">
+  <link rel="stylesheet" href="/static/css/page-guard.css?v=1">
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+  <link rel="stylesheet" href="/static/css/public-header.css?v=4">
+</head>
+<body class="min-h-screen bg-sb-ground text-sb-ink antialiased">
+
+{% include "partials/public_header.html" %}
+
+<main id="main" class="mx-auto max-w-3xl px-6 py-14 lg:px-10 lg:py-20">
+  <div class="sb-label text-sb-gold">Rollout Engine</div>
+  <h1 class="mt-4 text-[clamp(2rem,5vw,2.9rem)] font-black uppercase leading-[0.98] tracking-tight text-sb-ink-2">
+    Plan it. Launch it. Live it.
+  </h1>
+  <p class="mt-5 max-w-xl text-base leading-relaxed text-sb-ink-2">
+    From release calendars to content drops and tour routing. Here is what that
+    means in the app, what it hands back to you, and what it will not do on
+    your behalf.
+  </p>
+
+  <h2 class="mt-12 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">How it runs</h2>
+  <ol class="mt-5 border-l border-[rgb(201_168_106_/_0.26)]">
+    {% for step, body in workflow %}
+    <li class="relative pb-5 pl-5">
+      <span class="absolute -left-[4px] top-[7px] h-[7px] w-[7px] rounded-full bg-sb-gold" aria-hidden="true"></span>
+      <span class="sb-label block text-sb-gold">{{ step }}</span>
+      <span class="mt-1 block max-w-xl text-sm leading-relaxed text-sb-ink-2">{{ body }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+
+  <h2 class="mt-12 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">Plan lengths</h2>
+  <p class="mt-3 max-w-xl text-sm leading-relaxed text-sb-ink-2">
+    {{ plan_lengths | join(", ") }} — chosen from the release date, not from a
+    template.
+  </p>
+
+  <section class="mt-12 rounded border border-[rgb(201_168_106_/_0.26)] bg-sb-surface-1 p-5" aria-labelledby="sample-heading">
+    <div class="flex flex-wrap items-baseline justify-between gap-3">
+      <h2 class="sb-label text-sb-gold" id="sample-heading">{{ sample.label }}</h2>
+      <span class="text-xs text-sb-ink-2">{{ sample.length }}</span>
+    </div>
+    <ol class="mt-3">
+      {% for day, item, status in sample['entries'] %}
+      <li class="grid grid-cols-[64px_minmax(0,1fr)_auto] items-baseline gap-3 border-t border-white/[0.07] py-2 text-sm">
+        <span class="sb-num text-sb-gold">{{ day }}</span>
+        <span class="text-sb-ink">{{ item }}</span>
+        <span class="sb-label whitespace-nowrap text-sb-ink-2">{{ status }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+    <p class="mt-4 text-xs leading-relaxed text-sb-ink-2">{{ sample.note }}</p>
+  </section>
+
+  <h2 class="mt-12 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">Campaign statuses</h2>
+  <p class="mt-3 max-w-xl text-sm leading-relaxed text-sb-ink-2">
+    {{ statuses | join(" · ") }}
+  </p>
+
+  {% for heading, items in sections %}
+  <h2 class="mt-12 text-sm font-semibold uppercase tracking-[0.2em] text-sb-gold">{{ heading }}</h2>
+  <dl class="mt-4 space-y-5">
+    {% for title, body in items %}
+    <div class="border-t border-white/[0.07] pt-4">
+      <dt class="text-base font-semibold text-sb-ink">{{ title }}</dt>
+      <dd class="mt-1.5 max-w-xl text-sm leading-relaxed text-sb-ink-2">{{ body }}</dd>
+    </div>
+    {% endfor %}
+  </dl>
+  {% endfor %}
+
+  <div class="mt-12 flex flex-wrap gap-3">
+    <a href="/signup" class="inline-flex min-h-[48px] items-center justify-center rounded-sm bg-sb-gold px-6 text-xs font-bold uppercase tracking-[0.1em] text-sb-surface-2 transition-colors hover:bg-sb-gold-bright">Create an account to build one</a>
+    <a href="/creative-studio" class="inline-flex min-h-[48px] items-center justify-center rounded-sm border border-[rgb(201_168_106_/_0.26)] px-6 text-xs font-bold uppercase tracking-[0.1em] text-sb-ink transition-colors hover:border-sb-gold hover:text-sb-gold">Where the assets come from</a>
+  </div>
+</main>
+
+<footer class="mx-auto max-w-3xl px-6 pb-14 text-xs text-sb-ink-3 lg:px-10">
+  <a href="/#rollout-engine" class="font-semibold hover:text-sb-ink">← Back to Street Banker</a>
+</footer>
+</body>
+</html>

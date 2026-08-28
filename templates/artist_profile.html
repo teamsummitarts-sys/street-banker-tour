@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Artist Profile - Street Banker{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[900px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker · Primary Artist Profile</div>
+      <h1 class="sb-h1 mt-1">Label-Facing One-Sheet</h1>
+      <p class="mt-1 max-w-2xl text-sm text-gray-300">How Street Banker presents you to labels, partners, and the review desk — built from your press kit, campaigns, and real numbers.</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="window.print()" class="rounded-lg bg-sb-surface-2 px-4 py-2 text-sm font-bold text-sb-gold-bright ring-1 ring-sb-gold/50 hover:bg-black">Print / PDF</button>
+      <a href="/epk" class="sb-btn sb-btn-secondary">Edit in Press Office</a>
+    </div>
+  </div>
+
+  <!-- The one-sheet -->
+  <div id="one-sheet" class="overflow-hidden rounded-2xl border border-sb-gold/30 bg-gradient-to-b from-sb-surface-2 to-sb-ground">
+    <!-- Header plate -->
+    <div class="flex flex-wrap items-center gap-6 border-b border-sb-gold/25 p-6">
+      {% if e.photo %}
+      <img src="{{ e.photo }}" alt="{{ e.name }}" class="h-24 w-24 shrink-0 rounded-xl border border-sb-gold/40 object-cover">
+      {% else %}
+      <span class="grid h-24 w-24 shrink-0 place-items-center rounded-xl border border-sb-gold/40 bg-sb-gold/10 text-3xl font-black text-sb-ink">{{ e.initials }}</span>
+      {% endif %}
+      <div class="min-w-0 flex-1">
+        <h2 class="text-2xl font-black uppercase tracking-tight text-white">{{ e.name }}</h2>
+        <div class="mt-0.5 text-sm text-sb-gold-bright">{{ e.profile.tagline }}</div>
+        <div class="mt-1 text-xs text-gray-300 font-medium">{{ e.profile.location }} · {{ e.profile.genres | join(' · ') }}</div>
+      </div>
+      <div class="text-right">
+        <div class="text-4xl font-black tabular-nums {{ 'text-green-400' if q.total >= 75 else 'text-sb-gold-bright' }}">{{ q.total }}</div>
+        <div class="sb-label text-gray-300">SB Score</div>
+        <div class="mt-0.5 text-xs font-bold uppercase {{ 'text-green-400' if q.recommendation == 'High potential' else 'text-sb-gold-bright' }}">{{ q.recommendation }}</div>
+      </div>
+    </div>
+
+    <div class="space-y-6 p-6">
+      <!-- Badges -->
+      {% if q.badges %}
+      <div class="flex flex-wrap gap-1.5">
+        {% for b in q.badges %}
+        <span class="rounded-md border border-sb-gold/40 bg-sb-gold/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-sb-gold-bright">{{ b }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Bio -->
+      <div>
+        <h3 class="sb-label text-sb-gold">Bio</h3>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-200">{{ e.profile.bio }}</p>
+      </div>
+
+      <!-- Real numbers strip -->
+      <div class="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/10 sm:grid-cols-4">
+        {% for label, value in [('Campaigns', campaigns | length),
+                                 ('Link visits', campaigns | sum(attribute='visits')),
+                                 ('Service clicks', campaigns | sum(attribute='clicks')),
+                                 ('Fans owned', fan_count)] %}
+        <div class="bg-sb-ground px-3 py-4 text-center">
+          <div class="text-xl font-black tabular-nums text-sb-ink">{{ value }}</div>
+          <div class="sb-label mt-0.5 text-gray-300">{{ label }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Campaign history -->
+      {% if campaigns %}
+      <div>
+        <h3 class="sb-label text-sb-gold">Campaign History</h3>
+        <div class="mt-2 space-y-1.5">
+          {% for c in campaigns[:5] %}
+          <div class="flex flex-wrap items-center gap-3 rounded-lg border border-white/5 bg-black/30 px-3 py-2 text-xs">
+            <span class="min-w-0 flex-1 truncate font-semibold text-gray-100">{{ c.title }}</span>
+            <span class="rounded bg-white/10 px-1.5 py-0.5 text-xs font-bold uppercase text-gray-300">{{ c.eff_status }}</span>
+            <span class="sb-num text-gray-300">{{ c.visits }}v · {{ c.clicks }}c · <span class="text-sb-gold-bright">{{ c.fans }}f</span></span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Press + contact -->
+      <div class="grid gap-6 sm:grid-cols-2">
+        {% if e.profile.press %}
+        <div>
+          <h3 class="sb-label text-sb-gold">Press</h3>
+          {% for pq in e.profile.press[:2] %}
+          <blockquote class="mt-2 border-l-2 border-sb-gold/60 pl-3">
+            <p class="text-sm italic text-gray-200">“{{ pq.quote }}”</p>
+            <footer class="mt-1 text-xs font-bold uppercase tracking-wide text-gray-300">— {{ pq.source }}</footer>
+          </blockquote>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div>
+          <h3 class="sb-label text-sb-gold">Contact</h3>
+          <div class="mt-2 space-y-1 text-xs text-gray-200">
+            {% for key, label in [('booking', 'Booking'), ('press', 'Press'), ('management', 'Mgmt')] %}
+            {% if e.profile.contact[key] %}<div><span class="font-bold text-gray-300">{{ label }}:</span> {{ e.profile.contact[key] }}</div>{% endif %}
+            {% endfor %}
+            {% for s in e.profile.socials %}<div><span class="font-bold text-gray-300">{{ s.label }}:</span> {{ s.handle }}</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-white/10 pt-4 text-xs font-bold uppercase tracking-[0.3em] text-gray-300">Prepared by Street Banker · Data from live account activity</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @media print {
+    body * { visibility: hidden; }
+    #one-sheet, #one-sheet * { visibility: visible; }
+    #one-sheet { position: absolute; left: 0; top: 0; width: 100%; border: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+</style>
+{% endblock %}

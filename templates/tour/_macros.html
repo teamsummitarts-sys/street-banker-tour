@@ -1,0 +1,59 @@
+{# TOUR form macros. Subscript access everywhere (d['x']) on purpose —
+   see tests/test_no_object_leaks.py. #}
+
+{% macro field(name, label, value='', type='text', placeholder='', required=False, wide=False, step=None) -%}
+<label class="to-field{% if wide %} to-wide{% endif %}">
+  <span>{{ label }}</span>
+  <input type="{{ type }}" name="{{ name }}" value="{{ value if value is not none else '' }}"
+         {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+         {% if required %}required{% endif %}{% if step %} step="{{ step }}"{% endif %}>
+</label>
+{%- endmacro %}
+
+{% macro select(name, label, options, value='', labels=None, blank=None, wide=False) -%}
+<label class="to-field{% if wide %} to-wide{% endif %}">
+  <span>{{ label }}</span>
+  <select name="{{ name }}">
+    {% if blank is not none %}<option value="">{{ blank }}</option>{% endif %}
+    {% for opt in options %}
+      {% set key = opt[0] if opt is not string and opt is iterable else opt %}
+      {% set text = opt[1] if opt is not string and opt is iterable else (labels[opt] if labels and opt in labels else opt|replace('_',' ')|capitalize) %}
+      <option value="{{ key }}" {% if key == value %}selected{% endif %}>{{ text }}</option>
+    {% endfor %}
+  </select>
+</label>
+{%- endmacro %}
+
+{% macro textarea(name, label, value='', rows=3, placeholder='') -%}
+<label class="to-field to-wide">
+  <span>{{ label }}</span>
+  <textarea name="{{ name }}" rows="{{ rows }}" {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}>{{ value or '' }}</textarea>
+</label>
+{%- endmacro %}
+
+{% macro check(name, label, on=False, value='1') -%}
+<label><input type="checkbox" name="{{ name }}" value="{{ value }}" {% if on %}checked{% endif %}> {{ label }}</label>
+{%- endmacro %}
+
+{% macro chip(state) -%}
+{% if state in ('confirmed','complete','approved','checked_in','settled','live') %}<span class="to-chip to-chip--ok">{{ state|replace('_',' ') }}</span>
+{% elif state in ('waiting','pending','request','changed','hold','planned','open') %}<span class="to-chip to-chip--gold">{{ state|replace('_',' ') }}</span>
+{% elif state in ('cancelled','denied','no_show','disputed','incomplete') %}<span class="to-chip to-chip--warn">{{ state|replace('_',' ') }}</span>
+{% else %}<span class="to-chip">{{ (state or '—')|replace('_',' ') }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro ready(pct) -%}
+<span class="to-ready {{ 'lo' if pct < 50 else ('mid' if pct < 85 else 'hi') }}"><b>{{ pct }}%</b><small class="to-muted">ready</small></span>
+{%- endmacro %}
+
+{% macro sev(s) -%}
+{% if s == 'critical' %}<span class="to-chip to-chip--warn">Critical</span>{% elif s == 'important' %}<span class="to-chip to-chip--gold">Important</span>{% else %}<span class="to-chip to-chip--info">Info</span>{% endif %}
+{%- endmacro %}
+
+{% macro empty(title, body, href=None, label=None) -%}
+<div class="to-empty">
+  <div style="font-weight:800;color:var(--to-copy);font-size:14px">{{ title }}</div>
+  <div style="margin-top:4px">{{ body }}</div>
+  {% if href %}<div style="margin-top:10px"><a class="to-btn to-btn--small" href="{{ href }}">{{ label }}</a></div>{% endif %}
+</div>
+{%- endmacro %}

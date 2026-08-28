@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Fan CRM - Street Banker Links{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-[1100px] space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <div class="sb-label text-sb-gold">Street Banker Links · Fan CRM</div>
+      <h1 class="sb-h1 mt-1">Your Fans</h1>
+      <p class="mt-1 max-w-xl text-sm text-gray-300">Every email captured, pre-save made, and click tracked — the audience you own, scored by intent.</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="/links/fans/export.csv" class="sb-btn sb-btn-secondary">Export CSV</a>
+      <a href="/links" class="sb-btn sb-btn-secondary">← Campaigns</a>
+    </div>
+  </div>
+
+  <form method="get" class="flex gap-2">
+    <input name="q" value="{{ q }}" placeholder="Search by email or name..." class="w-full max-w-sm rounded-lg border border-white/10 bg-sb-surface-1 px-3 py-2 text-sm text-gray-100 placeholder-gray-300 focus:border-amber-500/50 focus:outline-none">
+    <button class="sb-btn sb-btn-secondary">Search</button>
+  </form>
+
+  {% if fans %}
+  <section class="overflow-x-auto rounded-2xl border border-white/10 bg-sb-surface-1 p-5">
+    <table class="w-full text-left text-sm">
+      <thead>
+        <tr class="border-b border-white/5 text-xs uppercase tracking-wide text-gray-300 font-medium">
+          <th class="py-2 pr-4 font-medium">Fan</th>
+          <th class="py-2 pr-4 font-medium">Intent</th>
+          <th class="py-2 pr-4 text-right font-medium">Pre-saves</th>
+          <th class="py-2 pr-4 text-right font-medium">Captures</th>
+          <th class="py-2 pr-4 font-medium">First Campaign</th>
+          <th class="py-2 font-medium">Last Active</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in fans %}
+        <tr class="border-b border-white/5 last:border-0">
+          <td class="py-3 pr-4">
+            <div class="font-semibold text-gray-100">{{ f.email }}</div>
+            {% if f.name %}<div class="text-xs text-gray-300 font-medium">{{ f.name }}</div>{% endif %}
+          </td>
+          <td class="py-3 pr-4">
+            <div class="flex items-center gap-2">
+              <span class="rounded-md px-2 py-0.5 text-xs font-bold uppercase {{ 'bg-green-500/15 text-green-400' if f.intent_level == 'Superfan' else ('bg-amber-500/15 text-amber-400' if f.intent_level in ('Hot', 'Warm') else 'bg-white/10 text-gray-300') }}">{{ f.intent_level }}</span>
+              <span class="text-xs font-bold sb-num text-gray-200">{{ f.intent_score }}</span>
+            </div>
+          </td>
+          <td class="py-3 pr-4 text-right sb-num text-gray-200">{{ f.total_presaves }}</td>
+          <td class="py-3 pr-4 text-right sb-num text-gray-200">{{ f.total_captures }}</td>
+          <td class="py-3 pr-4 text-xs text-gray-300 font-medium">{{ campaign_titles.get(f.first_campaign_id, '—') }}</td>
+          <td class="py-3 text-xs sb-num text-gray-300 font-medium">{{ f.updated[:10] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% else %}
+  <div class="rounded-2xl border border-dashed border-sb-gold/30 py-10 text-center">
+    <div class="text-sm font-bold text-gray-200">No fans captured yet</div>
+    <p class="mx-auto mt-1 max-w-md text-xs text-gray-300">Enable email capture on a campaign and every signup lands here — with consent logged and intent scored.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
