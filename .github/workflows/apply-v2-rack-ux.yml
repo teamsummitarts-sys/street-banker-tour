@@ -1,0 +1,27 @@
+name: Apply V2 Rack UX
+on:
+  push:
+    paths:
+      - scripts/v2_rack_ux.py
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply Rack UX patch
+        run: python scripts/v2_rack_ux.py
+      - name: Commit generated files and remove bootstrap
+        run: |
+          rm -f scripts/v2_rack_ux.py .github/workflows/apply-v2-rack-ux.yml
+          git config user.name "street-banker-v2-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Build guided Rack session experience" || exit 0
+          git push origin main
