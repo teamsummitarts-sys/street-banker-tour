@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - scripts/v2_rack_ux.py
+      - .github/workflows/apply-v2-rack-ux.yml
 jobs:
   apply:
     runs-on: ubuntu-latest
