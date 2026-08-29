@@ -2,8 +2,22 @@
 
 {% block title %}Track Passports - Street Banker{% endblock %}
 
+
+{% block head_scripts %}{{ super() }}<link rel="stylesheet" href="/static/css/studio-flow.css?v=1">{% endblock %}
+
 {% block content %}
-<div class="mx-auto max-w-[1000px] space-y-5">
+<div class="mx-auto max-w-[1000px] space-y-5">{% set flow_here = 'track' %}{% set flow_next_title = 'Start with the song record.' %}{% set flow_next_copy = 'Create or choose the track first so rights, metadata and every downstream asset have a single identity.' %}{% set flow_primary_href = '/rack' %}{% set flow_primary_label = 'Open Rack' %}
+
+<section class="sb-studio-flow" aria-label="Studio and assets workflow">
+  <div class="sb-studio-flow__head"><div><div class="sb-label sb-label-gold">Studio pipeline</div><div class="sb-studio-flow__title">Track → master → release asset</div><div class="sb-studio-flow__sub">One production path across the tools. Each stage hands its real output to the next.</div></div><div class="sb-studio-flow__state">{{ flow_state|default('production') }}</div></div>
+  <nav class="sb-studio-flow__rail" aria-label="Production stages">
+    {% for href,name,note,key in [('/tracks','Track','identity + rights','track'),('/rack','Rack','shape + measure','rack'),('/audio-studio','Stems','split + isolate','stems'),('/audio-studio','Versions','dub + campaign cuts','versions'),('/rack','Master','bounce + loudness','master'),('/vault','Vault','archive deliverables','vault'),('/tracks','Passport','release truth','passport')] %}
+    <a href="{{ href }}" class="sb-studio-flow__step {{ 'is-here' if flow_here|default('') == key else '' }}"><span class="sb-studio-flow__num">0{{ loop.index }}</span><span class="sb-studio-flow__name">{{ name }}</span><span class="sb-studio-flow__note">{{ note }}</span></a>
+    {% endfor %}
+  </nav>
+  <div class="sb-studio-flow__actions"><p><strong>{{ flow_next_title|default('Keep the asset moving.') }}</strong> {{ flow_next_copy|default('Do the work here, then send the result into the next stage instead of starting over on another page.') }}</p><a href="{{ flow_primary_href|default('/rack') }}" class="sb-btn sb-btn-primary sb-btn-sm">{{ flow_primary_label|default('Open Rack') }}</a><a href="/vault" class="sb-btn sb-btn-secondary sb-btn-sm">Open Vault</a></div>
+</section>
+
   <div>
     <div class="sb-label text-sb-gold">Street Banker · Artist OS</div>
     <h1 class="sb-h1 mt-1">Track Passports</h1>

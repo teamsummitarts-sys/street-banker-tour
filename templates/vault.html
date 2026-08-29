@@ -2,8 +2,22 @@
 
 {% block title %}Asset Vault - Street Banker{% endblock %}
 
+
+{% block head_scripts %}{{ super() }}<link rel="stylesheet" href="/static/css/studio-flow.css?v=1">{% endblock %}
+
 {% block content %}
-<div class="mx-auto max-w-[1100px] space-y-5">
+<div class="mx-auto max-w-[1100px] space-y-5">{% set flow_here = 'vault' %}{% set flow_next_title = 'Archive the deliverable.' %}{% set flow_next_copy = 'This is the handoff point for masters, stems, art and campaign files. The next move is attaching release truth in the Track Passport.' %}{% set flow_primary_href = '/tracks' %}{% set flow_primary_label = 'Open Passports' %}
+
+<section class="sb-studio-flow" aria-label="Studio and assets workflow">
+  <div class="sb-studio-flow__head"><div><div class="sb-label sb-label-gold">Studio pipeline</div><div class="sb-studio-flow__title">Track → master → release asset</div><div class="sb-studio-flow__sub">One production path across the tools. Each stage hands its real output to the next.</div></div><div class="sb-studio-flow__state">{{ flow_state|default('production') }}</div></div>
+  <nav class="sb-studio-flow__rail" aria-label="Production stages">
+    {% for href,name,note,key in [('/tracks','Track','identity + rights','track'),('/rack','Rack','shape + measure','rack'),('/audio-studio','Stems','split + isolate','stems'),('/audio-studio','Versions','dub + campaign cuts','versions'),('/rack','Master','bounce + loudness','master'),('/vault','Vault','archive deliverables','vault'),('/tracks','Passport','release truth','passport')] %}
+    <a href="{{ href }}" class="sb-studio-flow__step {{ 'is-here' if flow_here|default('') == key else '' }}"><span class="sb-studio-flow__num">0{{ loop.index }}</span><span class="sb-studio-flow__name">{{ name }}</span><span class="sb-studio-flow__note">{{ note }}</span></a>
+    {% endfor %}
+  </nav>
+  <div class="sb-studio-flow__actions"><p><strong>{{ flow_next_title|default('Keep the asset moving.') }}</strong> {{ flow_next_copy|default('Do the work here, then send the result into the next stage instead of starting over on another page.') }}</p><a href="{{ flow_primary_href|default('/rack') }}" class="sb-btn sb-btn-primary sb-btn-sm">{{ flow_primary_label|default('Open Rack') }}</a><a href="/vault" class="sb-btn sb-btn-secondary sb-btn-sm">Open Vault</a></div>
+</section>
+
   <div class="flex flex-wrap items-end justify-between gap-4">
     <div>
       <div class="sb-label text-sb-gold">Street Banker · Asset Vault</div>
@@ -17,7 +31,8 @@
   </div>
 
   <!-- Direct vault upload -->
-  <section class="rounded-2xl border border-sb-gold/25 bg-sb-surface-2 p-4">
+  <section class="sb-vault-drop">
+    <div class="sb-label sb-label-gold">Receiving dock</div><div class="mt-1 text-sm font-bold">File the finished asset</div><p class="mt-1 mb-3 text-xs text-gray-300">Masters, stems, art and campaign files land here with a useful label so the next person can actually find them.</p>
     <form id="vault-upload-form" class="flex flex-wrap items-center gap-2">
       <label class="cursor-pointer rounded-lg bg-sb-gold-bright px-4 py-2 text-xs font-black text-sb-on-gold hover:bg-sb-gold-bright">
         Upload to Vault<input id="vault-file" type="file" class="hidden">
