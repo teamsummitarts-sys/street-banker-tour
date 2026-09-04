@@ -12,15 +12,38 @@ Studio, and Remix Lab references: near-black equipment surfaces, warm brass
 rules, dense operational rows, restrained glow, numbered desks, and one clear
 gold action. It does not reproduce any one reference screen.
 
+## Locked design flow
+
+The owner has locked the three supplied references as the permanent interaction
+grammar for the V2 signed-in product. They are a sequence, not three alternate
+skins:
+
+1. **Manager Control Room — Studio reference.** The first view behaves like an
+   executive recording console: compact project intake, a live operating chain,
+   the Manager in command, and the full company present as working equipment.
+2. **Guided Desk Workflow — Remix Lab reference.** Opening any team member
+   exposes that desk's two capabilities as a deliberate path from assignment to
+   evidence to a Manager-ready output. The user always knows the current step
+   and the next valid action.
+3. **Mission Control — Tour reference.** Persisted deadlines, blockers,
+   approvals, and recorded activity resolve into a narrow decision surface with
+   one clear next executive action.
+
+The references set density, hierarchy, material finish, and action clarity.
+Their sample artists, track data, tour data, percentages, maps, photography,
+and exact screen compositions are not product data and must never be copied or
+presented as real. V2 must remain a distinct Company OS rather than a duplicate
+of V1, Claude's implementation, or any individual reference.
+
 ## Product hierarchy
 
 1. **Manager command:** the owner records an objective, success condition, and
    decision deadline.
-2. **Operating plan:** the Manager proposes accountable work without claiming
+2. **Ten-person company:** Manager is seat 01 and all ten desks, including both
+   capabilities per desk, are findable in the first desktop viewport.
+3. **Operating plan:** the Manager proposes accountable work without claiming
    that anyone has started it.
-3. **Ten-person company:** a continuous numbered matrix exposes every desk and
-   both of its approved capabilities.
-4. **Desk workspace:** assignments, status transitions, evidence, and
+4. **Guided desk workflow:** assignments, status transitions, evidence, and
    deliverables remain tied to their responsible specialist.
 5. **Mission Control:** only persisted approvals, blockers, reviews, deadlines,
    and activity are surfaced.

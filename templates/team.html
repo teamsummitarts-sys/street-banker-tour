@@ -2,18 +2,23 @@
 
 {% block title %}Company OS - Street Banker V2{% endblock %}
 
+{% block head_scripts %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/company-os-signal-room.css') }}?v=1">
+{% endblock %}
+
 {% block content %}
 <!--
 DIRECTION CONTRACT
-THESIS: Street Banker is the artist's already-staffed company; this surface refuses the generic staff directory and passive dashboard.
-OWN-WORLD: Near-black control-room surfaces, warm brass rules, compact ledger rows, numbered desks, restrained editorial type, and one decisive amber action.
-STORY: The owner gives the Manager an outcome, approves the operating plan, watches accountable work move across nine desks, and reviews stored deliverables.
-FIRST VIEWPORT: Manager command occupies the main field, all ten seats form one continuous matrix beneath it, and real decisions collect in a narrow Mission Control rail.
-FORM: Company switchboard, first-choice pinned owner direction; seed key: user-pinned-company-os.
+THESIS: Street Banker is the artist's staffed executive signal room, not a staff directory or passive dashboard.
+OWN-WORLD: A near-black studio console with warm metal controls, live status rails, numbered team channels, and one decisive brass action.
+STORY: Manager Control Room accepts the objective; the ten-desk console exposes accountable ownership; each desk moves through a guided capability workflow; Mission Control returns only stored decisions and evidence.
+FIRST VIEWPORT: Compact Manager intake, active operation, Mission Control, and all ten team desks are visible together before the detailed workspace.
+FORM: User-pinned three-reference flow — Studio Control Room -> Remix Lab workflow -> Tour Mission Control. The screens are grammar, never copied product data.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 -->
 
 <style>
+@layer company-os-legacy {
   .sb2-company-os {
     --sb2-ground: #060707;
     --sb2-surface: #0d0f0f;
@@ -636,6 +641,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     .sb2-seat[aria-pressed="true"],
     .sb2-tab[aria-selected="true"] { outline: 2px solid Highlight; }
   }
+}
 </style>
 
 <div class="sb2-company-os" id="sb2-company-os" data-app="company-os" data-load-state="loading" aria-busy="true">
@@ -649,13 +655,13 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         </svg>
         <span>
           <span class="sb2-brand-name">STREET BANKER</span>
-          <span class="sb2-brand-product">Company OS</span>
+          <span class="sb2-brand-product">Executive Signal Room</span>
         </span>
       </div>
       <nav class="sb2-nav" aria-label="Company OS workspace">
         <a href="#sb2-manager" aria-current="page">Manager</a>
-        <a href="#sb2-workspace">Work</a>
         <a href="#sb2-company-index">Team</a>
+        <a href="#sb2-workspace">Work</a>
         <a href="/rollout-studio">Projects</a>
         <a href="/vault">Vault</a>
       </nav>
@@ -672,12 +678,17 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       <main class="sb2-main">
         <div class="sb2-panel sb2-manager" id="sb2-manager" role="region" aria-labelledby="sb2-manager-title">
           <div class="sb2-manager-command">
-            <h1 id="sb2-manager-title">Ten desks. One direction.</h1>
-            <p class="sb2-manager-intro">Set the outcome. Your Manager builds the operating plan, assigns the company, and brings back decisions, documents, and finished work.</p>
+            <div class="sb2-manager-console-label">
+              <span class="sb2-seat-id">MANAGER / SEAT 01</span>
+              <span class="sb2-private-signal">Private owner channel</span>
+            </div>
+            <h1 id="sb2-manager-title">Manager Control Room</h1>
+            <p class="sb2-manager-intro">Give one clear outcome. Your Manager converts it into an accountable company plan and returns only decisions, evidence, and finished work.</p>
+            <button class="sb2-mobile-objective-toggle" id="sb2-mobile-objective-toggle" type="button" aria-controls="sb2-objective-form" aria-expanded="false">Set or change objective</button>
             <form class="sb2-objective-form" id="sb2-objective-form" novalidate>
               <div class="sb2-field">
                 <label for="sb2-objective-title">What needs to happen?</label>
-                <textarea class="sb2-input" id="sb2-objective-title" name="title" maxlength="180" required aria-describedby="sb2-objective-help sb2-objective-error" placeholder="Launch the next single with the music, rights, creative, campaign, and press ready by the decision date."></textarea>
+                <textarea class="sb2-input" id="sb2-objective-title" name="title" maxlength="180" required aria-describedby="sb2-objective-help sb2-objective-error" placeholder="What outcome should your company deliver?"></textarea>
               </div>
               <div class="sb2-field-row">
                 <div class="sb2-field">
@@ -709,9 +720,9 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
           <div class="sb2-manager-desk">
             <div class="sb2-manager-identity">
               <div>
-                <span class="sb2-seat-id">SEAT 01 / LEAD</span>
-                <h2>Your Manager</h2>
-                <p>Executive Manager</p>
+                <span class="sb2-seat-id">ACTIVE OPERATION</span>
+                <h2>Your Manager is in command</h2>
+                <p>Objective → plan → accountable desks → approval</p>
               </div>
               <span class="sb2-status" id="sb2-manager-state">Loading records</span>
             </div>
@@ -720,31 +731,37 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
               <p class="sb2-objective-title">Loading company records</p>
               <div class="sb2-objective-meta">Your private operating records are being loaded.</div>
             </div>
+            <div class="sb2-flow" id="sb2-flow" role="list" aria-label="Company operating signal chain">
+              <div class="sb2-flow-step" role="listitem"><span>1 · Objective</span><strong data-flow-count="objectives">—</strong></div>
+              <div class="sb2-flow-step" role="listitem"><span>2 · Manager plan</span><strong data-flow-count="assignments">—</strong></div>
+              <div class="sb2-flow-step" role="listitem"><span>3 · Evidence</span><strong data-flow-count="deliverables">—</strong></div>
+              <div class="sb2-flow-step" role="listitem"><span>4 · Approved</span><strong data-flow-count="approved">—</strong></div>
+            </div>
           </div>
-        </div>
-
-        <div class="sb2-flow" id="sb2-flow" role="list" aria-label="Company operating flow">
-          <div class="sb2-flow-step" role="listitem"><span>Objective</span><strong data-flow-count="objectives">—</strong></div>
-          <div class="sb2-flow-step" role="listitem"><span>Assignments</span><strong data-flow-count="assignments">—</strong></div>
-          <div class="sb2-flow-step" role="listitem"><span>Deliverables</span><strong data-flow-count="deliverables">—</strong></div>
-          <div class="sb2-flow-step" role="listitem"><span>Approved</span><strong data-flow-count="approved">—</strong></div>
         </div>
 
         <div class="sb2-company-index" id="sb2-company-index" role="region" aria-labelledby="sb2-company-index-title">
           <div class="sb2-index-heading">
-            <h2 id="sb2-company-index-title">Your ten-person company</h2>
-            <p>Select a desk to inspect its assignment and deliverables.</p>
+            <div>
+              <h2 id="sb2-company-index-title">Your Manager + nine specialist desks</h2>
+              <p>All ten seats are active parts of one company. Choose a desk to enter its workflow.</p>
+            </div>
+            <span class="sb2-company-count">10 desks / 20 capabilities</span>
           </div>
           <ol class="sb2-roster" aria-label="Street Banker ten-person company">
             {% for member in digital_team|default([], true) %}
             <li>
-              <button class="sb2-seat" type="button" data-desk-key="{{ member.key }}" aria-pressed="{{ 'true' if loop.first else 'false' }}" aria-label="Seat {{ member.seat }}, {{ member.name }}, loading records, open desk">
+              <button class="sb2-seat" type="button" data-desk-key="{{ member.key }}" aria-pressed="{{ 'true' if loop.first else 'false' }}" aria-label="Seat {{ member.seat }}, {{ member.name }}, {{ member.role }}, capabilities {{ member.capabilities[0].name }} and {{ member.capabilities[1].name }}, checking records, open desk">
                 <span class="sb2-seat-top">
                   <span class="sb2-seat-id">{{ member.seat }}</span>
-                  <span class="sb2-seat-state" data-seat-state>Loading records</span>
+                  <span class="sb2-seat-state" data-seat-state>Checking records</span>
                 </span>
                 <strong>{{ member.name }}</strong>
-                <span class="sb2-seat-features">{{ member.capabilities[0].name }} / {{ member.capabilities[1].name }}</span>
+                <span class="sb2-seat-role">{{ member.role }}</span>
+                <span class="sb2-seat-features" aria-label="Two capabilities">
+                  <span>{{ member.capabilities[0].name }}</span>
+                  <span>{{ member.capabilities[1].name }}</span>
+                </span>
               </button>
             </li>
             {% endfor %}
@@ -754,46 +771,53 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         <div class="sb2-workspace" id="sb2-workspace" role="region" aria-labelledby="sb2-workspace-title">
           <div class="sb2-workspace-heading">
             <div>
+              <span class="sb2-workspace-label">ACTIVE DESK WORKFLOW</span>
               <h2 id="sb2-workspace-title">Your Manager</h2>
               <p id="sb2-workspace-focus">Sets direction, assigns the company, and controls approvals.</p>
             </div>
             <div class="sb2-tabs" id="sb2-feature-tabs" role="tablist" aria-label="Manager features"></div>
+          </div>
+          <div class="sb2-desk-flow" id="sb2-desk-flow" role="list" aria-label="Selected desk workflow">
+            <div class="sb2-desk-flow-step" data-desk-stage="assigned" role="listitem"><span>1</span><strong>Assignment received</strong></div>
+            <div class="sb2-desk-flow-step" data-desk-stage="work" role="listitem"><span>2</span><strong>Capability in progress</strong></div>
+            <div class="sb2-desk-flow-step" data-desk-stage="evidence" role="listitem"><span>3</span><strong>Evidence stored</strong></div>
+            <div class="sb2-desk-flow-step" data-desk-stage="review" role="listitem"><span>4</span><strong>Manager decision</strong></div>
           </div>
           <div class="sb2-workspace-body" id="sb2-desk-panel" role="tabpanel" tabindex="0" aria-live="polite">
             <div class="sb2-assignment-zone" id="sb2-assignment-zone"></div>
             <div class="sb2-deliverable-zone" id="sb2-deliverable-zone"></div>
           </div>
         </div>
-      </main>
 
-      <aside class="sb2-mission" aria-labelledby="sb2-mission-title">
-        <div class="sb2-mission-sticky">
-          <div class="sb2-mission-block">
-            <div class="sb2-mission-heading">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.2-6 4.1 12 2.1-6H21"></path></svg>
-              <h2 id="sb2-mission-title">Mission Control</h2>
+        <aside class="sb2-mission" aria-labelledby="sb2-mission-title">
+          <div class="sb2-mission-sticky">
+            <div class="sb2-mission-block sb2-mission-overview">
+              <div class="sb2-mission-heading">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.2-6 4.1 12 2.1-6H21"></path></svg>
+                <h2 id="sb2-mission-title">Mission Control</h2>
+              </div>
+              <div class="sb2-mission-metrics">
+                <div class="sb2-mission-metric"><span>Decisions due</span><strong data-mission="decisions">—</strong></div>
+                <div class="sb2-mission-metric"><span>Blocked work</span><strong data-mission="blocked">—</strong></div>
+                <div class="sb2-mission-metric"><span>For review</span><strong data-mission="review">—</strong></div>
+                <div class="sb2-mission-metric"><span>Next deadline</span><strong data-mission="deadline">—</strong></div>
+              </div>
             </div>
-            <div class="sb2-mission-metrics">
-              <div class="sb2-mission-metric"><span>Decisions due</span><strong data-mission="decisions">—</strong></div>
-              <div class="sb2-mission-metric"><span>Blocked assignments</span><strong data-mission="blocked">—</strong></div>
-              <div class="sb2-mission-metric"><span>Deliverables for review</span><strong data-mission="review">—</strong></div>
-              <div class="sb2-mission-metric"><span>Next deadline</span><strong data-mission="deadline">—</strong></div>
+            <div class="sb2-mission-block" id="sb2-next-action-block">
+              <div class="sb2-mission-label">Next executive action</div>
+              <div class="sb2-next-action" id="sb2-next-action">Loading company records</div>
+              <p class="sb2-next-action-detail" id="sb2-next-action-detail">Mission Control only reports persisted assignments and deliverables.</p>
+              <button class="sb2-secondary" id="sb2-open-next" type="button" hidden>Open desk</button>
+            </div>
+            <div class="sb2-mission-block sb2-mission-activity">
+              <div class="sb2-mission-label">Recorded activity</div>
+              <ol class="sb2-activity-list" id="sb2-activity-list">
+                <li><span>Loading activity</span><time>—</time></li>
+              </ol>
             </div>
           </div>
-          <div class="sb2-mission-block" id="sb2-next-action-block">
-            <div class="sb2-mission-label">Next executive action</div>
-            <div class="sb2-next-action" id="sb2-next-action">Loading company records</div>
-            <p class="sb2-next-action-detail" id="sb2-next-action-detail">Mission Control only reports persisted assignments and deliverables.</p>
-            <button class="sb2-secondary" id="sb2-open-next" type="button" hidden>Open desk</button>
-          </div>
-          <div class="sb2-mission-block">
-            <div class="sb2-mission-label">Recorded activity</div>
-            <ol class="sb2-activity-list" id="sb2-activity-list">
-              <li><span>Loading activity</span><time>—</time></li>
-            </ol>
-          </div>
-        </div>
-      </aside>
+        </aside>
+      </main>
     </div>
   </div>
   <div class="sb2-toast" id="sb2-toast" role="status" aria-live="polite" data-visible="false"></div>
@@ -837,6 +861,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   const objectiveError = document.getElementById("sb2-objective-error");
   const loadError = document.getElementById("sb2-load-error");
   const buildPlanButton = document.getElementById("sb2-build-plan");
+  const mobileObjectiveToggle = document.getElementById("sb2-mobile-objective-toggle");
   const toast = document.getElementById("sb2-toast");
   const workspaceTitle = document.getElementById("sb2-workspace-title");
   const workspaceFocus = document.getElementById("sb2-workspace-focus");
@@ -1060,17 +1085,33 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
   function renderFlow() {
     const objectiveCount = state.objectives.filter((objective) => valueText(objective.status).toLowerCase() !== "cancelled").length;
+    const proposedStatuses = ["proposed", "pending", "draft", "planned"];
+    const assignedCount = state.assignments.filter((assignment) =>
+      !proposedStatuses.includes(valueText(assignment.status).toLowerCase())
+    ).length;
+    const proposedCount = state.assignments.length - assignedCount;
     const approvedCount = state.deliverables.filter((deliverable) =>
       ["approved", "delivered"].includes(valueText(deliverable.status).toLowerCase())
     ).length;
     const values = {
       objectives: objectiveCount + " recorded",
-      assignments: state.assignments.length + " prepared",
+      assignments: assignedCount
+        ? assignedCount + " assigned"
+        : (proposedCount ? proposedCount + " proposed" : "0 assigned"),
       deliverables: state.deliverables.length + " stored",
       approved: approvedCount + " approved"
     };
     document.querySelectorAll("[data-flow-count]").forEach((element) => {
       element.textContent = values[element.dataset.flowCount];
+    });
+    const stageValues = [objectiveCount, assignedCount, state.deliverables.length, approvedCount];
+    const firstEmpty = stageValues.findIndex((value) => value === 0);
+    document.querySelectorAll(".sb2-flow-step").forEach((element, index) => {
+      element.dataset.state = stageValues[index] > 0
+        ? "complete"
+        : (index === firstEmpty ? "current" : "idle");
+      if (index === firstEmpty) element.setAttribute("aria-current", "step");
+      else element.removeAttribute("aria-current");
     });
   }
 
@@ -1131,7 +1172,9 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       const active = member.key === state.selectedDesk;
       button.setAttribute("aria-pressed", active ? "true" : "false");
       button.setAttribute("aria-label",
-        "Seat " + member.seat + ", " + member.name + ", " + presentation[0] + ", open desk"
+        "Seat " + member.seat + ", " + member.name + ", " + member.role +
+          ", capabilities " + member.features.map((feature) => feature.name).join(" and ") +
+          ", " + presentation[0] + ", open desk"
       );
       const label = button.querySelector("[data-seat-state]");
       label.textContent = presentation[0];
@@ -1182,7 +1225,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         "Operating plan / " + plan.length + " " + (plan.length === 1 ? "desk" : "desks")
       ));
       const list = create("ol");
-      plan.slice(0, 6).forEach((assignment) => {
+      plan.slice(0, 3).forEach((assignment) => {
         const member = memberFor(assignmentDesk(assignment));
         const assignedFeature = featureFor(member, assignmentFeature(assignment));
         const item = create("li");
@@ -1195,6 +1238,12 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         ));
         list.appendChild(item);
       });
+      if (plan.length > 3) {
+        const item = create("li");
+        item.appendChild(create("strong", "", "+" + (plan.length - 3)));
+        item.appendChild(create("span", "", "additional accountable desks in this plan"));
+        list.appendChild(item);
+      }
       preview.appendChild(list);
       target.appendChild(preview);
     }
@@ -1522,12 +1571,77 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     deliverableZone.appendChild(list);
   }
 
+  function renderDeskFlow(assignments) {
+    const stages = Array.from(document.querySelectorAll("[data-desk-stage]"));
+    const labels = {
+      assigned: "Awaiting approved assignment",
+      work: "Capability work",
+      evidence: "Evidence required",
+      review: "Manager review"
+    };
+    stages.forEach((stage) => {
+      stage.dataset.state = "idle";
+      stage.removeAttribute("aria-current");
+      stage.querySelector("strong").textContent = labels[stage.dataset.deskStage];
+    });
+    if (!state.loaded || !assignments.length) {
+      const first = stages[0];
+      first.dataset.state = "current";
+      first.setAttribute("aria-current", "step");
+      return;
+    }
+
+    const statuses = assignments.map((assignment) => valueText(assignment.status).toLowerCase());
+    const deliverables = assignments.flatMap((assignment) => deliverablesForAssignment(assignment));
+    const deliverableStatuses = deliverables.map((deliverable) => valueText(deliverable.status).toLowerCase());
+    const delivered = statuses.some((status) => status === "delivered") &&
+      deliverableStatuses.some((status) => status === "approved");
+    let currentIndex = 0;
+    let attention = false;
+
+    labels.assigned = "Assignment received";
+    if (delivered) {
+      currentIndex = 4;
+      labels.work = "Capability completed";
+      labels.evidence = "Evidence approved";
+      labels.review = "Manager approved";
+    } else if (statuses.some((status) => status === "blocked")) {
+      currentIndex = 1;
+      attention = true;
+      labels.work = "Blocked — decision needed";
+    } else if (deliverableStatuses.some((status) => ["submitted", "review", "ready_for_review"].includes(status)) ||
+               statuses.some((status) => ["review", "ready_for_review"].includes(status))) {
+      currentIndex = 3;
+      labels.work = "Capability completed";
+      labels.evidence = "Evidence stored";
+      labels.review = "Manager decision due";
+    } else if (deliverables.length) {
+      currentIndex = 2;
+      labels.work = "Capability completed";
+      labels.evidence = "Evidence stored";
+    } else if (statuses.some((status) => status === "in_progress")) {
+      currentIndex = 1;
+      labels.work = "Capability in progress";
+    }
+
+    stages.forEach((stage, index) => {
+      stage.querySelector("strong").textContent = labels[stage.dataset.deskStage];
+      if (index < currentIndex || currentIndex === 4) {
+        stage.dataset.state = "complete";
+      } else if (index === currentIndex) {
+        stage.dataset.state = attention ? "attention" : "current";
+        stage.setAttribute("aria-current", "step");
+      }
+    });
+  }
+
   function renderWorkspace() {
     const member = memberFor(state.selectedDesk);
     if (!member) {
       workspaceTitle.textContent = "Company definition unavailable";
       workspaceFocus.textContent = "Refresh the page to restore the ten approved desks.";
       clear(tabs);
+      renderDeskFlow([]);
       clear(assignmentZone).appendChild(create("div", "sb2-empty", "No unverified desk data is being shown."));
       clear(deliverableZone).appendChild(create("div", "sb2-empty", "Deliverables are unavailable until the company definition loads."));
       return;
@@ -1538,6 +1652,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     workspaceFocus.textContent = member.role + ". " + member.focus;
     renderTabs(member);
     const assignments = assignmentsForFeature(member.key, feature.key);
+    renderDeskFlow(assignments);
     renderAssignmentZone(member, feature, assignments);
     renderDeliverableZone(feature, assignments);
   }
@@ -1620,7 +1735,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       activity.appendChild(item);
       return;
     }
-    state.activity.slice(0, 6).forEach((record) => {
+    state.activity.slice(0, 3).forEach((record) => {
       const item = create("li");
       const timestamp = record.created_at || record.created || record.at || "";
       const time = create("time", "", timeAgo(timestamp));
@@ -1733,6 +1848,21 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     }
   }
 
+  mobileObjectiveToggle.addEventListener("click", () => {
+    const open = objectiveForm.dataset.mobileOpen !== "true";
+    objectiveForm.dataset.mobileOpen = open ? "true" : "false";
+    mobileObjectiveToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) document.getElementById("sb2-objective-title").focus();
+  });
+
+  document.querySelector(".sb2-skip").addEventListener("click", (event) => {
+    if (!window.matchMedia("(max-width: 679px)").matches) return;
+    event.preventDefault();
+    objectiveForm.dataset.mobileOpen = "true";
+    mobileObjectiveToggle.setAttribute("aria-expanded", "true");
+    document.getElementById("sb2-objective-title").focus();
+  });
+
   objectiveForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     objectiveError.hidden = true;
@@ -1767,7 +1897,11 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       "Operating plan created. Review it before assigning the company.",
       { errorTarget: objectiveError }
     );
-    if (completed) objectiveForm.reset();
+    if (completed) {
+      objectiveForm.reset();
+      objectiveForm.dataset.mobileOpen = "false";
+      mobileObjectiveToggle.setAttribute("aria-expanded", "false");
+    }
   });
 
   document.addEventListener("click", async (event) => {

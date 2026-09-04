@@ -61,12 +61,15 @@ def test_team_os_renders_manager_first_and_exact_company_definition(
     assert state_response.status_code == 200
     assert state["ok"] is True
     assert body.count('data-desk-key="') == 10
-    assert "Ten desks. One direction." in body
-    assert "Your ten-person company" in body
+    assert "Manager Control Room" in body
+    assert "Your Manager + nine specialist desks" in body
+    assert "10 desks / 20 capabilities" in body
+    assert "company-os-signal-room.css" in body
+    assert body.count('data-desk-stage="') == 4
     assert "The proposed plan remains unassigned until you approve it." in body
     assert "Mission Control" in body
-    assert body.index("Ten desks. One direction.") < body.index(
-        "Your ten-person company")
+    assert body.index("Manager Control Room") < body.index(
+        "Your Manager + nine specialist desks")
     assert body.index('href="#sb2-manager"') < body.index(
         'href="#sb2-company-index"')
 

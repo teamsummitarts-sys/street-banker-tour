@@ -16,6 +16,7 @@ on:
       - "templates/login.html"
       - "templates/partials/login_session_recall.html"
       - "templates/team.html"
+      - "static/css/company-os-signal-room.css"
       - "tests/test_company_os.py"
       - "tests/test_company_os_security.py"
       - "tests/test_closed_owner_bootstrap.py"
