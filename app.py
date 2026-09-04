@@ -659,7 +659,7 @@ def create_app():
                         session["user_id"] = user_id
                         return redirect("/discover")
                     session["user_id"] = user_id
-                    return redirect(url_for("onboarding"))
+                    return redirect(url_for("team"))
         # /signup?as=fan preselects the fan side. The login page offers a
         # fan account as a distinct choice, and it landed on a form with
         # Artist already ticked - a link that names a destination has to
@@ -721,7 +721,7 @@ def create_app():
                     # The demo IS the walkthrough — land partners on the tour.
                     default = "/walkthrough"
                 else:
-                    default = "/command-center"
+                    default = "/team"
                 return redirect(_safe_local_redirect(request.args.get("next"), default))
             error = "Incorrect email or password."
         return render_template(
@@ -7818,6 +7818,104 @@ def create_app():
     _TEAM_ROLE_LABELS = dict(_TEAM_ROLE_OPTIONS)
     _TEAM_SEAT_LIMIT = 10
 
+    # V2 is a staffed operating model, not an empty set of human invite
+    # slots.  These ten desks are the product's permanent front door: each
+    # one routes into the existing module that performs that department's
+    # work, so the team layer never duplicates the underlying tools.
+    _DIGITAL_TEAM = (
+        {
+            "key": "manager",
+            "name": "Your Manager",
+            "role": "Executive Manager",
+            "initials": "MG",
+            "focus": "Turns every department into one clear daily plan.",
+            "brief": "Build the artist profile first, then the team can coordinate releases, money, touring, and creative from the same source.",
+            "href": "/actions",
+            "cta": "Open daily plan",
+        },
+        {
+            "key": "a_and_r",
+            "name": "Your A&R",
+            "role": "A&R Director",
+            "initials": "AR",
+            "focus": "Catalog direction, artist positioning, and release selection.",
+            "href": "/catalog",
+            "cta": "Review catalog",
+        },
+        {
+            "key": "marketing",
+            "name": "Your Marketer",
+            "role": "Marketing Director",
+            "initials": "MK",
+            "focus": "Campaign strategy, content timing, and audience growth.",
+            "href": "/rollout-studio",
+            "cta": "Build campaign",
+        },
+        {
+            "key": "publicist",
+            "name": "Your Publicist",
+            "role": "Publicity Director",
+            "initials": "PR",
+            "focus": "Press narrative, media outreach, and announcement tracking.",
+            "href": "/press-desk",
+            "cta": "Open press desk",
+        },
+        {
+            "key": "tour_manager",
+            "name": "Your Tour Manager",
+            "role": "Tour Director",
+            "initials": "TM",
+            "focus": "Routing, shows, advances, travel, and settlement.",
+            "href": "/tours",
+            "cta": "Open Tour OS",
+        },
+        {
+            "key": "accountant",
+            "name": "Your Royalty Accountant",
+            "role": "Revenue Director",
+            "initials": "RA",
+            "focus": "Statements, missing money, royalty lanes, and reporting.",
+            "href": "/overview",
+            "cta": "Review money",
+        },
+        {
+            "key": "attorney",
+            "name": "Your Rights Attorney",
+            "role": "Rights & Deal Director",
+            "initials": "RT",
+            "focus": "Splits, agreements, ownership conflicts, and clearances.",
+            "href": "/deal-room",
+            "cta": "Open deal room",
+        },
+        {
+            "key": "creative_director",
+            "name": "Your Creative Director",
+            "role": "Creative Director",
+            "initials": "CD",
+            "focus": "Release imagery, visual systems, and campaign assets.",
+            "href": "/artwork",
+            "cta": "Open creative",
+        },
+        {
+            "key": "producer_engineer",
+            "name": "Your Producer",
+            "role": "Studio Director",
+            "initials": "PE",
+            "focus": "Mix readiness, mastering direction, racks, and remix briefs.",
+            "href": "/rack",
+            "cta": "Enter studio",
+        },
+        {
+            "key": "assistant",
+            "name": "Your Executive Assistant",
+            "role": "Operations Coordinator",
+            "initials": "EA",
+            "focus": "Deadlines, notifications, documents, and follow-through.",
+            "href": "/notifications",
+            "cta": "Review updates",
+        },
+    )
+
     @app.route("/team")
     def team():
         user = current_user()
@@ -7836,6 +7934,9 @@ def create_app():
                                active_count=active_count,
                                invited_count=invited_count,
                                email_configured=emailer.configured(),
+                               digital_team=_DIGITAL_TEAM,
+                               manager=_DIGITAL_TEAM[0],
+                               specialists=_DIGITAL_TEAM[1:],
                                **build_dashboard_context())
 
     @app.route("/team/invite", methods=["POST"])

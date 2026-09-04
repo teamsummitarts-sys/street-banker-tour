@@ -1,195 +1,131 @@
 {% extends "base.html" %}
 
-{% block title %}Team OS - Street Banker{% endblock %}
+{% block title %}Your Team - Street Banker V2{% endblock %}
 
 {% block content %}
 <style>
-  .team-os { --team-gold: #e8b950; --team-line: rgba(232,185,80,.22); }
-  .team-panel { border: 1px solid rgba(255,255,255,.09); background: linear-gradient(145deg, rgba(21,21,19,.96), rgba(8,8,8,.98)); box-shadow: 0 22px 55px rgba(0,0,0,.24); }
-  .team-kicker { font-size: .7rem; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: #d8a94a; }
-  .team-stat { min-height: 104px; }
-  .team-seat { min-height: 168px; transition: border-color .18s ease, transform .18s ease, background .18s ease; }
-  .team-seat:hover { border-color: rgba(232,185,80,.42); transform: translateY(-2px); }
-  .team-seat-empty { border-style: dashed; background: rgba(255,255,255,.018); color: #8c8c87; }
-  .team-seat-empty:hover { color: #e8b950; background: rgba(232,185,80,.04); }
-  .seat-ring { background: conic-gradient(var(--team-gold) var(--seat-progress), rgba(255,255,255,.07) 0); }
-  .seat-ring::after { content: ""; position: absolute; inset: 8px; border-radius: 999px; background: #0d0d0c; }
-  .role-chip { border: 1px solid rgba(232,185,80,.24); background: rgba(232,185,80,.07); color: #efc66f; }
-  .module-link { transition: background .16s ease, border-color .16s ease; }
-  .module-link:hover { border-color: rgba(232,185,80,.38); background: rgba(232,185,80,.055); }
-  @media (prefers-reduced-motion: reduce) { .team-seat, .module-link { transition: none; } .team-seat:hover { transform: none; } }
+  .company-floor { --floor-gold:#e7b24a; --floor-line:rgba(231,178,74,.2); }
+  .floor-panel { border:1px solid rgba(255,255,255,.09); background:linear-gradient(145deg,rgba(22,22,20,.98),rgba(7,7,7,.99)); box-shadow:0 24px 64px rgba(0,0,0,.3); }
+  .floor-kicker { color:#d7a94f; font-size:.68rem; font-weight:800; letter-spacing:.22em; text-transform:uppercase; }
+  .manager-panel { position:relative; overflow:hidden; background:
+    radial-gradient(circle at 80% 15%,rgba(231,178,74,.14),transparent 32%),
+    linear-gradient(135deg,rgba(29,27,21,.98),rgba(8,8,8,.99) 62%); }
+  .manager-panel::after { content:""; position:absolute; inset:0; pointer-events:none; border:1px solid rgba(231,178,74,.18); border-radius:inherit; }
+  .manager-mark { box-shadow:0 0 0 8px rgba(231,178,74,.035),0 16px 44px rgba(0,0,0,.4); }
+  .status-pulse { box-shadow:0 0 0 0 rgba(74,222,128,.5); animation:floor-pulse 2.3s infinite; }
+  .specialist-card { min-height:214px; transition:transform .18s ease,border-color .18s ease,background .18s ease; }
+  .specialist-card:hover { transform:translateY(-3px); border-color:rgba(231,178,74,.42); background:linear-gradient(145deg,rgba(28,26,21,.98),rgba(9,9,9,.99)); }
+  .department-index { color:rgba(231,178,74,.42); font-variant-numeric:tabular-nums; }
+  .signal-line { background:linear-gradient(90deg,var(--floor-gold),rgba(231,178,74,0)); }
+  @keyframes floor-pulse { 70% { box-shadow:0 0 0 7px rgba(74,222,128,0); } 100% { box-shadow:0 0 0 0 rgba(74,222,128,0); } }
+  @media (prefers-reduced-motion:reduce) { .status-pulse{animation:none}.specialist-card{transition:none}.specialist-card:hover{transform:none} }
 </style>
 
-<div class="team-os mx-auto max-w-[1500px] space-y-5">
-  <header class="flex flex-col gap-5 border-b border-white/10 pb-5 xl:flex-row xl:items-end xl:justify-between">
+<div class="company-floor mx-auto max-w-[1500px] space-y-5">
+  <header class="flex flex-col gap-4 border-b border-white/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
     <div>
-      <div class="team-kicker">Street Banker / Team OS</div>
-      <h1 class="mt-2 max-w-4xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">One crew. Every part of the business.</h1>
-      <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-300">Ten shared seats for the people operating management, money, marketing, touring, rights, and the studio. This is the single team roster for Street Banker.</p>
+      <div class="floor-kicker">Street Banker V2 / Your Company</div>
+      <h1 class="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Your team is already in the room.</h1>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-300">Your manager leads one operating team across releases, touring, revenue, rights, publicity, creative, and the studio.</p>
     </div>
-    <button id="invite-jump" type="button" class="sb-btn sb-btn-primary min-h-11 shrink-0">Invite team member</button>
+    <div class="flex items-center gap-3 rounded-full border border-emerald-500/20 bg-emerald-500/[.06] px-4 py-2 text-xs font-bold uppercase tracking-[.14em] text-emerald-300">
+      <span class="status-pulse h-2 w-2 rounded-full bg-emerald-400"></span>
+      10 specialists ready
+    </div>
   </header>
 
-  <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Team status">
-    <div class="team-panel team-stat rounded-xl p-4">
-      <div class="team-kicker">Seats occupied</div>
-      <div class="mt-2 flex items-end gap-2"><span class="text-3xl font-semibold text-white">{{ seats_used }}</span><span class="pb-1 text-sm text-gray-400">/ {{ seat_limit }}</span></div>
-      <div class="mt-3 h-1 overflow-hidden rounded-full bg-white/10"><div class="h-full bg-sb-gold" style="width: {{ (seats_used * 100 / seat_limit)|round|int }}%"></div></div>
-    </div>
-    <div class="team-panel team-stat rounded-xl p-4">
-      <div class="team-kicker">Active</div>
-      <div class="mt-2 text-3xl font-semibold text-white">{{ active_count }}</div>
-      <div class="mt-2 text-xs uppercase tracking-[.15em] text-emerald-400">Connected accounts</div>
-    </div>
-    <div class="team-panel team-stat rounded-xl p-4">
-      <div class="team-kicker">Invites pending</div>
-      <div class="mt-2 text-3xl font-semibold text-white">{{ invited_count }}</div>
-      <div class="mt-2 text-xs uppercase tracking-[.15em] text-amber-400">Awaiting acceptance</div>
-    </div>
-    <div class="team-panel team-stat rounded-xl p-4">
-      <div class="team-kicker">Open seats</div>
-      <div class="mt-2 text-3xl font-semibold text-white">{{ seats_open }}</div>
-      <div class="mt-2 text-xs uppercase tracking-[.15em] text-gray-400">Available now</div>
-    </div>
-  </section>
-
-  <section class="team-panel rounded-2xl p-4 sm:p-5">
-    <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-      <div class="min-w-0">
-        <div class="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <div class="team-kicker">Shared roster</div>
-            <h2 class="mt-1 text-xl font-semibold text-white">Ten operating seats</h2>
+  <section class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(330px,.65fr)]">
+    <article class="manager-panel floor-panel rounded-2xl p-5 sm:p-7" data-agent-seat="1" data-manager-primary="true">
+      <div class="relative z-10 flex h-full flex-col">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div class="manager-mark grid h-16 w-16 shrink-0 place-items-center rounded-full border border-sb-gold/40 bg-black/45 text-lg font-black tracking-wider text-sb-gold-bright">{{ manager.initials }}</div>
+            <div>
+              <div class="floor-kicker">First chair / online</div>
+              <h2 class="mt-1 text-2xl font-semibold text-white">{{ manager.name }}</h2>
+              <p class="mt-1 text-sm text-gray-400">{{ manager.role }}</p>
+            </div>
           </div>
-          <div class="relative grid h-16 w-16 shrink-0 place-items-center rounded-full seat-ring" style="--seat-progress: {{ (seats_used * 360 / seat_limit)|round|int }}deg">
-            <div class="relative z-10 text-center"><span class="block text-lg font-bold text-white">{{ seats_used }}</span><span class="block text-[9px] uppercase tracking-wider text-gray-400">filled</span></div>
-          </div>
+          <span class="hidden rounded-full border border-sb-gold/25 bg-sb-gold/[.07] px-3 py-1 text-[10px] font-black uppercase tracking-[.16em] text-sb-gold-bright sm:inline-flex">Leads all 10</span>
         </div>
 
-        <div class="grid gap-3 md:grid-cols-2 2xl:grid-cols-5">
-          {% for seat in range(seat_limit) %}
-            {% if seat < members|length %}
-              {% set m = members[seat] %}
-              <article class="team-seat rounded-xl border border-white/10 bg-black/25 p-4" id="member-{{ m.id }}" data-team-seat="{{ seat + 1 }}">
-                <div class="flex items-start justify-between gap-3">
-                  <div class="grid h-10 w-10 place-items-center rounded-full border border-sb-gold/30 bg-sb-gold/10 text-sm font-black text-sb-gold-bright">{{ (m.member_name or m.email)[0]|upper }}</div>
-                  <span class="text-xs font-semibold text-gray-500">{{ "%02d"|format(seat + 1) }}</span>
-                </div>
-                <div class="mt-4 truncate text-sm font-semibold text-white">{{ m.member_name or m.email }}</div>
-                <div class="mt-1 truncate text-xs text-gray-400">{{ m.email }}</div>
-                <div class="mt-3 flex flex-wrap items-center gap-2">
-                  <span class="role-chip rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider">{{ role_labels.get(m.role, m.role|replace("_", " ")|title) }}</span>
-                  {% if m.status == "active" %}
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Active</span>
-                  {% else %}
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">Invited</span>
-                  {% endif %}
-                </div>
-                <button data-id="{{ m.id }}" class="remove-btn mt-4 min-h-10 text-xs font-semibold text-gray-400 hover:text-red-300">Remove seat</button>
-              </article>
-            {% else %}
-              <button type="button" class="team-seat team-seat-empty grid rounded-xl border border-white/10 p-4 text-left" data-empty-seat="{{ seat + 1 }}" data-team-seat="{{ seat + 1 }}">
-                <span class="text-xs font-semibold">{{ "%02d"|format(seat + 1) }}</span>
-                <span class="self-center text-center">
-                  <span class="mx-auto grid h-9 w-9 place-items-center rounded-full border border-current text-xl">+</span>
-                  <span class="mt-2 block text-xs font-bold uppercase tracking-[.14em]">Open seat</span>
-                </span>
-              </button>
-            {% endif %}
-          {% endfor %}
+        <div class="my-6 h-px w-full signal-line"></div>
+
+        <div class="max-w-3xl">
+          <div class="floor-kicker">Manager briefing</div>
+          <p class="mt-2 text-lg leading-8 text-gray-100">{{ manager.brief }}</p>
+        </div>
+
+        <div class="mt-6 grid gap-2 sm:grid-cols-3">
+          <a href="/artist-profile" class="rounded-xl border border-white/10 bg-black/25 p-3 transition-colors hover:border-sb-gold/35 hover:bg-sb-gold/[.05]">
+            <span class="block text-[10px] font-bold uppercase tracking-[.16em] text-gray-500">01 / Identity</span>
+            <span class="mt-1 block text-sm font-semibold text-white">Build artist profile</span>
+          </a>
+          <a href="/catalog" class="rounded-xl border border-white/10 bg-black/25 p-3 transition-colors hover:border-sb-gold/35 hover:bg-sb-gold/[.05]">
+            <span class="block text-[10px] font-bold uppercase tracking-[.16em] text-gray-500">02 / Assets</span>
+            <span class="mt-1 block text-sm font-semibold text-white">Load the catalog</span>
+          </a>
+          <a href="/rollout-studio" class="rounded-xl border border-white/10 bg-black/25 p-3 transition-colors hover:border-sb-gold/35 hover:bg-sb-gold/[.05]">
+            <span class="block text-[10px] font-bold uppercase tracking-[.16em] text-gray-500">03 / Demand</span>
+            <span class="mt-1 block text-sm font-semibold text-white">Start a campaign</span>
+          </a>
+        </div>
+
+        <div class="mt-auto pt-6">
+          <a href="{{ manager.href }}" class="sb-btn sb-btn-primary min-h-11">{{ manager.cta }} <span aria-hidden="true">→</span></a>
         </div>
       </div>
+    </article>
 
-      <aside class="space-y-4">
-        <section class="rounded-xl border border-sb-gold/25 bg-sb-gold/[.035] p-4" id="invite-panel">
-          <div class="team-kicker">Add to the team</div>
-          <h2 class="mt-1 text-lg font-semibold text-white">Assign an operating role</h2>
-          <form id="invite-form" class="mt-4 space-y-3">
-            <label class="block">
-              <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-400">Email</span>
-              <input name="email" type="email" required autocomplete="email" placeholder="name@company.com" {% if seats_open == 0 %}disabled{% endif %} class="min-h-11 w-full rounded-lg border border-white/15 bg-black/40 px-3 text-sm text-white placeholder-gray-500 focus:border-sb-gold focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
-            </label>
-            <label class="block">
-              <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-400">Role</span>
-              <select name="role" {% if seats_open == 0 %}disabled{% endif %} class="min-h-11 w-full rounded-lg border border-white/15 bg-black/40 px-3 text-sm text-gray-200 focus:border-sb-gold focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
-                {% for key, label in roles %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
-              </select>
-            </label>
-            <button type="submit" {% if seats_open == 0 %}disabled{% endif %} class="sb-btn sb-btn-primary min-h-11 w-full disabled:cursor-not-allowed disabled:opacity-50">{% if seats_open == 0 %}Team full{% else %}Send invite{% endif %}</button>
-          </form>
-          <div id="invite-result" class="mt-3 hidden rounded-lg border px-3 py-3 text-xs leading-5" role="status" aria-live="polite"></div>
-          {% if not email_configured %}
-            <p class="mt-3 text-xs leading-5 text-gray-400">Email delivery is off in this comparison build. Street Banker will generate a secure invite link for you to copy and send directly.</p>
-          {% endif %}
-        </section>
+    <aside class="floor-panel rounded-2xl p-5">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="floor-kicker">Company signal</div>
+          <h2 class="mt-1 text-lg font-semibold text-white">One plan, five divisions</h2>
+        </div>
+        <div class="grid h-14 w-14 place-items-center rounded-full border border-sb-gold/25 bg-sb-gold/[.05]">
+          <span class="text-xl font-semibold text-white">10</span>
+        </div>
+      </div>
+      <div class="mt-5 space-y-2">
+        <a href="/rollout-studio" class="flex min-h-12 items-center justify-between rounded-xl border border-white/10 bg-black/25 px-4 text-sm text-gray-200 hover:border-sb-gold/30"><span>Release & Marketing</span><span class="text-sb-gold">02 desks</span></a>
+        <a href="/rack" class="flex min-h-12 items-center justify-between rounded-xl border border-white/10 bg-black/25 px-4 text-sm text-gray-200 hover:border-sb-gold/30"><span>Studio & Creative</span><span class="text-sb-gold">02 desks</span></a>
+        <a href="/overview" class="flex min-h-12 items-center justify-between rounded-xl border border-white/10 bg-black/25 px-4 text-sm text-gray-200 hover:border-sb-gold/30"><span>Revenue & Rights</span><span class="text-sb-gold">02 desks</span></a>
+        <a href="/tours" class="flex min-h-12 items-center justify-between rounded-xl border border-white/10 bg-black/25 px-4 text-sm text-gray-200 hover:border-sb-gold/30"><span>Live & Touring</span><span class="text-sb-gold">01 desk</span></a>
+        <a href="/notifications" class="flex min-h-12 items-center justify-between rounded-xl border border-white/10 bg-black/25 px-4 text-sm text-gray-200 hover:border-sb-gold/30"><span>Executive Operations</span><span class="text-sb-gold">03 desks</span></a>
+      </div>
+      <p class="mt-4 text-xs leading-5 text-gray-500">Each desk opens the existing working module behind it. Nothing here creates a second version of Tour, Studio, Campaigns, or Money.</p>
+    </aside>
+  </section>
 
-        <section class="rounded-xl border border-white/10 bg-black/25 p-4">
-          <div class="team-kicker">One roster / all modules</div>
-          <div class="mt-3 grid gap-2">
-            <a href="/tour" class="module-link flex min-h-11 items-center justify-between rounded-lg border border-white/10 px-3 text-sm text-gray-200"><span>Tour OS</span><span aria-hidden="true">↗</span></a>
-            <a href="/rack" class="module-link flex min-h-11 items-center justify-between rounded-lg border border-white/10 px-3 text-sm text-gray-200"><span>Studio & Rack</span><span aria-hidden="true">↗</span></a>
-            <a href="/rollout-studio" class="module-link flex min-h-11 items-center justify-between rounded-lg border border-white/10 px-3 text-sm text-gray-200"><span>Campaigns</span><span aria-hidden="true">↗</span></a>
-            <a href="/overview" class="module-link flex min-h-11 items-center justify-between rounded-lg border border-white/10 px-3 text-sm text-gray-200"><span>Money & Royalties</span><span aria-hidden="true">↗</span></a>
-          </div>
-          <p class="mt-3 text-xs leading-5 text-gray-400">This roster is the single source of truth for team identity. Module-level permission scopes will attach here rather than creating separate team lists.</p>
-        </section>
-      </aside>
+  <section>
+    <div class="mb-3 flex items-end justify-between gap-3">
+      <div>
+        <div class="floor-kicker">Department floor</div>
+        <h2 class="mt-1 text-xl font-semibold text-white">Nine specialists behind your manager</h2>
+      </div>
+      <span class="text-xs font-semibold uppercase tracking-[.14em] text-gray-500">Select a desk to work</span>
+    </div>
+
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {% for member in specialists %}
+      <a href="{{ member.href }}" class="specialist-card floor-panel group flex flex-col rounded-2xl p-5" data-agent-seat="{{ loop.index + 1 }}" data-agent-key="{{ member.key }}">
+        <div class="flex items-start justify-between gap-3">
+          <div class="grid h-12 w-12 place-items-center rounded-full border border-white/10 bg-black/35 text-sm font-black tracking-wider text-sb-gold-bright group-hover:border-sb-gold/35">{{ member.initials }}</div>
+          <span class="department-index text-sm font-bold">{{ "%02d"|format(loop.index + 1) }}</span>
+        </div>
+        <div class="mt-5">
+          <div class="text-lg font-semibold text-white">{{ member.name }}</div>
+          <div class="mt-1 text-[10px] font-bold uppercase tracking-[.16em] text-sb-gold">{{ member.role }}</div>
+          <p class="mt-3 text-sm leading-6 text-gray-400">{{ member.focus }}</p>
+        </div>
+        <div class="mt-auto flex items-center justify-between border-t border-white/[.07] pt-4">
+          <span class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-emerald-300"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Ready</span>
+          <span class="text-xs font-semibold text-gray-300 group-hover:text-sb-gold-bright">{{ member.cta }} →</span>
+        </div>
+      </a>
+      {% endfor %}
     </div>
   </section>
 </div>
-
-<script>
-  const inviteForm = document.getElementById("invite-form");
-  const inviteEmail = inviteForm.querySelector('input[name="email"]');
-  const resultBox = document.getElementById("invite-result");
-
-  function openInvite() {
-    document.getElementById("invite-panel").scrollIntoView({ behavior: "smooth", block: "center" });
-    window.setTimeout(() => inviteEmail && inviteEmail.focus(), 250);
-  }
-
-  document.getElementById("invite-jump").addEventListener("click", openInvite);
-  document.querySelectorAll("[data-empty-seat]").forEach((seat) => seat.addEventListener("click", openInvite));
-
-  inviteForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const submit = inviteForm.querySelector('button[type="submit"]');
-    submit.disabled = true;
-    submit.textContent = "Sending…";
-    resultBox.classList.remove("hidden");
-
-    try {
-      const response = await fetch("/team/invite", { method: "POST", body: new FormData(inviteForm) });
-      const data = await response.json();
-      if (!response.ok || !data.ok) throw new Error(data.error || "Could not send the invite.");
-
-      resultBox.className = "mt-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-3 text-xs leading-5 text-emerald-300";
-      resultBox.textContent = data.emailed ? "Invite sent. The seat is now reserved." : "Seat reserved. Copy this invite link: ";
-      if (!data.emailed) {
-        const link = document.createElement("button");
-        link.type = "button";
-        link.className = "mt-2 block w-full break-all rounded border border-white/10 bg-black/30 p-2 text-left font-mono text-gray-200";
-        link.textContent = data.link;
-        link.addEventListener("click", async () => {
-          await navigator.clipboard.writeText(data.link);
-          link.textContent = "Copied ✓";
-        });
-        resultBox.appendChild(link);
-      }
-      window.setTimeout(() => window.location.reload(), data.emailed ? 900 : 5000);
-    } catch (error) {
-      resultBox.className = "mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-3 text-xs leading-5 text-red-300";
-      resultBox.textContent = error.message;
-      submit.disabled = false;
-      submit.textContent = "Send invite";
-    }
-  });
-
-  document.querySelectorAll(".remove-btn").forEach((button) => button.addEventListener("click", async () => {
-    if (!window.confirm("Remove this person from the shared Street Banker team?")) return;
-    const response = await fetch("/team/" + button.dataset.id + "/remove", { method: "POST" });
-    const data = await response.json();
-    if (data.ok) window.location.reload();
-  }));
-</script>
 {% endblock %}

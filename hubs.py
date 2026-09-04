@@ -7,8 +7,9 @@ SVG path lists rendered by base.html.
 """
 
 HUBS = [
-    ("command", "Command Center", "Your whole operation on one screen — scores, actions, and the strategist read.", [
-        ("command-center", "/command-center", "M4 4h5v5H4zM11 4h5v3h-5zM11 9h5v7h-5zM4 11h5v5H4z", "Command Center", "Every module's live status on one board."),
+    ("command", "Your Company", "Your manager and nine specialist desks, coordinating the entire operation.", [
+        ("team", "/team", "M7 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM13 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5z|M3 16c0-2.2 1.8-4 4-4M13 12c2.2 0 4 1.8 4 4", "Your Team", "Your manager first, with nine specialist desks behind the plan."),
+        ("command-center", "/command-center", "M4 4h5v5H4zM11 4h5v3h-5zM11 9h5v7h-5zM4 11h5v5H4z", "Operations Board", "Every module's live status on one board."),
         ("actions", "/actions", "M8 4h8M8 10h8M8 16h8|M4 4l1 1 2-2M4 10l1 1 2-2M4 16l1 1 2-2", "Actions", "The prioritized to-do list your data generates."),
         ("qualification", "/qualification", "M4 16V9M9 16V5M14 16v-8|M3 16h14M14 4l1.5 1.5L18 3", "Growth Score", "Release readiness scored from real signals."),
         ("trust-score", "/trust-score", "M10 3l6 3v5c0 3-2.5 5-6 6-3.5-1-6-3-6-6V6z|M10 8v3M10 13v.5", "Trust Score", "How complete and verifiable your record is."),
@@ -98,7 +99,6 @@ ACCOUNT_GROUP = ("Account", [
     ("fan-club-admin", "/fan-club", "M10 3l2 4 4 .5-3 3 .8 4.5L10 13l-3.8 2 .8-4.5-3-3 4-.5z|M10 8v2", "Fan Club", "Your paid membership club and drops."),
     ("inbox", "/inbox", "M3 12l3-8h8l3 8v4a1 1 0 01-1 1H4a1 1 0 01-1-1z|M3 12h4l1.5 2h3L13 12h4", "Inbox", "Messages and submissions."),
     ("notifications", "/notifications", "M10 3a4 4 0 00-4 4c0 4-2 5-2 5h12s-2-1-2-5a4 4 0 00-4-4z|M8.5 16a1.5 1.5 0 003 0", "Notifications", "Everything that happened while you were away."),
-    ("team", "/team", "M7 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM13 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5z|M3 16c0-2.2 1.8-4 4-4M13 12c2.2 0 4 1.8 4 4", "Team", "Invite your manager, accountant, attorney."),
     ("billing", "/billing", "M3 6h14v8H3z|M3 9h14M6 12h3", "Billing", "Plan and payments."),
     ("portal", "/portal", "M4 4h12v12H4z|M4 8h12M8 8v8", "Partner Portal", "Read-only views for your team memberships."),
     ("roster", "/roster", "M6 7a3 3 0 116 0 3 3 0 01-6 0z|M1 17c1-3 3.5-4 8-4|M13 9h6|M13 13h6|M13 17h4", "Label Roster", "Your artists, one desk (Label plan)."),

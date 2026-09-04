@@ -46,7 +46,7 @@ def test_owner_only_signup_accepts_allowlisted_owner(monkeypatch, tmp_path):
     )
 
     assert response.status_code == 302
-    assert response.headers["Location"].endswith("/onboarding")
+    assert response.headers["Location"].endswith("/team")
     owner = store.get_user_by_email("owner@example.com")
     assert owner is not None
     assert owner["plan"] == "label"
