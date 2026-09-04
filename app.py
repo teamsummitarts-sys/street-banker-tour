@@ -7951,6 +7951,33 @@ def create_app():
         members = store.list_team(user["id"])
         active_count = len([m for m in members if m["status"] == "active"])
         invited_count = len(members) - active_count
+
+        # The Manager desk is an operating layer over the existing modules.
+        # Every objective stays attached to this account and routes to one of
+        # the ten permanent specialist desks; it never creates a second Tour,
+        # Studio, Campaign, or Money product.
+        team_by_key = {member["key"]: member for member in _DIGITAL_TEAM}
+        manager_tasks = store.list_manager_tasks(user["id"])
+        for task in manager_tasks:
+            specialist = team_by_key.get(task["assignee"], _DIGITAL_TEAM[0])
+            task["assignee_name"] = specialist["name"]
+            task["assignee_role"] = specialist["role"]
+            task["assignee_initials"] = specialist["initials"]
+            task["assignee_href"] = specialist["href"]
+        task_counts = {
+            status: len([task for task in manager_tasks
+                         if task["status"] == status])
+            for status in ("queued", "in_progress", "delivered")
+        }
+        task_counts["total"] = len(manager_tasks)
+        task_progress = (
+            round(task_counts["delivered"] / task_counts["total"] * 100)
+            if task_counts["total"] else 0
+        )
+        next_task = next(
+            (task for task in manager_tasks
+             if task["status"] != "delivered"), None)
+
         return render_template("team.html", active_page="team",
                                members=members,
                                roles=_TEAM_ROLE_OPTIONS,
@@ -7964,7 +7991,65 @@ def create_app():
                                digital_team=_DIGITAL_TEAM,
                                manager=_DIGITAL_TEAM[0],
                                specialists=_DIGITAL_TEAM[1:],
+                               manager_tasks=manager_tasks,
+                               task_counts=task_counts,
+                               task_progress=task_progress,
+                               next_task=next_task,
+                               selected_assignee=request.args.get(
+                                   "assign", "marketing"),
                                **build_dashboard_context())
+
+    @app.route("/team/manager/tasks", methods=["POST"])
+    def manager_task_create():
+        user = current_user()
+        if user is None:
+            return jsonify({"ok": False, "error": "Sign in first."}), 401
+        payload = request.get_json(silent=True) or request.form
+        title = " ".join((payload.get("title") or "").split())
+        assignee = (payload.get("assignee") or "").strip()
+        valid_assignees = {member["key"] for member in _DIGITAL_TEAM}
+        if len(title) < 3:
+            return jsonify({
+                "ok": False,
+                "error": "Give your manager a clear objective.",
+            }), 400
+        if len(title) > 180:
+            return jsonify({
+                "ok": False,
+                "error": "Keep the objective under 180 characters.",
+            }), 400
+        if assignee not in valid_assignees:
+            return jsonify({
+                "ok": False,
+                "error": "Choose one of your ten operating specialists.",
+            }), 400
+        task = store.create_manager_task(user["id"], title, assignee)
+        specialist = next(
+            member for member in _DIGITAL_TEAM
+            if member["key"] == assignee)
+        task["assignee_name"] = specialist["name"]
+        task["assignee_role"] = specialist["role"]
+        return jsonify({"ok": True, "task": task}), 201
+
+    @app.route("/team/manager/tasks/<task_id>/status", methods=["POST"])
+    def manager_task_status(task_id):
+        user = current_user()
+        if user is None:
+            return jsonify({"ok": False, "error": "Sign in first."}), 401
+        payload = request.get_json(silent=True) or request.form
+        status = (payload.get("status") or "").strip()
+        if status not in ("queued", "in_progress", "delivered"):
+            return jsonify({
+                "ok": False,
+                "error": "Choose assigned, in progress, or delivered.",
+            }), 400
+        if not store.update_manager_task_status(
+                user["id"], task_id, status):
+            return jsonify({
+                "ok": False,
+                "error": "That objective was not found.",
+            }), 404
+        return jsonify({"ok": True, "status": status})
 
     @app.route("/team/invite", methods=["POST"])
     def team_invite():

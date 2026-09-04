@@ -461,6 +461,17 @@ def init_db():
                 joined TEXT,
                 UNIQUE(owner_id, email)
             );
+            CREATE TABLE IF NOT EXISTS manager_tasks (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                assignee TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'queued',
+                created TEXT NOT NULL,
+                updated TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_manager_tasks_user_status
+                ON manager_tasks(user_id, status, updated);
             CREATE TABLE IF NOT EXISTS pulse_snapshots (
                 user_id TEXT NOT NULL,
                 day TEXT NOT NULL,
@@ -2903,6 +2914,62 @@ def list_team(owner_id):
             "LEFT JOIN users u ON u.id = t.member_user_id "
             "WHERE t.owner_id = ? ORDER BY t.created", (owner_id,)).fetchall()
     return [dict(r) for r in rows]
+
+
+# --- Manager desk ------------------------------------------------------------
+
+_MANAGER_TASK_STATUSES = ("queued", "in_progress", "delivered")
+
+
+def create_manager_task(user_id, title, assignee):
+    """Create one owner-scoped objective for the V2 operating team."""
+    clean_title = " ".join((title or "").split())[:180]
+    if not clean_title or not user_id or not assignee:
+        raise ValueError("user_id, title, and assignee are required")
+    task_id = uuid.uuid4().hex
+    now = _now()
+    with get_db() as db:
+        db.execute(
+            "INSERT INTO manager_tasks "
+            "(id, user_id, title, assignee, status, created, updated) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (task_id, user_id, clean_title, assignee, "queued", now, now),
+        )
+        row = db.execute(
+            "SELECT * FROM manager_tasks WHERE id = ? AND user_id = ?",
+            (task_id, user_id),
+        ).fetchone()
+    return dict(row)
+
+
+def list_manager_tasks(user_id, limit=50):
+    """List a user's objectives with live work first and delivered work last."""
+    try:
+        limit = max(1, min(100, int(limit)))
+    except (TypeError, ValueError):
+        limit = 50
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT * FROM manager_tasks WHERE user_id = ? "
+            "ORDER BY CASE status "
+            "WHEN 'in_progress' THEN 0 WHEN 'queued' THEN 1 ELSE 2 END, "
+            "updated DESC LIMIT ?",
+            (user_id, limit),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def update_manager_task_status(user_id, task_id, status):
+    """Move a manager objective while enforcing account ownership."""
+    if status not in _MANAGER_TASK_STATUSES:
+        return False
+    with get_db() as db:
+        cur = db.execute(
+            "UPDATE manager_tasks SET status = ?, updated = ? "
+            "WHERE id = ? AND user_id = ?",
+            (status, _now(), task_id, user_id),
+        )
+    return cur.rowcount > 0
 
 
 def get_team_invite(token):

@@ -1,4 +1,4 @@
-"""Manager-first Team OS behavior and private collaborator limits."""
+"""Manager-first Team OS behavior, objectives, and private collaborator limits."""
 
 import db as store
 import hubs
@@ -26,7 +26,7 @@ def _signed_in_owner(monkeypatch, tmp_path):
     return client, owner_id
 
 
-def test_team_os_renders_manager_first_and_ten_operating_members(
+def test_team_os_renders_manager_first_dense_console_and_ten_operating_members(
         monkeypatch, tmp_path):
     client, _owner_id = _signed_in_owner(monkeypatch, tmp_path)
 
@@ -36,9 +36,11 @@ def test_team_os_renders_manager_first_and_ten_operating_members(
     assert response.status_code == 200
     assert body.count("data-agent-seat=") == 10
     assert 'data-manager-primary="true"' in body
-    assert body.index("Your Manager") < body.index(
-        "Nine specialists behind your manager")
-    assert "Your team is already in the room." in body
+    assert 'data-manager-console="true"' in body
+    assert body.index("Your Manager") < body.index("Your 10-person company")
+    assert "What are we moving today?" in body
+    assert "Mission Control" in body
+    assert "Objective pipeline" in body
     for label in (
         "Your Manager", "Your A&amp;R", "Your Marketer", "Your Publicist",
         "Your Tour Manager", "Your Royalty Accountant",
@@ -46,6 +48,82 @@ def test_team_os_renders_manager_first_and_ten_operating_members(
         "Your Executive Assistant",
     ):
         assert label in body
+
+
+def test_manager_creates_and_renders_owner_scoped_objective(
+        monkeypatch, tmp_path):
+    client, owner_id = _signed_in_owner(monkeypatch, tmp_path)
+
+    response = client.post(
+        "/team/manager/tasks",
+        data={
+            "title": "Build the six-week release plan",
+            "assignee": "marketing",
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.get_json()
+    assert payload["ok"] is True
+    assert payload["task"]["status"] == "queued"
+    assert payload["task"]["assignee_name"] == "Your Marketer"
+
+    rows = store.list_manager_tasks(owner_id)
+    assert len(rows) == 1
+    assert rows[0]["title"] == "Build the six-week release plan"
+
+    page = client.get("/team").get_data(as_text=True)
+    assert "Build the six-week release plan" in page
+    assert 'data-status="queued"' in page
+    assert "1 captured" in page
+    assert "1 queued" in page
+
+
+def test_manager_rejects_unclear_or_unknown_assignments(monkeypatch, tmp_path):
+    client, _owner_id = _signed_in_owner(monkeypatch, tmp_path)
+
+    unclear = client.post(
+        "/team/manager/tasks",
+        data={"title": "x", "assignee": "marketing"},
+    )
+    unknown = client.post(
+        "/team/manager/tasks",
+        data={"title": "Plan the next release", "assignee": "invented_desk"},
+    )
+
+    assert unclear.status_code == 400
+    assert unclear.get_json()["ok"] is False
+    assert unknown.status_code == 400
+    assert unknown.get_json() == {
+        "ok": False,
+        "error": "Choose one of your ten operating specialists.",
+    }
+
+
+def test_manager_task_progression_and_account_ownership(monkeypatch, tmp_path):
+    client, owner_id = _signed_in_owner(monkeypatch, tmp_path)
+    task = store.create_manager_task(
+        owner_id, "Advance the tour announcement", "tour_manager")
+
+    started = client.post(
+        f"/team/manager/tasks/{task['id']}/status",
+        data={"status": "in_progress"},
+    )
+    assert started.status_code == 200
+    assert store.list_manager_tasks(owner_id)[0]["status"] == "in_progress"
+
+    other_id = store.create_user(
+        "other@example.com", "Other",
+        generate_password_hash("different-pass"))
+    with client.session_transaction() as session:
+        session["user_id"] = other_id
+
+    blocked = client.post(
+        f"/team/manager/tasks/{task['id']}/status",
+        data={"status": "delivered"},
+    )
+    assert blocked.status_code == 404
+    assert store.list_manager_tasks(owner_id)[0]["status"] == "in_progress"
 
 
 def test_team_is_first_navigation_item_and_not_duplicated():

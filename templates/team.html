@@ -1,131 +1,335 @@
 {% extends "base.html" %}
 
-{% block title %}Your Team - Street Banker V2{% endblock %}
+{% block title %}Manager Command - Street Banker V2{% endblock %}
 
 {% block content %}
 <style>
-  .company-floor { --floor-gold:#e7b24a; --floor-line:rgba(231,178,74,.2); }
-  .floor-panel { border:1px solid rgba(255,255,255,.09); background:linear-gradient(145deg,rgba(22,22,20,.98),rgba(7,7,7,.99)); box-shadow:0 24px 64px rgba(0,0,0,.3); }
-  .floor-kicker { color:#d7a94f; font-size:.68rem; font-weight:800; letter-spacing:.22em; text-transform:uppercase; }
-  .manager-panel { position:relative; overflow:hidden; background:
-    radial-gradient(circle at 80% 15%,rgba(231,178,74,.14),transparent 32%),
-    linear-gradient(135deg,rgba(29,27,21,.98),rgba(8,8,8,.99) 62%); }
-  .manager-panel::after { content:""; position:absolute; inset:0; pointer-events:none; border:1px solid rgba(231,178,74,.18); border-radius:inherit; }
-  .manager-mark { box-shadow:0 0 0 8px rgba(231,178,74,.035),0 16px 44px rgba(0,0,0,.4); }
-  .status-pulse { box-shadow:0 0 0 0 rgba(74,222,128,.5); animation:floor-pulse 2.3s infinite; }
-  .specialist-card { min-height:214px; transition:transform .18s ease,border-color .18s ease,background .18s ease; }
-  .specialist-card:hover { transform:translateY(-3px); border-color:rgba(231,178,74,.42); background:linear-gradient(145deg,rgba(28,26,21,.98),rgba(9,9,9,.99)); }
-  .department-index { color:rgba(231,178,74,.42); font-variant-numeric:tabular-nums; }
-  .signal-line { background:linear-gradient(90deg,var(--floor-gold),rgba(231,178,74,0)); }
-  @keyframes floor-pulse { 70% { box-shadow:0 0 0 7px rgba(74,222,128,0); } 100% { box-shadow:0 0 0 0 rgba(74,222,128,0); } }
-  @media (prefers-reduced-motion:reduce) { .status-pulse{animation:none}.specialist-card{transition:none}.specialist-card:hover{transform:none} }
+  .manager-console {
+    --mc-gold: #e8b950;
+    --mc-gold-bright: #ffd477;
+    --mc-panel: #0d0e0e;
+    --mc-panel-2: #111313;
+    --mc-line: rgba(255,255,255,.105);
+    --mc-muted: #8d9298;
+    color: #f5f3ee;
+  }
+  .mc-shell { border: 1px solid rgba(255,255,255,.12); background: #080909; box-shadow: 0 24px 70px rgba(0,0,0,.42); }
+  .mc-panel { border: 1px solid var(--mc-line); background: var(--mc-panel); }
+  .mc-panel-soft { border: 1px solid rgba(255,255,255,.075); background: var(--mc-panel-2); }
+  .mc-label { color: #aeb2b5; font-size: .65rem; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
+  .mc-tab { position: relative; color: #969a9f; font-size: .76rem; font-weight: 650; letter-spacing: .02em; }
+  .mc-tab:hover { color: #f4f1e9; }
+  .mc-tab[aria-current="page"] { color: var(--mc-gold-bright); }
+  .mc-tab[aria-current="page"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -17px; height: 2px; background: var(--mc-gold); box-shadow: 0 0 14px rgba(232,185,80,.5); }
+  .mc-status-dot { box-shadow: 0 0 10px currentColor; }
+  .mc-stage { min-height: 70px; border: 1px solid rgba(255,255,255,.08); background: #0b0c0c; }
+  .mc-stage.is-active { border-color: rgba(232,185,80,.55); box-shadow: inset 0 0 24px rgba(232,185,80,.045); }
+  .mc-stage-number { border: 1px solid rgba(232,185,80,.3); color: var(--mc-gold-bright); }
+  .mc-input { resize: vertical; min-height: 86px; border: 1px solid rgba(255,255,255,.12); background: #070808; color: white; }
+  .mc-input:focus, .mc-select:focus { border-color: rgba(232,185,80,.75); outline: none; box-shadow: 0 0 0 3px rgba(232,185,80,.08); }
+  .mc-select { border: 1px solid rgba(255,255,255,.12); background: #090a0a; color: white; }
+  .mc-primary { border: 1px solid #f3cd72; background: #e8b950; color: #151006; box-shadow: 0 8px 24px rgba(232,185,80,.14); }
+  .mc-primary:hover { background: #f2c967; }
+  .mc-task { border-left: 2px solid rgba(255,255,255,.13); }
+  .mc-task[data-status="queued"] { border-left-color: #d7893d; }
+  .mc-task[data-status="in_progress"] { border-left-color: var(--mc-gold); }
+  .mc-task[data-status="delivered"] { border-left-color: #65a66f; }
+  .mc-progress-ring { background: conic-gradient(var(--mc-gold) var(--execution), rgba(255,255,255,.08) 0); }
+  .mc-progress-ring::after { content: ""; position: absolute; inset: 7px; border-radius: 999px; background: #0d0e0e; }
+  .mc-team-row { min-height: 60px; border: 1px solid rgba(255,255,255,.075); background: #0b0c0c; }
+  .mc-team-row:hover { border-color: rgba(232,185,80,.35); background: #11110f; }
+  .mc-team-row[data-manager-primary="true"] { border-color: rgba(232,185,80,.45); background: #14120c; }
+  .mc-avatar { border: 1px solid rgba(232,185,80,.28); background: #17140c; color: var(--mc-gold-bright); }
+  .mc-note { border-left: 2px solid rgba(232,185,80,.5); background: rgba(232,185,80,.035); }
+  .mc-toast { transform: translateY(10px); opacity: 0; pointer-events: none; transition: .18s ease; }
+  .mc-toast.is-visible { transform: translateY(0); opacity: 1; }
+  @media (max-width: 767px) {
+    .mc-tab[aria-current="page"]::after { bottom: -11px; }
+    .mc-stage { min-height: 58px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .mc-toast { transition: none; } }
 </style>
 
-<div class="company-floor mx-auto max-w-[1500px] space-y-5">
-  <header class="flex flex-col gap-4 border-b border-white/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
-    <div>
-      <div class="floor-kicker">Street Banker V2 / Your Company</div>
-      <h1 class="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Your team is already in the room.</h1>
-      <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-300">Your manager leads one operating team across releases, touring, revenue, rights, publicity, creative, and the studio.</p>
-    </div>
-    <div class="flex items-center gap-3 rounded-full border border-emerald-500/20 bg-emerald-500/[.06] px-4 py-2 text-xs font-bold uppercase tracking-[.14em] text-emerald-300">
-      <span class="status-pulse h-2 w-2 rounded-full bg-emerald-400"></span>
-      10 specialists ready
-    </div>
-  </header>
+<div class="manager-console mx-auto max-w-[1600px]">
+  <div class="mc-shell overflow-hidden rounded-2xl" data-manager-console="true">
+    <header class="border-b border-white/10 px-4 py-4 sm:px-6">
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div class="flex min-w-0 items-center gap-3">
+          <div class="mc-avatar grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-black tracking-[.1em]">SB</div>
+          <div class="min-w-0">
+            <div class="truncate text-sm font-bold tracking-[.14em] text-white">STREET BANKER <span class="font-medium text-sb-gold">COMMAND</span></div>
+            <div class="mt-0.5 text-[10px] uppercase tracking-[.16em] text-gray-500">Owner operating system</div>
+          </div>
+        </div>
+        <nav class="flex items-center gap-6 overflow-x-auto border-t border-white/[.06] pt-3 xl:border-0 xl:pt-0" aria-label="Manager workspace">
+          <a class="mc-tab pb-1" href="#manager-desk" aria-current="page">Manager</a>
+          <a class="mc-tab pb-1" href="#company-floor">Team</a>
+          <a class="mc-tab pb-1" href="#mission-control">Activity</a>
+          <a class="mc-tab pb-1" href="/rollout-studio">Projects</a>
+        </nav>
+        <div class="flex items-center gap-3 text-xs text-gray-400">
+          <span class="flex items-center gap-2"><span class="mc-status-dot h-1.5 w-1.5 rounded-full bg-emerald-400 text-emerald-400"></span>10 desks online</span>
+          <span class="rounded-full border border-sb-gold/30 px-3 py-1.5 font-bold text-sb-gold-bright">{{ account.initials }}</span>
+        </div>
+      </div>
+    </header>
 
-  <section class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(330px,.65fr)]">
-    <article class="manager-panel floor-panel rounded-2xl p-5 sm:p-7" data-agent-seat="1" data-manager-primary="true">
-      <div class="relative z-10 flex h-full flex-col">
-        <div class="flex items-start justify-between gap-4">
-          <div class="flex items-center gap-4">
-            <div class="manager-mark grid h-16 w-16 shrink-0 place-items-center rounded-full border border-sb-gold/40 bg-black/45 text-lg font-black tracking-wider text-sb-gold-bright">{{ manager.initials }}</div>
-            <div>
-              <div class="floor-kicker">First chair / online</div>
-              <h2 class="mt-1 text-2xl font-semibold text-white">{{ manager.name }}</h2>
-              <p class="mt-1 text-sm text-gray-400">{{ manager.role }}</p>
+    <div class="grid xl:grid-cols-[minmax(0,1fr)_340px]">
+      <main class="min-w-0 p-3 sm:p-5" id="manager-desk">
+        <section class="mc-panel overflow-hidden rounded-xl" data-manager-primary="true">
+          <div class="grid lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,.55fr)]">
+            <div class="p-4 sm:p-6">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <div class="mc-avatar grid h-12 w-12 place-items-center rounded-full text-sm font-black">{{ manager.initials }}</div>
+                  <div>
+                    <h1 class="text-xl font-semibold text-white sm:text-2xl">{{ manager.name }}</h1>
+                    <p class="mt-0.5 text-xs text-gray-400">{{ manager.role }} · directing all ten desks</p>
+                  </div>
+                </div>
+                <span class="rounded-full border border-emerald-500/20 bg-emerald-500/[.05] px-3 py-1 text-[10px] font-bold uppercase tracking-[.13em] text-emerald-300">Ready for direction</span>
+              </div>
+
+              <div class="mt-6">
+                <h2 class="text-lg font-semibold text-white">What are we moving today?</h2>
+                <p class="mt-1 text-sm text-gray-400">Set one clear outcome. Your manager routes it to the right specialist and keeps it visible through delivery.</p>
+                <form class="mt-4" id="manager-objective-form">
+                  <label class="sr-only" for="manager-objective">Objective</label>
+                  <textarea class="mc-input w-full rounded-lg px-4 py-3 text-sm leading-6 placeholder:text-gray-600" id="manager-objective" name="title" maxlength="180" required placeholder="Example: Build the six-week release plan for the next single"></textarea>
+                  <div class="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                    <label class="sr-only" for="manager-assignee">Assign to</label>
+                    <select class="mc-select min-h-11 w-full rounded-lg px-3 text-sm" id="manager-assignee" name="assignee">
+                      {% for member in digital_team %}
+                      <option value="{{ member.key }}"{% if selected_assignee == member.key %} selected{% endif %}>{{ member.name }} · {{ member.role }}</option>
+                      {% endfor %}
+                    </select>
+                    <button class="mc-primary min-h-11 rounded-lg px-5 text-sm font-black" type="submit">Assign objective <span aria-hidden="true">→</span></button>
+                  </div>
+                  <p class="mt-2 hidden text-xs text-red-300" id="manager-form-error" role="alert"></p>
+                </form>
+              </div>
+            </div>
+
+            <div class="border-t border-white/[.08] bg-black/20 p-4 lg:border-l lg:border-t-0 sm:p-6">
+              <div class="mc-label">Manager direction</div>
+              <p class="mt-3 text-sm leading-6 text-gray-200">{{ manager.brief }}</p>
+              <div class="mc-note mt-5 p-3 text-xs leading-5 text-gray-400">Start with the result you want. The desk assignment can change as the work develops; the objective remains in Mission Control.</div>
+              <a class="mt-5 inline-flex min-h-10 items-center gap-2 text-xs font-bold text-sb-gold-bright hover:text-white" href="{{ manager.href }}">Open full daily plan <span aria-hidden="true">→</span></a>
             </div>
           </div>
-          <span class="hidden rounded-full border border-sb-gold/25 bg-sb-gold/[.07] px-3 py-1 text-[10px] font-black uppercase tracking-[.16em] text-sb-gold-bright sm:inline-flex">Leads all 10</span>
-        </div>
+        </section>
 
-        <div class="my-6 h-px w-full signal-line"></div>
+        <section class="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4" aria-label="Objective pipeline">
+          <div class="mc-stage is-active flex items-center gap-3 rounded-lg p-3">
+            <span class="mc-stage-number grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold">1</span>
+            <div><div class="mc-label">Objectives</div><div class="mt-1 text-sm font-semibold text-white">{{ task_counts.total }} captured</div></div>
+          </div>
+          <div class="mc-stage flex items-center gap-3 rounded-lg p-3">
+            <span class="mc-stage-number grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold">2</span>
+            <div><div class="mc-label">Assigned</div><div class="mt-1 text-sm font-semibold text-white">{{ task_counts.queued }} queued</div></div>
+          </div>
+          <div class="mc-stage flex items-center gap-3 rounded-lg p-3">
+            <span class="mc-stage-number grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold">3</span>
+            <div><div class="mc-label">In progress</div><div class="mt-1 text-sm font-semibold text-white">{{ task_counts.in_progress }} moving</div></div>
+          </div>
+          <div class="mc-stage flex items-center gap-3 rounded-lg p-3">
+            <span class="mc-stage-number grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold">4</span>
+            <div><div class="mc-label">Delivered</div><div class="mt-1 text-sm font-semibold text-white">{{ task_counts.delivered }} complete</div></div>
+          </div>
+        </section>
 
-        <div class="max-w-3xl">
-          <div class="floor-kicker">Manager briefing</div>
-          <p class="mt-2 text-lg leading-8 text-gray-100">{{ manager.brief }}</p>
-        </div>
+        <section class="mc-panel mt-3 rounded-xl p-4 sm:p-5" id="active-work">
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 class="text-base font-semibold text-white">Active work</h2>
+              <p class="mt-1 text-xs text-gray-500">Owner-scoped objectives managed inside V2.</p>
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-[.14em] text-gray-500">{{ task_counts.queued + task_counts.in_progress }} live · {{ task_counts.delivered }} delivered</span>
+          </div>
 
-        <div class="mt-6 grid gap-2 sm:grid-cols-3">
-          <a href="/artist-profile" class="rounded-xl border border-white/10 bg-black/25 p-3 transition-colors hover:border-sb-gold/35 hover:bg-sb-gold/[.05]">
-            <span class="block text-[10px] font-bold uppercase tracking-[.16em] text-gray-500">01 / Identity</span>
-            <span class="mt-1 block text-sm font-semibold text-white">Build artist profile</span>
-          </a>
-          <a href="/catalog" class="rounded-xl border border-white/10 bg-black/25 p-3 transition-colors hover:border-sb-gold/35 hover:bg-sb-gold/[.05]">
-            <span class="block text-[10px] font-bold uppercase tracking-[.16em] text-gray-500">02 / Assets</span>
-            <span class="mt-1 block text-sm font-semibold text-white">Load the catalog</span>
-          </a>
-          <a href="/rollout-studio" class="rounded-xl border border-white/10 bg-black/25 p-3 transition-colors hover:border-sb-gold/35 hover:bg-sb-gold/[.05]">
-            <span class="block text-[10px] font-bold uppercase tracking-[.16em] text-gray-500">03 / Demand</span>
-            <span class="mt-1 block text-sm font-semibold text-white">Start a campaign</span>
-          </a>
-        </div>
+          <div class="mt-4 space-y-2">
+            {% for task in manager_tasks %}
+            <article class="mc-task mc-panel-soft rounded-lg p-3 sm:p-4" data-manager-task="{{ task.id }}" data-status="{{ task.status }}">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex min-w-0 items-start gap-3">
+                  <a class="mc-avatar grid h-9 w-9 shrink-0 place-items-center rounded-full text-[10px] font-black" href="{{ task.assignee_href }}" title="Open {{ task.assignee_name }}">{{ task.assignee_initials }}</a>
+                  <div class="min-w-0">
+                    <h3 class="text-sm font-semibold leading-5 text-white">{{ task.title }}</h3>
+                    <p class="mt-1 text-[11px] text-gray-500">{{ task.assignee_name }} · {{ task.assignee_role }}</p>
+                  </div>
+                </div>
+                <div class="flex shrink-0 items-center gap-2 pl-12 sm:pl-0">
+                  {% if task.status == "queued" %}
+                  <span class="rounded-full border border-orange-400/25 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[.12em] text-orange-300">Assigned</span>
+                  <form data-task-status-form><input type="hidden" name="status" value="in_progress"><button class="min-h-9 rounded-md border border-sb-gold/35 px-3 text-[10px] font-bold uppercase tracking-[.1em] text-sb-gold-bright hover:bg-sb-gold/[.07]" type="submit">Start work</button></form>
+                  {% elif task.status == "in_progress" %}
+                  <span class="rounded-full border border-sb-gold/30 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[.12em] text-sb-gold-bright">In progress</span>
+                  <form data-task-status-form><input type="hidden" name="status" value="delivered"><button class="min-h-9 rounded-md border border-emerald-400/30 px-3 text-[10px] font-bold uppercase tracking-[.1em] text-emerald-300 hover:bg-emerald-500/[.06]" type="submit">Mark delivered</button></form>
+                  {% else %}
+                  <span class="rounded-full border border-emerald-400/25 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[.12em] text-emerald-300">Delivered</span>
+                  <a class="min-h-9 rounded-md border border-white/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[.1em] text-gray-300 hover:border-sb-gold/30 hover:text-white" href="{{ task.assignee_href }}">Open desk</a>
+                  {% endif %}
+                </div>
+              </div>
+            </article>
+            {% else %}
+            <div class="rounded-lg border border-dashed border-white/10 px-5 py-8 text-center">
+              <div class="text-sm font-semibold text-gray-300">No objectives are waiting.</div>
+              <p class="mt-1 text-xs text-gray-500">Give your manager the first outcome above and it will appear here.</p>
+            </div>
+            {% endfor %}
+          </div>
+        </section>
 
-        <div class="mt-auto pt-6">
-          <a href="{{ manager.href }}" class="sb-btn sb-btn-primary min-h-11">{{ manager.cta }} <span aria-hidden="true">→</span></a>
-        </div>
-      </div>
-    </article>
+        <section class="mc-panel mt-3 rounded-xl p-4 sm:p-5" id="company-floor">
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 class="text-base font-semibold text-white">Your 10-person company</h2>
+              <p class="mt-1 text-xs text-gray-500">The Manager leads; every specialist opens the working module already built for that desk.</p>
+            </div>
+            <span class="text-[10px] font-bold uppercase tracking-[.14em] text-emerald-300">All desks ready</span>
+          </div>
+          <div class="mt-4 grid gap-2 lg:grid-cols-2">
+            {% for member in digital_team %}
+            <a class="mc-team-row group flex items-center gap-3 rounded-lg px-3 py-2.5" href="{{ member.href }}" data-agent-seat="{{ loop.index + 1 }}" data-agent-key="{{ member.key }}"{% if loop.first %} data-manager-primary="true"{% endif %}>
+              <div class="mc-avatar grid h-9 w-9 shrink-0 place-items-center rounded-full text-[10px] font-black">{{ member.initials }}</div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="truncate text-sm font-semibold text-white">{{ member.name }}</span>
+                  <span class="text-[9px] font-bold uppercase tracking-[.12em] text-emerald-300">Ready</span>
+                </div>
+                <div class="mt-0.5 truncate text-[11px] text-gray-500">{{ member.role }} · {{ member.focus }}</div>
+              </div>
+              <span class="text-gray-600 group-hover:text-sb-gold" aria-hidden="true">→</span>
+            </a>
+            {% endfor %}
+          </div>
+        </section>
+      </main>
 
-    <aside class="floor-panel rounded-2xl p-5">
-      <div class="flex items-center justify-between">
-        <div>
-          <div class="floor-kicker">Company signal</div>
-          <h2 class="mt-1 text-lg font-semibold text-white">One plan, five divisions</h2>
-        </div>
-        <div class="grid h-14 w-14 place-items-center rounded-full border border-sb-gold/25 bg-sb-gold/[.05]">
-          <span class="text-xl font-semibold text-white">10</span>
-        </div>
-      </div>
-      <div class="mt-5 space-y-2">
-        <a href="/rollout-studio" class="flex min-h-12 items-center justify-between rounded-xl border border-white/10 bg-black/25 px-4 text-sm text-gray-200 hover:border-sb-gold/30"><span>Release & Marketing</span><span class="text-sb-gold">02 desks</span></a>
-        <a href="/rack" class="flex min-h-12 items-center justify-between rounded-xl border border-white/10 bg-black/25 px-4 text-sm text-gray-200 hover:border-sb-gold/30"><span>Studio & Creative</span><span class="text-sb-gold">02 desks</span></a>
-        <a href="/overview" class="flex min-h-12 items-center justify-between rounded-xl border border-white/10 bg-black/25 px-4 text-sm text-gray-200 hover:border-sb-gold/30"><span>Revenue & Rights</span><span class="text-sb-gold">02 desks</span></a>
-        <a href="/tours" class="flex min-h-12 items-center justify-between rounded-xl border border-white/10 bg-black/25 px-4 text-sm text-gray-200 hover:border-sb-gold/30"><span>Live & Touring</span><span class="text-sb-gold">01 desk</span></a>
-        <a href="/notifications" class="flex min-h-12 items-center justify-between rounded-xl border border-white/10 bg-black/25 px-4 text-sm text-gray-200 hover:border-sb-gold/30"><span>Executive Operations</span><span class="text-sb-gold">03 desks</span></a>
-      </div>
-      <p class="mt-4 text-xs leading-5 text-gray-500">Each desk opens the existing working module behind it. Nothing here creates a second version of Tour, Studio, Campaigns, or Money.</p>
-    </aside>
-  </section>
+      <aside class="border-t border-white/10 bg-[#0a0b0b] p-3 xl:border-l xl:border-t-0 sm:p-5" id="mission-control">
+        <div class="sticky top-4 space-y-3">
+          <section class="mc-panel rounded-xl p-4">
+            <div class="flex items-center gap-2">
+              <span class="text-sb-gold" aria-hidden="true">⌁</span>
+              <h2 class="text-sm font-semibold uppercase tracking-[.12em] text-white">Mission Control</h2>
+            </div>
+            <div class="mt-4 flex items-center gap-4">
+              <div class="mc-progress-ring relative grid h-20 w-20 shrink-0 place-items-center rounded-full" style="--execution: {{ task_progress }}%;">
+                <div class="relative z-10 text-center"><div class="text-xl font-semibold text-white">{{ task_progress }}%</div><div class="text-[8px] uppercase tracking-[.12em] text-gray-500">delivered</div></div>
+              </div>
+              <div class="min-w-0">
+                <div class="mc-label">Execution signal</div>
+                {% if task_counts.total %}
+                <div class="mt-1 text-sm font-semibold text-white">{{ task_counts.delivered }} of {{ task_counts.total }} objectives complete</div>
+                <p class="mt-1 text-[11px] leading-4 text-gray-500">Calculated from your actual Manager queue.</p>
+                {% else %}
+                <div class="mt-1 text-sm font-semibold text-white">Awaiting first objective</div>
+                <p class="mt-1 text-[11px] leading-4 text-gray-500">Your execution signal starts when work is assigned.</p>
+                {% endif %}
+              </div>
+            </div>
+          </section>
 
-  <section>
-    <div class="mb-3 flex items-end justify-between gap-3">
-      <div>
-        <div class="floor-kicker">Department floor</div>
-        <h2 class="mt-1 text-xl font-semibold text-white">Nine specialists behind your manager</h2>
-      </div>
-      <span class="text-xs font-semibold uppercase tracking-[.14em] text-gray-500">Select a desk to work</span>
+          <section class="mc-panel rounded-xl p-4">
+            <div class="mc-label">Next up</div>
+            {% if next_task %}
+            <div class="mt-3 flex items-start gap-3">
+              <div class="mc-avatar grid h-9 w-9 shrink-0 place-items-center rounded-full text-[10px] font-black">{{ next_task.assignee_initials }}</div>
+              <div class="min-w-0"><div class="text-sm font-semibold leading-5 text-white">{{ next_task.title }}</div><div class="mt-1 text-[11px] text-gray-500">{{ next_task.assignee_name }}</div></div>
+            </div>
+            <a class="mc-primary mt-4 flex min-h-11 w-full items-center justify-center rounded-lg text-xs font-black uppercase tracking-[.1em]" href="#active-work">Advance objective <span class="ml-2" aria-hidden="true">→</span></a>
+            {% else %}
+            <p class="mt-3 text-sm leading-6 text-gray-400">No live work is waiting. Set the next objective at the Manager desk.</p>
+            <a class="mc-primary mt-4 flex min-h-11 w-full items-center justify-center rounded-lg text-xs font-black uppercase tracking-[.1em]" href="#manager-objective">Set objective <span class="ml-2" aria-hidden="true">→</span></a>
+            {% endif %}
+          </section>
+
+          <section class="mc-panel rounded-xl p-4">
+            <div class="flex items-center justify-between gap-3"><div class="mc-label">Quick assignment</div><span class="text-[10px] text-gray-600">existing desks</span></div>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              {% for member in specialists[:6] %}
+              <a class="rounded-lg border border-white/[.08] bg-black/20 p-2.5 text-left hover:border-sb-gold/30" href="/team?assign={{ member.key }}#manager-objective">
+                <span class="block text-[10px] font-bold text-sb-gold-bright">{{ member.initials }}</span>
+                <span class="mt-1 block truncate text-[11px] text-gray-300">{{ member.name|replace('Your ', '') }}</span>
+              </a>
+              {% endfor %}
+            </div>
+          </section>
+
+          <section class="mc-panel rounded-xl p-4">
+            <div class="mc-label">Company status</div>
+            <div class="mt-3 space-y-2 text-xs">
+              <div class="flex items-center justify-between"><span class="text-gray-500">Operating desks</span><span class="font-semibold text-white">10 / 10</span></div>
+              <div class="flex items-center justify-between"><span class="text-gray-500">Live objectives</span><span class="font-semibold text-white">{{ task_counts.queued + task_counts.in_progress }}</span></div>
+              <div class="flex items-center justify-between"><span class="text-gray-500">Human collaborators</span><span class="font-semibold text-white">{{ seats_used }} / {{ seat_limit }}</span></div>
+            </div>
+          </section>
+        </div>
+      </aside>
     </div>
 
-    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {% for member in specialists %}
-      <a href="{{ member.href }}" class="specialist-card floor-panel group flex flex-col rounded-2xl p-5" data-agent-seat="{{ loop.index + 1 }}" data-agent-key="{{ member.key }}">
-        <div class="flex items-start justify-between gap-3">
-          <div class="grid h-12 w-12 place-items-center rounded-full border border-white/10 bg-black/35 text-sm font-black tracking-wider text-sb-gold-bright group-hover:border-sb-gold/35">{{ member.initials }}</div>
-          <span class="department-index text-sm font-bold">{{ "%02d"|format(loop.index + 1) }}</span>
-        </div>
-        <div class="mt-5">
-          <div class="text-lg font-semibold text-white">{{ member.name }}</div>
-          <div class="mt-1 text-[10px] font-bold uppercase tracking-[.16em] text-sb-gold">{{ member.role }}</div>
-          <p class="mt-3 text-sm leading-6 text-gray-400">{{ member.focus }}</p>
-        </div>
-        <div class="mt-auto flex items-center justify-between border-t border-white/[.07] pt-4">
-          <span class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-emerald-300"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Ready</span>
-          <span class="text-xs font-semibold text-gray-300 group-hover:text-sb-gold-bright">{{ member.cta }} →</span>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-  </section>
+    <footer class="grid gap-3 border-t border-white/10 bg-[#090a0a] px-4 py-3 text-[10px] font-bold uppercase tracking-[.12em] text-gray-500 sm:grid-cols-4 sm:px-6">
+      <span><strong class="text-sb-gold-bright">Manager:</strong> online</span>
+      <span><strong class="text-white">Team:</strong> 10 specialists</span>
+      <span><strong class="text-white">Workflow:</strong> {{ task_counts.total }} objectives</span>
+      <span class="sm:text-right"><strong class="text-white">Access:</strong> owner private</span>
+    </footer>
+  </div>
 </div>
+
+<div class="mc-toast fixed bottom-5 right-5 z-50 max-w-sm rounded-lg border border-white/10 bg-[#121313] px-4 py-3 text-sm text-white shadow-2xl" id="manager-toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const form = document.getElementById('manager-objective-form');
+  const error = document.getElementById('manager-form-error');
+  const toast = document.getElementById('manager-toast');
+  const notify = (message) => {
+    toast.textContent = message;
+    toast.classList.add('is-visible');
+    window.setTimeout(() => toast.classList.remove('is-visible'), 2200);
+  };
+  const send = async (url, body) => {
+    const response = await fetch(url, { method: 'POST', body });
+    const data = await response.json().catch(() => ({ ok: false, error: 'The Manager could not update this objective.' }));
+    if (!response.ok || !data.ok) throw new Error(data.error || 'The Manager could not update this objective.');
+    return data;
+  };
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    error.classList.add('hidden');
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+    button.textContent = 'Assigning…';
+    try {
+      await send('/team/manager/tasks', new FormData(form));
+      notify('Objective assigned to your team.');
+      window.setTimeout(() => window.location.assign('/team#active-work'), 350);
+    } catch (failure) {
+      error.textContent = failure.message;
+      error.classList.remove('hidden');
+      button.disabled = false;
+      button.innerHTML = 'Assign objective <span aria-hidden="true">→</span>';
+    }
+  });
+
+  document.querySelectorAll('[data-task-status-form]').forEach((statusForm) => {
+    statusForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const task = statusForm.closest('[data-manager-task]');
+      const button = statusForm.querySelector('button');
+      button.disabled = true;
+      try {
+        await send(`/team/manager/tasks/${task.dataset.managerTask}/status`, new FormData(statusForm));
+        window.location.assign('/team#active-work');
+      } catch (failure) {
+        notify(failure.message);
+        button.disabled = false;
+      }
+    });
+  });
+})();
+</script>
 {% endblock %}
