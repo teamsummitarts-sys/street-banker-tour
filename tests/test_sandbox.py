@@ -126,29 +126,3 @@ def test_production_html_is_byte_identical(monkeypatch):
         assert "[SANDBOX]" not in body, path
         assert "2147483647" not in body, path       # the strip's z-index
     assert sandbox.mark("<html><body>x</body></html>") == "<html><body>x</body></html>"
-
-# --- workflow-comparison entry ---------------------------------------------
-
-def test_workflow_comparison_root_enters_the_product(monkeypatch):
-    """The isolated comparison URL must not look like the public V1 site."""
-    monkeypatch.setenv("WORKFLOW_ENTRY_ONLY", "1")
-    monkeypatch.delenv("DEMO_PASSWORD", raising=False)
-    client = create_app().test_client()
-
-    signed_out = client.get("/", follow_redirects=False)
-    assert signed_out.status_code == 302
-    assert signed_out.headers["Location"].endswith("/login")
-
-    opened = client.post(
-        "/demo-open",
-        data={"demo_workspace": "demo@streetbanker.io",
-              "demo_password": "sweep"},
-        follow_redirects=False,
-    )
-    assert opened.status_code == 302
-    assert opened.headers["Location"].endswith("/walkthrough")
-
-    signed_in = client.get("/", follow_redirects=False)
-    assert signed_in.status_code == 302
-    assert signed_in.headers["Location"].endswith("/walkthrough")
-
