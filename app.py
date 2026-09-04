@@ -1548,16 +1548,6 @@ def create_app():
 
     @app.route("/")
     def index():
-        # Isolated workflow-comparison deployments should enter the product,
-        # not the public marketing homepage bundled with this codebase.
-        # The flag is off by default so production and every other deployment
-        # keep their existing root behavior.
-        workflow_entry_only = (
-            os.environ.get("WORKFLOW_ENTRY_ONLY") or ""
-        ).strip().lower() in ("1", "true", "yes", "on")
-        if workflow_entry_only:
-            return redirect("/walkthrough" if current_user() else "/login")
-
         # Homepage content is fully config-driven (landing_config); the
         # command-desk figures are editable there, not injected live.
         config = get_landing_config()
