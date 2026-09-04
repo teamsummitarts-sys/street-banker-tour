@@ -4,11 +4,24 @@ on:
   pull_request:
     paths:
       - "app.py"
+      - "company_os.py"
       - "db.py"
+      - "DESIGN.md"
+      - "PRODUCT.md"
+      - "Procfile"
       - "plans.py"
+      - "docs/RENDER_V2_DEPLOYMENT.md"
+      - "requirements.txt"
+      - "templates/base.html"
+      - "templates/login.html"
+      - "templates/partials/login_session_recall.html"
       - "templates/team.html"
+      - "tests/test_company_os.py"
+      - "tests/test_company_os_security.py"
+      - "tests/test_closed_owner_bootstrap.py"
       - "tests/test_team_os.py"
       - "tests/test_signup_access.py"
+      - "tests/test_v2_security_foundation.py"
       - ".github/workflows/team-os-check.yml"
 
 jobs:
@@ -22,4 +35,11 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - run: pytest -q tests/test_team_os.py tests/test_signup_access.py
+      - run: >-
+          pytest -q
+          tests/test_company_os.py
+          tests/test_company_os_security.py
+          tests/test_closed_owner_bootstrap.py
+          tests/test_team_os.py
+          tests/test_signup_access.py
+          tests/test_v2_security_foundation.py

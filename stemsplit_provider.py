@@ -31,7 +31,7 @@ BASE = "https://stemsplit.io/api/v1"
 # PUBLIC_BASE_URL so it stays true when the domain changes.
 UA = "StreetBanker/1.0 (+%s)" % (
     os.environ.get("PUBLIC_BASE_URL")
-    or "https://street-banker.onrender.com").rstrip("/")
+    or "http://127.0.0.1:5000").rstrip("/")
 JOBS = os.environ.get("STEMSPLIT_JOBS_PATH", "/jobs")
 SRC_DIR = os.path.join(tempfile.gettempdir(), "sb-stem-src")
 MAX_UPLOAD = 60 * 1024 * 1024          # a full-length WAV, with headroom

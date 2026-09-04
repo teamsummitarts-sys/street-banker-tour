@@ -1,335 +1,1998 @@
 {% extends "base.html" %}
 
-{% block title %}Manager Command - Street Banker V2{% endblock %}
+{% block title %}Company OS - Street Banker V2{% endblock %}
 
 {% block content %}
+<!--
+DIRECTION CONTRACT
+THESIS: Street Banker is the artist's already-staffed company; this surface refuses the generic staff directory and passive dashboard.
+OWN-WORLD: Near-black control-room surfaces, warm brass rules, compact ledger rows, numbered desks, restrained editorial type, and one decisive amber action.
+STORY: The owner gives the Manager an outcome, approves the operating plan, watches accountable work move across nine desks, and reviews stored deliverables.
+FIRST VIEWPORT: Manager command occupies the main field, all ten seats form one continuous matrix beneath it, and real decisions collect in a narrow Mission Control rail.
+FORM: Company switchboard, first-choice pinned owner direction; seed key: user-pinned-company-os.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+-->
+
 <style>
-  .manager-console {
-    --mc-gold: #e8b950;
-    --mc-gold-bright: #ffd477;
-    --mc-panel: #0d0e0e;
-    --mc-panel-2: #111313;
-    --mc-line: rgba(255,255,255,.105);
-    --mc-muted: #8d9298;
-    color: #f5f3ee;
+  .sb2-company-os {
+    --sb2-ground: #060707;
+    --sb2-surface: #0d0f0f;
+    --sb2-surface-raised: #111313;
+    --sb2-surface-warm: #15130e;
+    --sb2-line: rgba(239, 233, 219, .13);
+    --sb2-line-strong: rgba(239, 233, 219, .22);
+    --sb2-line-gold: rgba(227, 170, 69, .48);
+    --sb2-gold: #e3aa45;
+    --sb2-gold-bright: #f4c26a;
+    --sb2-text: #f2efe8;
+    --sb2-muted: #a7abb0;
+    --sb2-quiet: #858a8f;
+    --sb2-danger: #e19170;
+    --sb2-success: #a6bf78;
+    --sb2-focus: #ffcf75;
+    max-width: 1680px;
+    margin: 0 auto;
+    color: var(--sb2-text);
+    font-family: var(--sb-display, "Archivo", sans-serif);
   }
-  .mc-shell { border: 1px solid rgba(255,255,255,.12); background: #080909; box-shadow: 0 24px 70px rgba(0,0,0,.42); }
-  .mc-panel { border: 1px solid var(--mc-line); background: var(--mc-panel); }
-  .mc-panel-soft { border: 1px solid rgba(255,255,255,.075); background: var(--mc-panel-2); }
-  .mc-label { color: #aeb2b5; font-size: .65rem; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
-  .mc-tab { position: relative; color: #969a9f; font-size: .76rem; font-weight: 650; letter-spacing: .02em; }
-  .mc-tab:hover { color: #f4f1e9; }
-  .mc-tab[aria-current="page"] { color: var(--mc-gold-bright); }
-  .mc-tab[aria-current="page"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -17px; height: 2px; background: var(--mc-gold); box-shadow: 0 0 14px rgba(232,185,80,.5); }
-  .mc-status-dot { box-shadow: 0 0 10px currentColor; }
-  .mc-stage { min-height: 70px; border: 1px solid rgba(255,255,255,.08); background: #0b0c0c; }
-  .mc-stage.is-active { border-color: rgba(232,185,80,.55); box-shadow: inset 0 0 24px rgba(232,185,80,.045); }
-  .mc-stage-number { border: 1px solid rgba(232,185,80,.3); color: var(--mc-gold-bright); }
-  .mc-input { resize: vertical; min-height: 86px; border: 1px solid rgba(255,255,255,.12); background: #070808; color: white; }
-  .mc-input:focus, .mc-select:focus { border-color: rgba(232,185,80,.75); outline: none; box-shadow: 0 0 0 3px rgba(232,185,80,.08); }
-  .mc-select { border: 1px solid rgba(255,255,255,.12); background: #090a0a; color: white; }
-  .mc-primary { border: 1px solid #f3cd72; background: #e8b950; color: #151006; box-shadow: 0 8px 24px rgba(232,185,80,.14); }
-  .mc-primary:hover { background: #f2c967; }
-  .mc-task { border-left: 2px solid rgba(255,255,255,.13); }
-  .mc-task[data-status="queued"] { border-left-color: #d7893d; }
-  .mc-task[data-status="in_progress"] { border-left-color: var(--mc-gold); }
-  .mc-task[data-status="delivered"] { border-left-color: #65a66f; }
-  .mc-progress-ring { background: conic-gradient(var(--mc-gold) var(--execution), rgba(255,255,255,.08) 0); }
-  .mc-progress-ring::after { content: ""; position: absolute; inset: 7px; border-radius: 999px; background: #0d0e0e; }
-  .mc-team-row { min-height: 60px; border: 1px solid rgba(255,255,255,.075); background: #0b0c0c; }
-  .mc-team-row:hover { border-color: rgba(232,185,80,.35); background: #11110f; }
-  .mc-team-row[data-manager-primary="true"] { border-color: rgba(232,185,80,.45); background: #14120c; }
-  .mc-avatar { border: 1px solid rgba(232,185,80,.28); background: #17140c; color: var(--mc-gold-bright); }
-  .mc-note { border-left: 2px solid rgba(232,185,80,.5); background: rgba(232,185,80,.035); }
-  .mc-toast { transform: translateY(10px); opacity: 0; pointer-events: none; transition: .18s ease; }
-  .mc-toast.is-visible { transform: translateY(0); opacity: 1; }
-  @media (max-width: 767px) {
-    .mc-tab[aria-current="page"]::after { bottom: -11px; }
-    .mc-stage { min-height: 58px; }
+
+  .sb2-company-os,
+  .sb2-company-os * { box-sizing: border-box; }
+  .sb2-company-os ::selection { background: var(--sb2-gold); color: #151006; }
+  .sb2-company-os button,
+  .sb2-company-os input,
+  .sb2-company-os textarea { font: inherit; }
+  .sb2-company-os [hidden] { display: none !important; }
+
+  .sb2-company-os button:focus-visible,
+  .sb2-company-os a:focus-visible,
+  .sb2-company-os input:focus-visible,
+  .sb2-company-os textarea:focus-visible {
+    outline: 2px solid var(--sb2-focus);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 1px var(--sb2-ground);
   }
-  @media (prefers-reduced-motion: reduce) { .mc-toast { transition: none; } }
+
+  .sb2-skip {
+    position: fixed;
+    z-index: 100;
+    left: 1rem;
+    top: 1rem;
+    transform: translateY(-180%);
+    padding: .7rem 1rem;
+    background: var(--sb2-gold-bright);
+    color: #151006;
+    font-size: .82rem;
+    font-weight: 800;
+    text-decoration: none;
+  }
+  .sb2-skip:focus { transform: translateY(0); }
+
+  .sb2-frame {
+    overflow: hidden;
+    border: 1px solid var(--sb2-line-strong);
+    border-radius: 10px;
+    background: var(--sb2-ground);
+  }
+
+  .sb2-header {
+    min-height: 64px;
+    display: grid;
+    grid-template-columns: minmax(210px, auto) 1fr auto;
+    align-items: center;
+    gap: 1.5rem;
+    padding: .8rem 1rem;
+    border-bottom: 1px solid var(--sb2-line);
+    background: #090a0a;
+  }
+
+  .sb2-brand { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+  .sb2-brand-mark { width: 34px; height: 34px; flex: none; color: var(--sb2-gold-bright); }
+  .sb2-brand-name {
+    display: block;
+    font-size: .78rem;
+    font-weight: 850;
+    letter-spacing: .18em;
+    line-height: 1.2;
+  }
+  .sb2-brand-product {
+    display: block;
+    margin-top: .16rem;
+    color: var(--sb2-gold-bright);
+    font-size: .64rem;
+    font-weight: 750;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+  }
+
+  .sb2-nav { display: flex; justify-content: center; gap: .25rem; }
+  .sb2-nav a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 .85rem;
+    border-bottom: 1px solid transparent;
+    color: var(--sb2-muted);
+    font-size: .75rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .sb2-nav a:hover,
+  .sb2-nav a[aria-current="page"] { border-bottom-color: var(--sb2-gold); color: var(--sb2-text); }
+
+  .sb2-owner-mark {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--sb2-line-gold);
+    border-radius: 50%;
+    color: var(--sb2-gold-bright);
+    font-size: .72rem;
+    font-weight: 850;
+    letter-spacing: .08em;
+  }
+
+  .sb2-sync-line { height: 2px; overflow: hidden; background: rgba(255,255,255,.035); }
+  .sb2-sync-line::after {
+    content: "";
+    display: block;
+    width: 26%;
+    height: 100%;
+    transform: translateX(-120%);
+    background: var(--sb2-gold);
+  }
+  .sb2-company-os[data-load-state="loading"] .sb2-sync-line::after {
+    animation: sb2-sync 1.1s cubic-bezier(.22, 1, .36, 1) infinite;
+  }
+  @keyframes sb2-sync { to { transform: translateX(490%); } }
+
+  .sb2-error-banner,
+  .sb2-storage-note {
+    margin: .8rem;
+    padding: .8rem 1rem;
+    border: 1px solid rgba(225,145,112,.52);
+    background: rgba(225,145,112,.08);
+    color: #ffd4c5;
+    font-size: .78rem;
+    line-height: 1.5;
+  }
+
+  .sb2-console { display: grid; grid-template-columns: minmax(0, 1fr) 320px; }
+  .sb2-main { min-width: 0; padding: 12px; }
+  .sb2-panel { border: 1px solid var(--sb2-line); background: var(--sb2-surface); }
+
+  .sb2-manager {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(250px, .55fr);
+    min-height: 260px;
+  }
+  .sb2-manager-command { padding: clamp(1rem, 2.4vw, 1.75rem); }
+  .sb2-manager h1 {
+    max-width: 15ch;
+    margin: 0;
+    color: var(--sb2-text);
+    font-family: var(--sb-display, "Archivo", sans-serif);
+    font-size: clamp(2rem, 3.6vw, 4rem);
+    font-stretch: 115%;
+    font-weight: 800;
+    letter-spacing: -.025em;
+    line-height: .94;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+  .sb2-manager-intro {
+    max-width: 68ch;
+    margin: .75rem 0 0;
+    color: var(--sb2-muted);
+    font-size: .85rem;
+    line-height: 1.6;
+  }
+  .sb2-objective-form { margin-top: 1.15rem; }
+  .sb2-field label {
+    display: block;
+    margin-bottom: .42rem;
+    color: var(--sb2-muted);
+    font-size: .65rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .sb2-input {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--sb2-line-strong);
+    border-radius: 5px;
+    background: #080909;
+    color: var(--sb2-text);
+    padding: .72rem .8rem;
+    font-size: .82rem;
+    line-height: 1.45;
+  }
+  textarea.sb2-input { min-height: 76px; resize: vertical; }
+  .sb2-input::placeholder { color: #8e949a; }
+  .sb2-input:hover { border-color: var(--sb2-line-gold); }
+  .sb2-field-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(120px, .62fr) minmax(0, .8fr);
+    gap: .55rem;
+    margin-top: .55rem;
+  }
+  .sb2-form-finish {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: .7rem;
+  }
+  .sb2-form-note,
+  .sb2-form-error { margin: 0; color: var(--sb2-quiet); font-size: .7rem; line-height: 1.45; }
+  .sb2-form-error { color: #ffd0bf; }
+
+  .sb2-primary,
+  .sb2-secondary,
+  .sb2-text-button {
+    min-height: 44px;
+    border-radius: 5px;
+    font-size: .72rem;
+    font-weight: 850;
+    letter-spacing: .04em;
+    cursor: pointer;
+  }
+  .sb2-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+    flex: none;
+    border: 1px solid var(--sb2-gold-bright);
+    background: var(--sb2-gold);
+    color: #151006;
+    padding: 0 1rem;
+  }
+  .sb2-primary:hover { background: var(--sb2-gold-bright); }
+  .sb2-primary:disabled,
+  .sb2-secondary:disabled { cursor: not-allowed; opacity: .52; }
+  .sb2-primary svg,
+  .sb2-secondary svg { width: 15px; height: 15px; }
+  .sb2-secondary {
+    border: 1px solid var(--sb2-line-gold);
+    background: transparent;
+    color: var(--sb2-gold-bright);
+    padding: 0 .85rem;
+  }
+  .sb2-secondary:hover { background: rgba(227,170,69,.08); }
+
+  .sb2-manager-desk {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--sb2-line);
+    background: var(--sb2-surface-warm);
+  }
+  .sb2-manager-identity {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .8rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--sb2-line);
+  }
+  .sb2-seat-id {
+    color: var(--sb2-gold-bright);
+    font-variant-numeric: tabular-nums;
+    font-size: .68rem;
+    font-weight: 850;
+    letter-spacing: .14em;
+  }
+  .sb2-manager-identity h2 { margin: .32rem 0 0; font-size: 1rem; font-weight: 750; }
+  .sb2-manager-identity p { margin: .2rem 0 0; color: var(--sb2-muted); font-size: .7rem; }
+  .sb2-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    border: 1px solid var(--sb2-line-strong);
+    border-radius: 999px;
+    padding: .24rem .55rem;
+    color: var(--sb2-muted);
+    font-size: .61rem;
+    font-weight: 800;
+    letter-spacing: .05em;
+    line-height: 1.2;
+    text-align: center;
+  }
+  .sb2-status[data-tone="attention"] { border-color: rgba(225,145,112,.5); color: #ffc2ab; }
+  .sb2-status[data-tone="progress"] { border-color: var(--sb2-line-gold); color: var(--sb2-gold-bright); }
+  .sb2-status[data-tone="complete"] { border-color: rgba(166,191,120,.46); color: #c9dfa2; }
+  .sb2-current-objective { flex: 1; padding: 1rem; }
+  .sb2-current-objective h3,
+  .sb2-mission-label,
+  .sb2-output-label {
+    margin: 0;
+    color: var(--sb2-quiet);
+    font-size: .62rem;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .sb2-objective-title {
+    margin: .55rem 0 0;
+    color: var(--sb2-text);
+    font-family: var(--sb-display, "Archivo", sans-serif);
+    font-size: 1.25rem;
+    font-weight: 720;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+  .sb2-objective-meta {
+    display: grid;
+    gap: .35rem;
+    margin-top: .8rem;
+    color: var(--sb2-muted);
+    font-size: .68rem;
+    line-height: 1.45;
+  }
+  .sb2-plan-preview { margin-top: .9rem; border-top: 1px solid var(--sb2-line); padding-top: .75rem; }
+  .sb2-plan-preview ol { display: grid; gap: .32rem; margin: .5rem 0 0; padding: 0; list-style: none; }
+  .sb2-plan-preview li {
+    display: grid;
+    grid-template-columns: 2.2rem 1fr;
+    gap: .4rem;
+    color: var(--sb2-muted);
+    font-size: .66rem;
+    line-height: 1.4;
+  }
+  .sb2-plan-preview li strong { color: var(--sb2-gold-bright); font-variant-numeric: tabular-nums; }
+  .sb2-plan-action { width: 100%; margin-top: .85rem; }
+
+  .sb2-flow {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 10px;
+    border: 1px solid var(--sb2-line);
+    background: var(--sb2-surface);
+  }
+  .sb2-flow-step { min-width: 0; padding: .7rem .8rem; border-right: 1px solid var(--sb2-line); }
+  .sb2-flow-step:last-child { border-right: 0; }
+  .sb2-flow-step span {
+    display: block;
+    color: var(--sb2-quiet);
+    font-size: .59rem;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .sb2-flow-step strong {
+    display: block;
+    margin-top: .28rem;
+    color: var(--sb2-text);
+    font-size: .75rem;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .sb2-company-index,
+  .sb2-workspace {
+    margin-top: 10px;
+    border: 1px solid var(--sb2-line);
+    background: var(--sb2-surface);
+  }
+  .sb2-index-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .65rem .8rem;
+    border-bottom: 1px solid var(--sb2-line);
+  }
+  .sb2-index-heading h2,
+  .sb2-workspace-heading h2,
+  .sb2-mission-heading h2 {
+    margin: 0;
+    font-size: .78rem;
+    font-weight: 850;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .sb2-index-heading p { margin: 0; color: var(--sb2-muted); font-size: .67rem; }
+  .sb2-roster {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .sb2-roster li { min-width: 0; border-right: 1px solid var(--sb2-line); border-bottom: 1px solid var(--sb2-line); }
+  .sb2-roster li:nth-child(5n) { border-right: 0; }
+  .sb2-roster li:nth-last-child(-n+5) { border-bottom: 0; }
+  .sb2-seat {
+    width: 100%;
+    min-height: 96px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .32rem;
+    border: 0;
+    background: transparent;
+    color: var(--sb2-text);
+    padding: .65rem .7rem;
+    text-align: left;
+    cursor: pointer;
+  }
+  .sb2-seat:hover { background: rgba(255,255,255,.025); }
+  .sb2-seat[aria-pressed="true"] { background: var(--sb2-surface-warm); box-shadow: inset 0 0 0 1px var(--sb2-line-gold); }
+  .sb2-seat-top { width: 100%; display: flex; align-items: flex-start; justify-content: space-between; gap: .35rem; }
+  .sb2-seat-state {
+    color: var(--sb2-quiet);
+    font-size: .55rem;
+    font-weight: 750;
+    line-height: 1.2;
+    text-align: right;
+  }
+  .sb2-seat-state[data-tone="attention"] { color: var(--sb2-danger); }
+  .sb2-seat-state[data-tone="progress"] { color: var(--sb2-gold-bright); }
+  .sb2-seat-state[data-tone="complete"] { color: var(--sb2-success); }
+  .sb2-seat strong { font-size: .72rem; font-weight: 780; line-height: 1.25; overflow-wrap: anywhere; }
+  .sb2-seat-features { color: var(--sb2-muted); font-size: .58rem; line-height: 1.35; overflow-wrap: anywhere; }
+
+  .sb2-workspace-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem;
+    padding: .85rem;
+    border-bottom: 1px solid var(--sb2-line);
+  }
+  .sb2-workspace-heading p { max-width: 70ch; margin: .3rem 0 0; color: var(--sb2-muted); font-size: .72rem; line-height: 1.5; }
+  .sb2-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: min(100%, 340px);
+    border: 1px solid var(--sb2-line-strong);
+  }
+  .sb2-tab {
+    min-height: 44px;
+    border: 0;
+    border-right: 1px solid var(--sb2-line-strong);
+    background: #090a0a;
+    color: var(--sb2-muted);
+    padding: .55rem .65rem;
+    font-size: .65rem;
+    font-weight: 780;
+    line-height: 1.25;
+    cursor: pointer;
+  }
+  .sb2-tab:last-child { border-right: 0; }
+  .sb2-tab[aria-selected="true"] { background: var(--sb2-surface-warm); color: var(--sb2-gold-bright); }
+  .sb2-workspace-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .72fr); }
+  .sb2-assignment-zone,
+  .sb2-deliverable-zone { min-width: 0; padding: .9rem; }
+  .sb2-deliverable-zone { border-left: 1px solid var(--sb2-line); background: #0a0b0b; }
+  .sb2-feature-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(160px, .48fr);
+    gap: .8rem;
+    padding-bottom: .8rem;
+    border-bottom: 1px solid var(--sb2-line);
+  }
+  .sb2-feature-intro h3,
+  .sb2-zone-title { margin: 0; font-size: .76rem; font-weight: 820; }
+  .sb2-feature-intro p { margin: .35rem 0 0; color: var(--sb2-muted); font-size: .72rem; line-height: 1.5; }
+  .sb2-output-name { display: block; margin-top: .3rem; color: var(--sb2-gold-bright); font-size: .7rem; line-height: 1.35; }
+  .sb2-assignment-list,
+  .sb2-deliverable-list,
+  .sb2-activity-list { display: grid; gap: .55rem; margin: .7rem 0 0; padding: 0; list-style: none; }
+  .sb2-assignment,
+  .sb2-deliverable { border-top: 1px solid var(--sb2-line); padding-top: .65rem; }
+  .sb2-assignment:first-child,
+  .sb2-deliverable:first-child { border-top: 0; padding-top: 0; }
+  .sb2-record-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .7rem; }
+  .sb2-record-title {
+    margin: 0;
+    color: var(--sb2-text);
+    font-size: .75rem;
+    font-weight: 760;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+  .sb2-record-meta,
+  .sb2-record-copy { margin: .3rem 0 0; color: var(--sb2-muted); font-size: .66rem; line-height: 1.5; overflow-wrap: anywhere; }
+  .sb2-record-actions { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .65rem; }
+  .sb2-empty { margin-top: .7rem; border: 1px dashed var(--sb2-line-strong); padding: .85rem; color: var(--sb2-muted); font-size: .7rem; line-height: 1.5; }
+  .sb2-empty strong { display: block; margin-bottom: .24rem; color: var(--sb2-text); font-size: .74rem; }
+  .sb2-deliverable-form,
+  .sb2-review-form { display: grid; gap: .55rem; margin-top: .7rem; padding-top: .7rem; border-top: 1px solid var(--sb2-line); }
+  .sb2-blocker-control { margin-top: .55rem; border-top: 1px solid var(--sb2-line); padding-top: .55rem; }
+  .sb2-blocker-control summary {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    color: var(--sb2-muted);
+    font-size: .68rem;
+    font-weight: 760;
+    cursor: pointer;
+  }
+  .sb2-blocker-control[open] summary { color: var(--sb2-danger); }
+  .sb2-blocker-form { display: grid; gap: .55rem; padding-bottom: .2rem; }
+  .sb2-evidence-list { margin: .45rem 0 0; padding-left: 1rem; color: var(--sb2-muted); font-size: .64rem; line-height: 1.5; }
+  .sb2-rights-note { margin: .7rem 0 0; padding: .6rem .7rem; border: 1px solid var(--sb2-line-gold); color: var(--sb2-muted); font-size: .65rem; line-height: 1.45; }
+
+  .sb2-mission { min-width: 0; border-left: 1px solid var(--sb2-line); background: #090a0a; padding: 12px; }
+  .sb2-mission-sticky { position: sticky; top: 1rem; display: grid; gap: 10px; }
+  .sb2-mission-block { border: 1px solid var(--sb2-line); background: var(--sb2-surface); padding: .85rem; }
+  .sb2-mission-heading { display: flex; align-items: center; gap: .6rem; }
+  .sb2-mission-heading svg { width: 19px; height: 19px; color: var(--sb2-gold-bright); }
+  .sb2-mission-metrics { display: grid; margin-top: .75rem; border-top: 1px solid var(--sb2-line); }
+  .sb2-mission-metric {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: .8rem;
+    padding: .58rem 0;
+    border-bottom: 1px solid var(--sb2-line);
+  }
+  .sb2-mission-metric span { color: var(--sb2-muted); font-size: .68rem; }
+  .sb2-mission-metric strong { color: var(--sb2-text); font-size: .83rem; font-variant-numeric: tabular-nums; }
+  .sb2-next-action { margin-top: .5rem; color: var(--sb2-text); font-size: .78rem; font-weight: 740; line-height: 1.45; overflow-wrap: anywhere; }
+  .sb2-next-action-detail { margin: .3rem 0 0; color: var(--sb2-muted); font-size: .67rem; line-height: 1.5; }
+  .sb2-next-action-detail + .sb2-secondary { width: 100%; margin-top: .7rem; }
+  .sb2-activity-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .65rem;
+    padding-top: .55rem;
+    border-top: 1px solid var(--sb2-line);
+    color: var(--sb2-muted);
+    font-size: .64rem;
+    line-height: 1.45;
+  }
+  .sb2-activity-list li:first-child { border-top: 0; padding-top: 0; }
+  .sb2-activity-list time { color: var(--sb2-quiet); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .sb2-toast {
+    position: fixed;
+    z-index: 90;
+    right: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    max-width: min(360px, calc(100vw - 2rem));
+    transform: translateY(.5rem);
+    border: 1px solid var(--sb2-line-gold);
+    background: #121313;
+    color: var(--sb2-text);
+    padding: .75rem .9rem;
+    font-size: .75rem;
+    line-height: 1.45;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease-out, transform .18s ease-out;
+  }
+  .sb2-toast[data-visible="true"] { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 1199px) {
+    .sb2-console { grid-template-columns: minmax(0, 1fr); }
+    .sb2-mission { border-top: 1px solid var(--sb2-line); border-left: 0; }
+    .sb2-mission-sticky { position: static; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (max-width: 900px) {
+    .sb2-header { grid-template-columns: minmax(0, 1fr) auto; }
+    .sb2-nav { grid-column: 1 / -1; justify-content: stretch; border-top: 1px solid var(--sb2-line); padding-top: .4rem; }
+    .sb2-nav a { flex: 1; justify-content: center; padding: 0 .3rem; }
+    .sb2-manager { grid-template-columns: minmax(0, 1fr); }
+    .sb2-manager-desk { border-top: 1px solid var(--sb2-line); border-left: 0; }
+    .sb2-roster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sb2-roster li:nth-child(5n) { border-right: 1px solid var(--sb2-line); }
+    .sb2-roster li:nth-child(2n) { border-right: 0; }
+    .sb2-roster li:nth-last-child(-n+5) { border-bottom: 1px solid var(--sb2-line); }
+    .sb2-roster li:nth-last-child(-n+2) { border-bottom: 0; }
+    .sb2-workspace-heading { grid-template-columns: minmax(0, 1fr); }
+    .sb2-tabs { min-width: 0; width: 100%; }
+    .sb2-workspace-body { grid-template-columns: minmax(0, 1fr); }
+    .sb2-deliverable-zone { border-top: 1px solid var(--sb2-line); border-left: 0; }
+    .sb2-mission-sticky { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .sb2-main,
+    .sb2-mission { padding: 8px; }
+    .sb2-frame { border-radius: 6px; }
+    .sb2-header { gap: .65rem; padding: .7rem; }
+    .sb2-owner-mark { width: 38px; height: 38px; }
+    .sb2-brand-name { font-size: .7rem; }
+    .sb2-brand-product { font-size: .58rem; }
+    .sb2-nav { gap: 0; }
+    .sb2-nav a { font-size: .67rem; }
+    .sb2-manager-command { padding: .9rem; }
+    .sb2-manager h1 { font-size: clamp(2.1rem, 13vw, 3.35rem); }
+    .sb2-field-row { grid-template-columns: minmax(0, 1fr); }
+    .sb2-form-finish { align-items: stretch; flex-direction: column; }
+    .sb2-primary { width: 100%; }
+    .sb2-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sb2-flow-step:nth-child(2) { border-right: 0; }
+    .sb2-flow-step:nth-child(-n+2) { border-bottom: 1px solid var(--sb2-line); }
+    .sb2-index-heading { align-items: flex-start; flex-direction: column; gap: .25rem; }
+    .sb2-seat { min-height: 88px; padding: .58rem; }
+    .sb2-feature-intro { grid-template-columns: minmax(0, 1fr); }
+    .sb2-record-top { align-items: flex-start; flex-direction: column; }
+  }
+  @media (max-width: 339px) {
+    .sb2-roster { grid-template-columns: minmax(0, 1fr); }
+    .sb2-roster li,
+    .sb2-roster li:nth-child(2n),
+    .sb2-roster li:nth-child(5n),
+    .sb2-roster li:nth-last-child(-n+2) { border-right: 0; border-bottom: 1px solid var(--sb2-line); }
+    .sb2-roster li:last-child { border-bottom: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sb2-company-os *,
+    .sb2-company-os *::before,
+    .sb2-company-os *::after {
+      scroll-behavior: auto !important;
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+    }
+  }
+  @media (prefers-contrast: more) {
+    .sb2-company-os { --sb2-line: rgba(255,255,255,.34); --sb2-line-strong: rgba(255,255,255,.56); }
+  }
+  @media (forced-colors: active) {
+    .sb2-seat[aria-pressed="true"],
+    .sb2-tab[aria-selected="true"] { outline: 2px solid Highlight; }
+  }
 </style>
 
-<div class="manager-console mx-auto max-w-[1600px]">
-  <div class="mc-shell overflow-hidden rounded-2xl" data-manager-console="true">
-    <header class="border-b border-white/10 px-4 py-4 sm:px-6">
-      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div class="flex min-w-0 items-center gap-3">
-          <div class="mc-avatar grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-black tracking-[.1em]">SB</div>
-          <div class="min-w-0">
-            <div class="truncate text-sm font-bold tracking-[.14em] text-white">STREET BANKER <span class="font-medium text-sb-gold">COMMAND</span></div>
-            <div class="mt-0.5 text-[10px] uppercase tracking-[.16em] text-gray-500">Owner operating system</div>
-          </div>
-        </div>
-        <nav class="flex items-center gap-6 overflow-x-auto border-t border-white/[.06] pt-3 xl:border-0 xl:pt-0" aria-label="Manager workspace">
-          <a class="mc-tab pb-1" href="#manager-desk" aria-current="page">Manager</a>
-          <a class="mc-tab pb-1" href="#company-floor">Team</a>
-          <a class="mc-tab pb-1" href="#mission-control">Activity</a>
-          <a class="mc-tab pb-1" href="/rollout-studio">Projects</a>
-        </nav>
-        <div class="flex items-center gap-3 text-xs text-gray-400">
-          <span class="flex items-center gap-2"><span class="mc-status-dot h-1.5 w-1.5 rounded-full bg-emerald-400 text-emerald-400"></span>10 desks online</span>
-          <span class="rounded-full border border-sb-gold/30 px-3 py-1.5 font-bold text-sb-gold-bright">{{ account.initials }}</span>
-        </div>
+<div class="sb2-company-os" id="sb2-company-os" data-app="company-os" data-load-state="loading" aria-busy="true">
+  <a class="sb2-skip" href="#sb2-objective-title">Skip to Manager objective</a>
+  <div class="sb2-frame">
+    <header class="sb2-header">
+      <div class="sb2-brand" aria-label="Street Banker Company OS">
+        <svg class="sb2-brand-mark" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="20" cy="20" r="17"></circle>
+          <path d="M25.5 13.5c-1.4-1.3-3.3-2-5.6-2-3.5 0-5.9 1.6-5.9 4.1 0 2.7 2.6 3.5 6.1 4.2 3.8.8 6.2 1.6 6.2 4.5 0 2.7-2.5 4.4-6.3 4.4-2.9 0-5.2-.9-6.8-2.7M20 8.7v22.6"></path>
+        </svg>
+        <span>
+          <span class="sb2-brand-name">STREET BANKER</span>
+          <span class="sb2-brand-product">Company OS</span>
+        </span>
       </div>
+      <nav class="sb2-nav" aria-label="Company OS workspace">
+        <a href="#sb2-manager" aria-current="page">Manager</a>
+        <a href="#sb2-workspace">Work</a>
+        <a href="#sb2-company-index">Team</a>
+        <a href="/rollout-studio">Projects</a>
+        <a href="/vault">Vault</a>
+      </nav>
+      <div class="sb2-owner-mark" aria-label="Private owner workspace">{{ account.initials|default('SB', true) }}</div>
     </header>
 
-    <div class="grid xl:grid-cols-[minmax(0,1fr)_340px]">
-      <main class="min-w-0 p-3 sm:p-5" id="manager-desk">
-        <section class="mc-panel overflow-hidden rounded-xl" data-manager-primary="true">
-          <div class="grid lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,.55fr)]">
-            <div class="p-4 sm:p-6">
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div class="flex items-center gap-3">
-                  <div class="mc-avatar grid h-12 w-12 place-items-center rounded-full text-sm font-black">{{ manager.initials }}</div>
-                  <div>
-                    <h1 class="text-xl font-semibold text-white sm:text-2xl">{{ manager.name }}</h1>
-                    <p class="mt-0.5 text-xs text-gray-400">{{ manager.role }} · directing all ten desks</p>
-                  </div>
-                </div>
-                <span class="rounded-full border border-emerald-500/20 bg-emerald-500/[.05] px-3 py-1 text-[10px] font-bold uppercase tracking-[.13em] text-emerald-300">Ready for direction</span>
+    <div class="sb2-sync-line" aria-hidden="true"></div>
+    <div class="sb2-error-banner" id="sb2-load-error" role="alert" tabindex="-1" hidden></div>
+    <div class="sb2-storage-note" id="sb2-storage-note" {% if not storage_is_ephemeral|default(false, true) %}hidden{% endif %}>
+      Temporary storage is active. Company records can reset after a service restart or deployment.
+    </div>
+
+    <div class="sb2-console">
+      <main class="sb2-main">
+        <div class="sb2-panel sb2-manager" id="sb2-manager" role="region" aria-labelledby="sb2-manager-title">
+          <div class="sb2-manager-command">
+            <h1 id="sb2-manager-title">Ten desks. One direction.</h1>
+            <p class="sb2-manager-intro">Set the outcome. Your Manager builds the operating plan, assigns the company, and brings back decisions, documents, and finished work.</p>
+            <form class="sb2-objective-form" id="sb2-objective-form" novalidate>
+              <div class="sb2-field">
+                <label for="sb2-objective-title">What needs to happen?</label>
+                <textarea class="sb2-input" id="sb2-objective-title" name="title" maxlength="180" required aria-describedby="sb2-objective-help sb2-objective-error" placeholder="Launch the next single with the music, rights, creative, campaign, and press ready by the decision date."></textarea>
               </div>
-
-              <div class="mt-6">
-                <h2 class="text-lg font-semibold text-white">What are we moving today?</h2>
-                <p class="mt-1 text-sm text-gray-400">Set one clear outcome. Your manager routes it to the right specialist and keeps it visible through delivery.</p>
-                <form class="mt-4" id="manager-objective-form">
-                  <label class="sr-only" for="manager-objective">Objective</label>
-                  <textarea class="mc-input w-full rounded-lg px-4 py-3 text-sm leading-6 placeholder:text-gray-600" id="manager-objective" name="title" maxlength="180" required placeholder="Example: Build the six-week release plan for the next single"></textarea>
-                  <div class="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                    <label class="sr-only" for="manager-assignee">Assign to</label>
-                    <select class="mc-select min-h-11 w-full rounded-lg px-3 text-sm" id="manager-assignee" name="assignee">
-                      {% for member in digital_team %}
-                      <option value="{{ member.key }}"{% if selected_assignee == member.key %} selected{% endif %}>{{ member.name }} · {{ member.role }}</option>
-                      {% endfor %}
-                    </select>
-                    <button class="mc-primary min-h-11 rounded-lg px-5 text-sm font-black" type="submit">Assign objective <span aria-hidden="true">→</span></button>
-                  </div>
-                  <p class="mt-2 hidden text-xs text-red-300" id="manager-form-error" role="alert"></p>
-                </form>
-              </div>
-            </div>
-
-            <div class="border-t border-white/[.08] bg-black/20 p-4 lg:border-l lg:border-t-0 sm:p-6">
-              <div class="mc-label">Manager direction</div>
-              <p class="mt-3 text-sm leading-6 text-gray-200">{{ manager.brief }}</p>
-              <div class="mc-note mt-5 p-3 text-xs leading-5 text-gray-400">Start with the result you want. The desk assignment can change as the work develops; the objective remains in Mission Control.</div>
-              <a class="mt-5 inline-flex min-h-10 items-center gap-2 text-xs font-bold text-sb-gold-bright hover:text-white" href="{{ manager.href }}">Open full daily plan <span aria-hidden="true">→</span></a>
-            </div>
-          </div>
-        </section>
-
-        <section class="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4" aria-label="Objective pipeline">
-          <div class="mc-stage is-active flex items-center gap-3 rounded-lg p-3">
-            <span class="mc-stage-number grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold">1</span>
-            <div><div class="mc-label">Objectives</div><div class="mt-1 text-sm font-semibold text-white">{{ task_counts.total }} captured</div></div>
-          </div>
-          <div class="mc-stage flex items-center gap-3 rounded-lg p-3">
-            <span class="mc-stage-number grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold">2</span>
-            <div><div class="mc-label">Assigned</div><div class="mt-1 text-sm font-semibold text-white">{{ task_counts.queued }} queued</div></div>
-          </div>
-          <div class="mc-stage flex items-center gap-3 rounded-lg p-3">
-            <span class="mc-stage-number grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold">3</span>
-            <div><div class="mc-label">In progress</div><div class="mt-1 text-sm font-semibold text-white">{{ task_counts.in_progress }} moving</div></div>
-          </div>
-          <div class="mc-stage flex items-center gap-3 rounded-lg p-3">
-            <span class="mc-stage-number grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold">4</span>
-            <div><div class="mc-label">Delivered</div><div class="mt-1 text-sm font-semibold text-white">{{ task_counts.delivered }} complete</div></div>
-          </div>
-        </section>
-
-        <section class="mc-panel mt-3 rounded-xl p-4 sm:p-5" id="active-work">
-          <div class="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 class="text-base font-semibold text-white">Active work</h2>
-              <p class="mt-1 text-xs text-gray-500">Owner-scoped objectives managed inside V2.</p>
-            </div>
-            <span class="text-[10px] font-bold uppercase tracking-[.14em] text-gray-500">{{ task_counts.queued + task_counts.in_progress }} live · {{ task_counts.delivered }} delivered</span>
-          </div>
-
-          <div class="mt-4 space-y-2">
-            {% for task in manager_tasks %}
-            <article class="mc-task mc-panel-soft rounded-lg p-3 sm:p-4" data-manager-task="{{ task.id }}" data-status="{{ task.status }}">
-              <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div class="flex min-w-0 items-start gap-3">
-                  <a class="mc-avatar grid h-9 w-9 shrink-0 place-items-center rounded-full text-[10px] font-black" href="{{ task.assignee_href }}" title="Open {{ task.assignee_name }}">{{ task.assignee_initials }}</a>
-                  <div class="min-w-0">
-                    <h3 class="text-sm font-semibold leading-5 text-white">{{ task.title }}</h3>
-                    <p class="mt-1 text-[11px] text-gray-500">{{ task.assignee_name }} · {{ task.assignee_role }}</p>
-                  </div>
+              <div class="sb2-field-row">
+                <div class="sb2-field">
+                  <label for="sb2-success-condition">Success condition</label>
+                  <input class="sb2-input" id="sb2-success-condition" name="success_condition" maxlength="300" required placeholder="Name the finished result">
                 </div>
-                <div class="flex shrink-0 items-center gap-2 pl-12 sm:pl-0">
-                  {% if task.status == "queued" %}
-                  <span class="rounded-full border border-orange-400/25 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[.12em] text-orange-300">Assigned</span>
-                  <form data-task-status-form><input type="hidden" name="status" value="in_progress"><button class="min-h-9 rounded-md border border-sb-gold/35 px-3 text-[10px] font-bold uppercase tracking-[.1em] text-sb-gold-bright hover:bg-sb-gold/[.07]" type="submit">Start work</button></form>
-                  {% elif task.status == "in_progress" %}
-                  <span class="rounded-full border border-sb-gold/30 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[.12em] text-sb-gold-bright">In progress</span>
-                  <form data-task-status-form><input type="hidden" name="status" value="delivered"><button class="min-h-9 rounded-md border border-emerald-400/30 px-3 text-[10px] font-bold uppercase tracking-[.1em] text-emerald-300 hover:bg-emerald-500/[.06]" type="submit">Mark delivered</button></form>
-                  {% else %}
-                  <span class="rounded-full border border-emerald-400/25 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[.12em] text-emerald-300">Delivered</span>
-                  <a class="min-h-9 rounded-md border border-white/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[.1em] text-gray-300 hover:border-sb-gold/30 hover:text-white" href="{{ task.assignee_href }}">Open desk</a>
-                  {% endif %}
+                <div class="sb2-field">
+                  <label for="sb2-due-date">Decision deadline</label>
+                  <input class="sb2-input" id="sb2-due-date" name="due_date" type="date" required>
+                </div>
+                <div class="sb2-field">
+                  <label for="sb2-project">Project</label>
+                  <input class="sb2-input" id="sb2-project" name="project" maxlength="100" placeholder="Optional project name">
                 </div>
               </div>
-            </article>
-            {% else %}
-            <div class="rounded-lg border border-dashed border-white/10 px-5 py-8 text-center">
-              <div class="text-sm font-semibold text-gray-300">No objectives are waiting.</div>
-              <p class="mt-1 text-xs text-gray-500">Give your manager the first outcome above and it will appear here.</p>
+              <div class="sb2-form-finish">
+                <div>
+                  <p class="sb2-form-note" id="sb2-objective-help">The proposed plan remains unassigned until you approve it.</p>
+                  <p class="sb2-form-error" id="sb2-objective-error" role="alert" hidden></p>
+                </div>
+                <button class="sb2-primary" id="sb2-build-plan" type="submit" disabled>
+                  <span>Build operating plan</span>
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h12M12 6l4 4-4 4"></path></svg>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="sb2-manager-desk">
+            <div class="sb2-manager-identity">
+              <div>
+                <span class="sb2-seat-id">SEAT 01 / LEAD</span>
+                <h2>Your Manager</h2>
+                <p>Executive Manager</p>
+              </div>
+              <span class="sb2-status" id="sb2-manager-state">Loading records</span>
             </div>
+            <div class="sb2-current-objective" id="sb2-current-objective" aria-live="polite">
+              <h3>Current objective</h3>
+              <p class="sb2-objective-title">Loading company records</p>
+              <div class="sb2-objective-meta">Your private operating records are being loaded.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sb2-flow" id="sb2-flow" role="list" aria-label="Company operating flow">
+          <div class="sb2-flow-step" role="listitem"><span>Objective</span><strong data-flow-count="objectives">—</strong></div>
+          <div class="sb2-flow-step" role="listitem"><span>Assignments</span><strong data-flow-count="assignments">—</strong></div>
+          <div class="sb2-flow-step" role="listitem"><span>Deliverables</span><strong data-flow-count="deliverables">—</strong></div>
+          <div class="sb2-flow-step" role="listitem"><span>Approved</span><strong data-flow-count="approved">—</strong></div>
+        </div>
+
+        <div class="sb2-company-index" id="sb2-company-index" role="region" aria-labelledby="sb2-company-index-title">
+          <div class="sb2-index-heading">
+            <h2 id="sb2-company-index-title">Your ten-person company</h2>
+            <p>Select a desk to inspect its assignment and deliverables.</p>
+          </div>
+          <ol class="sb2-roster" aria-label="Street Banker ten-person company">
+            {% for member in digital_team|default([], true) %}
+            <li>
+              <button class="sb2-seat" type="button" data-desk-key="{{ member.key }}" aria-pressed="{{ 'true' if loop.first else 'false' }}" aria-label="Seat {{ member.seat }}, {{ member.name }}, loading records, open desk">
+                <span class="sb2-seat-top">
+                  <span class="sb2-seat-id">{{ member.seat }}</span>
+                  <span class="sb2-seat-state" data-seat-state>Loading records</span>
+                </span>
+                <strong>{{ member.name }}</strong>
+                <span class="sb2-seat-features">{{ member.capabilities[0].name }} / {{ member.capabilities[1].name }}</span>
+              </button>
+            </li>
             {% endfor %}
-          </div>
-        </section>
+          </ol>
+        </div>
 
-        <section class="mc-panel mt-3 rounded-xl p-4 sm:p-5" id="company-floor">
-          <div class="flex flex-wrap items-end justify-between gap-3">
+        <div class="sb2-workspace" id="sb2-workspace" role="region" aria-labelledby="sb2-workspace-title">
+          <div class="sb2-workspace-heading">
             <div>
-              <h2 class="text-base font-semibold text-white">Your 10-person company</h2>
-              <p class="mt-1 text-xs text-gray-500">The Manager leads; every specialist opens the working module already built for that desk.</p>
+              <h2 id="sb2-workspace-title">Your Manager</h2>
+              <p id="sb2-workspace-focus">Sets direction, assigns the company, and controls approvals.</p>
             </div>
-            <span class="text-[10px] font-bold uppercase tracking-[.14em] text-emerald-300">All desks ready</span>
+            <div class="sb2-tabs" id="sb2-feature-tabs" role="tablist" aria-label="Manager features"></div>
           </div>
-          <div class="mt-4 grid gap-2 lg:grid-cols-2">
-            {% for member in digital_team %}
-            <a class="mc-team-row group flex items-center gap-3 rounded-lg px-3 py-2.5" href="{{ member.href }}" data-agent-seat="{{ loop.index + 1 }}" data-agent-key="{{ member.key }}"{% if loop.first %} data-manager-primary="true"{% endif %}>
-              <div class="mc-avatar grid h-9 w-9 shrink-0 place-items-center rounded-full text-[10px] font-black">{{ member.initials }}</div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="truncate text-sm font-semibold text-white">{{ member.name }}</span>
-                  <span class="text-[9px] font-bold uppercase tracking-[.12em] text-emerald-300">Ready</span>
-                </div>
-                <div class="mt-0.5 truncate text-[11px] text-gray-500">{{ member.role }} · {{ member.focus }}</div>
-              </div>
-              <span class="text-gray-600 group-hover:text-sb-gold" aria-hidden="true">→</span>
-            </a>
-            {% endfor %}
+          <div class="sb2-workspace-body" id="sb2-desk-panel" role="tabpanel" tabindex="0" aria-live="polite">
+            <div class="sb2-assignment-zone" id="sb2-assignment-zone"></div>
+            <div class="sb2-deliverable-zone" id="sb2-deliverable-zone"></div>
           </div>
-        </section>
+        </div>
       </main>
 
-      <aside class="border-t border-white/10 bg-[#0a0b0b] p-3 xl:border-l xl:border-t-0 sm:p-5" id="mission-control">
-        <div class="sticky top-4 space-y-3">
-          <section class="mc-panel rounded-xl p-4">
-            <div class="flex items-center gap-2">
-              <span class="text-sb-gold" aria-hidden="true">⌁</span>
-              <h2 class="text-sm font-semibold uppercase tracking-[.12em] text-white">Mission Control</h2>
+      <aside class="sb2-mission" aria-labelledby="sb2-mission-title">
+        <div class="sb2-mission-sticky">
+          <div class="sb2-mission-block">
+            <div class="sb2-mission-heading">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.2-6 4.1 12 2.1-6H21"></path></svg>
+              <h2 id="sb2-mission-title">Mission Control</h2>
             </div>
-            <div class="mt-4 flex items-center gap-4">
-              <div class="mc-progress-ring relative grid h-20 w-20 shrink-0 place-items-center rounded-full" style="--execution: {{ task_progress }}%;">
-                <div class="relative z-10 text-center"><div class="text-xl font-semibold text-white">{{ task_progress }}%</div><div class="text-[8px] uppercase tracking-[.12em] text-gray-500">delivered</div></div>
-              </div>
-              <div class="min-w-0">
-                <div class="mc-label">Execution signal</div>
-                {% if task_counts.total %}
-                <div class="mt-1 text-sm font-semibold text-white">{{ task_counts.delivered }} of {{ task_counts.total }} objectives complete</div>
-                <p class="mt-1 text-[11px] leading-4 text-gray-500">Calculated from your actual Manager queue.</p>
-                {% else %}
-                <div class="mt-1 text-sm font-semibold text-white">Awaiting first objective</div>
-                <p class="mt-1 text-[11px] leading-4 text-gray-500">Your execution signal starts when work is assigned.</p>
-                {% endif %}
-              </div>
+            <div class="sb2-mission-metrics">
+              <div class="sb2-mission-metric"><span>Decisions due</span><strong data-mission="decisions">—</strong></div>
+              <div class="sb2-mission-metric"><span>Blocked assignments</span><strong data-mission="blocked">—</strong></div>
+              <div class="sb2-mission-metric"><span>Deliverables for review</span><strong data-mission="review">—</strong></div>
+              <div class="sb2-mission-metric"><span>Next deadline</span><strong data-mission="deadline">—</strong></div>
             </div>
-          </section>
-
-          <section class="mc-panel rounded-xl p-4">
-            <div class="mc-label">Next up</div>
-            {% if next_task %}
-            <div class="mt-3 flex items-start gap-3">
-              <div class="mc-avatar grid h-9 w-9 shrink-0 place-items-center rounded-full text-[10px] font-black">{{ next_task.assignee_initials }}</div>
-              <div class="min-w-0"><div class="text-sm font-semibold leading-5 text-white">{{ next_task.title }}</div><div class="mt-1 text-[11px] text-gray-500">{{ next_task.assignee_name }}</div></div>
-            </div>
-            <a class="mc-primary mt-4 flex min-h-11 w-full items-center justify-center rounded-lg text-xs font-black uppercase tracking-[.1em]" href="#active-work">Advance objective <span class="ml-2" aria-hidden="true">→</span></a>
-            {% else %}
-            <p class="mt-3 text-sm leading-6 text-gray-400">No live work is waiting. Set the next objective at the Manager desk.</p>
-            <a class="mc-primary mt-4 flex min-h-11 w-full items-center justify-center rounded-lg text-xs font-black uppercase tracking-[.1em]" href="#manager-objective">Set objective <span class="ml-2" aria-hidden="true">→</span></a>
-            {% endif %}
-          </section>
-
-          <section class="mc-panel rounded-xl p-4">
-            <div class="flex items-center justify-between gap-3"><div class="mc-label">Quick assignment</div><span class="text-[10px] text-gray-600">existing desks</span></div>
-            <div class="mt-3 grid grid-cols-2 gap-2">
-              {% for member in specialists[:6] %}
-              <a class="rounded-lg border border-white/[.08] bg-black/20 p-2.5 text-left hover:border-sb-gold/30" href="/team?assign={{ member.key }}#manager-objective">
-                <span class="block text-[10px] font-bold text-sb-gold-bright">{{ member.initials }}</span>
-                <span class="mt-1 block truncate text-[11px] text-gray-300">{{ member.name|replace('Your ', '') }}</span>
-              </a>
-              {% endfor %}
-            </div>
-          </section>
-
-          <section class="mc-panel rounded-xl p-4">
-            <div class="mc-label">Company status</div>
-            <div class="mt-3 space-y-2 text-xs">
-              <div class="flex items-center justify-between"><span class="text-gray-500">Operating desks</span><span class="font-semibold text-white">10 / 10</span></div>
-              <div class="flex items-center justify-between"><span class="text-gray-500">Live objectives</span><span class="font-semibold text-white">{{ task_counts.queued + task_counts.in_progress }}</span></div>
-              <div class="flex items-center justify-between"><span class="text-gray-500">Human collaborators</span><span class="font-semibold text-white">{{ seats_used }} / {{ seat_limit }}</span></div>
-            </div>
-          </section>
+          </div>
+          <div class="sb2-mission-block" id="sb2-next-action-block">
+            <div class="sb2-mission-label">Next executive action</div>
+            <div class="sb2-next-action" id="sb2-next-action">Loading company records</div>
+            <p class="sb2-next-action-detail" id="sb2-next-action-detail">Mission Control only reports persisted assignments and deliverables.</p>
+            <button class="sb2-secondary" id="sb2-open-next" type="button" hidden>Open desk</button>
+          </div>
+          <div class="sb2-mission-block">
+            <div class="sb2-mission-label">Recorded activity</div>
+            <ol class="sb2-activity-list" id="sb2-activity-list">
+              <li><span>Loading activity</span><time>—</time></li>
+            </ol>
+          </div>
         </div>
       </aside>
     </div>
-
-    <footer class="grid gap-3 border-t border-white/10 bg-[#090a0a] px-4 py-3 text-[10px] font-bold uppercase tracking-[.12em] text-gray-500 sm:grid-cols-4 sm:px-6">
-      <span><strong class="text-sb-gold-bright">Manager:</strong> online</span>
-      <span><strong class="text-white">Team:</strong> 10 specialists</span>
-      <span><strong class="text-white">Workflow:</strong> {{ task_counts.total }} objectives</span>
-      <span class="sm:text-right"><strong class="text-white">Access:</strong> owner private</span>
-    </footer>
   </div>
+  <div class="sb2-toast" id="sb2-toast" role="status" aria-live="polite" data-visible="false"></div>
 </div>
 
-<div class="mc-toast fixed bottom-5 right-5 z-50 max-w-sm rounded-lg border border-white/10 bg-[#121313] px-4 py-3 text-sm text-white shadow-2xl" id="manager-toast" role="status" aria-live="polite"></div>
+<noscript>
+  <p style="margin:1rem 0;color:#ffd0bf">Company OS requires JavaScript to load private operating records and update work safely.</p>
+</noscript>
 
 <script>
 (() => {
-  const form = document.getElementById('manager-objective-form');
-  const error = document.getElementById('manager-form-error');
-  const toast = document.getElementById('manager-toast');
-  const notify = (message) => {
-    toast.textContent = message;
-    toast.classList.add('is-visible');
-    window.setTimeout(() => toast.classList.remove('is-visible'), 2200);
-  };
-  const send = async (url, body) => {
-    const response = await fetch(url, { method: 'POST', body });
-    const data = await response.json().catch(() => ({ ok: false, error: 'The Manager could not update this objective.' }));
-    if (!response.ok || !data.ok) throw new Error(data.error || 'The Manager could not update this objective.');
-    return data;
+  "use strict";
+
+  const SERVER_CONTEXT = {
+    ready: {{ 'true' if objectives is defined else 'false' }},
+    team: {{ digital_team|default([], true)|tojson }},
+    objectives: {{ objectives|default([], true)|tojson }},
+    assignments: {{ assignments|default([], true)|tojson }},
+    deliverables: {{ deliverables|default([], true)|tojson }},
+    activity: {{ activity|default([], true)|tojson }},
+    mission_control: {{ mission_control|default({}, true)|tojson }},
+    current_objective: {{ active_objective|default(none, true)|tojson }},
+    selected_desk: {% if selected_desk is defined and selected_desk is mapping %}{{ selected_desk.key|tojson }}{% else %}{{ selected_desk|default('manager', true)|tojson }}{% endif %},
+    selected_feature: {% if selected_feature is defined and selected_feature is mapping %}{{ selected_feature.key|tojson }}{% else %}{{ selected_feature|default(none, true)|tojson }}{% endif %},
+    storage_is_ephemeral: {{ storage_is_ephemeral|default(false, true)|tojson }}
   };
 
-  form?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    error.classList.add('hidden');
-    const button = form.querySelector('button[type="submit"]');
-    button.disabled = true;
-    button.textContent = 'Assigning…';
+  function normalizeTeam(records) {
+    if (!Array.isArray(records)) return [];
+    return records.map((member) => Object.assign({}, member, {
+      features: Array.isArray(member.capabilities)
+        ? member.capabilities
+        : (Array.isArray(member.features) ? member.features : [])
+    })).filter((member) => member.key && member.features.length === 2);
+  }
+
+  let TEAM = normalizeTeam(SERVER_CONTEXT.team);
+
+  const root = document.getElementById("sb2-company-os");
+  const objectiveForm = document.getElementById("sb2-objective-form");
+  const objectiveError = document.getElementById("sb2-objective-error");
+  const loadError = document.getElementById("sb2-load-error");
+  const buildPlanButton = document.getElementById("sb2-build-plan");
+  const toast = document.getElementById("sb2-toast");
+  const workspaceTitle = document.getElementById("sb2-workspace-title");
+  const workspaceFocus = document.getElementById("sb2-workspace-focus");
+  const tabs = document.getElementById("sb2-feature-tabs");
+  const assignmentZone = document.getElementById("sb2-assignment-zone");
+  const deliverableZone = document.getElementById("sb2-deliverable-zone");
+  const nextActionButton = document.getElementById("sb2-open-next");
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const requestedDesk = urlParams.get("desk") || SERVER_CONTEXT.selected_desk || "manager";
+  const requestedFeature = urlParams.get("feature") || SERVER_CONTEXT.selected_feature || null;
+
+  const state = {
+    selectedDesk: TEAM.some((member) => member.key === requestedDesk) ? requestedDesk : "manager",
+    selectedFeature: requestedFeature,
+    objectives: [],
+    assignments: [],
+    deliverables: [],
+    activity: [],
+    mission: {},
+    currentObjective: null,
+    nextActionDesk: null,
+    storageIsEphemeral: Boolean(SERVER_CONTEXT.storage_is_ephemeral),
+    loaded: false,
+    focusRecord: null
+  };
+
+  function valueText(value, fallback) {
+    if (value === null || value === undefined) return fallback || "";
+    return String(value);
+  }
+
+  function create(tag, className, content) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (content !== undefined && content !== null) element.textContent = valueText(content);
+    return element;
+  }
+
+  function append(parent) {
+    Array.prototype.slice.call(arguments, 1).forEach((child) => {
+      if (child) parent.appendChild(child);
+    });
+    return parent;
+  }
+
+  function clear(element) {
+    element.replaceChildren();
+    return element;
+  }
+
+  function memberFor(key) {
+    return TEAM.find((member) => member.key === key) || TEAM.find((member) => member.key === "manager") || null;
+  }
+
+  function featureFor(member, key) {
+    if (!member || !Array.isArray(member.features) || !member.features.length) return null;
+    return member.features.find((feature) => feature.key === key) || member.features[0];
+  }
+
+  function assignmentDesk(assignment) {
+    return assignment.assignee || assignment.team_key || assignment.role_key || assignment.desk_key || assignment.assignee_key || assignment.member_key;
+  }
+
+  function assignmentFeature(assignment) {
+    return assignment.capability || assignment.feature_key || assignment.capability_key;
+  }
+
+  function versionOf(record) {
+    return Number((record && (record.version ?? record.lock_version)) ?? 1);
+  }
+
+  function statusPresentation(status, fallback) {
+    const normalized = valueText(status).toLowerCase();
+    const values = {
+      draft: ["Plan proposed", "progress"],
+      planned: ["Plan proposed", "progress"],
+      pending: ["Plan proposed", "progress"],
+      proposed: ["Plan proposed", "progress"],
+      queued: ["Assigned", "progress"],
+      assigned: ["Assigned", "progress"],
+      in_progress: ["In progress", "progress"],
+      blocked: ["Blocked", "attention"],
+      review: ["Ready for review", "attention"],
+      ready_for_review: ["Ready for review", "attention"],
+      submitted: ["Ready for review", "attention"],
+      revision_requested: ["Revision requested", "attention"],
+      delivered: ["Delivered", "complete"],
+      approved: ["Approved", "complete"],
+      complete: ["Complete", "complete"],
+      completed: ["Complete", "complete"],
+      cancelled: ["Cancelled", "neutral"]
+    };
+    return values[normalized] || [fallback || "Not assigned", "neutral"];
+  }
+
+  function statusNode(status, fallback) {
+    const presentation = statusPresentation(status, fallback);
+    const element = create("span", "sb2-status", presentation[0]);
+    element.dataset.tone = presentation[1];
+    return element;
+  }
+
+  function formatDate(value, fallback) {
+    if (!value) return fallback || "No deadline";
+    const source = String(value);
+    const parsed = new Date(source.length === 10 ? source + "T12:00:00" : source);
+    if (Number.isNaN(parsed.getTime())) return fallback || "No deadline";
+    return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(parsed);
+  }
+
+  function timeAgo(value) {
+    if (!value) return "—";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "—";
+    const minutes = Math.round((parsed.getTime() - Date.now()) / 60000);
+    const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+    if (Math.abs(minutes) < 60) return formatter.format(minutes, "minute");
+    const hours = Math.round(minutes / 60);
+    if (Math.abs(hours) < 24) return formatter.format(hours, "hour");
+    return formatter.format(Math.round(hours / 24), "day");
+  }
+
+  function csrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.content : "";
+  }
+
+  async function request(url, options) {
+    const settings = options || {};
+    const headers = Object.assign({ Accept: "application/json" }, settings.headers || {});
+    const token = csrfToken();
+    if (token) headers["X-CSRF-Token"] = token;
+    const method = valueText(settings.method, "GET").toUpperCase();
+    if (!["GET", "HEAD"].includes(method)) headers["X-SB-Intent"] = "company-os-v2";
+    if (settings.body && !(settings.body instanceof FormData)) headers["Content-Type"] = "application/json";
+    const response = await fetch(url, Object.assign({
+      credentials: "same-origin",
+      headers: headers
+    }, settings, { headers: headers }));
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.ok === false) {
+      const error = new Error(payload.error || payload.message || "Company OS could not complete that action.");
+      error.status = response.status;
+      error.details = payload;
+      throw error;
+    }
+    return payload;
+  }
+
+  function notify(message) {
+    toast.textContent = message;
+    toast.dataset.visible = "true";
+    window.clearTimeout(notify.timeout);
+    notify.timeout = window.setTimeout(() => {
+      toast.dataset.visible = "false";
+    }, 3200);
+  }
+
+  function unpack(payload) {
+    const source = payload.company_os || payload.data || payload;
+    if (Array.isArray(source.team)) TEAM = normalizeTeam(source.team);
+    state.objectives = Array.isArray(source.objectives) ? source.objectives : [];
+    state.assignments = Array.isArray(source.assignments) ? source.assignments : [];
+    state.deliverables = Array.isArray(source.deliverables) ? source.deliverables : [];
+    state.activity = Array.isArray(source.activity) ? source.activity : [];
+    state.mission = source.mission_control || source.mission || {};
+    state.currentObjective = source.current_objective || source.active_objective ||
+      state.objectives.find((objective) => !["complete", "completed", "cancelled"].includes(valueText(objective.status).toLowerCase())) || null;
+    if (Object.prototype.hasOwnProperty.call(source, "storage_is_ephemeral")) {
+      state.storageIsEphemeral = Boolean(source.storage_is_ephemeral);
+    }
+  }
+
+  function assignmentsForObjective(objective) {
+    if (!objective) return [];
+    return state.assignments.filter((assignment) => valueText(assignment.objective_id) === valueText(objective.id));
+  }
+
+  function assignmentsForFeature(deskKey, featureKey) {
+    return state.assignments.filter((assignment) => {
+      if (assignmentDesk(assignment) !== deskKey) return false;
+      const assignedFeature = assignmentFeature(assignment);
+      return !assignedFeature || assignedFeature === featureKey;
+    });
+  }
+
+  function deliverablesForAssignment(assignment) {
+    return state.deliverables.filter((deliverable) =>
+      valueText(deliverable.work_item_id || deliverable.assignment_id) === valueText(assignment.id)
+    );
+  }
+
+  function setBusy(button, busy, busyLabel) {
+    if (!button) return;
+    if (!button._idleMarkup) button._idleMarkup = button.innerHTML;
+    button.disabled = busy;
+    button.setAttribute("aria-busy", busy ? "true" : "false");
+    if (busy) button.textContent = busyLabel;
+    else button.innerHTML = button._idleMarkup;
+  }
+
+  function selectedUrl(desk, feature) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("desk", desk);
+    url.searchParams.set("feature", feature);
+    history.replaceState({ desk: desk, feature: feature }, "", url);
+  }
+
+  function focusRecord() {
+    if (!state.focusRecord) return;
+    const selector = '[data-record-kind="' + state.focusRecord.kind + '"][data-record-id="' + state.focusRecord.id.replace(/"/g, '\\"') + '"]';
+    const target = document.querySelector(selector);
+    state.focusRecord = null;
+    if (target) target.focus();
+  }
+
+  function renderStorage() {
+    document.getElementById("sb2-storage-note").hidden = !state.storageIsEphemeral;
+  }
+
+  function renderFlow() {
+    const objectiveCount = state.objectives.filter((objective) => valueText(objective.status).toLowerCase() !== "cancelled").length;
+    const approvedCount = state.deliverables.filter((deliverable) =>
+      ["approved", "delivered"].includes(valueText(deliverable.status).toLowerCase())
+    ).length;
+    const values = {
+      objectives: objectiveCount + " recorded",
+      assignments: state.assignments.length + " prepared",
+      deliverables: state.deliverables.length + " stored",
+      approved: approvedCount + " approved"
+    };
+    document.querySelectorAll("[data-flow-count]").forEach((element) => {
+      element.textContent = values[element.dataset.flowCount];
+    });
+  }
+
+  function seatState(member) {
+    if (!state.loaded) return ["Loading records", "neutral"];
+    const currentObjectiveId = state.currentObjective && state.currentObjective.id;
+    const currentAssignments = currentObjectiveId
+      ? state.assignments.filter(
+          (assignment) => assignment.objective_id === currentObjectiveId
+        )
+      : [];
+    if (member.key === "manager") {
+      if (!state.currentObjective) return ["Needs direction", "neutral"];
+      if (valueText(state.currentObjective.plan_status).toLowerCase() === "pending") {
+        return ["Plan approval", "attention"];
+      }
+      if (currentAssignments.some((assignment) =>
+        ["review", "ready_for_review"].includes(valueText(assignment.status).toLowerCase())
+      )) return ["Review ready", "attention"];
+      if (currentAssignments.some((assignment) => valueText(assignment.status).toLowerCase() === "blocked")) {
+        return ["Decision required", "attention"];
+      }
+      return ["Coordinating", "progress"];
+    }
+
+    const records = state.assignments.filter(
+      (assignment) => assignmentDesk(assignment) === member.key
+    );
+    const currentRecords = currentAssignments.filter(
+      (assignment) => assignmentDesk(assignment) === member.key
+    );
+    if (state.currentObjective &&
+        ["pending", "draft", "planned"].includes(
+          valueText(state.currentObjective.plan_status || state.currentObjective.status).toLowerCase()
+        ) && currentRecords.length) {
+      return ["Plan proposed", "progress"];
+    }
+    const relevantRecords = currentRecords.length ? currentRecords : records;
+    if (!relevantRecords.length) return ["Not assigned", "neutral"];
+    const latest = relevantRecords.slice().sort((a, b) =>
+      new Date(b.updated_at || b.updated || 0).getTime() -
+        new Date(a.updated_at || a.updated || 0).getTime()
+    )[0];
+    return statusPresentation(latest.status);
+  }
+
+  function renderSeats() {
+    document.querySelectorAll("[data-desk-key]").forEach((button) => {
+      const member = memberFor(button.dataset.deskKey);
+      if (!member) {
+        const missingLabel = button.querySelector("[data-seat-state]");
+        missingLabel.textContent = "Definition unavailable";
+        missingLabel.dataset.tone = "attention";
+        button.setAttribute("aria-label", button.textContent.trim() + ", definition unavailable");
+        return;
+      }
+      const presentation = seatState(member);
+      const active = member.key === state.selectedDesk;
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+      button.setAttribute("aria-label",
+        "Seat " + member.seat + ", " + member.name + ", " + presentation[0] + ", open desk"
+      );
+      const label = button.querySelector("[data-seat-state]");
+      label.textContent = presentation[0];
+      label.dataset.tone = presentation[1];
+    });
+  }
+
+  function renderObjective() {
+    const managerState = document.getElementById("sb2-manager-state");
+    const managerMember = memberFor("manager");
+    const managerPresentation = managerMember ? seatState(managerMember) : ["Records unavailable", "attention"];
+    managerState.textContent = managerPresentation[0];
+    managerState.dataset.tone = managerPresentation[1];
+
+    const target = clear(document.getElementById("sb2-current-objective"));
+    target.appendChild(create("h3", "", "Current objective"));
+    const objective = state.currentObjective;
+    if (!objective) {
+      target.appendChild(create("p", "sb2-objective-title", "No objective is active."));
+      target.appendChild(create(
+        "div",
+        "sb2-objective-meta",
+        "Tell your Manager the outcome you need. Nothing will be assigned until you approve the plan."
+      ));
+      return;
+    }
+
+    target.appendChild(create("p", "sb2-objective-title", objective.title || "Untitled objective"));
+    const meta = create("div", "sb2-objective-meta");
+    meta.appendChild(statusNode(objective.plan_status || objective.status, "Recorded"));
+    if (objective.success_condition) {
+      meta.appendChild(create("span", "", "Success: " + objective.success_condition));
+    }
+    meta.appendChild(create(
+      "span",
+      "",
+      (objective.project || "Company objective") + " / " +
+        formatDate(objective.due_date || objective.deadline)
+    ));
+    target.appendChild(meta);
+
+    const plan = assignmentsForObjective(objective);
+    if (plan.length) {
+      const preview = create("div", "sb2-plan-preview");
+      preview.appendChild(create(
+        "span",
+        "sb2-output-label",
+        "Operating plan / " + plan.length + " " + (plan.length === 1 ? "desk" : "desks")
+      ));
+      const list = create("ol");
+      plan.slice(0, 6).forEach((assignment) => {
+        const member = memberFor(assignmentDesk(assignment));
+        const assignedFeature = featureFor(member, assignmentFeature(assignment));
+        const item = create("li");
+        item.appendChild(create("strong", "", member ? member.seat : "—"));
+        item.appendChild(create(
+          "span",
+          "",
+          (member ? member.name : "Company desk") + " — " +
+            (assignment.title || (assignedFeature ? assignedFeature.name : "Assigned work"))
+        ));
+        list.appendChild(item);
+      });
+      preview.appendChild(list);
+      target.appendChild(preview);
+    }
+
+    if (["pending", "draft", "planned"].includes(
+      valueText(objective.plan_status || objective.status).toLowerCase()
+    )) {
+      const button = create("button", "sb2-primary sb2-plan-action", "Approve & assign");
+      button.type = "button";
+      button.dataset.approvePlan = objective.id;
+      button.dataset.version = versionOf(objective);
+      target.appendChild(button);
+    }
+  }
+
+  function renderTabs(member) {
+    const selected = featureFor(member, state.selectedFeature);
+    state.selectedFeature = selected.key;
+    clear(tabs);
+    tabs.setAttribute("aria-label", member.name + " features");
+    member.features.forEach((feature) => {
+      const button = create("button", "sb2-tab", feature.name);
+      const active = feature.key === selected.key;
+      button.type = "button";
+      button.id = "sb2-tab-" + feature.key;
+      button.dataset.featureKey = feature.key;
+      button.setAttribute("role", "tab");
+      button.setAttribute("aria-selected", active ? "true" : "false");
+      button.setAttribute("aria-controls", "sb2-desk-panel");
+      button.tabIndex = active ? 0 : -1;
+      tabs.appendChild(button);
+    });
+    document.getElementById("sb2-desk-panel").setAttribute("aria-labelledby", "sb2-tab-" + selected.key);
+    selectedUrl(member.key, selected.key);
+  }
+
+  function labelledField(labelText, name, type, options) {
+    const settings = options || {};
+    const wrapper = create("div", "sb2-field");
+    const id = "sb2-" + name + "-" + settings.suffix;
+    const label = create("label", "", labelText);
+    label.htmlFor = id;
+    const control = create(type === "textarea" ? "textarea" : "input", "sb2-input");
+    control.id = id;
+    control.name = name;
+    if (type !== "textarea") control.type = type || "text";
+    if (settings.maxLength) control.maxLength = settings.maxLength;
+    if (settings.placeholder) control.placeholder = settings.placeholder;
+    if (settings.required) control.required = true;
+    append(wrapper, label, control);
+    return wrapper;
+  }
+
+  function assignmentControls(assignment, deliverables) {
+    const controls = create("div", "sb2-record-actions");
+    const status = valueText(assignment.status).toLowerCase();
+    const latestDeliverable = deliverables.reduce((latest, deliverable) => {
+      if (!latest) return deliverable;
+      return Number(deliverable.revision || 0) > Number(latest.revision || 0)
+        ? deliverable
+        : latest;
+    }, null);
+    const latestIsApproved = latestDeliverable &&
+      valueText(latestDeliverable.status).toLowerCase() === "approved";
+    const hasPendingReview = deliverables.some(
+      (deliverable) => valueText(deliverable.status).toLowerCase() === "submitted"
+    );
+    let action = null;
+    if (["queued", "assigned"].includes(status)) {
+      action = create("button", "sb2-secondary", "Start assignment");
+      action.dataset.assignmentTransition = "in_progress";
+    } else if (status === "in_progress" && deliverables.length) {
+      action = create("button", "sb2-secondary", "Send to Manager review");
+      action.dataset.assignmentTransition = "review";
+    } else if (["review", "ready_for_review"].includes(status) &&
+               latestIsApproved && !hasPendingReview) {
+      action = create("button", "sb2-secondary", "Close approved work");
+      action.dataset.assignmentTransition = "delivered";
+    } else if (status === "blocked") {
+      action = create("button", "sb2-secondary", "Resume assignment");
+      action.dataset.assignmentTransition = "in_progress";
+    }
+    if (action) {
+      action.type = "button";
+      action.dataset.assignmentId = assignment.id;
+      action.dataset.version = versionOf(assignment);
+      controls.appendChild(action);
+    }
+    return controls;
+  }
+
+  function blockerForm(assignment) {
+    const details = create("details", "sb2-blocker-control");
+    details.appendChild(create("summary", "", "Record a blocker"));
+    const form = create("form", "sb2-blocker-form");
+    const suffix = "blocker-" + valueText(assignment.id).replace(/[^a-zA-Z0-9_-]/g, "");
+    form.dataset.blockerForm = "true";
+    form.dataset.assignmentId = assignment.id;
+    form.dataset.version = versionOf(assignment);
+    form.appendChild(labelledField("What is blocking this assignment?", "blocker", "textarea", {
+      suffix: suffix,
+      maxLength: 500,
+      required: true,
+      placeholder: "Name the decision, input, access, or dependency required"
+    }));
+    const error = create("p", "sb2-form-error");
+    error.dataset.formError = "true";
+    error.setAttribute("role", "alert");
+    error.hidden = true;
+    const submit = create("button", "sb2-secondary", "Mark assignment blocked");
+    submit.type = "submit";
+    append(form, error, submit);
+    details.appendChild(form);
+    return details;
+  }
+
+  function deliverableForm(assignment) {
+    const form = create("form", "sb2-deliverable-form");
+    const suffix = valueText(assignment.id).replace(/[^a-zA-Z0-9_-]/g, "");
+    form.dataset.deliverableForm = "true";
+    form.dataset.assignmentId = assignment.id;
+    form.dataset.version = versionOf(assignment);
+    append(
+      form,
+      labelledField("Deliverable title", "title", "text", { suffix: suffix, maxLength: 160, required: true }),
+      labelledField("What was completed?", "summary", "textarea", { suffix: suffix, maxLength: 3000, required: true }),
+      labelledField("Evidence references", "evidence_refs", "textarea", {
+        suffix: suffix,
+        required: true,
+        placeholder: "One file, document, source, or URL per line"
+      })
+    );
+    const error = create("p", "sb2-form-error");
+    error.dataset.formError = "true";
+    error.setAttribute("role", "alert");
+    error.hidden = true;
+    const submit = create("button", "sb2-secondary", "Store deliverable");
+    submit.type = "submit";
+    append(form, error, submit);
+    return form;
+  }
+
+  function renderAssignmentZone(member, feature, assignments) {
+    clear(assignmentZone);
+    const intro = create("div", "sb2-feature-intro");
+    const description = create("div");
+    append(description, create("h3", "", feature.name), create("p", "", feature.description));
+    const output = create("div");
+    append(
+      output,
+      create("span", "sb2-output-label", "Expected output"),
+      create("span", "sb2-output-name", feature.output)
+    );
+    append(intro, description, output);
+    assignmentZone.appendChild(intro);
+
+    if (member.disclaimer) {
+      assignmentZone.appendChild(create("p", "sb2-rights-note", member.disclaimer));
+    }
+
+    const block = create("div");
+    block.style.marginTop = ".8rem";
+    block.appendChild(create("h3", "sb2-zone-title", "Assigned work"));
+    const list = create("ol", "sb2-assignment-list");
+    if (!assignments.length) {
+      const empty = create("li", "sb2-empty");
+      append(
+        empty,
+        create("strong", "", "No assignment from your Manager yet."),
+        document.createTextNode("This desk opens when an approved operating plan routes work to " + feature.name + ".")
+      );
+      list.appendChild(empty);
+    } else {
+      assignments.forEach((assignment) => {
+        const item = create("li", "sb2-assignment");
+        item.dataset.recordKind = "assignment";
+        item.dataset.recordId = assignment.id;
+        item.tabIndex = -1;
+
+        const recordTop = create("div", "sb2-record-top");
+        const identity = create("div");
+        append(
+          identity,
+          create("p", "sb2-record-title", assignment.title || feature.name),
+          create(
+            "p",
+            "sb2-record-meta",
+            formatDate(assignment.due_date || assignment.deadline) +
+              (assignment.dependency ? " / Depends on " + assignment.dependency : "")
+          )
+        );
+        append(recordTop, identity, statusNode(assignment.status));
+        item.appendChild(recordTop);
+        if (assignment.instructions || assignment.description) {
+          item.appendChild(create("p", "sb2-record-copy", assignment.instructions || assignment.description));
+        }
+        if (assignment.blocker || assignment.blocked_reason) {
+          item.appendChild(create(
+            "p",
+            "sb2-record-copy",
+            "Blocked: " + (assignment.blocker || assignment.blocked_reason)
+          ));
+        }
+
+        const deliverables = deliverablesForAssignment(assignment);
+        const controls = assignmentControls(assignment, deliverables);
+        if (controls.children.length) item.appendChild(controls);
+        const assignmentStatus = valueText(assignment.status).toLowerCase();
+        if (["queued", "assigned", "in_progress"].includes(assignmentStatus)) {
+          item.appendChild(blockerForm(assignment));
+        }
+        if (assignmentStatus === "in_progress") {
+          item.appendChild(deliverableForm(assignment));
+        }
+        list.appendChild(item);
+      });
+    }
+    block.appendChild(list);
+    assignmentZone.appendChild(block);
+  }
+
+  function reviewForm(deliverable) {
+    const form = create("form", "sb2-review-form");
+    const suffix = valueText(deliverable.id).replace(/[^a-zA-Z0-9_-]/g, "");
+    form.dataset.reviewForm = "true";
+    form.dataset.deliverableId = deliverable.id;
+    form.dataset.version = versionOf(deliverable);
+    form.appendChild(labelledField("Review note", "note", "textarea", {
+      suffix: suffix,
+      maxLength: 1000,
+      placeholder: "Required when requesting changes"
+    }));
+    const error = create("p", "sb2-form-error");
+    error.dataset.formError = "true";
+    error.setAttribute("role", "alert");
+    error.hidden = true;
+    form.appendChild(error);
+    const actions = create("div", "sb2-record-actions");
+    const approve = create("button", "sb2-primary", "Approve");
+    approve.type = "submit";
+    approve.name = "decision";
+    approve.value = "approved";
+    const revise = create("button", "sb2-secondary", "Request changes");
+    revise.type = "submit";
+    revise.name = "decision";
+    revise.value = "revision_requested";
+    append(actions, approve, revise);
+    form.appendChild(actions);
+    return form;
+  }
+
+  function renderDeliverableZone(feature, assignments) {
+    clear(deliverableZone);
+    deliverableZone.appendChild(create("h3", "sb2-zone-title", "Deliverables and approval"));
+    const list = create("ol", "sb2-deliverable-list");
+    const records = [];
+    assignments.forEach((assignment) => {
+      deliverablesForAssignment(assignment).forEach((deliverable) => {
+        records.push({ assignment: assignment, deliverable: deliverable });
+      });
+    });
+
+    if (!records.length) {
+      const empty = create("li", "sb2-empty");
+      append(
+        empty,
+        create("strong", "", "No deliverable is stored."),
+        document.createTextNode("Work only appears here after the assigned desk submits evidence.")
+      );
+      list.appendChild(empty);
+    } else {
+      records.forEach((record) => {
+        const deliverable = record.deliverable;
+        const assignment = record.assignment;
+        const item = create("li", "sb2-deliverable");
+        item.dataset.recordKind = "deliverable";
+        item.dataset.recordId = deliverable.id;
+        item.tabIndex = -1;
+        const top = create("div", "sb2-record-top");
+        const identity = create("div");
+        append(
+          identity,
+          create("p", "sb2-record-title", deliverable.title || feature.output),
+          create(
+            "p",
+            "sb2-record-meta",
+            "Version " + versionOf(deliverable) + " / " +
+              formatDate(
+                deliverable.updated_at || deliverable.updated ||
+                  deliverable.created_at || deliverable.created,
+                "Date unavailable"
+              )
+          )
+        );
+        append(top, identity, statusNode(deliverable.status, "Stored"));
+        item.appendChild(top);
+        if (deliverable.summary || deliverable.body) {
+          item.appendChild(create("p", "sb2-record-copy", deliverable.summary || deliverable.body));
+        }
+
+        const evidence = Array.isArray(deliverable.evidence_refs)
+          ? deliverable.evidence_refs
+          : (deliverable.metadata && Array.isArray(deliverable.metadata.evidence_refs)
+            ? deliverable.metadata.evidence_refs
+            : []);
+        if (evidence.length) {
+          const label = create("span", "sb2-output-label", "Evidence");
+          label.style.display = "block";
+          label.style.marginTop = ".55rem";
+          item.appendChild(label);
+          const evidenceList = create("ul", "sb2-evidence-list");
+          evidence.forEach((entry) => evidenceList.appendChild(create("li", "", entry)));
+          item.appendChild(evidenceList);
+        }
+
+        const status = valueText(deliverable.status).toLowerCase();
+        const assignmentStatus = valueText(assignment.status).toLowerCase();
+        if (status === "submitted" &&
+            ["review", "ready_for_review"].includes(assignmentStatus)) {
+          item.appendChild(reviewForm(deliverable));
+        }
+        list.appendChild(item);
+      });
+    }
+    deliverableZone.appendChild(list);
+  }
+
+  function renderWorkspace() {
+    const member = memberFor(state.selectedDesk);
+    if (!member) {
+      workspaceTitle.textContent = "Company definition unavailable";
+      workspaceFocus.textContent = "Refresh the page to restore the ten approved desks.";
+      clear(tabs);
+      clear(assignmentZone).appendChild(create("div", "sb2-empty", "No unverified desk data is being shown."));
+      clear(deliverableZone).appendChild(create("div", "sb2-empty", "Deliverables are unavailable until the company definition loads."));
+      return;
+    }
+    const feature = featureFor(member, state.selectedFeature);
+    state.selectedFeature = feature.key;
+    workspaceTitle.textContent = member.name;
+    workspaceFocus.textContent = member.role + ". " + member.focus;
+    renderTabs(member);
+    const assignments = assignmentsForFeature(member.key, feature.key);
+    renderAssignmentZone(member, feature, assignments);
+    renderDeliverableZone(feature, assignments);
+  }
+
+  function deriveMission() {
+    const derivedReviewAssignments = state.assignments.filter((assignment) =>
+      ["review", "ready_for_review"].includes(valueText(assignment.status).toLowerCase())
+    );
+    const derivedBlocked = state.assignments.filter((assignment) =>
+      valueText(assignment.status).toLowerCase() === "blocked"
+    );
+    const derivedReviewDeliverables = state.deliverables.filter((deliverable) =>
+      ["submitted", "review", "ready_for_review"].includes(valueText(deliverable.status).toLowerCase())
+    );
+    const blocked = Array.isArray(state.mission.blocked) ? state.mission.blocked : derivedBlocked;
+    const reviewAssignments = Array.isArray(state.mission.review) ? state.mission.review : derivedReviewAssignments;
+    const reviewDeliverables = Array.isArray(state.mission.deliverables_for_review)
+      ? state.mission.deliverables_for_review
+      : derivedReviewDeliverables;
+    const pendingPlans = Array.isArray(state.mission.plans_for_approval)
+      ? state.mission.plans_for_approval
+      : state.objectives.filter((objective) => valueText(objective.plan_status).toLowerCase() === "pending");
+    const deadlines = state.assignments
+      .filter((assignment) => assignment.due_date || assignment.deadline)
+      .slice()
+      .sort((a, b) => new Date(a.due_date || a.deadline) - new Date(b.due_date || b.deadline));
+    return {
+      decisions: Number(state.mission.decisions_due ?? (pendingPlans.length + reviewDeliverables.length)),
+      blockedCount: Number(state.mission.blocked_count ?? blocked.length),
+      reviewCount: Number(state.mission.review_count ?? reviewAssignments.length),
+      deadlineRecord: state.mission.next_deadline || deadlines[0] || null,
+      pendingPlans: pendingPlans,
+      reviewDeliverables: reviewDeliverables,
+      reviewAssignments: reviewAssignments,
+      blocked: blocked,
+      deadlines: deadlines
+    };
+  }
+
+  function renderMission() {
+    const mission = deriveMission();
+    document.querySelector('[data-mission="decisions"]').textContent = mission.decisions;
+    document.querySelector('[data-mission="blocked"]').textContent = mission.blockedCount;
+    document.querySelector('[data-mission="review"]').textContent = mission.reviewCount;
+    const deadlineValue = mission.deadlineRecord &&
+      (mission.deadlineRecord.due_date || mission.deadlineRecord.deadline || mission.deadlineRecord);
+    document.querySelector('[data-mission="deadline"]').textContent = formatDate(deadlineValue, "None");
+
+    const plan = mission.pendingPlans[0] || null;
+    const pendingDeliverable = mission.reviewDeliverables[0] || null;
+    const deliverableAssignment = pendingDeliverable
+      ? state.assignments.find((assignment) =>
+          valueText(assignment.id) === valueText(pendingDeliverable.work_item_id || pendingDeliverable.assignment_id))
+      : null;
+    const next = plan || deliverableAssignment || mission.reviewAssignments[0] ||
+      mission.blocked[0] || mission.deadlineRecord || null;
+    const action = document.getElementById("sb2-next-action");
+    const detail = document.getElementById("sb2-next-action-detail");
+    if (!next) {
+      action.textContent = "Nothing needs your decision.";
+      detail.textContent = state.currentObjective
+        ? "Your Manager will surface the next persisted review, blocker, or deadline here."
+        : "Set the first objective at the Manager desk.";
+      state.nextActionDesk = null;
+      nextActionButton.hidden = true;
+    } else {
+      const member = plan ? memberFor("manager") : memberFor(assignmentDesk(next));
+      action.textContent = next.title || member.name + " assignment";
+      detail.textContent = member.name + " / " +
+        statusPresentation(plan ? (plan.plan_status || plan.status) : next.status)[0] +
+        ((next.due_date || next.deadline) ? " / " + formatDate(next.due_date || next.deadline) : "");
+      state.nextActionDesk = member.key;
+      nextActionButton.hidden = false;
+    }
+
+    const activity = clear(document.getElementById("sb2-activity-list"));
+    if (!state.activity.length) {
+      const item = create("li");
+      append(item, create("span", "", "No company activity has been recorded."), create("time", "", "—"));
+      activity.appendChild(item);
+      return;
+    }
+    state.activity.slice(0, 6).forEach((record) => {
+      const item = create("li");
+      const timestamp = record.created_at || record.created || record.at || "";
+      const time = create("time", "", timeAgo(timestamp));
+      if (timestamp) time.dateTime = timestamp;
+      const eventLabel = valueText(record.event)
+        .replace(/_/g, " ")
+        .replace(/^./, (character) => character.toUpperCase());
+      append(
+        item,
+        create(
+          "span",
+          "",
+          record.message || record.description || record.action ||
+            eventLabel || "Recorded update"
+        ),
+        time
+      );
+      activity.appendChild(item);
+    });
+  }
+
+  function renderAll() {
+    renderStorage();
+    renderFlow();
+    renderSeats();
+    renderObjective();
+    renderWorkspace();
+    renderMission();
+    window.requestAnimationFrame(focusRecord);
+  }
+
+  async function loadCompany(options) {
+    const settings = options || {};
+    const hadVerifiedContext = state.loaded;
+    root.dataset.loadState = "loading";
+    root.setAttribute("aria-busy", "true");
+    loadError.hidden = true;
     try {
-      await send('/team/manager/tasks', new FormData(form));
-      notify('Objective assigned to your team.');
-      window.setTimeout(() => window.location.assign('/team#active-work'), 350);
-    } catch (failure) {
-      error.textContent = failure.message;
-      error.classList.remove('hidden');
-      button.disabled = false;
-      button.innerHTML = 'Assign objective <span aria-hidden="true">→</span>';
+      const payload = await request("/api/company-os");
+      unpack(payload);
+      if (TEAM.length !== 10) {
+        throw new Error("The ten-person company definition is incomplete.");
+      }
+      state.loaded = true;
+      buildPlanButton.disabled = false;
+      root.dataset.loadState = "ready";
+      renderAll();
+    } catch (error) {
+      root.dataset.loadState = "error";
+      buildPlanButton.disabled = true;
+      loadError.textContent = error.status === 401
+        ? "Your session ended. Sign in again to open the private Company OS."
+        : (hadVerifiedContext
+          ? "Company records could not be refreshed. The verified records loaded with this page remain visible, but changes are paused."
+          : "Company records could not be loaded. Refresh the page before creating or changing work.");
+      loadError.hidden = false;
+      loadError.focus();
+      if (hadVerifiedContext && settings.keepServerContext !== false) {
+        renderAll();
+      } else {
+        state.loaded = false;
+        renderSeats();
+        document.querySelectorAll("[data-flow-count], [data-mission]").forEach((element) => {
+          element.textContent = "—";
+        });
+        const current = clear(document.getElementById("sb2-current-objective"));
+        append(
+          current,
+          create("h3", "", "Current objective"),
+          create("p", "sb2-objective-title", "Records unavailable"),
+          create("div", "sb2-objective-meta", "No work state is shown because the private record service did not respond.")
+        );
+        document.getElementById("sb2-next-action").textContent = "Records unavailable";
+        document.getElementById("sb2-next-action-detail").textContent = "Refresh to restore verified Mission Control data.";
+        if (TEAM.length) renderWorkspace();
+      }
+    } finally {
+      root.setAttribute("aria-busy", "false");
+    }
+  }
+
+  async function mutate(button, busyLabel, operation, successMessage, options) {
+    const settings = options || {};
+    const inlineError = settings.errorTarget || null;
+    if (inlineError) inlineError.hidden = true;
+    setBusy(button, true, busyLabel);
+    try {
+      await operation();
+      state.focusRecord = settings.focusRecord || null;
+      notify(successMessage);
+      await loadCompany({ keepServerContext: false });
+      return true;
+    } catch (error) {
+      if (error.status === 409) {
+        notify("This record changed in another session. Company OS refreshed the latest version.");
+        await loadCompany({ keepServerContext: false });
+      } else {
+        const message = error.status === 422
+          ? (error.message || "This work cannot move forward until its required evidence is stored.")
+          : error.message;
+        if (inlineError) {
+          inlineError.textContent = message;
+          inlineError.hidden = false;
+          inlineError.focus();
+        }
+        notify(message);
+        setBusy(button, false);
+      }
+      return false;
+    }
+  }
+
+  objectiveForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    objectiveError.hidden = true;
+    const titleInput = document.getElementById("sb2-objective-title");
+    const successInput = document.getElementById("sb2-success-condition");
+    const dueInput = document.getElementById("sb2-due-date");
+    const required = [titleInput, successInput, dueInput];
+    required.forEach((input) => input.removeAttribute("aria-invalid"));
+    const invalid = required.find((input) => !input.value.trim());
+    if (invalid) {
+      invalid.setAttribute("aria-invalid", "true");
+      objectiveError.textContent = "Add the objective, success condition, and decision deadline before building the plan.";
+      objectiveError.hidden = false;
+      invalid.focus();
+      return;
+    }
+
+    const body = {
+      title: titleInput.value.trim(),
+      success_condition: successInput.value.trim(),
+      due_date: dueInput.value,
+      target_date: dueInput.value,
+      project: document.getElementById("sb2-project").value.trim()
+    };
+    const completed = await mutate(
+      buildPlanButton,
+      "Building operating plan",
+      () => request("/api/company-os/objectives", {
+        method: "POST",
+        body: JSON.stringify(body)
+      }),
+      "Operating plan created. Review it before assigning the company.",
+      { errorTarget: objectiveError }
+    );
+    if (completed) objectiveForm.reset();
+  });
+
+  document.addEventListener("click", async (event) => {
+    const seat = event.target.closest("[data-desk-key]");
+    if (seat && root.contains(seat)) {
+      state.selectedDesk = seat.dataset.deskKey;
+      const member = memberFor(state.selectedDesk);
+      state.selectedFeature = member && member.features[0] ? member.features[0].key : null;
+      renderSeats();
+      renderWorkspace();
+      return;
+    }
+
+    const tab = event.target.closest("[data-feature-key]");
+    if (tab && root.contains(tab)) {
+      state.selectedFeature = tab.dataset.featureKey;
+      renderWorkspace();
+      return;
+    }
+
+    const approve = event.target.closest("[data-approve-plan]");
+    if (approve && root.contains(approve)) {
+      await mutate(
+        approve,
+        "Assigning company",
+        () => request(
+          "/api/company-os/objectives/" + encodeURIComponent(approve.dataset.approvePlan) + "/approve-plan",
+          {
+            method: "POST",
+            body: JSON.stringify({ expected_version: Number(approve.dataset.version) })
+          }
+        ),
+        "Operating plan approved and assigned."
+      );
+      return;
+    }
+
+    const transition = event.target.closest("[data-assignment-transition]");
+    if (transition && root.contains(transition)) {
+      const assignmentId = transition.dataset.assignmentId;
+      const nextStatus = transition.dataset.assignmentTransition;
+      await mutate(
+        transition,
+        "Updating assignment",
+        () => request("/api/company-os/assignments/" + encodeURIComponent(assignmentId), {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: nextStatus,
+            expected_version: Number(transition.dataset.version)
+          })
+        }),
+        nextStatus === "review"
+          ? "Deliverable sent to Manager review."
+          : (nextStatus === "delivered" ? "Approved assignment closed." : "Assignment started."),
+        { focusRecord: { kind: "assignment", id: assignmentId } }
+      );
     }
   });
 
-  document.querySelectorAll('[data-task-status-form]').forEach((statusForm) => {
-    statusForm.addEventListener('submit', async (event) => {
+  tabs.addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    const controls = Array.from(tabs.querySelectorAll('[role="tab"]'));
+    const current = controls.indexOf(document.activeElement);
+    if (current < 0) return;
+    event.preventDefault();
+    let next = current;
+    if (event.key === "ArrowLeft") next = (current - 1 + controls.length) % controls.length;
+    if (event.key === "ArrowRight") next = (current + 1) % controls.length;
+    if (event.key === "Home") next = 0;
+    if (event.key === "End") next = controls.length - 1;
+    controls[next].focus();
+    controls[next].click();
+  });
+
+  function validEvidenceReference(entry) {
+    if (/^https?:\/\/\S+$/i.test(entry)) return true;
+    return /^(document|stored_asset|vault_file):[a-zA-Z0-9_-]+$/i.test(entry);
+  }
+
+  document.addEventListener("submit", async (event) => {
+    const blocker = event.target.closest("[data-blocker-form]");
+    if (blocker && root.contains(blocker)) {
       event.preventDefault();
-      const task = statusForm.closest('[data-manager-task]');
-      const button = statusForm.querySelector('button');
-      button.disabled = true;
-      try {
-        await send(`/team/manager/tasks/${task.dataset.managerTask}/status`, new FormData(statusForm));
-        window.location.assign('/team#active-work');
-      } catch (failure) {
-        notify(failure.message);
-        button.disabled = false;
+      const button = blocker.querySelector('button[type="submit"]');
+      const error = blocker.querySelector("[data-form-error]");
+      const blockerText = blocker.querySelector('[name="blocker"]');
+      const reason = blockerText.value.trim();
+      if (!reason) {
+        blockerText.setAttribute("aria-invalid", "true");
+        error.textContent = "Describe the blocker before updating this assignment.";
+        error.hidden = false;
+        blockerText.focus();
+        return;
       }
+      blockerText.removeAttribute("aria-invalid");
+      error.hidden = true;
+      const assignmentId = blocker.dataset.assignmentId;
+      await mutate(
+        button,
+        "Recording blocker",
+        () => request("/api/company-os/assignments/" + encodeURIComponent(assignmentId), {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: "blocked",
+            blocker: reason,
+            expected_version: Number(blocker.dataset.version)
+          })
+        }),
+        "Blocker recorded in Mission Control.",
+        { errorTarget: error, focusRecord: { kind: "assignment", id: assignmentId } }
+      );
+      return;
+    }
+
+    const form = event.target.closest("[data-deliverable-form]");
+    if (form && root.contains(form)) {
+      event.preventDefault();
+      const button = form.querySelector('button[type="submit"]');
+      const error = form.querySelector("[data-form-error]");
+      const formData = new FormData(form);
+      const title = valueText(formData.get("title")).trim();
+      const summary = valueText(formData.get("summary")).trim();
+      const evidence = valueText(formData.get("evidence_refs"))
+        .split(/\r?\n/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+      if (!title || !summary || !evidence.some(validEvidenceReference)) {
+        error.textContent = "Add a title, completion summary, and at least one evidence URL or owned record reference.";
+        error.hidden = false;
+        const firstInvalid = Array.from(form.querySelectorAll("[required]")).find((control) => !control.value.trim());
+        (firstInvalid || form.querySelector('[name="evidence_refs"]')).focus();
+        return;
+      }
+      error.hidden = true;
+      const assignmentId = form.dataset.assignmentId;
+      await mutate(
+        button,
+        "Storing deliverable",
+        () => request(
+          "/api/company-os/assignments/" + encodeURIComponent(assignmentId) + "/deliverables",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              title: title,
+              summary: summary,
+              evidence_refs: evidence,
+              expected_version: Number(form.dataset.version)
+            })
+          }
+        ),
+        "Deliverable stored with its evidence.",
+        { errorTarget: error, focusRecord: { kind: "assignment", id: assignmentId } }
+      );
+      return;
+    }
+
+    const review = event.target.closest("[data-review-form]");
+    if (review && root.contains(review)) {
+      event.preventDefault();
+      const submitter = event.submitter;
+      const decision = submitter ? submitter.value : "";
+      const note = review.querySelector('[name="note"]').value.trim();
+      const error = review.querySelector("[data-form-error]");
+      if (decision === "revision_requested" && !note) {
+        error.textContent = "Name the required change before returning this deliverable.";
+        error.hidden = false;
+        review.querySelector('[name="note"]').focus();
+        return;
+      }
+      error.hidden = true;
+      const deliverableId = review.dataset.deliverableId;
+      await mutate(
+        submitter,
+        decision === "approved" ? "Approving deliverable" : "Returning deliverable",
+        () => request(
+          "/api/company-os/deliverables/" + encodeURIComponent(deliverableId) + "/review",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              decision: decision,
+              note: note,
+              expected_version: Number(review.dataset.version)
+            })
+          }
+        ),
+        decision === "approved" ? "Deliverable approved." : "Revision request returned to the desk.",
+        { errorTarget: error, focusRecord: { kind: "deliverable", id: deliverableId } }
+      );
+    }
+  });
+
+  nextActionButton.addEventListener("click", () => {
+    if (!state.nextActionDesk) return;
+    state.selectedDesk = state.nextActionDesk;
+    const member = memberFor(state.selectedDesk);
+    state.selectedFeature = member && member.features[0] ? member.features[0].key : null;
+    renderSeats();
+    renderWorkspace();
+    document.getElementById("sb2-workspace").scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start"
     });
   });
+
+  window.addEventListener("popstate", () => {
+    const current = new URL(window.location.href);
+    const desk = current.searchParams.get("desk");
+    const feature = current.searchParams.get("feature");
+    state.selectedDesk = TEAM.some((member) => member.key === desk) ? desk : "manager";
+    state.selectedFeature = feature;
+    renderSeats();
+    renderWorkspace();
+  });
+
+  if (SERVER_CONTEXT.ready && TEAM.length === 10) {
+    unpack(SERVER_CONTEXT);
+    state.loaded = true;
+    root.dataset.loadState = "ready";
+    buildPlanButton.disabled = false;
+    renderAll();
+  } else if (TEAM.length) {
+    renderWorkspace();
+  }
+
+  loadCompany({ keepServerContext: true });
 })();
 </script>
 {% endblock %}

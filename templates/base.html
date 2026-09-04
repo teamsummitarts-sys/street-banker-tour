@@ -77,7 +77,7 @@
        reading a public page (/services and its detail pages render this
        same shell) was being handed seventy destinations that every one of
        them answered with a login wall; they get the public header instead. #}
-    {% if user_plan %}
+    {% if user_plan and active_page != 'team' %}
     <aside id="sb-aside" class="flex w-full shrink-0 flex-col border-b border-white/5 bg-sb-ground p-4 lg:h-screen lg:w-60 lg:border-b-0 lg:border-r lg:p-5">
       <!-- Mobile: one compact row - brand + menu toggle -->
       <div class="flex items-center justify-between lg:hidden">
@@ -364,10 +364,10 @@
       {% endif %}
       </div><!-- /sb-menu -->
     </aside>
-    {% else %}
+    {% elif not user_plan %}
     {% include "partials/public_header.html" %}
     {% endif %}
-    <main class="flex-1 p-4 sm:p-6 lg:p-8">
+    <main class="flex-1 {{ 'min-w-0 p-0' if active_page == 'team' else 'p-4 sm:p-6 lg:p-8' }}">
       {% block content %}{% endblock %}
     </main>
   </div>

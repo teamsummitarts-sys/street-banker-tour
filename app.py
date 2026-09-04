@@ -2,6 +2,7 @@ import json
 import hmac
 import math
 import os
+import re
 import time
 import urllib.parse
 import uuid
@@ -14,6 +15,7 @@ from markupsafe import Markup
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import db as store
+import company_os
 import demo_seed
 import acr_provider
 import documents_engine
@@ -58,9 +60,36 @@ import valuation_engine
 # a 403 and never reaches this process), so that is not exploitable
 # today. This does not depend on that holding.
 #
-# Set PUBLIC_BASE_URL in Render when the real domain lands.
-PUBLIC_BASE_URL = (os.environ.get("PUBLIC_BASE_URL")
-                   or "https://street-banker.onrender.com").rstrip("/")
+# Set PUBLIC_BASE_URL to this isolated V2 service in every deployed
+# environment.  Falling back to the V1 host is more than a bad link: it can
+# send password resets, invites, and shared work back into a different
+# product.  Development gets an explicit localhost default; deployed boots
+# are validated again inside create_app(), after tests/configuration have had
+# a chance to set their environment.
+_V1_HOSTS = {"street-banker.onrender.com"}
+
+
+def _resolved_public_base_url():
+    app_env = (os.environ.get("APP_ENV") or "development").strip().lower()
+    raw = (os.environ.get("PUBLIC_BASE_URL") or "").strip().rstrip("/")
+    if not raw:
+        if app_env in ("staging", "production"):
+            raise RuntimeError(
+                "PUBLIC_BASE_URL is required for the deployed V2 service")
+        return "http://127.0.0.1:5000"
+    parsed = urllib.parse.urlsplit(raw)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise RuntimeError("PUBLIC_BASE_URL must be an absolute http(s) URL")
+    # A fully-qualified DNS name may legally end in a dot. Canonicalize it
+    # before enforcing the hard V1/V2 boundary so an equivalent spelling
+    # cannot bypass the service guard.
+    host = (parsed.hostname or "").rstrip(".").lower()
+    if host in _V1_HOSTS:
+        raise RuntimeError("PUBLIC_BASE_URL must not point at the V1 service")
+    return raw
+
+
+PUBLIC_BASE_URL = _resolved_public_base_url()
 
 # The host partner subdomains hang off: foxglove.street-banker.onrender.com
 # resolves the partner with slug "foxglove". Set PARTNER_ROOT_DOMAIN on a
@@ -68,6 +97,93 @@ PUBLIC_BASE_URL = (os.environ.get("PUBLIC_BASE_URL")
 # domain never touches this - that is matched first, exactly.
 _PARTNER_ROOT = (os.environ.get("PARTNER_ROOT_DOMAIN")
                  or PUBLIC_BASE_URL.split("//")[-1].split("/")[0]).strip().lower()
+
+
+def _signup_mode():
+    """Return a known registration mode, failing closed when deployed."""
+    app_env = (os.environ.get("APP_ENV") or "development").strip().lower()
+    raw = (os.environ.get("SIGNUP_MODE") or "").strip().lower()
+    if app_env in ("staging", "production"):
+        return raw if raw in ("owner_only", "closed") else "closed"
+    if raw in ("open", "owner_only", "closed"):
+        return raw
+    return "open"
+
+
+def _private_owner_emails():
+    """Return the explicit login allowlist for a closed comparison build.
+
+    The historical source-level owner hashes still grant the product plan in
+    development, but they must not silently expand who can enter a private V2
+    deployment. Closed mode therefore trusts only the deployment's explicit
+    owner settings.
+    """
+    configured = {
+        email.strip().lower()
+        for email in (os.environ.get("OWNER_EMAILS") or "").split(",")
+        if email.strip()
+    }
+    bootstrap_email = (os.environ.get("OWNER_BOOTSTRAP_EMAIL") or "").strip().lower()
+    if bootstrap_email:
+        configured.add(bootstrap_email)
+    return configured
+
+
+def _valid_werkzeug_password_hash(value):
+    """Validate the encoded form before a closed deployment can boot.
+
+    Prefix and length checks are insufficient: a malformed value such as
+    ``scrypt:xxxxx`` looks secret-like but can never authenticate an owner.
+    This accepts the two versioned formats Werkzeug generates for this app
+    and bounds their parameters so validation itself stays cheap.
+    """
+    if not isinstance(value, str) or not 1 <= len(value) <= 512:
+        return False
+    parts = value.split("$")
+    if len(parts) != 3:
+        return False
+    method, salt, digest = parts
+    if (re.fullmatch(r"[A-Za-z0-9]{8,64}", salt) is None
+            or re.fullmatch(r"[0-9a-f]+", digest) is None):
+        return False
+    parameters = method.split(":")
+    try:
+        if len(parameters) == 4 and parameters[0] == "scrypt":
+            n, r, p = (int(value) for value in parameters[1:])
+            return (
+                16384 <= n <= 1048576
+                and n & (n - 1) == 0
+                and 1 <= r <= 32
+                and 1 <= p <= 16
+                and len(digest) == 128
+            )
+        if len(parameters) == 3 and parameters[0] == "pbkdf2":
+            algorithm = parameters[1]
+            iterations = int(parameters[2])
+            digest_length = {"sha256": 64, "sha512": 128}.get(algorithm)
+            return (
+                digest_length is not None
+                and 100000 <= iterations <= 10000000
+                and len(digest) == digest_length
+            )
+    except (TypeError, ValueError):
+        return False
+    return False
+
+
+def _demo_password():
+    """Return the configured demo secret, or None when demos are disabled.
+
+    The familiar local ``sweep`` account remains a development fixture for
+    the established test suite.  It can never become a deployed credential.
+    """
+    if _signup_mode() == "closed":
+        return None
+    app_env = (os.environ.get("APP_ENV") or "development").strip().lower()
+    configured = os.environ.get("DEMO_PASSWORD") or ""
+    if app_env in ("staging", "production"):
+        return configured if len(configured) >= 12 and configured != "sweep" else None
+    return configured or "sweep"
 
 
 def public_url(path=""):
@@ -523,6 +639,28 @@ def create_app():
     if app_env in ("staging", "production") and not secret_key:
         raise RuntimeError("SECRET_KEY is required in staging and production")
     app.config["SECRET_KEY"] = secret_key or "street-banker-v2-local-development-only"
+    global PUBLIC_BASE_URL, _PARTNER_ROOT
+    PUBLIC_BASE_URL = _resolved_public_base_url()
+    _PARTNER_ROOT = (os.environ.get("PARTNER_ROOT_DOMAIN")
+                     or urllib.parse.urlsplit(PUBLIC_BASE_URL).hostname
+                     or "").strip().lower()
+    if _signup_mode() == "closed":
+        private_owners = _private_owner_emails()
+        if len(private_owners) != 1:
+            raise RuntimeError(
+                "Closed V2 requires exactly one explicitly configured owner email")
+        if app_env in ("staging", "production"):
+            bootstrap_email = (
+                os.environ.get("OWNER_BOOTSTRAP_EMAIL") or ""
+            ).strip().lower()
+            bootstrap_hash = os.environ.get(
+                "OWNER_BOOTSTRAP_PASSWORD_HASH") or ""
+            valid_hash = _valid_werkzeug_password_hash(bootstrap_hash)
+            if (bootstrap_email not in private_owners or not valid_hash
+                    or len(bootstrap_hash) < 50):
+                raise RuntimeError(
+                    "Closed deployed V2 requires the sole owner bootstrap email "
+                    "and a Werkzeug password hash")
     # Session cookie: 31 days when "remember this device" is ticked, and
     # Lax + Secure in production. Without SameSite set explicitly, a
     # browser applies its own default and the cookie can be dropped on a
@@ -588,30 +726,50 @@ def create_app():
     app.jinja_env.filters["js_json"] = _js_json
 
     store.init_db()
-    # Seed one demo account per tier so partners can tour exactly what each
-    # plan buys. All share the demo password; DEMO_PASSWORD rotates them all.
+    # Seed showcase accounts only when a valid demo secret exists.  Local
+    # development keeps its historical fixture; deployed V2 never falls back
+    # to a password published in source.
     _DEMO_ACCOUNTS = [
         ("demo@streetbanker.io", "Synthwave Surfer", "label"),
         ("demo-pro@streetbanker.io", "Synthwave Surfer (Pro)", "pro"),
         ("demo-artist@streetbanker.io", "Synthwave Surfer (Artist)", "artist"),
         ("demo-fan@streetbanker.io", "Demo Fan", "fan"),
     ]
-    for _email, _name, _plan in _DEMO_ACCOUNTS:
+    demo_password = _demo_password()
+    for _email, _name, _plan in (_DEMO_ACCOUNTS if demo_password else ()):
         if store.get_user_by_email(_email) is None:
-            store.create_user(_email, _name, generate_password_hash("sweep"))
+            store.create_user(
+                _email, _name, generate_password_hash(demo_password))
         _acct = store.get_user_by_email(_email)
         if (_acct.get("plan") or "artist") != _plan:
             store.set_user_plan(_acct["id"], _plan)
-        if os.environ.get("DEMO_PASSWORD"):
-            with store.get_db() as _db:
-                _db.execute("UPDATE users SET password_hash = ? WHERE id = ?",
-                            (generate_password_hash(os.environ["DEMO_PASSWORD"]),
-                             _acct["id"]))
+        with store.get_db() as _db:
+            _db.execute("UPDATE users SET password_hash = ? WHERE id = ?",
+                        (generate_password_hash(demo_password), _acct["id"]))
         # Real statements for the non-fan demos, so the showcase runs on
         # the same engines an artist's account does. Idempotent, and it
         # never touches an account that already has rows.
         if _plan != "fan":
             demo_seed.seed_statements(_acct["id"])
+
+    # The comparison service currently runs on disposable storage.  A
+    # password *hash* in Render can recreate the single approved owner after
+    # a restart without storing plaintext in source or reopening signup.
+    # Existing accounts are never overwritten.
+    bootstrap_email = (os.environ.get("OWNER_BOOTSTRAP_EMAIL") or "").strip().lower()
+    bootstrap_hash = os.environ.get("OWNER_BOOTSTRAP_PASSWORD_HASH") or ""
+    if bootstrap_email or bootstrap_hash:
+        if (not bootstrap_email or not bootstrap_hash
+                or not _is_owner_email(bootstrap_email)):
+            raise RuntimeError(
+                "Owner bootstrap requires an allowlisted email and password hash")
+        if store.get_user_by_email(bootstrap_email) is None:
+            store.create_user(
+                bootstrap_email,
+                (os.environ.get("OWNER_BOOTSTRAP_NAME") or "Street Banker").strip()
+                or "Street Banker",
+                bootstrap_hash,
+            )
 
     # Owner accounts get the top plan at boot as well as at login, so an
     # existing long-lived session does not have to sign out and back in
@@ -621,7 +779,17 @@ def create_app():
 
     def current_user():
         user_id = session.get("user_id")
-        return store.get_user(user_id) if user_id else None
+        user = store.get_user(user_id) if user_id else None
+        if (user is not None and _signup_mode() == "closed"
+                and user.get("email", "").strip().lower()
+                not in _private_owner_emails()):
+            # Access policy is evaluated on every request, not only at login.
+            # This invalidates a signed cookie from an older demo or
+            # collaborator configuration even when the session secret did not
+            # rotate with the deployment.
+            session.pop("user_id", None)
+            return None
+        return user
 
     def login_required_redirect():
         return redirect(url_for("login", next=request.path))
@@ -629,7 +797,9 @@ def create_app():
     @app.route("/signup", methods=["GET", "POST"])
     def signup():
         error = None
-        signup_mode = (os.environ.get("SIGNUP_MODE") or "open").strip().lower()
+        signup_mode = _signup_mode()
+        if signup_mode == "closed" and request.method == "GET":
+            return redirect(url_for("login", signup="closed"))
         if request.method == "GET" and request.args.get("ref"):
             session["ref_code"] = request.args.get("ref")[:16]
         if request.method == "POST":
@@ -649,6 +819,13 @@ def create_app():
                 error = "Please provide a valid email and a password of 6+ characters."
                 if signup_mode != "owner_only":
                     error = "Please provide a name, a valid email, and a password of 6+ characters."
+            elif signup_mode == "closed":
+                return render_template(
+                    "signup.html",
+                    error="Street Banker V2 registration is closed.",
+                    preselect="artist",
+                    owner_only=False,
+                ), 403
             elif signup_mode == "owner_only" and not owner_email:
                 error = "Street Banker V2 registration is owner-only."
             else:
@@ -704,6 +881,8 @@ def create_app():
         offering to save a real sign-in on this page - and sometimes had
         them save the demo address instead of the artist's own.
         """
+        if _demo_password() is None:
+            return redirect("/login?demo=unavailable")
         email = (request.form.get("demo_workspace") or "").strip().lower()
         password = request.form.get("demo_password") or ""
         allowed = {"demo@streetbanker.io", "demo-pro@streetbanker.io",
@@ -725,7 +904,15 @@ def create_app():
         if request.method == "POST":
             email = (request.form.get("email") or "").strip().lower()
             password = request.form.get("password") or ""
-            user = store.get_user_by_email(email)
+            # Closed V2 is a one-owner comparison environment. Even if an old
+            # disposable database still contains a demo or collaborator row,
+            # that account cannot authenticate unless its address is in the
+            # deployment's explicit owner allowlist.
+            login_allowed = (
+                _signup_mode() != "closed"
+                or email in _private_owner_emails()
+            )
+            user = store.get_user_by_email(email) if login_allowed else None
             if user and check_password_hash(user["password_hash"], password):
                 session["user_id"] = user["id"]
                 # A fresh sign-in is a fresh visit: let the Overview
@@ -747,8 +934,10 @@ def create_app():
                 elif is_demo:
                     # The demo IS the walkthrough — land partners on the tour.
                     default = "/walkthrough"
-                else:
+                elif _is_owner_email(user.get("email")):
                     default = "/team"
+                else:
+                    default = "/command-center"
                 return redirect(_safe_local_redirect(request.args.get("next"), default))
             error = "Incorrect email or password."
         return render_template(
@@ -756,7 +945,9 @@ def create_app():
             # Tour-rack state: was demo access just requested, and is this
             # browser already a known lead (cookie set by /demo-access)?
             demo_state=request.args.get("demo"),
-            demo_lead=request.cookies.get("sb_demo_lead"))
+            demo_lead=request.cookies.get("sb_demo_lead"),
+            demo_available=_demo_password() is not None,
+            registration_closed=_signup_mode() == "closed")
 
     # One lead per IP per half-minute is plenty; this only guards the
     # public capture form against dumb floods, not determined abuse.
@@ -768,6 +959,8 @@ def create_app():
         stored in the owner's inbox, and if the mailer is live the password
         goes out automatically. A cookie marks the browser as a known lead
         so the tour rack switches to its password state."""
+        if _demo_password() is None:
+            return redirect("/login?demo=unavailable#tour-rack")
         # Honeypot: real visitors never see this field.
         if request.form.get("company"):
             return redirect("/login#tour-rack")
@@ -790,7 +983,7 @@ def create_app():
         sent = False
         if emailer.configured():
             try:
-                pw = os.environ.get("DEMO_PASSWORD", "sweep")
+                pw = _demo_password()
                 emailer.send(
                     email,
                     "Your Street Banker demo access",
@@ -941,7 +1134,12 @@ def create_app():
                          "Contact the site owner to reset your password.")
             else:
                 email = (request.form.get("email") or "").strip().lower()
-                user = store.get_user_by_email(email) if "@" in email else None
+                reset_allowed = (
+                    _signup_mode() != "closed"
+                    or email in _private_owner_emails()
+                )
+                user = (store.get_user_by_email(email)
+                        if "@" in email and reset_allowed else None)
                 if user:
                     token = _reset_serializer().dumps(user["id"])
                     # Pinned, not request-derived. This is the one link
@@ -971,7 +1169,10 @@ def create_app():
         except (BadSignature, SignatureExpired):
             return render_template("reset.html", invalid=True, error=None)
         user = store.get_user(user_id)
-        if user is None:
+        if (user is None
+                or (_signup_mode() == "closed"
+                    and user.get("email", "").lower()
+                    not in _private_owner_emails())):
             return render_template("reset.html", invalid=True, error=None)
         error = None
         if request.method == "POST":
@@ -981,6 +1182,8 @@ def create_app():
             else:
                 store.set_user_password(user_id, generate_password_hash(password))
                 session["user_id"] = user_id
+                if _signup_mode() == "closed":
+                    return redirect("/team")
                 return redirect("/command-center" if (user.get("plan") or "artist") != "fan"
                                 else "/discover")
         return render_template("reset.html", invalid=False, error=error)
@@ -2879,6 +3082,10 @@ def create_app():
 
     _PUBLIC_PREFIXES = ("/static/", "/uploads/", "/media/", "/l/", "/s/", "/epk/",
                         "/stem-src/",
+                        # Company OS API routes return their own JSON 401/403
+                        # responses; letting the generic plan wall redirect
+                        # them would turn an API failure into a login page.
+                        "/api/company-os",
                         "/services", "/favicon", "/presave/", "/reset/",
                         "/team/join/", "/webhooks/", "/club/", "/showday/",
                         "/rider/", "/roster/join/", "/sign/", "/sheet/", "/pitch/", "/@",
@@ -3900,6 +4107,8 @@ def create_app():
         user = current_user()
         if user is None:
             return login_required_redirect()
+        if _signup_mode() == "closed":
+            abort(403)
         email = (request.form.get("email") or "").strip().lower()
         if "@" in email and email != user["email"].lower():
             invite = store.add_roster_invite(user["id"], email)
@@ -3918,6 +4127,8 @@ def create_app():
 
     @app.route("/roster/join/<token>", methods=["GET", "POST"])
     def roster_join(token):
+        if _signup_mode() == "closed":
+            abort(404)
         invite = store.get_roster_invite(token)
         if invite is None:
             return render_template("roster_join.html", invalid=True,
@@ -7845,165 +8056,417 @@ def create_app():
     _TEAM_ROLE_LABELS = dict(_TEAM_ROLE_OPTIONS)
     _TEAM_SEAT_LIMIT = 10
 
-    # V2 is a staffed operating model, not an empty set of human invite
-    # slots.  These ten desks are the product's permanent front door: each
-    # one routes into the existing module that performs that department's
-    # work, so the team layer never duplicates the underlying tools.
-    _DIGITAL_TEAM = (
-        {
-            "key": "manager",
-            "name": "Your Manager",
-            "role": "Executive Manager",
-            "initials": "MG",
-            "focus": "Turns every department into one clear daily plan.",
-            "brief": "Build the artist profile first, then the team can coordinate releases, money, touring, and creative from the same source.",
-            "href": "/actions",
-            "cta": "Open daily plan",
-        },
-        {
-            "key": "a_and_r",
-            "name": "Your A&R",
-            "role": "A&R Director",
-            "initials": "AR",
-            "focus": "Catalog direction, artist positioning, and release selection.",
-            "href": "/catalog",
-            "cta": "Review catalog",
-        },
-        {
-            "key": "marketing",
-            "name": "Your Marketer",
-            "role": "Marketing Director",
-            "initials": "MK",
-            "focus": "Campaign strategy, content timing, and audience growth.",
-            "href": "/rollout-studio",
-            "cta": "Build campaign",
-        },
-        {
-            "key": "publicist",
-            "name": "Your Publicist",
-            "role": "Publicity Director",
-            "initials": "PR",
-            "focus": "Press narrative, media outreach, and announcement tracking.",
-            "href": "/press-desk",
-            "cta": "Open press desk",
-        },
-        {
-            "key": "tour_manager",
-            "name": "Your Tour Manager",
-            "role": "Tour Director",
-            "initials": "TM",
-            "focus": "Routing, shows, advances, travel, and settlement.",
-            "href": "/tours",
-            "cta": "Open Tour OS",
-        },
-        {
-            "key": "accountant",
-            "name": "Your Royalty Accountant",
-            "role": "Revenue Director",
-            "initials": "RA",
-            "focus": "Statements, missing money, royalty lanes, and reporting.",
-            "href": "/overview",
-            "cta": "Review money",
-        },
-        {
-            "key": "attorney",
-            "name": "Your Rights Attorney",
-            "role": "Rights & Deal Director",
-            "initials": "RT",
-            "focus": "Splits, agreements, ownership conflicts, and clearances.",
-            "href": "/deal-room",
-            "cta": "Open deal room",
-        },
-        {
-            "key": "creative_director",
-            "name": "Your Creative Director",
-            "role": "Creative Director",
-            "initials": "CD",
-            "focus": "Release imagery, visual systems, and campaign assets.",
-            "href": "/artwork",
-            "cta": "Open creative",
-        },
-        {
-            "key": "producer_engineer",
-            "name": "Your Producer",
-            "role": "Studio Director",
-            "initials": "PE",
-            "focus": "Mix readiness, mastering direction, racks, and remix briefs.",
-            "href": "/rack",
-            "cta": "Enter studio",
-        },
-        {
-            "key": "assistant",
-            "name": "Your Executive Assistant",
-            "role": "Operations Coordinator",
-            "initials": "EA",
-            "focus": "Deadlines, notifications, documents, and follow-through.",
-            "href": "/notifications",
-            "cta": "Review updates",
-        },
-    )
+    # One canonical definition drives routes, templates, and tests.
+    _DIGITAL_TEAM = company_os.TEAM
+
+    _COMPANY_INTENT = "company-os-v2"
+    _COMPANY_STATUS_LABELS = {
+        "proposed": "Proposed",
+        "queued": "Assigned",
+        "in_progress": "In progress",
+        "blocked": "Blocked",
+        "review": "Ready for review",
+        "delivered": "Approved",
+        "rejected": "Revision requested",
+    }
+
+    def _company_api_user():
+        user = current_user()
+        if user is None:
+            return None, (jsonify({
+                "ok": False, "error": "Sign in first."
+            }), 401)
+        if not _is_owner_email(user.get("email")):
+            return None, (jsonify({
+                "ok": False, "error": "Company OS is owner-only."
+            }), 403)
+        return user, None
+
+    def _company_intent_error():
+        supplied = request.headers.get("X-SB-Intent", "")
+        if not hmac.compare_digest(supplied, _COMPANY_INTENT):
+            return jsonify({
+                "ok": False, "error": "Missing Company OS request intent."
+            }), 403
+        return None
+
+    def _company_json(allow_status=False):
+        payload = request.get_json(silent=True)
+        if not isinstance(payload, dict):
+            raise ValueError("Send one JSON object.")
+        forbidden = {
+            "user_id", "owner_id", "actor_id", "actor_user_id",
+            "created", "updated", "plan_status",
+        }
+        if not allow_status:
+            forbidden.add("status")
+        if forbidden.intersection(payload):
+            raise ValueError("Ownership, status, and audit fields are server controlled.")
+        return payload
+
+    def _company_text(value, field, maximum, minimum=0, multiline=False):
+        if value is None:
+            value = ""
+        if not isinstance(value, str):
+            raise ValueError("%s must be text." % field)
+        if any(ord(char) < 32 and char not in "\n\t" for char in value):
+            raise ValueError("%s contains unsupported control characters." % field)
+        clean = value.strip()
+        if not multiline:
+            clean = " ".join(clean.split())
+        if len(clean) < minimum:
+            raise ValueError("%s is too short." % field)
+        if len(clean) > maximum:
+            raise ValueError("%s is too long." % field)
+        return clean
+
+    def _company_version(payload):
+        value = payload.get("expected_version")
+        if isinstance(value, bool):
+            raise ValueError("expected_version must be a non-negative integer.")
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            raise ValueError("expected_version must be a non-negative integer.")
+        if value < 0:
+            raise ValueError("expected_version must be a non-negative integer.")
+        return value
+
+    def _decorate_assignment(row):
+        item = dict(row)
+        desk = company_os.TEAM_BY_KEY.get(item.get("assignee")) or {}
+        feature = company_os.capability(
+            item.get("assignee"), item.get("capability")) or {}
+        item["desk_name"] = desk.get("name", "Company desk")
+        item["desk_role"] = desk.get("role", "Specialist")
+        item["desk_initials"] = desk.get("initials", "SB")
+        item["feature_name"] = feature.get("name", item.get("capability", ""))
+        item["status_label"] = _COMPANY_STATUS_LABELS.get(
+            item.get("status"), str(item.get("status") or "Not assigned").replace("_", " ").title())
+        return item
+
+    def _company_state(user_id):
+        objectives = store.list_manager_objectives(user_id, limit=50)
+        assignments = [
+            _decorate_assignment(row)
+            for row in store.list_manager_work_items(user_id, limit=500)
+        ]
+        deliverables = store.list_manager_deliverables(user_id, limit=500)
+        activity = store.list_manager_activity(user_id, limit=100)
+        # A newly proposed plan is the Manager's next decision even when an
+        # older objective is already in progress. This keeps every new plan
+        # reachable from the single-current-objective interface; after it is
+        # approved, the next pending plan naturally moves into view.
+        active_objective = next(
+            (item for item in objectives
+             if item.get("plan_status") == "pending"),
+            next(
+                (item for item in objectives
+                 if item.get("status") not in ("delivered", "archived")),
+                objectives[0] if objectives else None,
+            ),
+        )
+        blocked = [item for item in assignments if item.get("status") == "blocked"]
+        review = [item for item in assignments if item.get("status") == "review"]
+        pending_deliverables = [
+            item for item in deliverables
+            if item.get("status") == "submitted" and item.get("work_item_id")
+        ]
+        pending_plans = [
+            item for item in objectives if item.get("plan_status") == "pending"
+        ]
+        live_due = sorted(
+            (item for item in assignments
+             if item.get("status") not in ("delivered",)
+             and item.get("due_date")),
+            key=lambda item: item.get("due_date") or "9999-12-31",
+        )
+        mission_control = {
+            "decisions_due": len(pending_plans) + len(pending_deliverables),
+            "blocked_count": len(blocked),
+            "review_count": len(review),
+            "blocked": blocked[:5],
+            "review": review[:5],
+            "deliverables_for_review": pending_deliverables[:5],
+            "plans_for_approval": pending_plans[:5],
+            "next_deadline": live_due[0] if live_due else None,
+        }
+        return {
+            "ok": True,
+            "team": company_os.TEAM,
+            "objectives": objectives,
+            "assignments": assignments,
+            "deliverables": deliverables,
+            "activity": activity,
+            "active_objective": active_objective,
+            "mission_control": mission_control,
+            "storage_is_ephemeral": bool(
+                os.environ.get("RENDER")
+                and os.environ.get("V2_DURABLE_STORAGE") != "1"),
+        }
+
+    def _company_result(result, user_id):
+        payload = _company_state(user_id)
+        if result:
+            payload["objective"] = result.get("objective")
+            payload["work_items"] = [
+                _decorate_assignment(row)
+                for row in result.get("work_items", [])
+            ]
+            if result.get("deliverable"):
+                payload["deliverable"] = result["deliverable"]
+        return payload
+
+    def _company_error(exc):
+        if isinstance(exc, store.ManagerNotFoundError):
+            return jsonify({"ok": False, "error": str(exc)}), 404
+        if isinstance(exc, store.ManagerConflictError):
+            return jsonify({"ok": False, "error": str(exc)}), 409
+        if isinstance(exc, (store.ManagerValidationError, ValueError)):
+            return jsonify({"ok": False, "error": str(exc)}), 400
+        raise exc
 
     @app.route("/team")
     def team():
         user = current_user()
         if user is None:
             return login_required_redirect()
-        members = store.list_team(user["id"])
-        active_count = len([m for m in members if m["status"] == "active"])
-        invited_count = len(members) - active_count
-
-        # The Manager desk is an operating layer over the existing modules.
-        # Every objective stays attached to this account and routes to one of
-        # the ten permanent specialist desks; it never creates a second Tour,
-        # Studio, Campaign, or Money product.
-        team_by_key = {member["key"]: member for member in _DIGITAL_TEAM}
-        manager_tasks = store.list_manager_tasks(user["id"])
-        for task in manager_tasks:
-            specialist = team_by_key.get(task["assignee"], _DIGITAL_TEAM[0])
-            task["assignee_name"] = specialist["name"]
-            task["assignee_role"] = specialist["role"]
-            task["assignee_initials"] = specialist["initials"]
-            task["assignee_href"] = specialist["href"]
-        task_counts = {
-            status: len([task for task in manager_tasks
-                         if task["status"] == status])
-            for status in ("queued", "in_progress", "delivered")
-        }
-        task_counts["total"] = len(manager_tasks)
-        task_progress = (
-            round(task_counts["delivered"] / task_counts["total"] * 100)
-            if task_counts["total"] else 0
+        if (_signup_mode() != "open"
+                and not _is_owner_email(user.get("email"))):
+            abort(403)
+        state = _company_state(user["id"])
+        selected_key = request.args.get("desk", "manager")
+        selected_desk = company_os.TEAM_BY_KEY.get(
+            selected_key, company_os.TEAM_BY_KEY["manager"])
+        selected_feature_key = request.args.get(
+            "feature", selected_desk["capabilities"][0]["key"])
+        selected_feature = company_os.capability(
+            selected_desk["key"], selected_feature_key)
+        if selected_feature is None:
+            selected_feature = selected_desk["capabilities"][0]
+        selected_assignments = [
+            item for item in state["assignments"]
+            if item.get("assignee") == selected_desk["key"]
+        ]
+        return render_template(
+            "team.html",
+            active_page="team",
+            digital_team=_DIGITAL_TEAM,
+            manager=_DIGITAL_TEAM[0],
+            selected_desk=selected_desk,
+            selected_feature=selected_feature,
+            selected_assignments=selected_assignments,
+            **state,
+            **build_dashboard_context(),
         )
-        next_task = next(
-            (task for task in manager_tasks
-             if task["status"] != "delivered"), None)
 
-        return render_template("team.html", active_page="team",
-                               members=members,
-                               roles=_TEAM_ROLE_OPTIONS,
-                               role_labels=_TEAM_ROLE_LABELS,
-                               seat_limit=_TEAM_SEAT_LIMIT,
-                               seats_used=len(members),
-                               seats_open=max(0, _TEAM_SEAT_LIMIT - len(members)),
-                               active_count=active_count,
-                               invited_count=invited_count,
-                               email_configured=emailer.configured(),
-                               digital_team=_DIGITAL_TEAM,
-                               manager=_DIGITAL_TEAM[0],
-                               specialists=_DIGITAL_TEAM[1:],
-                               manager_tasks=manager_tasks,
-                               task_counts=task_counts,
-                               task_progress=task_progress,
-                               next_task=next_task,
-                               selected_assignee=request.args.get(
-                                   "assign", "marketing"),
-                               **build_dashboard_context())
+    @app.route("/api/company-os")
+    def company_os_state():
+        user, denied = _company_api_user()
+        if denied:
+            return denied
+        return jsonify(_company_state(user["id"]))
+
+    @app.route("/api/company-os/objectives", methods=["POST"])
+    def company_os_objective_create():
+        user, denied = _company_api_user()
+        if denied:
+            return denied
+        intent_error = _company_intent_error()
+        if intent_error:
+            return intent_error
+        try:
+            payload = _company_json()
+            title = _company_text(
+                payload.get("title"), "Objective", 180, minimum=3)
+            success = _company_text(
+                payload.get("success_condition", ""),
+                "Success condition", 500, minimum=3)
+            project = _company_text(
+                payload.get("project", ""), "Project", 100)
+            target_date = (payload.get("target_date", "")
+                           or payload.get("decision_deadline", "")
+                           or payload.get("due_date", ""))
+            target_date = _company_text(
+                target_date, "Decision deadline", 10, minimum=10)
+            try:
+                date.fromisoformat(target_date)
+            except ValueError:
+                raise ValueError(
+                    "Decision deadline must be a valid date.")
+            priority = payload.get("priority", "normal")
+            if priority not in ("low", "normal", "high", "critical"):
+                raise ValueError("Choose a valid priority.")
+            plan = company_os.build_operating_plan(
+                title, success, target_date)
+            result = store.create_manager_objective_plan(
+                user["id"],
+                title,
+                "manager",
+                plan["items"],
+                success_condition=success,
+                details=plan["summary"],
+                due_date=target_date,
+                project=project,
+                objective_type=plan["objective_type"],
+                routing={
+                    "engine": "company-os-v2",
+                    "priority": priority,
+                    "desks": sorted({
+                        item["assignee"] for item in plan["items"]
+                    }),
+                },
+                plan_document=plan,
+                actor_user_id=user["id"],
+                source="engine",
+            )
+            return jsonify(_company_result(result, user["id"])), 201
+        except Exception as exc:
+            return _company_error(exc)
+
+    @app.route(
+        "/api/company-os/objectives/<objective_id>/approve-plan",
+        methods=["POST"],
+    )
+    def company_os_objective_approve(objective_id):
+        user, denied = _company_api_user()
+        if denied:
+            return denied
+        intent_error = _company_intent_error()
+        if intent_error:
+            return intent_error
+        try:
+            payload = _company_json()
+            result = store.approve_manager_plan(
+                user["id"], objective_id,
+                expected_version=_company_version(payload),
+                actor_user_id=user["id"],
+            )
+            return jsonify(_company_result(result, user["id"]))
+        except Exception as exc:
+            return _company_error(exc)
+
+    @app.route(
+        "/api/company-os/assignments/<work_item_id>",
+        methods=["PATCH"],
+    )
+    def company_os_assignment_update(work_item_id):
+        user, denied = _company_api_user()
+        if denied:
+            return denied
+        intent_error = _company_intent_error()
+        if intent_error:
+            return intent_error
+        try:
+            payload = _company_json(allow_status=True)
+            status = payload.get("status")
+            aliases = {
+                "assigned": "queued",
+                "ready_for_review": "review",
+                "approved": "delivered",
+            }
+            status = aliases.get(status, status)
+            if status not in (
+                    "queued", "in_progress", "blocked", "review", "delivered"):
+                raise ValueError("Choose a valid assignment state.")
+            blocker = _company_text(
+                payload.get("blocker", ""), "Blocker", 500,
+                multiline=True)
+            if status == "blocked" and not blocker:
+                raise ValueError("Describe what is blocking this assignment.")
+            result = store.transition_manager_work_item(
+                user["id"], work_item_id, status,
+                expected_version=_company_version(payload),
+                blocker=blocker,
+                actor_user_id=user["id"],
+            )
+            return jsonify(_company_result(result, user["id"]))
+        except Exception as exc:
+            return _company_error(exc)
+
+    @app.route(
+        "/api/company-os/assignments/<work_item_id>/deliverables",
+        methods=["POST"],
+    )
+    def company_os_deliverable_create(work_item_id):
+        user, denied = _company_api_user()
+        if denied:
+            return denied
+        intent_error = _company_intent_error()
+        if intent_error:
+            return intent_error
+        try:
+            payload = _company_json()
+            title = _company_text(
+                payload.get("title"), "Deliverable title", 160, minimum=3)
+            summary = _company_text(
+                payload.get("summary", ""), "Deliverable summary", 5000,
+                minimum=3, multiline=True)
+            evidence_refs = payload.get("evidence_refs", [])
+            if not isinstance(evidence_refs, list) or len(evidence_refs) > 20:
+                raise ValueError("Evidence references must be a list of up to 20 items.")
+            clean_refs = []
+            for raw_ref in evidence_refs:
+                ref = _company_text(
+                    raw_ref, "Evidence reference", 500, minimum=1)
+                clean_refs.append(ref)
+            if not clean_refs:
+                raise ValueError(
+                    "Attach at least one real evidence link or owned record.")
+            result = store.create_manager_deliverable(
+                user["id"], work_item_id,
+                kind="text",
+                title=title,
+                body=summary,
+                metadata={"evidence_refs": clean_refs},
+                source="owner",
+                actor_user_id=user["id"],
+                expected_version=_company_version(payload),
+            )
+            return jsonify(_company_result(result, user["id"])), 201
+        except Exception as exc:
+            return _company_error(exc)
+
+    @app.route(
+        "/api/company-os/deliverables/<deliverable_id>/review",
+        methods=["POST"],
+    )
+    def company_os_deliverable_review(deliverable_id):
+        user, denied = _company_api_user()
+        if denied:
+            return denied
+        intent_error = _company_intent_error()
+        if intent_error:
+            return intent_error
+        try:
+            payload = _company_json()
+            decision = payload.get("decision")
+            if decision == "revision_requested":
+                decision = "rejected"
+            if decision not in ("approved", "rejected"):
+                raise ValueError("Choose approve or request changes.")
+            note = _company_text(
+                payload.get("note", ""), "Review note", 1000,
+                multiline=True)
+            if decision == "rejected" and not note:
+                raise ValueError("Explain the requested change.")
+            result = store.decide_manager_deliverable(
+                user["id"], deliverable_id, decision,
+                expected_version=_company_version(payload),
+                note=note,
+                actor_user_id=user["id"],
+            )
+            return jsonify(_company_result(result, user["id"]))
+        except Exception as exc:
+            return _company_error(exc)
 
     @app.route("/team/manager/tasks", methods=["POST"])
     def manager_task_create():
         user = current_user()
         if user is None:
             return jsonify({"ok": False, "error": "Sign in first."}), 401
+        if _signup_mode() != "open":
+            abort(404)
         payload = request.get_json(silent=True) or request.form
         title = " ".join((payload.get("title") or "").split())
         assignee = (payload.get("assignee") or "").strip()
@@ -8036,6 +8499,8 @@ def create_app():
         user = current_user()
         if user is None:
             return jsonify({"ok": False, "error": "Sign in first."}), 401
+        if _signup_mode() != "open":
+            abort(404)
         payload = request.get_json(silent=True) or request.form
         status = (payload.get("status") or "").strip()
         if status not in ("queued", "in_progress", "delivered"):
@@ -8056,6 +8521,18 @@ def create_app():
         user = current_user()
         if user is None:
             return jsonify({"ok": False, "error": "Sign in first."}), 401
+        if _signup_mode() == "closed":
+            return jsonify({
+                "ok": False,
+                "error": "Invites are disabled while V2 registration is closed.",
+            }), 403
+        if (_signup_mode() != "open"
+                and not _is_owner_email(user.get("email"))):
+            return jsonify({"ok": False, "error": "Company OS is owner-only."}), 403
+        if _signup_mode() != "open":
+            intent_error = _company_intent_error()
+            if intent_error:
+                return intent_error
         email = (request.form.get("email") or "").strip().lower()
         role = request.form.get("role") or "manager"
         if "@" not in email or role not in _TEAM_ROLES:
@@ -8087,6 +8564,8 @@ def create_app():
 
     @app.route("/team/join/<token>", methods=["GET", "POST"])
     def team_join(token):
+        if _signup_mode() == "closed":
+            abort(404)
         invite = store.get_team_invite(token)
         if invite is None:
             return render_template("team_join.html", invalid=True, invite=None, error=None)
@@ -8129,6 +8608,13 @@ def create_app():
         user = current_user()
         if user is None:
             return jsonify({"ok": False}), 401
+        if (_signup_mode() != "open"
+                and not _is_owner_email(user.get("email"))):
+            return jsonify({"ok": False}), 403
+        if _signup_mode() != "open":
+            intent_error = _company_intent_error()
+            if intent_error:
+                return intent_error
         return jsonify({"ok": store.remove_team_member(user["id"], member_id)})
 
     @app.route("/onboarding")

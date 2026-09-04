@@ -31,8 +31,10 @@
          when a valid saved Artist EQ mix exists in this browser. -->
     {% include "partials/login_artist_eq_recall.html" %}
 
-    <!-- 4. B. TOUR STREET BANKER -->
-    {% include "partials/login_demo_tour.html" %}
+    <!-- Private V2 never exposes demo entry or lead capture. -->
+    {% if demo_available and not registration_closed %}
+      {% include "partials/login_demo_tour.html" %}
+    {% endif %}
 
     <!-- 5. one row, because there is one question: which account -->
     {# These were two rows of identical weight, and both buttons went to
@@ -40,23 +42,34 @@
        "GO TO FAN EXPERIENCE" promised a different destination and
        delivered the artist form. One row, two named choices, and the fan
        link now actually arrives on the fan side. #}
-    <div class="lsr-rows">
-      <section class="lsr-row" aria-labelledby="lsr-new-h">
-        <div>
-          <h2 class="lsr-row-title" id="lsr-new-h">NO ACCOUNT YET?</h2>
-          <p class="lsr-row-sub">
-            Artists get the back office — royalties, releases, catalog.
-            Or <a class="lsr-row-alt" href="/signup?as=fan">Create a free fan account →</a>
-          </p>
-        </div>
-        <a class="lsr-row-btn" href="/signup">CREATE ARTIST ACCOUNT</a>
-      </section>
-    </div>
+    {% if registration_closed %}
+      <div class="lsr-rows">
+        <section class="lsr-row" aria-labelledby="lsr-private-h">
+          <div>
+            <h2 class="lsr-row-title" id="lsr-private-h">PRIVATE V2 ACCESS</h2>
+            <p class="lsr-row-sub">Registration and demo access are closed. Sign in with the approved owner account.</p>
+          </div>
+        </section>
+      </div>
+    {% else %}
+      <div class="lsr-rows">
+        <section class="lsr-row" aria-labelledby="lsr-new-h">
+          <div>
+            <h2 class="lsr-row-title" id="lsr-new-h">NO ACCOUNT YET?</h2>
+            <p class="lsr-row-sub">
+              Artists get the back office — royalties, releases, catalog.
+              Or <a class="lsr-row-alt" href="/signup?as=fan">Create a free fan account →</a>
+            </p>
+          </div>
+          <a class="lsr-row-btn" href="/signup">CREATE ARTIST ACCOUNT</a>
+        </section>
+      </div>
+    {% endif %}
 
     <!-- 6. security statement -->
     <p class="lsr-security">
       <span class="lsr-security-mark" aria-hidden="true"></span>
-      Secure account access. Demo workspaces contain sample data.
+      {% if registration_closed %}Secure owner-only access. No public or demo accounts.{% else %}Secure account access. Demo workspaces contain sample data.{% endif %}
     </p>
 
     <!-- 7. minimal footer -->

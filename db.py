@@ -15,7 +15,8 @@ import os
 import sqlite3
 import uuid
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from urllib.parse import urlsplit
 
 
 def db_path():
@@ -24,30 +25,37 @@ def db_path():
     )
 
 
-_FALLBACK_WARNED = False
-
-
 @contextmanager
 def get_db():
-    path = db_path()
+    path = os.path.abspath(db_path())
+    directory = os.path.dirname(path)
     try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-    except OSError:
-        # DATABASE_PATH points somewhere we cannot create (e.g. the disk
-        # is not mounted yet). Fall back to the local instance dir so the
-        # app still boots — degraded (ephemeral) beats down.
-        global _FALLBACK_WARNED
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            "instance", "streetbanker.db")
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        if not _FALLBACK_WARNED:
-            print("WARNING: DATABASE_PATH unusable; falling back to", path)
-            _FALLBACK_WARNED = True
-    conn = sqlite3.connect(path)
+        os.makedirs(directory, exist_ok=True)
+    except OSError as exc:
+        # Never replace a configured durable path with an ephemeral local
+        # database. A service that cannot open its selected store must fail
+        # closed so the owner is not shown work that will disappear later.
+        raise RuntimeError(
+            "Street Banker database directory is unavailable: %s" % directory
+        ) from exc
+    try:
+        conn = sqlite3.connect(path)
+    except sqlite3.Error as exc:
+        raise RuntimeError(
+            "Street Banker database is unavailable: %s" % path
+        ) from exc
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    if conn.execute("PRAGMA foreign_keys").fetchone()[0] != 1:
+        conn.close()
+        raise RuntimeError("SQLite foreign-key enforcement is unavailable")
+    conn.execute("PRAGMA busy_timeout = 5000")
     try:
         yield conn
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 
@@ -472,6 +480,101 @@ def init_db():
             );
             CREATE INDEX IF NOT EXISTS idx_manager_tasks_user_status
                 ON manager_tasks(user_id, status, updated);
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_manager_tasks_id_user
+                ON manager_tasks(id, user_id);
+            CREATE TABLE IF NOT EXISTS manager_work_items (
+                id TEXT PRIMARY KEY,
+                objective_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                sequence INTEGER NOT NULL,
+                team_key TEXT NOT NULL,
+                capability_key TEXT NOT NULL,
+                title TEXT NOT NULL,
+                instructions TEXT NOT NULL DEFAULT '',
+                required_input TEXT NOT NULL DEFAULT '',
+                expected_deliverable TEXT NOT NULL DEFAULT '',
+                acceptance_json TEXT NOT NULL DEFAULT '[]',
+                output_kind TEXT NOT NULL DEFAULT 'document',
+                due_date TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'proposed'
+                    CHECK (status IN (
+                        'proposed', 'queued', 'in_progress', 'blocked',
+                        'review', 'delivered'
+                    )),
+                blocker TEXT NOT NULL DEFAULT '',
+                required INTEGER NOT NULL DEFAULT 1,
+                system_generated INTEGER NOT NULL DEFAULT 0,
+                version INTEGER NOT NULL DEFAULT 0,
+                created TEXT NOT NULL,
+                updated TEXT NOT NULL,
+                started_at TEXT,
+                delivered_at TEXT,
+                UNIQUE(id, user_id),
+                UNIQUE(id, objective_id, user_id),
+                UNIQUE(objective_id, sequence),
+                FOREIGN KEY (objective_id, user_id)
+                    REFERENCES manager_tasks(id, user_id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_manager_work_items_owner_status_due
+                ON manager_work_items(user_id, status, due_date);
+            CREATE INDEX IF NOT EXISTS idx_manager_work_items_objective
+                ON manager_work_items(objective_id, user_id, sequence);
+            CREATE TABLE IF NOT EXISTS manager_deliverables (
+                id TEXT PRIMARY KEY,
+                objective_id TEXT NOT NULL,
+                work_item_id TEXT,
+                user_id TEXT NOT NULL,
+                revision INTEGER NOT NULL,
+                kind TEXT NOT NULL
+                    CHECK (kind IN ('plan', 'text', 'link', 'record_ref')),
+                title TEXT NOT NULL,
+                body TEXT NOT NULL DEFAULT '',
+                uri TEXT NOT NULL DEFAULT '',
+                metadata_json TEXT NOT NULL DEFAULT '{}',
+                source TEXT NOT NULL
+                    CHECK (source IN ('engine', 'owner', 'linked_record')),
+                status TEXT NOT NULL DEFAULT 'submitted'
+                    CHECK (status IN ('submitted', 'approved', 'rejected')),
+                version INTEGER NOT NULL DEFAULT 0,
+                created TEXT NOT NULL,
+                updated TEXT NOT NULL,
+                decided_at TEXT,
+                UNIQUE(id, user_id),
+                UNIQUE(work_item_id, revision),
+                FOREIGN KEY (objective_id, user_id)
+                    REFERENCES manager_tasks(id, user_id) ON DELETE CASCADE,
+                FOREIGN KEY (work_item_id, user_id)
+                    REFERENCES manager_work_items(id, user_id) ON DELETE CASCADE,
+                FOREIGN KEY (work_item_id, objective_id, user_id)
+                    REFERENCES manager_work_items(id, objective_id, user_id)
+                    ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_manager_deliverables_owner_item
+                ON manager_deliverables(user_id, work_item_id, status, revision);
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_manager_objective_deliverable_revision
+                ON manager_deliverables(objective_id, revision)
+                WHERE work_item_id IS NULL;
+            CREATE TABLE IF NOT EXISTS manager_activity (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                objective_id TEXT NOT NULL,
+                work_item_id TEXT,
+                user_id TEXT NOT NULL,
+                actor_user_id TEXT NOT NULL,
+                event TEXT NOT NULL,
+                details_json TEXT NOT NULL DEFAULT '{}',
+                created TEXT NOT NULL,
+                FOREIGN KEY (objective_id, user_id)
+                    REFERENCES manager_tasks(id, user_id) ON DELETE CASCADE,
+                FOREIGN KEY (work_item_id, user_id)
+                    REFERENCES manager_work_items(id, user_id) ON DELETE CASCADE,
+                FOREIGN KEY (work_item_id, objective_id, user_id)
+                    REFERENCES manager_work_items(id, objective_id, user_id)
+                    ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_manager_activity_owner_created
+                ON manager_activity(user_id, created DESC);
+            CREATE INDEX IF NOT EXISTS idx_manager_activity_objective
+                ON manager_activity(objective_id, user_id, created, id);
             CREATE TABLE IF NOT EXISTS pulse_snapshots (
                 user_id TEXT NOT NULL,
                 day TEXT NOT NULL,
@@ -932,6 +1035,37 @@ def init_db():
                 db.execute("ALTER TABLE tour_shows ADD COLUMN %s" % _col)
             except sqlite3.OperationalError:
                 pass  # column already exists
+
+        # Company OS: keep manager_tasks as the stable objective identifier so
+        # existing clients and records continue to work, then add the fields
+        # needed by the coordinated plan/work/deliverable lifecycle. Legacy
+        # rows are treated as already-approved single-desk objectives.
+        for _col in (
+                "details TEXT NOT NULL DEFAULT ''",
+                "success_condition TEXT NOT NULL DEFAULT ''",
+                "due_date TEXT NOT NULL DEFAULT ''",
+                "project TEXT NOT NULL DEFAULT ''",
+                "objective_type TEXT NOT NULL DEFAULT 'general'",
+                "source TEXT NOT NULL DEFAULT 'legacy'",
+                "plan_status TEXT NOT NULL DEFAULT 'approved'",
+                "plan_version INTEGER NOT NULL DEFAULT 0",
+                "routing_json TEXT NOT NULL DEFAULT '{}'",
+                "version INTEGER NOT NULL DEFAULT 0",
+                "completed_at TEXT",
+                "approved_at TEXT",
+        ):
+            try:
+                db.execute("ALTER TABLE manager_tasks ADD COLUMN %s" % _col)
+            except sqlite3.OperationalError as exc:
+                # ALTER ADD COLUMN has no portable IF NOT EXISTS in the
+                # supported SQLite versions. Only suppress the known repeat
+                # migration case; surface malformed schema and disk errors.
+                if "duplicate column name" not in str(exc).lower():
+                    raise
+        db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_manager_tasks_user_due "
+            "ON manager_tasks(user_id, due_date, status)"
+        )
 
         # V2 migration: uploads now carry explicit ownership and visibility.
         # Private business files are backfilled first; intentionally public
@@ -2919,6 +3053,938 @@ def list_team(owner_id):
 # --- Manager desk ------------------------------------------------------------
 
 _MANAGER_TASK_STATUSES = ("queued", "in_progress", "delivered")
+_MANAGER_PLAN_STATUSES = ("pending", "approved", "revision_requested")
+_MANAGER_WORK_STATUSES = (
+    "proposed", "queued", "in_progress", "blocked", "review", "delivered",
+)
+_MANAGER_DELIVERABLE_KINDS = ("plan", "text", "link", "record_ref")
+_MANAGER_DELIVERABLE_SOURCES = ("engine", "owner", "linked_record")
+_MANAGER_DELIVERABLE_STATUSES = ("submitted", "approved", "rejected")
+_MANAGER_TRANSITIONS = {
+    "queued": ("in_progress", "blocked"),
+    "in_progress": ("review", "blocked"),
+    "blocked": ("queued", "in_progress"),
+    "review": ("in_progress", "delivered"),
+    "proposed": (),
+    "delivered": (),
+}
+
+
+class ManagerValidationError(ValueError):
+    """A Company OS write was malformed before it reached SQLite."""
+
+
+class ManagerNotFoundError(LookupError):
+    """The requested Company OS object is absent from this owner's account."""
+
+
+class ManagerConflictError(RuntimeError):
+    """A version, state transition, or evidence precondition was not met."""
+
+    def __init__(self, message, *, current_status=None, current_version=None):
+        super().__init__(message)
+        self.current_status = current_status
+        self.current_version = current_version
+
+
+def _manager_text(value, field, max_length, *, required=False,
+                  collapse=True):
+    if value is None:
+        value = ""
+    if not isinstance(value, str):
+        raise ManagerValidationError("%s must be text" % field)
+    if any(ord(char) < 32 and char not in "\n\t" for char in value):
+        raise ManagerValidationError("%s contains unsupported control characters" % field)
+    clean = " ".join(value.split()) if collapse else value.strip()
+    if required and not clean:
+        raise ManagerValidationError("%s is required" % field)
+    if len(clean) > max_length:
+        raise ManagerValidationError(
+            "%s must be %d characters or fewer" % (field, max_length)
+        )
+    return clean
+
+
+def _manager_date(value, field="due_date"):
+    clean = _manager_text(value, field, 10)
+    if not clean:
+        return ""
+    try:
+        return date.fromisoformat(clean).isoformat()
+    except ValueError as exc:
+        raise ManagerValidationError(
+            "%s must use YYYY-MM-DD" % field
+        ) from exc
+
+
+def _manager_json(value, field, *, expected=(dict,), max_length=20000):
+    if not isinstance(value, expected):
+        names = " or ".join(item.__name__ for item in expected)
+        raise ManagerValidationError("%s must be a %s" % (field, names))
+    try:
+        encoded = json.dumps(
+            value, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+        )
+    except (TypeError, ValueError) as exc:
+        raise ManagerValidationError("%s must be JSON serializable" % field) from exc
+    if len(encoded) > max_length:
+        raise ManagerValidationError(
+            "%s is larger than %d characters" % (field, max_length)
+        )
+    return encoded
+
+
+def _manager_version(value, field="expected_version"):
+    if isinstance(value, bool):
+        raise ManagerValidationError("%s must be a non-negative integer" % field)
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ManagerValidationError(
+            "%s must be a non-negative integer" % field
+        ) from exc
+    if parsed < 0:
+        raise ManagerValidationError("%s must be a non-negative integer" % field)
+    return parsed
+
+
+def _manager_decode_json(raw, fallback):
+    try:
+        decoded = json.loads(raw or "")
+    except (TypeError, ValueError):
+        return fallback
+    return decoded
+
+
+def _manager_objective_dict(row):
+    item = dict(row)
+    item["routing"] = _manager_decode_json(item.get("routing_json"), {})
+    return item
+
+
+def _manager_work_item_dict(row):
+    item = dict(row)
+    # Public Company OS clients call these assignments and historically use
+    # assignee/capability. Keep the normalized storage names too so neither
+    # the new API nor direct persistence callers need a translation table.
+    item["assignee"] = item.get("team_key")
+    item["capability"] = item.get("capability_key")
+    item["acceptance_criteria"] = _manager_decode_json(
+        item.get("acceptance_json"), []
+    )
+    return item
+
+
+def _manager_deliverable_dict(row):
+    item = dict(row)
+    item["metadata"] = _manager_decode_json(item.get("metadata_json"), {})
+    return item
+
+
+def _manager_activity_dict(row):
+    item = dict(row)
+    item["details"] = _manager_decode_json(item.get("details_json"), {})
+    return item
+
+
+def _manager_add_activity(db, user_id, objective_id, event, *,
+                          actor_user_id=None, work_item_id=None, details=None,
+                          now=None):
+    actor = _manager_text(
+        actor_user_id or user_id, "actor_user_id", 128, required=True
+    )
+    event = _manager_text(event, "event", 80, required=True)
+    created = now or _now()
+    cursor = db.execute(
+        "INSERT INTO manager_activity "
+        "(objective_id,work_item_id,user_id,actor_user_id,event,details_json,created) "
+        "VALUES (?,?,?,?,?,?,?)",
+        (objective_id, work_item_id, user_id, actor, event,
+         _manager_json(details or {}, "activity details"), created),
+    )
+    return cursor.lastrowid
+
+
+def _manager_bundle(db, user_id, objective_id):
+    objective = db.execute(
+        "SELECT * FROM manager_tasks WHERE id = ? AND user_id = ?",
+        (objective_id, user_id),
+    ).fetchone()
+    if objective is None:
+        return None
+    work_items = db.execute(
+        "SELECT * FROM manager_work_items "
+        "WHERE objective_id = ? AND user_id = ? ORDER BY sequence, created",
+        (objective_id, user_id),
+    ).fetchall()
+    deliverables = db.execute(
+        "SELECT * FROM manager_deliverables "
+        "WHERE objective_id = ? AND user_id = ? "
+        "ORDER BY created, revision",
+        (objective_id, user_id),
+    ).fetchall()
+    activity = db.execute(
+        "SELECT * FROM manager_activity "
+        "WHERE objective_id = ? AND user_id = ? ORDER BY created, id",
+        (objective_id, user_id),
+    ).fetchall()
+    return {
+        "objective": _manager_objective_dict(objective),
+        "work_items": [_manager_work_item_dict(row) for row in work_items],
+        "deliverables": [
+            _manager_deliverable_dict(row) for row in deliverables
+        ],
+        "activity": [_manager_activity_dict(row) for row in activity],
+    }
+
+
+def _manager_recompute_objective(db, user_id, objective_id, now):
+    objective = db.execute(
+        "SELECT status,plan_status FROM manager_tasks "
+        "WHERE id = ? AND user_id = ?",
+        (objective_id, user_id),
+    ).fetchone()
+    if objective is None:
+        raise ManagerNotFoundError("objective was not found")
+    if objective["status"] == "delivered":
+        return
+    rows = db.execute(
+        "SELECT status FROM manager_work_items "
+        "WHERE objective_id = ? AND user_id = ? AND required = 1",
+        (objective_id, user_id),
+    ).fetchall()
+    statuses = [row["status"] for row in rows]
+    if (objective["plan_status"] == "approved" and statuses
+            and all(status == "delivered" for status in statuses)):
+        next_status = "delivered"
+        completed_at = now
+    elif any(status in ("in_progress", "blocked", "review", "delivered")
+             for status in statuses):
+        next_status = "in_progress"
+        completed_at = None
+    else:
+        next_status = "queued"
+        completed_at = None
+    if next_status != objective["status"]:
+        db.execute(
+            "UPDATE manager_tasks SET status = ?, completed_at = ?, "
+            "updated = ?, version = version + 1 "
+            "WHERE id = ? AND user_id = ? AND status != 'delivered'",
+            (next_status, completed_at, now, objective_id, user_id),
+        )
+
+
+def _manager_normalize_work_items(work_items, plan_status):
+    if not isinstance(work_items, (list, tuple)):
+        raise ManagerValidationError("work_items must be a list")
+    if not work_items:
+        raise ManagerValidationError("at least one work item is required")
+    if len(work_items) > 50:
+        raise ManagerValidationError("an objective can contain at most 50 work items")
+    normalized = []
+    sequences = set()
+    for position, raw in enumerate(work_items, start=1):
+        if not isinstance(raw, dict):
+            raise ManagerValidationError("each work item must be an object")
+        sequence = _manager_version(raw.get("sequence", position), "sequence")
+        if sequence < 1 or sequence in sequences:
+            raise ManagerValidationError("work item sequences must be unique and positive")
+        sequences.add(sequence)
+        team_key = _manager_text(
+            raw.get("team_key", raw.get("assignee")),
+            "work item assignee", 60, required=True,
+        )
+        capability_key = _manager_text(
+            raw.get("capability_key", raw.get("capability")),
+            "work item capability", 80, required=True,
+        )
+        status = raw.get("status") or (
+            "proposed" if plan_status == "pending" else "queued"
+        )
+        if plan_status == "pending":
+            status = "proposed"
+        elif status == "proposed":
+            status = "queued"
+        if status not in _MANAGER_WORK_STATUSES:
+            raise ManagerValidationError("unsupported work item status")
+        expected = _manager_text(
+            raw.get("expected_deliverable"), "expected_deliverable", 1000
+        )
+        acceptance = raw.get("acceptance_criteria")
+        if acceptance is None:
+            acceptance = [expected] if expected else []
+        if not isinstance(acceptance, (list, tuple)) or any(
+                not isinstance(item, str) for item in acceptance):
+            raise ManagerValidationError(
+                "acceptance_criteria must be a list of text values"
+            )
+        normalized.append({
+            "id": uuid.uuid4().hex,
+            "sequence": sequence,
+            "team_key": team_key,
+            "capability_key": capability_key,
+            "title": _manager_text(
+                raw.get("title"), "work item title", 180, required=True
+            ),
+            "instructions": _manager_text(
+                raw.get("instructions"), "instructions", 4000,
+                collapse=False,
+            ),
+            "required_input": _manager_text(
+                raw.get("required_input"), "required_input", 2000,
+                collapse=False,
+            ),
+            "expected_deliverable": expected,
+            "acceptance_json": _manager_json(
+                list(acceptance), "acceptance_criteria", expected=(list,)
+            ),
+            "output_kind": _manager_text(
+                raw.get("output_kind") or "document", "output_kind", 60,
+                required=True,
+            ),
+            "due_date": _manager_date(raw.get("due_date")),
+            "status": status,
+            "blocker": _manager_text(raw.get("blocker"), "blocker", 1000),
+            "required": 0 if raw.get("required") is False else 1,
+            "system_generated": 1 if raw.get("system_generated") else 0,
+        })
+    return sorted(normalized, key=lambda item: item["sequence"])
+
+
+def create_manager_objective_plan(
+        user_id, title, assignee, work_items, *, success_condition="",
+        details="", due_date="", project="", objective_type="general",
+        routing=None, plan_document=None, actor_user_id=None,
+        source="engine"):
+    """Atomically persist one objective, its proposed work, plan, and history."""
+    user_id = _manager_text(user_id, "user_id", 128, required=True)
+    title = _manager_text(title, "title", 180, required=True)
+    assignee = _manager_text(assignee, "assignee", 60, required=True)
+    if source not in ("engine", "legacy"):
+        raise ManagerValidationError("source must be engine or legacy")
+    plan_status = "pending" if source == "engine" else "approved"
+    normalized = _manager_normalize_work_items(work_items, plan_status)
+    objective_id = uuid.uuid4().hex
+    now = _now()
+    routing_json = _manager_json(
+        routing or {}, "routing", expected=(dict, list)
+    )
+    if plan_document is None:
+        plan_document = {
+            "objective": title,
+            "objective_type": objective_type or "general",
+            "assignments": [
+                {
+                    "sequence": item["sequence"],
+                    "assignee": item["team_key"],
+                    "capability": item["capability_key"],
+                    "title": item["title"],
+                    "due_date": item["due_date"],
+                    "expected_deliverable": item["expected_deliverable"],
+                }
+                for item in normalized
+            ],
+        }
+    if isinstance(plan_document, str):
+        plan_body = _manager_text(
+            plan_document, "plan_document", 20000, required=True,
+            collapse=False,
+        )
+    else:
+        plan_body = _manager_json(
+            plan_document, "plan_document", expected=(dict, list)
+        )
+    with get_db() as db:
+        db.execute("BEGIN IMMEDIATE")
+        db.execute(
+            "INSERT INTO manager_tasks "
+            "(id,user_id,title,assignee,status,created,updated,details,"
+            "success_condition,due_date,project,objective_type,source,"
+            "plan_status,plan_version,routing_json,version) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                objective_id, user_id, title, assignee, "queued", now, now,
+                _manager_text(details, "details", 4000, collapse=False),
+                _manager_text(
+                    success_condition, "success_condition", 2000,
+                    collapse=False,
+                ),
+                _manager_date(due_date),
+                _manager_text(project, "project", 180),
+                _manager_text(
+                    objective_type or "general", "objective_type", 60,
+                    required=True,
+                ),
+                source, plan_status, 1 if source == "engine" else 0,
+                routing_json, 0,
+            ),
+        )
+        for item in normalized:
+            db.execute(
+                "INSERT INTO manager_work_items "
+                "(id,objective_id,user_id,sequence,team_key,capability_key,"
+                "title,instructions,required_input,expected_deliverable,"
+                "acceptance_json,output_kind,due_date,status,blocker,required,"
+                "system_generated,version,created,updated) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    item["id"], objective_id, user_id, item["sequence"],
+                    item["team_key"], item["capability_key"], item["title"],
+                    item["instructions"], item["required_input"],
+                    item["expected_deliverable"], item["acceptance_json"],
+                    item["output_kind"], item["due_date"], item["status"],
+                    item["blocker"], item["required"],
+                    item["system_generated"], 0, now, now,
+                ),
+            )
+        plan_id = uuid.uuid4().hex
+        db.execute(
+            "INSERT INTO manager_deliverables "
+            "(id,objective_id,work_item_id,user_id,revision,kind,title,body,"
+            "uri,metadata_json,source,status,version,created,updated) "
+            "VALUES (?,?,NULL,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                plan_id, objective_id, user_id, 1, "plan",
+                "Manager operating plan", plan_body, "", "{}", "engine",
+                "submitted", 0, now, now,
+            ),
+        )
+        _manager_add_activity(
+            db, user_id, objective_id, "objective_created",
+            actor_user_id=actor_user_id, now=now,
+            details={
+                "assignee": assignee,
+                "objective_type": objective_type or "general",
+                "plan_status": plan_status,
+                "work_item_count": len(normalized),
+            },
+        )
+        _manager_add_activity(
+            db, user_id, objective_id, "plan_submitted",
+            actor_user_id=actor_user_id, now=now,
+            details={"deliverable_id": plan_id, "plan_version": 1},
+        )
+        return _manager_bundle(db, user_id, objective_id)
+
+
+def get_manager_objective(user_id, objective_id, include_children=True):
+    with get_db() as db:
+        if include_children:
+            return _manager_bundle(db, user_id, objective_id)
+        row = db.execute(
+            "SELECT * FROM manager_tasks WHERE id = ? AND user_id = ?",
+            (objective_id, user_id),
+        ).fetchone()
+    return _manager_objective_dict(row) if row else None
+
+
+def list_manager_objectives(user_id, limit=50):
+    try:
+        limit = max(1, min(100, int(limit)))
+    except (TypeError, ValueError):
+        limit = 50
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT * FROM manager_tasks WHERE user_id = ? "
+            "ORDER BY CASE status WHEN 'in_progress' THEN 0 "
+            "WHEN 'queued' THEN 1 ELSE 2 END, updated DESC LIMIT ?",
+            (user_id, limit),
+        ).fetchall()
+    return [_manager_objective_dict(row) for row in rows]
+
+
+def get_manager_work_item(user_id, work_item_id):
+    with get_db() as db:
+        row = db.execute(
+            "SELECT * FROM manager_work_items WHERE id = ? AND user_id = ?",
+            (work_item_id, user_id),
+        ).fetchone()
+    return _manager_work_item_dict(row) if row else None
+
+
+def list_manager_work_items(user_id, objective_id=None, status=None, limit=100):
+    try:
+        limit = max(1, min(250, int(limit)))
+    except (TypeError, ValueError):
+        limit = 100
+    if status is not None and status not in _MANAGER_WORK_STATUSES:
+        raise ManagerValidationError("unsupported work item status")
+    clauses = ["user_id = ?"]
+    values = [user_id]
+    if objective_id is not None:
+        clauses.append("objective_id = ?")
+        values.append(objective_id)
+    if status is not None:
+        clauses.append("status = ?")
+        values.append(status)
+    values.append(limit)
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT * FROM manager_work_items WHERE "
+            + " AND ".join(clauses)
+            + " ORDER BY due_date, sequence, created LIMIT ?",
+            tuple(values),
+        ).fetchall()
+    return [_manager_work_item_dict(row) for row in rows]
+
+
+def list_manager_deliverables(user_id, objective_id=None, work_item_id=None,
+                              limit=100):
+    try:
+        limit = max(1, min(250, int(limit)))
+    except (TypeError, ValueError):
+        limit = 100
+    clauses = ["user_id = ?"]
+    values = [user_id]
+    if objective_id is not None:
+        clauses.append("objective_id = ?")
+        values.append(objective_id)
+    if work_item_id is not None:
+        clauses.append("work_item_id = ?")
+        values.append(work_item_id)
+    values.append(limit)
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT * FROM manager_deliverables WHERE "
+            + " AND ".join(clauses)
+            + " ORDER BY created, rowid, revision LIMIT ?",
+            tuple(values),
+        ).fetchall()
+    return [_manager_deliverable_dict(row) for row in rows]
+
+
+def list_manager_activity(user_id, objective_id=None, limit=100):
+    try:
+        limit = max(1, min(250, int(limit)))
+    except (TypeError, ValueError):
+        limit = 100
+    clauses = ["user_id = ?"]
+    values = [user_id]
+    if objective_id is not None:
+        clauses.append("objective_id = ?")
+        values.append(objective_id)
+    values.append(limit)
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT * FROM manager_activity WHERE "
+            + " AND ".join(clauses)
+            + " ORDER BY created DESC, id DESC LIMIT ?",
+            tuple(values),
+        ).fetchall()
+    return [_manager_activity_dict(row) for row in rows]
+
+
+def approve_manager_plan(user_id, objective_id, *, expected_version,
+                         actor_user_id=None):
+    expected_version = _manager_version(expected_version)
+    now = _now()
+    with get_db() as db:
+        db.execute("BEGIN IMMEDIATE")
+        objective = db.execute(
+            "SELECT * FROM manager_tasks WHERE id = ? AND user_id = ?",
+            (objective_id, user_id),
+        ).fetchone()
+        if objective is None:
+            raise ManagerNotFoundError("objective was not found")
+        if objective["version"] != expected_version:
+            raise ManagerConflictError(
+                "objective changed; reload before approving the plan",
+                current_status=objective["plan_status"],
+                current_version=objective["version"],
+            )
+        if objective["plan_status"] != "pending":
+            raise ManagerConflictError(
+                "only a pending plan can be approved",
+                current_status=objective["plan_status"],
+                current_version=objective["version"],
+            )
+        plan = db.execute(
+            "SELECT id FROM manager_deliverables "
+            "WHERE objective_id = ? AND user_id = ? AND work_item_id IS NULL "
+            "AND kind = 'plan' AND status = 'submitted' ORDER BY revision DESC LIMIT 1",
+            (objective_id, user_id),
+        ).fetchone()
+        if plan is None:
+            raise ManagerConflictError(
+                "the objective has no submitted operating plan",
+                current_status=objective["plan_status"],
+                current_version=objective["version"],
+            )
+        updated = db.execute(
+            "UPDATE manager_tasks SET plan_status = 'approved', approved_at = ?, "
+            "updated = ?, version = version + 1 "
+            "WHERE id = ? AND user_id = ? AND plan_status = 'pending' "
+            "AND version = ?",
+            (now, now, objective_id, user_id, expected_version),
+        )
+        if updated.rowcount != 1:
+            raise ManagerConflictError("objective changed while approving the plan")
+        db.execute(
+            "UPDATE manager_work_items SET status = 'queued', updated = ?, "
+            "version = version + 1 WHERE objective_id = ? AND user_id = ? "
+            "AND status = 'proposed'",
+            (now, objective_id, user_id),
+        )
+        db.execute(
+            "UPDATE manager_deliverables SET status = 'approved', decided_at = ?, "
+            "updated = ?, version = version + 1 "
+            "WHERE id = ? AND user_id = ? AND status = 'submitted'",
+            (now, now, plan["id"], user_id),
+        )
+        _manager_add_activity(
+            db, user_id, objective_id, "plan_approved",
+            actor_user_id=actor_user_id, now=now,
+            details={"plan_deliverable_id": plan["id"]},
+        )
+        return _manager_bundle(db, user_id, objective_id)
+
+
+def transition_manager_work_item(user_id, work_item_id, status, *,
+                                 expected_version, blocker="",
+                                 actor_user_id=None):
+    status = _manager_text(status, "status", 40, required=True)
+    if status not in _MANAGER_WORK_STATUSES:
+        raise ManagerValidationError("unsupported work item status")
+    expected_version = _manager_version(expected_version)
+    blocker = _manager_text(blocker, "blocker", 1000, collapse=False)
+    if status == "blocked" and not blocker:
+        raise ManagerValidationError("a blocked work item needs a blocker")
+    now = _now()
+    with get_db() as db:
+        db.execute("BEGIN IMMEDIATE")
+        item = db.execute(
+            "SELECT w.*,o.plan_status,o.status AS objective_status "
+            "FROM manager_work_items w JOIN manager_tasks o "
+            "ON o.id = w.objective_id AND o.user_id = w.user_id "
+            "WHERE w.id = ? AND w.user_id = ?",
+            (work_item_id, user_id),
+        ).fetchone()
+        if item is None:
+            raise ManagerNotFoundError("work item was not found")
+        if item["version"] != expected_version:
+            raise ManagerConflictError(
+                "work item changed; reload before updating it",
+                current_status=item["status"],
+                current_version=item["version"],
+            )
+        if item["objective_status"] == "delivered":
+            raise ManagerConflictError(
+                "a delivered objective is terminal",
+                current_status=item["status"],
+                current_version=item["version"],
+            )
+        if item["plan_status"] != "approved":
+            raise ManagerConflictError(
+                "approve the operating plan before starting assignments",
+                current_status=item["status"],
+                current_version=item["version"],
+            )
+        if status not in _MANAGER_TRANSITIONS[item["status"]]:
+            raise ManagerConflictError(
+                "invalid work item transition from %s to %s"
+                % (item["status"], status),
+                current_status=item["status"],
+                current_version=item["version"],
+            )
+        if status == "review":
+            evidence = db.execute(
+                "SELECT 1 FROM manager_deliverables WHERE work_item_id = ? "
+                "AND user_id = ? AND status IN ('submitted','approved') LIMIT 1",
+                (work_item_id, user_id),
+            ).fetchone()
+            if evidence is None:
+                raise ManagerConflictError(
+                    "submit a deliverable before requesting review",
+                    current_status=item["status"],
+                    current_version=item["version"],
+                )
+        if status == "delivered":
+            latest = db.execute(
+                "SELECT status,revision FROM manager_deliverables "
+                "WHERE work_item_id = ? AND user_id = ? "
+                "ORDER BY revision DESC LIMIT 1",
+                (work_item_id, user_id),
+            ).fetchone()
+            if latest is None or latest["status"] != "approved":
+                raise ManagerConflictError(
+                    "the latest deliverable revision must be approved before delivery",
+                    current_status=item["status"],
+                    current_version=item["version"],
+                )
+            pending = db.execute(
+                "SELECT 1 FROM manager_deliverables WHERE work_item_id = ? "
+                "AND user_id = ? AND status = 'submitted' LIMIT 1",
+                (work_item_id, user_id),
+            ).fetchone()
+            if pending is not None:
+                raise ManagerConflictError(
+                    "all submitted deliverable revisions must be reviewed before delivery",
+                    current_status=item["status"],
+                    current_version=item["version"],
+                )
+        next_blocker = blocker if status == "blocked" else ""
+        updated = db.execute(
+            "UPDATE manager_work_items SET status = ?, blocker = ?, updated = ?, "
+            "started_at = CASE WHEN ? = 'in_progress' "
+            "THEN COALESCE(started_at, ?) ELSE started_at END, "
+            "delivered_at = CASE WHEN ? = 'delivered' THEN ? ELSE delivered_at END, "
+            "version = version + 1 WHERE id = ? AND user_id = ? "
+            "AND status = ? AND version = ?",
+            (
+                status, next_blocker, now, status, now, status, now,
+                work_item_id, user_id, item["status"], expected_version,
+            ),
+        )
+        if updated.rowcount != 1:
+            raise ManagerConflictError("work item changed while it was updating")
+        _manager_add_activity(
+            db, user_id, item["objective_id"], "work_item_%s" % status,
+            actor_user_id=actor_user_id, work_item_id=work_item_id, now=now,
+            details={
+                "from": item["status"], "to": status,
+                "blocker": next_blocker,
+            },
+        )
+        _manager_recompute_objective(db, user_id, item["objective_id"], now)
+        return _manager_bundle(db, user_id, item["objective_id"])
+
+
+def _manager_validate_evidence_refs(db, user_id, metadata):
+    refs = metadata.get("evidence_refs", [])
+    if not isinstance(refs, list) or any(not isinstance(ref, str) for ref in refs):
+        raise ManagerValidationError("evidence_refs must be a list of text values")
+    if not refs:
+        raise ManagerValidationError(
+            "at least one evidence reference is required"
+        )
+    if len(refs) > 20:
+        raise ManagerValidationError("at most 20 evidence references are allowed")
+    owner_tables = {
+        "document": "documents",
+        "stored_asset": "stored_assets",
+        "vault": "vault_files",
+        "vault_file": "vault_files",
+    }
+    cleaned = []
+    for ref in refs:
+        ref = _manager_text(ref, "evidence reference", 2048, required=True)
+        parsed = urlsplit(ref)
+        if parsed.scheme in ("http", "https") and parsed.netloc:
+            cleaned.append(ref)
+            continue
+        prefix, separator, record_id = ref.partition(":")
+        table = owner_tables.get(prefix)
+        if not separator or table is None or not record_id:
+            raise ManagerValidationError(
+                "evidence references must be http(s) URLs or owner record references"
+            )
+        row = db.execute(
+            "SELECT 1 FROM %s WHERE id = ? AND user_id = ?" % table,
+            (record_id, user_id),
+        ).fetchone()
+        if row is None:
+            # Deliberately indistinguishable from a missing record: another
+            # account's identifier is never evidence for this owner.
+            raise ManagerNotFoundError("evidence record was not found")
+        cleaned.append(ref)
+    metadata["evidence_refs"] = cleaned
+
+
+def create_manager_deliverable(
+        user_id, work_item_id, *, kind, title, body="", uri="", metadata=None,
+        source="owner", expected_version=None, actor_user_id=None):
+    kind = _manager_text(kind, "kind", 40, required=True)
+    if kind not in _MANAGER_DELIVERABLE_KINDS or kind == "plan":
+        raise ManagerValidationError("unsupported deliverable kind")
+    if source not in ("owner", "linked_record"):
+        raise ManagerValidationError("deliverable source must be owner or linked_record")
+    title = _manager_text(title, "deliverable title", 180, required=True)
+    body = _manager_text(body, "deliverable body", 20000, collapse=False)
+    uri = _manager_text(uri, "deliverable uri", 2048)
+    if expected_version is not None:
+        expected_version = _manager_version(expected_version)
+    if kind == "text" and not body:
+        raise ManagerValidationError("a text deliverable needs a summary")
+    if kind == "link":
+        parsed = urlsplit(uri)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ManagerValidationError("a link deliverable needs an http(s) URL")
+    if kind == "record_ref" and not uri:
+        raise ManagerValidationError("a record deliverable needs a record reference")
+    if metadata is None:
+        metadata = {}
+    elif isinstance(metadata, dict):
+        metadata = dict(metadata)
+    else:
+        raise ManagerValidationError("deliverable metadata must be an object")
+    now = _now()
+    with get_db() as db:
+        db.execute("BEGIN IMMEDIATE")
+        item = db.execute(
+            "SELECT w.*,o.status AS objective_status FROM manager_work_items w "
+            "JOIN manager_tasks o ON o.id = w.objective_id AND o.user_id = w.user_id "
+            "WHERE w.id = ? AND w.user_id = ?",
+            (work_item_id, user_id),
+        ).fetchone()
+        if item is None:
+            raise ManagerNotFoundError("work item was not found")
+        if (expected_version is not None
+                and item["version"] != expected_version):
+            raise ManagerConflictError(
+                "work item changed; reload before submitting",
+                current_status=item["status"],
+                current_version=item["version"],
+            )
+        # BEGIN IMMEDIATE serializes writers. When an internal caller omits an
+        # expected version, bind the update to the version read under this
+        # transaction; public APIs should always supply the client's version.
+        write_version = item["version"]
+        if item["status"] != "in_progress":
+            raise ManagerConflictError(
+                "deliverables can only be submitted while work is in progress",
+                current_status=item["status"],
+                current_version=item["version"],
+            )
+        if item["objective_status"] == "delivered":
+            raise ManagerConflictError("a delivered objective is terminal")
+        _manager_validate_evidence_refs(db, user_id, metadata)
+        if kind == "record_ref":
+            _manager_validate_evidence_refs(
+                db, user_id, {"evidence_refs": [uri]}
+            )
+            source = "linked_record"
+        metadata_json = _manager_json(metadata, "deliverable metadata")
+        revision = db.execute(
+            "SELECT COALESCE(MAX(revision),0) + 1 FROM manager_deliverables "
+            "WHERE work_item_id = ? AND user_id = ?",
+            (work_item_id, user_id),
+        ).fetchone()[0]
+        deliverable_id = uuid.uuid4().hex
+        db.execute(
+            "INSERT INTO manager_deliverables "
+            "(id,objective_id,work_item_id,user_id,revision,kind,title,body,"
+            "uri,metadata_json,source,status,version,created,updated) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                deliverable_id, item["objective_id"], work_item_id, user_id,
+                revision, kind, title, body, uri, metadata_json, source,
+                "submitted", 0, now, now,
+            ),
+        )
+        bumped = db.execute(
+            "UPDATE manager_work_items SET version = version + 1, updated = ? "
+            "WHERE id = ? AND user_id = ? AND version = ? AND status != 'delivered'",
+            (now, work_item_id, user_id, write_version),
+        )
+        if bumped.rowcount != 1:
+            raise ManagerConflictError("work item changed while submitting")
+        _manager_add_activity(
+            db, user_id, item["objective_id"], "deliverable_submitted",
+            actor_user_id=actor_user_id, work_item_id=work_item_id, now=now,
+            details={
+                "deliverable_id": deliverable_id,
+                "kind": kind,
+                "revision": revision,
+            },
+        )
+        bundle = _manager_bundle(db, user_id, item["objective_id"])
+        bundle["deliverable"] = next(
+            row for row in bundle["deliverables"]
+            if row["id"] == deliverable_id
+        )
+        return bundle
+
+
+def decide_manager_deliverable(
+        user_id, deliverable_id, decision, *, expected_version, note="",
+        actor_user_id=None):
+    decision = _manager_text(decision, "decision", 40, required=True)
+    if decision == "revision_requested":
+        stored_status = "rejected"
+    elif decision in ("approved", "rejected"):
+        stored_status = decision
+    else:
+        raise ManagerValidationError(
+            "decision must be approved or revision_requested"
+        )
+    expected_version = _manager_version(expected_version)
+    note = _manager_text(note, "review note", 2000, collapse=False)
+    now = _now()
+    with get_db() as db:
+        db.execute("BEGIN IMMEDIATE")
+        row = db.execute(
+            "SELECT d.*,w.status AS work_status,w.version AS work_version,"
+            "o.status AS objective_status FROM manager_deliverables d "
+            "JOIN manager_work_items w ON w.id = d.work_item_id "
+            "AND w.user_id = d.user_id "
+            "JOIN manager_tasks o ON o.id = d.objective_id "
+            "AND o.user_id = d.user_id "
+            "WHERE d.id = ? AND d.user_id = ?",
+            (deliverable_id, user_id),
+        ).fetchone()
+        if row is None:
+            raise ManagerNotFoundError("deliverable was not found")
+        if row["version"] != expected_version:
+            raise ManagerConflictError(
+                "deliverable changed; reload before reviewing it",
+                current_status=row["status"],
+                current_version=row["version"],
+            )
+        if row["objective_status"] == "delivered":
+            raise ManagerConflictError("a delivered objective is terminal")
+        if row["status"] != "submitted":
+            raise ManagerConflictError(
+                "only a submitted deliverable can be reviewed",
+                current_status=row["status"],
+                current_version=row["version"],
+            )
+        if row["work_status"] != "review":
+            raise ManagerConflictError(
+                "a deliverable can only be reviewed when its assignment is ready for review",
+                current_status=row["work_status"],
+                current_version=row["work_version"],
+            )
+        metadata = _manager_decode_json(row["metadata_json"], {})
+        if note:
+            metadata["review_note"] = note
+        updated = db.execute(
+            "UPDATE manager_deliverables SET status = ?, metadata_json = ?, "
+            "decided_at = ?, updated = ?, version = version + 1 "
+            "WHERE id = ? AND user_id = ? AND status = 'submitted' AND version = ?",
+            (
+                stored_status,
+                _manager_json(metadata, "deliverable metadata"),
+                now, now, deliverable_id, user_id, expected_version,
+            ),
+        )
+        if updated.rowcount != 1:
+            raise ManagerConflictError("deliverable changed while reviewing it")
+        next_work_status = row["work_status"]
+        if stored_status == "rejected" and row["work_status"] == "review":
+            next_work_status = "in_progress"
+        if next_work_status != row["work_status"]:
+            db.execute(
+                "UPDATE manager_work_items SET status = ?, blocker = '', "
+                "updated = ?, delivered_at = CASE WHEN ? = 'delivered' "
+                "THEN ? ELSE delivered_at END, version = version + 1 "
+                "WHERE id = ? AND user_id = ? AND status = ? AND version = ?",
+                (
+                    next_work_status, now, next_work_status, now,
+                    row["work_item_id"], user_id, row["work_status"],
+                    row["work_version"],
+                ),
+            )
+        _manager_add_activity(
+            db, user_id, row["objective_id"],
+            "deliverable_%s" % (
+                "approved" if stored_status == "approved" else "revision_requested"
+            ),
+            actor_user_id=actor_user_id, work_item_id=row["work_item_id"],
+            now=now,
+            details={"deliverable_id": deliverable_id, "note": note},
+        )
+        _manager_recompute_objective(db, user_id, row["objective_id"], now)
+        return _manager_bundle(db, user_id, row["objective_id"])
 
 
 def create_manager_task(user_id, title, assignee):
@@ -2965,9 +4031,11 @@ def update_manager_task_status(user_id, task_id, status):
         return False
     with get_db() as db:
         cur = db.execute(
-            "UPDATE manager_tasks SET status = ?, updated = ? "
+            "UPDATE manager_tasks SET status = ?, updated = ?, "
+            "completed_at = CASE WHEN ? = 'delivered' THEN ? ELSE NULL END, "
+            "version = version + 1 "
             "WHERE id = ? AND user_id = ?",
-            (status, _now(), task_id, user_id),
+            (status, _now(), status, _now(), task_id, user_id),
         )
     return cur.rowcount > 0
 

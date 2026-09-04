@@ -10,7 +10,7 @@ adapters serve every capability, and no audio leaves the machine.
 | --- | --- | --- | --- |
 | 1 | `ELEVENLABS_API_KEY` | elevenlabs.io → profile → API keys | Yes, for anything real |
 | 2 | Webhook signing secret | elevenlabs.io → webhooks, when a webhook is created | Only for slow work (dubbing, agents) |
-| 3 | Public HTTPS URL for the webhook | `https://street-banker.onrender.com/webhooks/audio/elevenlabs` | Only for slow work |
+| 3 | Public HTTPS URL for the webhook | `https://street-banker-v2-workflows.onrender.com/webhooks/audio/elevenlabs` | Only for slow work |
 | 4 | Written zero-retention confirmation | ElevenLabs sales — it is an **enterprise-only** mode | Only if a tenant requires it |
 | 5 | A spend cap on the vendor account | elevenlabs.io billing | Strongly recommended |
 
@@ -104,7 +104,7 @@ environment is not evidence of anything.
 ## Checking a webhook is wired
 
 ```bash
-curl -i -X POST https://street-banker.onrender.com/webhooks/audio/elevenlabs -d '{}'
+curl -i -X POST https://street-banker-v2-workflows.onrender.com/webhooks/audio/elevenlabs -d '{}'
 ```
 
 | You get | It means |

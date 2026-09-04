@@ -69,7 +69,9 @@
         <button type="submit" class="lsr-gold-btn" id="lsr-submit">RECALL MY DESK</button>
         <div class="lsr-side-rule" aria-hidden="true"><span></span></div>
         <a class="lsr-side-link" href="/forgot">Forgot password?</a>
+        {% if not registration_closed %}
         <p class="lsr-side-note">New here? <a href="/signup">Build your back office.</a></p>
+        {% endif %}
       </div>
     </form>
   </div>
