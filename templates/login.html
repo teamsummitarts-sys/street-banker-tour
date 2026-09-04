@@ -27,9 +27,12 @@
     <!-- 2. A. SESSION RECALL -->
     {% include "partials/login_session_recall.html" %}
 
-    <!-- 3. YOUR MIX IS READY - rendered hidden; the script reveals it only
+    <!-- 3. YOUR MIX IS READY - never render its create-account action in the
+         private owner-only build. In open mode the script reveals it only
          when a valid saved Artist EQ mix exists in this browser. -->
-    {% include "partials/login_artist_eq_recall.html" %}
+    {% if not registration_closed %}
+      {% include "partials/login_artist_eq_recall.html" %}
+    {% endif %}
 
     <!-- Private V2 never exposes demo entry or lead capture. -->
     {% if demo_available and not registration_closed %}

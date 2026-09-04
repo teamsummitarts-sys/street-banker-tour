@@ -708,7 +708,7 @@ def test_closed_login_page_exposes_no_signup_or_demo_entry(monkeypatch, tmp_path
     assert response.status_code == 200
     assert "PRIVATE V2 ACCESS" in body
     assert "Registration and demo access are closed." in body
-    assert 'href="/signup"' not in body
+    assert 'href="/signup' not in body
     assert 'action="/demo-open"' not in body
     assert 'action="/demo-access"' not in body
 
