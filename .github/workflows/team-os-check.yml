@@ -1,0 +1,25 @@
+name: Team OS verification
+
+on:
+  pull_request:
+    paths:
+      - "app.py"
+      - "db.py"
+      - "plans.py"
+      - "templates/team.html"
+      - "tests/test_team_os.py"
+      - "tests/test_signup_access.py"
+      - ".github/workflows/team-os-check.yml"
+
+jobs:
+  team-os:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: pytest -q tests/test_team_os.py tests/test_signup_access.py

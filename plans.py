@@ -19,8 +19,8 @@ PLANS = [
      ["Royalty Sweep: statements, recovery, catalog", "Valuation & funding tools",
       "Sync & rights pages", "Reports & Tax Center", "Consulting hours (with ambassadors)"]),
     ("label", "Label", "$99/mo", "Everything in Pro plus label operations.",
-     ["Roster seats (coming with Label Mode)", "Label Services priority",
-      "Partner reports", "Team permissions"]),
+     ["10 shared team seats", "Label Services priority",
+      "Partner reports", "Role-ready team workspace"]),
 ]
 PLAN_NAMES = {key: name for key, name, _, _, _ in PLANS}
 

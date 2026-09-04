@@ -2868,12 +2868,25 @@ def set_dispute_status(user_id, dispute_id, status):
 
 # --- Team ------------------------------------------------------------------------
 
-def add_team_invite(owner_id, email, role):
-    """Create an invite; returns the row or None if already on the team."""
+def add_team_invite(owner_id, email, role, seat_limit=None):
+    """Create an invite without exceeding the owner's team allowance.
+
+    The seat check and insert run under one SQLite write lock so concurrent
+    invite requests cannot push an account past its limit. Returns None for
+    a duplicate email and a full error object when no seat remains.
+    """
     member_id = uuid.uuid4().hex
     token = uuid.uuid4().hex
     try:
         with get_db() as db:
+            if seat_limit is not None:
+                db.execute("BEGIN IMMEDIATE")
+                count = db.execute(
+                    "SELECT COUNT(*) FROM team_members WHERE owner_id = ?",
+                    (owner_id,),
+                ).fetchone()[0]
+                if count >= seat_limit:
+                    return {"error": "full"}
             db.execute(
                 "INSERT INTO team_members (id, owner_id, email, role, status, invite_token, created) "
                 "VALUES (?,?,?,?,'invited',?,?)",

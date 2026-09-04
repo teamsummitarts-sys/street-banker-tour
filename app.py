@@ -7802,16 +7802,39 @@ def create_app():
         ctx["webhook_live"] = stripe_billing.webhook_configured()
         return render_template("billing.html", active_page="billing", **ctx)
 
-    _TEAM_ROLES = ("manager", "accountant", "publicist", "attorney", "assistant")
+    _TEAM_ROLE_OPTIONS = (
+        ("manager", "Manager"),
+        ("a_and_r", "A&R"),
+        ("marketing", "Marketing"),
+        ("publicist", "Publicist"),
+        ("tour_manager", "Tour Manager"),
+        ("accountant", "Accountant"),
+        ("attorney", "Attorney"),
+        ("creative_director", "Creative Director"),
+        ("producer_engineer", "Producer / Engineer"),
+        ("assistant", "Assistant"),
+    )
+    _TEAM_ROLES = tuple(key for key, _label in _TEAM_ROLE_OPTIONS)
+    _TEAM_ROLE_LABELS = dict(_TEAM_ROLE_OPTIONS)
+    _TEAM_SEAT_LIMIT = 10
 
     @app.route("/team")
     def team():
         user = current_user()
         if user is None:
             return login_required_redirect()
+        members = store.list_team(user["id"])
+        active_count = len([m for m in members if m["status"] == "active"])
+        invited_count = len(members) - active_count
         return render_template("team.html", active_page="team",
-                               members=store.list_team(user["id"]),
-                               roles=_TEAM_ROLES,
+                               members=members,
+                               roles=_TEAM_ROLE_OPTIONS,
+                               role_labels=_TEAM_ROLE_LABELS,
+                               seat_limit=_TEAM_SEAT_LIMIT,
+                               seats_used=len(members),
+                               seats_open=max(0, _TEAM_SEAT_LIMIT - len(members)),
+                               active_count=active_count,
+                               invited_count=invited_count,
                                email_configured=emailer.configured(),
                                **build_dashboard_context())
 
@@ -7826,7 +7849,13 @@ def create_app():
             return jsonify({"ok": False, "error": "Enter a valid email and pick a role."}), 400
         if email == user["email"]:
             return jsonify({"ok": False, "error": "That's you — no invite needed."}), 400
-        invite = store.add_team_invite(user["id"], email, role)
+        invite = store.add_team_invite(
+            user["id"], email, role, seat_limit=_TEAM_SEAT_LIMIT)
+        if invite and invite.get("error") == "full":
+            return jsonify({
+                "ok": False,
+                "error": "All 10 team seats are filled. Remove a member before inviting someone else.",
+            }), 409
         if invite is None:
             return jsonify({"ok": False, "error": "That email is already on your team."}), 400
         link = request.url_root.rstrip("/") + "/team/join/" + invite["invite_token"]
