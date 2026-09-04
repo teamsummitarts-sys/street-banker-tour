@@ -635,8 +635,11 @@ def create_app():
             name = (request.form.get("name") or "").strip()
             email = (request.form.get("email") or "").strip().lower()
             password = request.form.get("password") or ""
+            signup_mode = (os.environ.get("SIGNUP_MODE") or "open").strip().lower()
             if not name or "@" not in email or len(password) < 6:
                 error = "Please provide a name, a valid email, and a password of 6+ characters."
+            elif signup_mode == "owner_only" and not _is_owner_email(email):
+                error = "Street Banker V2 registration is owner-only."
             else:
                 user_id = store.create_user(email, name, generate_password_hash(password))
                 if user_id is None:
