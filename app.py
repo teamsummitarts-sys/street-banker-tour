@@ -629,43 +629,70 @@ def create_app():
     @app.route("/signup", methods=["GET", "POST"])
     def signup():
         error = None
+        signup_mode = (os.environ.get("SIGNUP_MODE") or "open").strip().lower()
         if request.method == "GET" and request.args.get("ref"):
             session["ref_code"] = request.args.get("ref")[:16]
         if request.method == "POST":
             name = (request.form.get("name") or "").strip()
             email = (request.form.get("email") or "").strip().lower()
             password = request.form.get("password") or ""
-            signup_mode = (os.environ.get("SIGNUP_MODE") or "open").strip().lower()
+            owner_email = _is_owner_email(email)
+
+            # The private comparison build has one approved owner.  Do not
+            # make that owner remember whether Render kept or reset its
+            # disposable database: the same form creates a missing account
+            # or signs the existing owner in when the password matches.
+            if signup_mode == "owner_only" and owner_email and not name:
+                name = "Street Banker"
+
             if not name or "@" not in email or len(password) < 6:
-                error = "Please provide a name, a valid email, and a password of 6+ characters."
-            elif signup_mode == "owner_only" and not _is_owner_email(email):
+                error = "Please provide a valid email and a password of 6+ characters."
+                if signup_mode != "owner_only":
+                    error = "Please provide a name, a valid email, and a password of 6+ characters."
+            elif signup_mode == "owner_only" and not owner_email:
                 error = "Street Banker V2 registration is owner-only."
             else:
-                user_id = store.create_user(email, name, generate_password_hash(password))
-                if user_id is None:
-                    error = "An account with that email already exists."
-                else:
-                    _grant_owner_plan(store.get_user(user_id))
-                    ref = session.pop("ref_code", None) or request.form.get("ref")
-                    referrer = store.user_by_ref_code(ref) if ref else None
-                    if referrer and referrer["id"] != user_id:
-                        store.set_referred_by(user_id, referrer["id"])
-                        store.notify(referrer["id"], "network", "Referral signed up",
-                                     "%s joined from your link. Your $9 credit "
-                                     "applies when they start a paid plan." % email,
-                                     "/referrals")
-                    if request.form.get("account_type") == "fan":
-                        store.set_user_plan(user_id, "fan")
-                        session["user_id"] = user_id
-                        return redirect("/discover")
-                    session["user_id"] = user_id
+                existing = store.get_user_by_email(email)
+                if (existing is not None and signup_mode == "owner_only"
+                        and owner_email
+                        and check_password_hash(existing["password_hash"], password)):
+                    _grant_owner_plan(existing)
+                    session["user_id"] = existing["id"]
+                    session.pop("seen_rolled", None)
                     return redirect(url_for("team"))
+                if existing is not None:
+                    error = ("Your owner account already exists. Use the current "
+                             "password here or choose Sign in below."
+                             if signup_mode == "owner_only" and owner_email
+                             else "An account with that email already exists.")
+                else:
+                    user_id = store.create_user(
+                        email, name, generate_password_hash(password))
+                    if user_id is None:
+                        error = "An account with that email already exists."
+                    else:
+                        _grant_owner_plan(store.get_user(user_id))
+                        ref = session.pop("ref_code", None) or request.form.get("ref")
+                        referrer = store.user_by_ref_code(ref) if ref else None
+                        if referrer and referrer["id"] != user_id:
+                            store.set_referred_by(user_id, referrer["id"])
+                            store.notify(referrer["id"], "network", "Referral signed up",
+                                         "%s joined from your link. Your $9 credit "
+                                         "applies when they start a paid plan." % email,
+                                         "/referrals")
+                        if request.form.get("account_type") == "fan":
+                            store.set_user_plan(user_id, "fan")
+                            session["user_id"] = user_id
+                            return redirect("/discover")
+                        session["user_id"] = user_id
+                        return redirect(url_for("team"))
         # /signup?as=fan preselects the fan side. The login page offers a
         # fan account as a distinct choice, and it landed on a form with
         # Artist already ticked - a link that names a destination has to
         # arrive there.
         preselect = "fan" if request.args.get("as") == "fan" else "artist"
-        return render_template("signup.html", error=error, preselect=preselect)
+        return render_template("signup.html", error=error, preselect=preselect,
+                               owner_only=signup_mode == "owner_only")
 
     @app.route("/demo-open", methods=["POST"])
     def demo_open():
