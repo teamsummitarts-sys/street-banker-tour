@@ -129,7 +129,7 @@ emails or numeric IDs alone is insufficient.
 | Imported/synthesized audio and rendered PCM | Browser page memory only; no upload route, telemetry or provider request. |
 | Settings and undo history | Page memory only. No localStorage, IndexedDB or server persistence. |
 | Downloaded WAV/JSON | Saved wherever the browser/user chooses; the app cannot verify download completion or delete those files. Device backup services may copy them. |
-| Clear, reload, close | Dispose the engine and release application references. No forensic memory-erasure claim. Back/forward restoration starts a cleared session. |
+| Clear, reload, close | Dispose the engine and release application references. No forensic memory-erasure claim. Back/forward restoration preserves the session only when the browser retained the page in memory. |
 | Automatic recovery/backups | None for this module. Download recipes and source audio to keep work. |
 | V2 account/infrastructure | Existing host behavior; no changes. Deployed disk durability, infrastructure logs and backup configuration have not been verified in this work. |
 
@@ -199,3 +199,24 @@ and [service previews](https://render.com/docs/service-previews). No Render
 configuration was modified. Other deployment automation must be reviewed before
 enabling/merging; live service mapping remains unverified. No merge or deployment
 is authorized by this source change.
+
+## iPhone export correction — 2026-09-05
+
+Exports now use two deliberate steps: Prepare WAV/recipe, then Save / share file
+when file sharing is supported, or Download file. Preparation never navigates
+the lab. The native save sheet is invoked directly from the second tap, after
+rendering has finished. The fallback is a real download link with a separate
+browsing target and no opener; a browser file preview should leave the lab tab
+intact. In-app browsers may still open an external viewer.
+
+One prepared file is retained in page memory until replaced, Clear session or
+page teardown. New edits do not alter it; prepare again to export new settings.
+Cancelling/failing the save sheet preserves the prepared file and working patch.
+The app does not claim the user actually saved a file. Choosing a share target
+can transfer the file through the device; the app does not upload recordings.
+
+A cached history return retains audio/settings/undo and resumes only after Play.
+A real reload, page eviction or closed tab can still lose unsaved work. This adds
+no persistent browser storage or cloud backup. Physical iPhone confirmation is
+pending; the user's report establishes the symptom, not a completed diagnosis
+of the specific browser or iOS version.

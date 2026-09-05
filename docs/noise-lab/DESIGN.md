@@ -27,8 +27,9 @@ Manual presets and local source processing are the operative Phase 1 journey.
 The example sound description is static copy, clearly marked as next phase.
 There is no editable prompt, AI request, generation charge, or simulated result.
 No cloud Save action is present. Private recipe JSON download/import and a WAV
-download are labeled by their actual behavior. Successful clicks report a
-download request, not a verified save to the user's file system.
+download are labeled by their actual behavior. Preparation reveals an explicit save/share button when supported and a download
+link. No file opens automatically after rendering. The app does not claim a
+verified save to the user's file system.
 
 Each continuous slider gesture is one undo step. A auditions the preceding
 committed patch while retaining current B edits; editing is locked while A is
@@ -58,3 +59,10 @@ operation, actual audio and failure recovery, mobile layouts, sustained and
 declared-device playback, and musician evaluation remain unverified. Capability
 detection does not certify device support. This document records implemented
 design and behavior, not a claim that those validation gates have passed.
+
+The iPhone export correction adds a compact file-ready region beneath the output
+controls. It identifies the prepared filename and snapshot behavior, offers a
+native Save / share file button when file sharing is supported, and retains a
+separate-target Download file link. Cancelling does not clear the patch. Cached
+history returns retain edits and undo; ordinary reload/eviction still loses
+unsaved session data. Device verification remains pending.

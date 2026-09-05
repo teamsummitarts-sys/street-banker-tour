@@ -95,3 +95,23 @@ AI generation, server ownership of patch versions, durable storage, quotas,
 provider costs, retention jobs, restore/deletion and musician metrics have no
 implementation or completion claim here. No main-branch merge, live-site change,
 service configuration change or deployment is part of these checks.
+
+## iPhone save/navigation regression — 2026-09-05
+
+The user reported saving then being taken out of the app and confirmed an iPhone.
+Source inspection found synthetic same-context blob navigation and destructive
+pagehide/pageshow handling. These explain a possible preview-and-return loss;
+the exact browser behavior has not been reproduced on the user's device.
+
+Three regression tests failed against the original controller, then passed after
+the correction. The expanded suite passes 10 controller + 15 DSP + 15 Python
+tests (40 total), exit 0. Coverage includes no automatic export navigation, a
+separate fallback context, gesture-triggered file sharing, cancelled/unsupported/
+failed sharing, async WAV preparation, cached-return source/history retention,
+and full-unload disposal. These use the real controller with DOM/engine fakes;
+physical Safari/in-app browser behavior remains unverified.
+
+Browser rationale: [download behavior can vary](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/a),
+[file sharing needs a user gesture](https://developer.mozilla.org/en-US/docs/Web/API/Web_Share_API),
+and [pagehide distinguishes cached navigation](https://developer.mozilla.org/en-US/docs/Web/API/Window/pagehide_event).
+No DSP algorithm, recipe schema, ownership gate or persistent storage changed.

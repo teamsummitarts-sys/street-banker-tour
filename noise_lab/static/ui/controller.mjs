@@ -27,6 +27,8 @@ let generation = 0;
 let recipeRevision = 0;
 let transportRevision = 0;
 let downloadUrls = new Set();
+let preparedFile = null;
+let fileRevision = 0;
 
 function message(text, error = false) {
   const target = $(error ? 'error' : 'notice');
@@ -95,7 +97,7 @@ function renderTransport() {
   $('export-audio').disabled = !loaded || loading || exporting || faulted;
   $('export-audio').setAttribute('aria-busy', String(exporting));
   $('cancel-export').hidden = !exporting;
-  $('export-audio').lastChild.textContent = exporting ? ' Rendering…' : 'Download WAV';
+  $('export-audio').lastChild.textContent = exporting ? ' Rendering…' : 'Prepare WAV';
   document.querySelectorAll('[data-loop]').forEach(button => {
     button.disabled = loading || !support.supported || faulted;
     button.setAttribute('aria-pressed', String(button.dataset.loop === sourceId));
@@ -352,25 +354,53 @@ $('audio-file').addEventListener('change', event => {
   if (file) loadSource({ file });
 });
 
-function download(blob, name) {
+function prepareDownload(blob, name) {
+  // Rendering can outlast a mobile browser's user activation. Prepare first;
+  // a separate real tap opens the OS save sheet or the fallback download.
+  const file = new File([blob], name, {type: blob.type});
   const url = URL.createObjectURL(blob);
+  for (const previous of downloadUrls) URL.revokeObjectURL(previous);
+  downloadUrls.clear();
   downloadUrls.add(url);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = name;
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-  setTimeout(() => { URL.revokeObjectURL(url); downloadUrls.delete(url); }, 60000);
+  preparedFile = file;
+  fileRevision++;
+  const link = $('save-download');
+  link.href = url;
+  link.download = name;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  $('prepared-name').textContent = name;
+  let shareable = false;
+  try { shareable = typeof navigator.share === 'function' && navigator.canShare?.({files: [file]}) === true; } catch {}
+  $('share-download').hidden = !shareable;
+  $('share-download').disabled = false;
+  $('file-ready').hidden = false;
 }
+
+$('share-download').addEventListener('click', async () => {
+  if (!preparedFile) return;
+  const revision = fileRevision;
+  $('share-download').disabled = true;
+  try {
+    // Called before any await, directly from this explicit save gesture.
+    await navigator.share({files: [preparedFile]});
+    if (revision === fileRevision) message('File handed to your device. Your patch is still here.');
+  } catch (error) {
+    if (revision === fileRevision) message(error?.name === 'AbortError'
+      ? 'Save cancelled. Your file and patch are still here.'
+      : 'The save sheet could not open. Use Download file instead; your patch is still here.', error?.name !== 'AbortError');
+  } finally {
+    if (revision === fileRevision) $('share-download').disabled = false;
+  }
+});
 
 function fileStamp() { return new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-'); }
 $('export-recipe').addEventListener('click', () => {
   finishGesture();
   try {
     const safeRecipe = validateRecipe(current);
-    download(new Blob([`${JSON.stringify(safeRecipe, null, 2)}\n`], { type: 'application/json' }), `noise-lab-recipe-${fileStamp()}.json`);
-    message('Recipe download requested. Keep the JSON file and source audio to recreate this sound.');
+    prepareDownload(new Blob([`${JSON.stringify(safeRecipe, null, 2)}\n`], { type: 'application/json' }), `noise-lab-recipe-${fileStamp()}.json`);
+    message('Recipe ready below. Choose Save / share file or Download file. Keep source audio separately.');
   } catch (error) { message(describeError(error, 'The recipe could not be downloaded.'), true); }
 });
 $('import-recipe').addEventListener('click', () => $('recipe-file').click());
@@ -399,8 +429,8 @@ $('export-audio').addEventListener('click', async () => {
   try {
     const blob = await engine.exportWav({ includeTail: $('include-tail').checked, recipe: clone(current), bypass: false });
     if (token !== generation) return;
-    download(blob, `noise-lab-${current.profile}-${fileStamp()}.wav`);
-    message('WAV download requested. Your current B patch was rendered locally.');
+    prepareDownload(blob, `noise-lab-${current.profile}-${fileStamp()}.wav`);
+    message('WAV ready below. Choose Save / share file or Download file. Your patch stays in the lab.');
   } catch (error) {
     if (token === generation) message(`${describeError(error, 'The WAV could not be rendered. Try a shorter source.')} Your source and working patch are retained.`, true);
   } finally {
@@ -426,6 +456,12 @@ function clearSession({ announce = true } = {}) {
   sourceId = LOOPS[0]?.id || 'harmonic-pluck';
   for (const url of downloadUrls) URL.revokeObjectURL(url);
   downloadUrls.clear();
+  preparedFile = null;
+  fileRevision++;
+  $('file-ready').hidden = true;
+  $('save-download').removeAttribute('href');
+  $('save-download').removeAttribute('download');
+  $('prepared-name').textContent = '';
   $('audio-file').value = $('recipe-file').value = '';
   $('source-name').textContent = sourceDefinition(sourceId)?.name || 'Harmonic pluck';
   $('source-description').textContent = 'An original synthesized clean loop. Press Play to load and audition it.';
@@ -436,8 +472,20 @@ function clearSession({ announce = true } = {}) {
   if (announce) message('Session cleared: loaded audio, patch edits, and undo history were released. Downloaded files are unchanged.');
 }
 $('clear-session').addEventListener('click', () => clearSession());
-window.addEventListener('pagehide', () => { if (engine) engine.dispose(); });
-window.addEventListener('pageshow', event => { if (event.persisted) clearSession({ announce: true }); });
+window.addEventListener('pagehide', event => {
+  transportRevision++;
+  if (event.persisted) {
+    engine?.stop();
+    engine?.cancelExport();
+  } else if (engine) engine.dispose();
+});
+window.addEventListener('pageshow', event => {
+  if (event.persisted) {
+    renderControls();
+    renderTransport();
+    message('Your session is still here. Press Play to resume.');
+  }
+});
 document.addEventListener('visibilitychange', () => { if (!document.hidden) renderTransport(); });
 
 const support = supportsAudio();
