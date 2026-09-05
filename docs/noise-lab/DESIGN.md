@@ -66,3 +66,15 @@ native Save / share file button when file sharing is supported, and retains a
 separate-target Download file link. Cancelling does not clear the patch. Cached
 history returns retain edits and undo; ordinary reload/eviction still loses
 unsaved session data. Device verification remains pending.
+# Phase 2 functional addition — 2026-09-05
+
+The existing prompt panel now contains a labeled sound-description textarea,
+Create sound, Cancel generation, Check connection, and status/allowance text.
+It uses the existing brass/black visual system with no shared-site styles.
+The textarea is 16px and actions wrap with 44px minimum targets. Generation
+requires a loaded loop, B selected and server configuration. It never starts
+playback. Controls remain usable while waiting; newer work invalidates the
+candidate. Failure/cancel text points to manual presets and retains the patch.
+Only the typed description is sent; privacy/retention and restart-scoped limits
+are disclosed. The iPhone prepare-then-share export flow remains unchanged.
+Physical iPhone layout, VoiceOver and live generation require user/device checks.

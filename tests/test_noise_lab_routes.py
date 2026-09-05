@@ -7,7 +7,8 @@ from noise_lab import init
 
 def host(enabled=True, user=None):
     app = Flask(__name__)
-    app.config.update(TESTING=True, NOISE_LAB_ENABLED=enabled)
+    app.config.update(TESTING=True, SECRET_KEY='isolated-test-secret', NOISE_LAB_ENABLED=enabled,
+                      OPENAI_API_KEY='')
     init(app, current_user=lambda: user)
     return app
 
@@ -34,7 +35,7 @@ def test_capabilities_do_not_claim_unbuilt_features():
     response = host(user={"id": "owner"}).test_client().get("/noise-lab/capabilities")
     assert response.status_code == 200
     payload = response.get_json()
-    assert payload["phase"] == 1
+    assert payload["phase"] == 2
     assert payload["ai_generation"] is False
     assert payload["cloud_patch_storage"] is False
     assert payload["audio_uploads"] is False
@@ -50,11 +51,11 @@ def test_per_application_identity_does_not_bleed_between_hosts():
     assert first.get("/noise-lab/capabilities").status_code == 200
 
 
-def test_no_mutation_or_recording_upload_surface_exists():
+def test_no_recording_upload_and_generation_requires_a_session_token():
     client = host(user={"id": "owner"}).test_client()
     assert client.post("/noise-lab/", data=b"audio").status_code == 405
     assert client.post("/noise-lab/capabilities", json={"user_id": "other"}).status_code == 405
-    assert client.post("/noise-lab/api/generate", json={"prompt": "test"}).status_code == 404
+    assert client.post("/noise-lab/api/generate", json={"prompt": "test"}).status_code == 403
     assert client.post("/noise-lab/upload", data=b"audio").status_code == 404
 
 

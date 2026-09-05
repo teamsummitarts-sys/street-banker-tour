@@ -9,12 +9,12 @@
   <link rel="stylesheet" href="{{ url_for('noise_lab.static', filename='ui/noise-lab.css') }}">
   <script type="module" src="{{ url_for('noise_lab.static', filename='ui/controller.mjs') }}"></script>
 </head>
-<body class="noise-lab" data-assets-url="{{ lab_assets_url }}">
+<body class="noise-lab" data-assets-url="{{ lab_assets_url }}" data-csrf="{{ lab_csrf }}">
   <!-- Noise Lab inherits Street Banker V2's dense near-black and warm-brass console.
   Its five tangible macro controls derive from the owner's black pedal reference.
   Actual source time, processing state, and recipe values are the only displays.
-  Phase 1 processes local audio and downloads files. AI and account patch storage
-  are explicitly unavailable. No V1 styles, navigation, data, or assets are used. -->
+  Phase 2 adds constrained text-to-settings; account patch storage is unavailable.
+  No V1 styles, navigation, data, or assets are used. -->
   <a class="skip-link" href="#source">Skip to audio controls</a>
   <header class="site-bar">
     <a href="{{ return_url }}" class="brand" aria-label="Return to Street Banker V2">STREET BANKER<span>V2</span></a>
@@ -23,7 +23,7 @@
   <main>
     <header class="lab-title">
       <div><h1>Noise Lab<span aria-hidden="true">.</span></h1><p>Shape a sound. Keep the happy accident.</p></div>
-      <div class="build-note"><span class="local-mark" aria-hidden="true"></span><strong>Local audio prototype</strong><span>Phase 1 · Engine &amp; controls</span></div>
+      <div class="build-note"><span class="local-mark" aria-hidden="true"></span><strong>Local audio prototype</strong><span>Phase 2 · Sound descriptions</span></div>
     </header>
 
     <div id="support-message" class="message" role="status" hidden></div>
@@ -48,10 +48,13 @@
         <input type="file" id="audio-file" accept="audio/wav,audio/x-wav,.wav" hidden>
       </section>
       <section class="prompt-panel" aria-labelledby="prompt-heading">
-        <div class="section-heading"><h2 id="prompt-heading">Describe the sound</h2><span>Next phase</span></div>
-        <p class="prompt-example">“Metallic growl.<br>Keep the pick attack.”</p>
-        <p class="prompt-status">AI generation is not connected in this prototype. Start with a manual preset and shape it below.</p>
-        <div class="prompt-limit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10h12v11H6zM8 10V6a4 4 0 0 1 8 0v4"/></svg>No prompts sent. No generation charges.</div>
+        <div class="section-heading"><h2 id="prompt-heading">Describe the sound</h2><span id="generation-label">Checking connection</span></div>
+        <label class="prompt-input-label" for="sound-prompt">What should it sound like?</label>
+        <textarea id="sound-prompt" rows="3" maxlength="500" aria-describedby="prompt-privacy generation-allowance" placeholder="Metallic growl. Keep the pick attack."></textarea>
+        <p id="prompt-privacy" class="prompt-status">Create sound sends only this description to OpenAI. Your audio stays on this device. Up to 500 characters.</p>
+        <div class="generation-actions"><button type="button" id="generate-sound" disabled>Create sound</button><button type="button" id="cancel-generation" hidden>Cancel generation</button><button type="button" id="refresh-generation">Check connection</button></div>
+        <p id="generation-status" class="prompt-status" role="status" aria-live="polite">Checking AI availability. Manual presets are available below.</p>
+        <p id="generation-allowance" class="prompt-limit">20 attempts per account, 100 across this server process. Requests are spaced at least 10 seconds apart. Restarts reset the allowance.</p>
       </section>
     </div>
 
@@ -100,7 +103,7 @@
     </section>
 
     <div class="notes">
-      <details><summary>Privacy &amp; session data</summary><div><p>Your source audio is processed in this browser's memory. This module does not upload audio, save recordings in browser storage, or send prompts to an AI provider. Use only audio you own or have permission to process.</p><p>Closing or reloading the page clears this session. Returning through browser history preserves it only if the browser kept this page in memory. There is no automatic backup or recovery. WAV and recipe files you download remain wherever you save them; delete those files from your device or backup service when you no longer want them.</p><p>V2 account and infrastructure behavior remains separate from this local session. Private account patch storage and its retention policy belong to a later phase.</p><button type="button" id="clear-session">Clear this session</button></div></details>
+      <details><summary>Privacy &amp; session data</summary><div><p>Your source audio is processed in this browser's memory. This module does not upload audio or save recordings in browser storage. Use only audio you own or have permission to process.</p><p>Create sound sends the typed description to OpenAI through V2's authenticated server. The provider does not hear the audio. Noise Lab does not save descriptions or provider response bodies, and requests response storage off. OpenAI may retain content in abuse-monitoring logs for up to 30 days by default, with legal exceptions; zero retention has not been verified for this account.</p><p>The server keeps account-linked attempt counts, success/failure counts, token totals when reported, and total generation time in memory until restart. They have no automatic backup and are used to enforce the pilot allowance. Clear session does not reset that allowance or delete provider logs. Cancelled or failed requests may still incur provider charges.</p><p>Closing or reloading the page clears this session. Returning through browser history preserves it only if the browser kept this page in memory. There is no automatic backup or recovery. WAV and recipe files you download remain wherever you save them; delete those files from your device or backup service when you no longer want them.</p><p>V2 account and infrastructure behavior remains separate from this local session. Private account patch storage and its retention policy belong to a later phase.</p><button type="button" id="clear-session">Clear this session</button></div></details>
       <details><summary>Browser support &amp; playback</summary><div><p id="browser-support">Checking this browser's audio capabilities…</p><p>Use Play to enable audio. Mobile browsers may pause when you lock the screen, switch apps, or change audio devices. Return here and press Play to resume. Keep this page in the foreground for the pilot.</p><p>Imports support mono or stereo RIFF WAV: PCM 16/24/32-bit or 32-bit float, 8–192 kHz, up to 30 seconds and 20 MiB. MP3, compressed WAV, and WAV extensible are unsupported. Import uses basic linear resampling and short loop-edge fades; this is not an archival audio converter. A failed replacement keeps your previous source.</p><p>Hardware, live instrument input, and universal pedal export are outside this prototype. Device and sustained-playback validation is still pending. Capability detection is not a claim of tested device support. Start at a comfortable listening volume.</p></div></details>
       <details><summary>Controls &amp; recipe versions</summary><div><p>Tab to each control. Use arrow keys on sliders, or enter an exact value. Home and End move to a slider's limits. Each continuous slider adjustment is one undo step.</p><p>A auditions the previous patch. B returns to your current patch. Compare clean bypasses effects independently. Controls are locked while auditioning A; switch to B to continue editing. Downloads use the current B recipe, even while comparing. Changing the source or settings during a WAV render cancels that render.</p><p>Space controls filtered echo. The optional export tail is fixed at two seconds, so a longer echo may be cut short. Recipe files include their schema and engine version. Unsupported or invalid recipes are rejected, keeping the current working patch. Downloaded recipes contain settings only; keep source audio separately to recreate a sound.</p></div></details>
     </div>

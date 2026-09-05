@@ -30,6 +30,19 @@ assert response.status_code == 200
 assert response.json['ai_generation'] is False
 assert response.headers['Cache-Control'] == 'no-store'
 assert client.get('/noise-lab/').status_code == 200
+with client.session_transaction() as session:
+    csrf = session['noise_lab_csrf']['token']
+headers = {'X-Noise-Lab-CSRF': csrf}
+assert client.post('/noise-lab/api/generate', headers=headers, json={'prompt': 'soft echo'}).status_code == 503
+assert client.post('/noise-lab/api/generate', headers=headers, json={'prompt': 'x', 'user_id': 'another'}).status_code == 400
+app.app.config.update(TESTING=True, OPENAI_API_KEY='synthetic-test-key')
+app.app.config['NOISE_LAB_PROVIDER'] = lambda _: {
+    'status': 'completed', 'output': [{'type': 'message', 'role': 'assistant', 'status': 'completed',
+    'content': [{'type': 'output_text', 'text': '{"profile":"clean","macros":{"texture":0,"motion":0,"space":10,"mix":25}}'}]}]}
+generated = client.post('/noise-lab/api/generate', headers=headers, json={'prompt': 'soft echo'})
+assert generated.status_code == 200
+assert generated.json['recipe']['engineVersion'] == 'noise-lab-1.0.0'
+assert generated.json['generation']['verified_live'] is False
 assert client.get('/noise-lab/assets/engine/index.mjs').status_code == 200
 with app.store.get_db() as db:
     tables = [row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")]
@@ -41,6 +54,7 @@ with client.session_transaction() as session:
     session['user_id'] = 'unrecognized-account'
 app.app.config['NOISE_LAB_ENABLED'] = True
 assert client.get('/noise-lab/capabilities').status_code == 302
+assert client.post('/noise-lab/api/generate', headers=headers, json={'prompt': 'x'}).status_code == 302
 print('V2 identity, assets, feature flag and no-migration boundary passed.')
 '''], cwd=root, env=env, text=True, capture_output=True, timeout=90)
     assert result.returncode == 0, result.stdout + result.stderr

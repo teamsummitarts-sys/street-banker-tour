@@ -29,6 +29,11 @@ let transportRevision = 0;
 let downloadUrls = new Set();
 let preparedFile = null;
 let fileRevision = 0;
+let aiReady = false;
+let aiBusy = false;
+let aiSequence = 0;
+let aiController = null;
+let aiRemaining = 0;
 
 function message(text, error = false) {
   const target = $(error ? 'error' : 'notice');
@@ -83,6 +88,7 @@ function renderControls() {
   $('undo').disabled = cursor === 0 || comparison === 'a';
   $('redo').disabled = cursor >= history.length - 1 || comparison === 'a';
   $('compare-state').textContent = clean ? `Clean selected · ${comparison.toUpperCase()} patch retained` : `${comparison.toUpperCase()} selected · ${comparison === 'a' ? 'Previous patch · editing locked' : 'Current patch'}`;
+  renderGeneration();
 }
 
 function renderTransport() {
@@ -107,6 +113,7 @@ function renderTransport() {
   else if (faulted) $('monitor-state').textContent = 'Audio stopped · clear session to retry';
   else $('monitor-state').textContent = playing ? 'Playing locally' : loaded ? 'Stopped · source ready' : 'Ready for a loop';
   updatePosition();
+  renderGeneration();
 }
 
 function updatePosition() {
@@ -158,6 +165,7 @@ async function ensureEngine() {
 
 async function loadSource({ loopId, file } = {}) {
   if (loading) return;
+  recipeRevision++;
   const token = generation;
   loading = true;
   message('');
@@ -439,8 +447,118 @@ $('export-audio').addEventListener('click', async () => {
 });
 $('cancel-export').addEventListener('click', () => { engine?.cancelExport(); });
 
+function generationMessage(text, error = false) {
+  $('generation-status').textContent = text;
+  $('generation-status').setAttribute('role', error ? 'alert' : 'status');
+}
+
+function renderGeneration() {
+  $('generate-sound').disabled = !aiReady || aiRemaining <= 0 || aiBusy || !loaded || loading || faulted || comparison === 'a';
+  $('generate-sound').textContent = aiBusy ? 'Creating settings…' : 'Create sound';
+  $('generate-sound').setAttribute('aria-busy', String(aiBusy));
+  $('cancel-generation').hidden = !aiBusy;
+  $('refresh-generation').disabled = aiBusy;
+  $('generation-label').textContent = aiBusy ? 'Generating' : aiReady ? 'AI settings' : 'Manual presets available';
+  $('generation-allowance').textContent = aiReady
+    ? `Last reported allowance: ${aiRemaining} attempts. Load a loop and select B to create a sound. Allowance resets when the server restarts.`
+    : 'AI connection unavailable. Manual presets and local exports remain available.';
+}
+
+async function refreshGeneration() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch('/noise-lab/capabilities', {credentials: 'same-origin', cache: 'no-store', signal: controller.signal});
+    if (!response.ok || response.redirected) throw new Error('Sign in');
+    const result = await response.json();
+    aiReady = result.ai_generation === true && result.generation?.configured === true;
+    aiRemaining = Number.isInteger(result.generation?.usage?.remaining) ? result.generation.usage.remaining : 0;
+    generationMessage(aiReady
+      ? 'Describe the sound you want. AI suggests settings for the existing effects; it does not listen to your audio.'
+      : 'AI generation is unavailable. Choose a manual preset below; your working patch is retained.');
+  } catch {
+    aiReady = false;
+    generationMessage('Could not check the AI connection. Manual presets still work. Retry, or sign in again if your session expired.', true);
+  } finally { clearTimeout(timer); renderGeneration(); }
+}
+
+function cancelGeneration(announce = true) {
+  aiSequence++;
+  aiController?.abort();
+  aiController = null;
+  aiBusy = false;
+  renderGeneration();
+  if (announce) generationMessage('Generation cancelled. Your patch is retained. A request already sent may still count toward usage.');
+}
+
+$('refresh-generation').addEventListener('click', refreshGeneration);
+$('cancel-generation').addEventListener('click', () => cancelGeneration());
+$('sound-prompt').addEventListener('input', () => { recipeRevision++; });
+$('generate-sound').addEventListener('click', async () => {
+  if (aiBusy || !aiReady || aiRemaining <= 0 || !loaded || loading || faulted || comparison === 'a') return;
+  const prompt = $('sound-prompt').value.trim();
+  if (!prompt || prompt.length > 500) {
+    generationMessage('Enter a sound description from 1 to 500 characters.', true);
+    $('sound-prompt').focus(); return;
+  }
+  finishGesture();
+  const revision = ++recipeRevision, sessionToken = generation, sequence = ++aiSequence;
+  const controller = new AbortController();
+  aiController = controller;
+  const timer = setTimeout(() => controller.abort(), 20000);
+  aiBusy = true;
+  renderGeneration();
+  generationMessage('Creating effect settings. You can keep listening or edit; newer edits will be kept.');
+  try {
+    const response = await fetch('/noise-lab/api/generate', {
+      method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: controller.signal,
+      headers: {'Content-Type': 'application/json', 'X-Noise-Lab-CSRF': document.body.dataset.csrf},
+      body: JSON.stringify({prompt}),
+    });
+    if (sequence !== aiSequence || sessionToken !== generation) return;
+    if (response.redirected || response.status === 401 || response.status === 403) {
+      throw new Error('Please sign in again and reload Noise Lab. Export your working patch first.');
+    }
+    const result = await response.json();
+    if (sequence !== aiSequence || sessionToken !== generation) return;
+    if (Number.isInteger(result.generation?.usage?.remaining)) aiRemaining = result.generation.usage.remaining;
+    // Error messages are local allowlisted copy, never provider text/HTML.
+    if (!response.ok) {
+      const reasons = {
+        allowance_exhausted: 'The pilot allowance has been used. Manual presets remain available.',
+        cooldown: 'Wait 10 seconds before trying again.', busy: 'A generation is still running. Try again shortly.',
+        unconfigured: 'AI generation is unavailable. Use a manual preset.',
+        provider_auth: 'The AI provider could not authenticate. Use a manual preset until the server connection is corrected.',
+        provider_limit: 'The AI provider rejected this request because of a usage or rate limit.',
+        refused: 'The AI provider declined this description. Try a different sound description.',
+      };
+      throw new Error(reasons[result.error] || 'Generation failed or returned invalid settings. Choose a manual preset or try again.');
+    }
+    if (revision !== recipeRevision) {
+      generationMessage('New settings discarded because you changed the source, description, comparison, or patch. Your newer work is retained.');
+      return;
+    }
+    if (result.generationVersion !== 'noise-lab-prompt-1.0.0') throw new Error('Unsupported generation version.');
+    const next = validateRecipe(result.recipe);
+    // AI cannot turn up the output; the musician stays in charge of Level.
+    next.macros.level = Math.min(next.macros.level, current.macros.level, -12);
+    replaceRecipe(next);
+    generationMessage('New settings applied to B. A and Undo keep the previous patch. Play to audition; turn off Compare clean to hear the effects.');
+  } catch (error) {
+    if (sequence === aiSequence && sessionToken === generation) {
+      generationMessage(`${error?.name === 'AbortError' ? 'Generation timed out. The provider may still count the request.' : describeError(error, 'Generation could not finish.')} Your working patch is retained; manual presets are available.`, true);
+    }
+  } finally {
+    clearTimeout(timer);
+    if (sequence === aiSequence && sessionToken === generation) { aiBusy = false; aiController = null; renderGeneration(); }
+  }
+});
+
 function clearSession({ announce = true } = {}) {
   generation++;
+  cancelGeneration(false);
+  $('sound-prompt').value = '';
+  generationMessage('Description and local session cleared. Generation allowance is unchanged.');
   if (animation !== null) cancelAnimationFrame(animation);
   animation = null;
   if (engine) { engine.onstatechange = null; engine.dispose(); }
@@ -474,6 +592,7 @@ function clearSession({ announce = true } = {}) {
 $('clear-session').addEventListener('click', () => clearSession());
 window.addEventListener('pagehide', event => {
   transportRevision++;
+  if (aiBusy) cancelGeneration();
   if (event.persisted) {
     engine?.stop();
     engine?.cancelExport();
@@ -501,3 +620,4 @@ if (initialSource) {
 }
 renderControls();
 renderTransport();
+await refreshGeneration();
