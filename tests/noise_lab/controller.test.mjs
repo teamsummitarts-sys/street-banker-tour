@@ -14,6 +14,7 @@ class Element {
   setAttribute(key, value) { this[key] = value; }
   querySelector() { return this.span ??= new Element(); }
   replaceChildren() {} append() {} remove() {} focus() {}
+  removeAttribute(key) { delete this[key]; }
   async event(type, event = {}) {
     return Promise.all((this.listeners[type] || []).map(fn => fn({target: this, ...event})));
   }
@@ -37,10 +38,13 @@ async function setup() {
   const loops = ['harmonic-pluck', 'pulse-bass'].map(id => {
     const element = new Element(); element.dataset.loop = id; return element;
   });
+  const created = [];
   globalThis.document = {getElementById: get, querySelector: get,
     querySelectorAll: () => loops, addEventListener() {},
-    createElement: () => new Element(), body: {append() {}}};
-  globalThis.window = {addEventListener() {}};
+    createElement: () => { const e = new Element(); created.push(e); return e; }, body: {append() {}}};
+  const lifecycle = new Element();
+  globalThis.window = lifecycle;
+  Object.defineProperty(globalThis, 'navigator', {configurable: true, value: {}});
   globalThis.isSecureContext = true;
   globalThis.AudioContext = function() {};
   globalThis.AudioWorkletNode = function() {};
@@ -53,7 +57,10 @@ async function setup() {
     getInfo() { return {playing: this.playing, duration: 8, channels: 1, sampleRate: 8000, name: 'Test loop'}; },
     loadDemo() { return this.getInfo(); },
     async play() { this.playCalls++; this.playing = true; },
-    stop() { this.stopCalls++; this.playing = false; }, dispose() {},
+    stop() { this.stopCalls++; this.playing = false; },
+    disposeCalls: 0, dispose() { this.disposeCalls++; },
+    async exportWav() { return new Blob(['test PCM'], {type: 'audio/wav'}); },
+    cancelExport() {},
   };
   NoiseEngine.create = () => creation.promise;
   await import(`../../noise_lab/static/ui/controller.mjs?test=${++session}`);
@@ -64,7 +71,7 @@ async function setup() {
     const done = get('recipe-file').event('change');
     return {resolve: read.resolve, done};
   };
-  return {get, choose, startImport, creation, audio};
+  return {get, choose, startImport, creation, audio, lifecycle, created};
 }
 
 test('A identifies the preset being auditioned and B retains its own selection', async () => {
@@ -135,4 +142,90 @@ test('Stop cancels a pending Play before an engine exists; a later Play works', 
   await get('stop').click();
   assert.equal(audio.stopCalls, 1);
   assert.equal(audio.playing, false);
+});
+
+test('preparing an export does not navigate; saving targets a separate context', async () => {
+  const {get, created} = await setup();
+  await get('export-recipe').click();
+  assert.equal(get('file-ready').hidden, false);
+  assert.match(get('save-download').href, /^blob:/);
+  assert.equal(get('save-download').target, '_blank');
+  assert.equal(get('save-download').rel, 'noopener');
+  assert.ok(!created.some(e => e.href), 'No synthetic download navigation.');
+  await get('clear-session').click();
+  assert.equal(get('file-ready').hidden, true);
+  assert.equal(get('save-download').href, undefined);
+});
+
+test('iPhone share is invoked only by the save gesture; cancel retains edits and prepared file', async () => {
+  const {get, choose} = await setup();
+  let shared = 0;
+  navigator.canShare = ({files}) => files[0] instanceof File;
+  navigator.share = async () => { shared++; throw new DOMException('Cancelled', 'AbortError'); };
+  await choose('metal-bloom');
+  await get('export-recipe').click();
+  assert.equal(shared, 0);
+  assert.equal(get('share-download').hidden, false);
+  await get('share-download').click();
+  assert.equal(shared, 1);
+  assert.equal(get('preset').value, 'metal-bloom');
+  assert.equal(get('file-ready').hidden, false);
+  assert.match(get('notice').textContent, /cancelled/i);
+  await get('undo').click();
+  assert.equal(get('preset').value, 'clean');
+  await get('clear-session').click();
+});
+
+test('returning from a cached file preview preserves source and undo; full unload disposes audio', async () => {
+  const {get, choose, creation, audio, lifecycle} = await setup();
+  const start = get('play').click(); creation.resolve(audio); await start;
+  await choose('metal-bloom');
+  await lifecycle.event('pagehide', {persisted: true});
+  assert.equal(audio.playing, false);
+  assert.equal(audio.disposeCalls, 0);
+  await lifecycle.event('pageshow', {persisted: true});
+  assert.equal(get('preset').value, 'metal-bloom');
+  assert.equal(get('export-audio').disabled, false);
+  await get('undo').click();
+  assert.equal(get('preset').value, 'clean');
+  await lifecycle.event('pagehide', {persisted: false});
+  assert.equal(audio.disposeCalls, 1);
+});
+
+test('WAV rendering prepares a file without invoking the OS; a later save tap shares it', async () => {
+  const {get, creation, audio} = await setup();
+  let sharedFile;
+  navigator.canShare = () => true;
+  navigator.share = async ({files}) => { sharedFile = files[0]; };
+  const start = get('play').click(); creation.resolve(audio); await start;
+  const render = deferred(); audio.exportWav = () => render.promise;
+  const pending = get('export-audio').click();
+  assert.equal(sharedFile, undefined);
+  render.resolve(new Blob(['PCM fixture'], {type: 'audio/wav'})); await pending;
+  assert.equal(sharedFile, undefined);
+  assert.match(get('save-download').download, /\.wav$/);
+  const saving = get('share-download').click();
+  assert.ok(sharedFile instanceof File, 'Sharing starts synchronously from the new tap.');
+  assert.equal(sharedFile.type, 'audio/wav');
+  assert.equal(await sharedFile.text(), 'PCM fixture');
+  await saving;
+  assert.equal(audio.disposeCalls, 0);
+  assert.equal(get('file-ready').hidden, false);
+  await get('clear-session').click();
+});
+
+test('unsupported or failed native sharing keeps a working manual download', async () => {
+  const {get} = await setup();
+  navigator.canShare = () => false;
+  navigator.share = async () => { throw new Error('Sharing unavailable'); };
+  await get('export-recipe').click();
+  assert.equal(get('share-download').hidden, true);
+  assert.match(get('save-download').href, /^blob:/);
+  navigator.canShare = () => true;
+  await get('export-recipe').click();
+  await get('share-download').click();
+  assert.equal(get('file-ready').hidden, false);
+  assert.match(get('save-download').href, /^blob:/);
+  assert.match(get('error').textContent, /Download file/);
+  await get('clear-session').click();
 });
