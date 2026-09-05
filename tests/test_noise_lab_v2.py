@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 
-def test_noise_lab_uses_v2_identity_and_flag_without_new_database_tables(tmp_path):
+def test_noise_lab_uses_v2_identity_flags_and_persistent_patch_boundary(tmp_path):
     root = Path(__file__).resolve().parents[1]
     # Deliberately do not inherit provider credentials, production database paths,
     # secrets, Render flags or any other application environment from the runner.
@@ -47,6 +47,22 @@ assert client.get('/noise-lab/assets/engine/index.mjs').status_code == 200
 with app.store.get_db() as db:
     tables = [row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")]
 assert not any(name.startswith('noise_lab') for name in tables)
+app.app.config['NOISE_LAB_PATCH_STORAGE_ENABLED'] = True
+assert client.get('/noise-lab/capabilities').json['cloud_patch_storage'] is True
+saved = client.post('/noise-lab/api/patches', headers=headers, json={
+    'requestId': 'c1e5c7a2-11cd-40ce-8ac4-5b7515bd1df1',
+    'name': 'Actual V2 host fixture', 'recipe': generated.json['recipe']})
+assert saved.status_code == 201
+patch_id = saved.json['patch']['id']
+again = app.create_app()
+again.config.update(TESTING=True, NOISE_LAB_PATCH_STORAGE_ENABLED=True)
+reopened = again.test_client()
+with reopened.session_transaction() as session:
+    session['user_id'] = user['id']
+restored = reopened.get('/noise-lab/api/patches/' + patch_id)
+assert restored.status_code == 200
+assert restored.json['patch']['versions'][0]['recipe'] == generated.json['recipe']
+assert reopened.get('/noise-lab/api/patches/' + patch_id + '/export').json['archiveVersion'] == 1
 app.app.config['NOISE_LAB_ENABLED'] = False
 assert client.get('/noise-lab/').status_code == 404
 assert client.get('/noise-lab/assets/engine/index.mjs').status_code == 404
@@ -55,6 +71,6 @@ with client.session_transaction() as session:
 app.app.config['NOISE_LAB_ENABLED'] = True
 assert client.get('/noise-lab/capabilities').status_code == 302
 assert client.post('/noise-lab/api/generate', headers=headers, json={'prompt': 'x'}).status_code == 302
-print('V2 identity, assets, feature flag and no-migration boundary passed.')
+print('V2 identity, assets, gated schema and reopened patch persistence passed.')
 '''], cwd=root, env=env, text=True, capture_output=True, timeout=90)
     assert result.returncode == 0, result.stdout + result.stderr

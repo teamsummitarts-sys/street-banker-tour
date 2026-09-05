@@ -186,6 +186,33 @@ test('empty descriptions and unavailable generation never send a POST', async ()
   assert.match(get('generation-status').textContent, /unavailable/i);
 });
 
+test('account save sends only a named settings snapshot and keeps the iPhone session open', async () => {
+  const {get, setResponse, requests, created, audio} = await readyToGenerate();
+  const id = '4bf647db-1234-4567-8901-234567890abc';
+  const patch = {id, name: 'My growl', headVersion: 1, updated: '2026-09-05T00:00:00Z',
+    versions: [{version: 1, name: 'My growl', created: '2026-09-05T00:00:00Z', recipe: recipe('clean')}]};
+  setResponse(async (url, options) => ({ok: true, json: async () =>
+    url.endsWith('/capabilities') ? {ai_generation: true, cloud_patch_storage: true,
+      generation: {configured: true, usage: {remaining: 19}}}
+      : options?.method === 'POST' ? {patch} : {patches: []}}));
+  await get('refresh-generation').click();
+  get('patch-name').value = 'My growl';
+  await get('save-patch').click();
+  const posted = requests.filter(r => r.options?.method === 'POST');
+  assert.equal(posted.length, 1);
+  assert.equal(posted[0].url, '/noise-lab/api/patches');
+  const data = JSON.parse(posted[0].options.body);
+  assert.deepEqual(Object.keys(data).sort(), ['name', 'recipe', 'requestId']);
+  assert.equal(data.name, 'My growl');
+  assert.deepEqual(data.recipe, recipe('clean'));
+  assert.equal(posted[0].options.headers['X-Noise-Lab-CSRF'], 'test-csrf');
+  assert.match(get('patch-status').textContent, /Saved.*version 1/i);
+  await get('save-patch').click();
+  assert.equal(requests.filter(r => r.options?.method === 'POST').length, 1, 'A repeated tap after acknowledgment does not create a duplicate.');
+  assert.equal(audio.disposeCalls, 0);
+  assert.equal(created.some(element => element.href), false);
+});
+
 test('A identifies the preset being auditioned and B retains its own selection', async () => {
   const {get, choose} = await setup();
   await choose('metal-bloom');
@@ -340,4 +367,111 @@ test('unsupported or failed native sharing keeps a working manual download', asy
   assert.match(get('save-download').href, /^blob:/);
   assert.match(get('error').textContent, /Download file/);
   await get('clear-session').click();
+});
+
+function storedPatch(versions = ['clean']) {
+  return {id: '4bf647db-1234-4567-8901-234567890abc', name: 'Private growl', headVersion: versions.length,
+    updated: '2026-09-05T00:00:00Z', versions: versions.map((id, i) => ({version: i+1,
+      name: 'Private growl', created: '2026-09-05T00:00:00Z', recipe: recipe(id)}))};
+}
+async function enableLibrary(context, respond) {
+  context.setResponse(async (url, options) => url.endsWith('/capabilities')
+    ? {ok: true, json: async () => ({ai_generation: true, cloud_patch_storage: true, account_scope: 'test-csrf', generation: {configured: true, usage: {remaining: 19}}})}
+    : respond(url, options));
+  await context.get('refresh-generation').click();
+}
+const ok = data => ({ok: true, json: async () => data});
+
+test('restoring an old saved version supports Undo and subsequent saving appends at the latest head', async () => {
+  const ctx = await readyToGenerate(), {get, choose, requests} = ctx;
+  const patch = storedPatch(['clean', 'dark-room']);
+  await enableLibrary(ctx, async (_url, options) => ok(options?.method === 'POST' ? {patch: storedPatch(['clean','dark-room','clean'])} : {patches: [patch], patch}));
+  await choose('metal-bloom');
+  get('patch-list').value = patch.id; await get('patch-list').event('change');
+  assert.equal(get('preset').value, 'metal-bloom', 'Browsing never replaces unsaved settings.');
+  get('patch-version').value = '1'; await get('load-patch-version').click();
+  assert.equal(get('preset').value, 'clean');
+  await get('undo').click(); assert.equal(get('preset').value, 'metal-bloom');
+  await get('redo').click(); assert.equal(get('preset').value, 'clean');
+  await get('save-version').click();
+  const posted = requests.filter(r => r.options?.method === 'POST');
+  assert.equal(posted.length, 1);
+  assert.equal(JSON.parse(posted[0].options.body).baseVersion, 2);
+  assert.match(get('patch-status').textContent, /version 3/);
+});
+
+test('a save acknowledges its snapshot without overwriting edits made while waiting', async () => {
+  const ctx = await readyToGenerate(), {get, choose} = ctx;
+  const wait = deferred();
+  await enableLibrary(ctx, async (_url, options) => options?.method === 'POST' ? wait.promise : ok({patches: []}));
+  get('patch-name').value = 'Private growl';
+  const saving = get('save-patch').click();
+  await choose('metal-bloom');
+  wait.resolve(ok({patch: storedPatch()})); await saving;
+  assert.equal(get('preset').value, 'metal-bloom');
+  assert.match(get('patch-status').textContent, /newer edits are not saved/);
+  assert.match(get('patch-save-state').textContent, /not saved/);
+});
+
+test('uncertain saves reuse the request ID; conflicts and expired sessions preserve working audio', async () => {
+  const ctx = await readyToGenerate(), {get, choose, requests, audio} = ctx;
+  let attempt = 0;
+  await enableLibrary(ctx, async (_url, options) => {
+    if (options?.method !== 'POST') return ok({patches: []});
+    if (++attempt === 1) throw Error('Offline');
+    if (attempt === 2) return {ok: false, status: 409, json: async () => ({error: 'version_conflict'})};
+    return {ok: false, status: 401, json: async () => ({})};
+  });
+  await choose('dark-room'); get('patch-name').value = 'Private growl';
+  await get('save-patch').click(); await get('save-patch').click();
+  const posts = requests.filter(r => r.options?.method === 'POST');
+  assert.equal(JSON.parse(posts[0].options.body).requestId, JSON.parse(posts[1].options.body).requestId);
+  assert.match(get('patch-status').textContent, /Another save/);
+  await get('save-patch').click();
+  assert.match(get('patch-status').textContent, /sign-in/);
+  assert.equal(get('save-version').disabled, true);
+  assert.equal(get('preset').value, 'dark-room'); assert.equal(audio.disposeCalls, 0);
+});
+
+test('history export prepares a separate iPhone download and deletion requires a second explicit action', async () => {
+  const ctx = await readyToGenerate(), {get, requests, choose, audio} = ctx;
+  const patch = storedPatch(['clean','dark-room']);
+  await enableLibrary(ctx, async (url, options) => ok(options?.method === 'DELETE' ? {deleted: true}
+    : url.endsWith('/export') ? {archiveVersion: 1, patch} : {patches: [patch], patch}));
+  await choose('metal-bloom');
+  get('patch-list').value = patch.id; await get('patch-list').event('change');
+  await get('export-patch-history').click();
+  assert.equal(get('file-ready').hidden, false);
+  assert.equal(get('save-download').target, '_blank');
+  assert.match(get('prepared-name').textContent, /noise-lab-patch/);
+  await get('delete-patch').click();
+  assert.equal(requests.some(r => r.options?.method === 'DELETE'), false);
+  await get('cancel-delete-patch').click();
+  await get('confirm-delete-patch').click();
+  assert.equal(requests.some(r => r.options?.method === 'DELETE'), false);
+  await get('delete-patch').click(); await get('confirm-delete-patch').click();
+  const deletions = requests.filter(r => r.options?.method === 'DELETE');
+  assert.equal(deletions.length, 1);
+  assert.deepEqual(JSON.parse(deletions[0].options.body), {baseVersion: 2});
+  assert.equal(get('preset').value, 'metal-bloom'); assert.equal(audio.disposeCalls, 0);
+  assert.match(get('patch-status').textContent, /deleted from the active library/);
+  await get('clear-session').click();
+});
+
+test('a cleared session ignores late library responses and a switched account cannot reuse its library', async () => {
+  const ctx = await readyToGenerate(), {get, choose} = ctx;
+  const wait = deferred();
+  await enableLibrary(ctx, async (_url, options) => options?.method === 'POST' ? wait.promise : ok({patches: []}));
+  get('patch-name').value = 'Private growl';
+  const saving = get('save-patch').click();
+  await get('clear-session').click();
+  wait.resolve(ok({patch: storedPatch()})); await saving;
+  assert.equal(get('patch-name').value, '');
+  assert.equal(get('save-version').disabled, true);
+  await choose('dark-room');
+  ctx.setResponse(async () => ok({ai_generation: true, cloud_patch_storage: true, account_scope: 'another-account-csrf'}));
+  await get('refresh-generation').click();
+  assert.equal(get('save-patch').disabled, true);
+  assert.equal(get('generate-sound').disabled, true);
+  assert.equal(get('preset').value, 'dark-room');
 });
