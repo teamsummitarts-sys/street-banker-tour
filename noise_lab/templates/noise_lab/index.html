@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Street Banker Noise Lab: a private, local audio effects prototype.">
+  <title>Noise Lab · Street Banker V2</title>
+  <link rel="stylesheet" href="{{ url_for('noise_lab.static', filename='ui/noise-lab.css') }}">
+  <script type="module" src="{{ url_for('noise_lab.static', filename='ui/controller.mjs') }}"></script>
+</head>
+<body class="noise-lab" data-assets-url="{{ lab_assets_url }}">
+  <!-- Noise Lab inherits Street Banker V2's dense near-black and warm-brass console.
+  Its five tangible macro controls derive from the owner's black pedal reference.
+  Actual source time, processing state, and recipe values are the only displays.
+  Phase 1 processes local audio and downloads files. AI and account patch storage
+  are explicitly unavailable. No V1 styles, navigation, data, or assets are used. -->
+  <a class="skip-link" href="#source">Skip to audio controls</a>
+  <header class="site-bar">
+    <a href="{{ return_url }}" class="brand" aria-label="Return to Street Banker V2">STREET BANKER<span>V2</span></a>
+    <a href="{{ return_url }}" class="back-link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6M8 12h13"/></svg>Back to your team</a>
+  </header>
+  <main>
+    <header class="lab-title">
+      <div><h1>Noise Lab<span aria-hidden="true">.</span></h1><p>Shape a sound. Keep the happy accident.</p></div>
+      <div class="build-note"><span class="local-mark" aria-hidden="true"></span><strong>Local audio prototype</strong><span>Phase 1 · Engine &amp; controls</span></div>
+    </header>
+
+    <div id="support-message" class="message" role="status" hidden></div>
+    <noscript><p class="message error">Noise Lab needs JavaScript for local audio processing. Enable JavaScript, then reload.</p></noscript>
+
+    <div class="session-console">
+      <section class="source-panel" id="source" aria-labelledby="source-heading">
+        <div class="section-heading"><h2 id="source-heading">Your clean source</h2><span id="source-badge">Original synthesis</span></div>
+        <div class="source-choices" role="group" aria-label="Choose an original clean loop">
+          <button type="button" data-loop="harmonic-pluck" aria-pressed="true">Harmonic pluck</button>
+          <button type="button" data-loop="pulse-bass" aria-pressed="false">Pulse bass</button>
+        </div>
+        <div class="source-detail"><strong id="source-name">Harmonic pluck</strong><p id="source-description">An original synthesized clean loop. Press Play to load and audition it.</p></div>
+        <div class="transport">
+          <button class="play-button" id="play" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg><span>Play loop</span></button>
+          <button id="stop" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7Z"/></svg>Stop</button>
+          <output id="source-time" class="time-readout" aria-label="Playback time">0:00 / —</output>
+        </div>
+        <div class="playback-track" aria-hidden="true"><div id="playback-position"></div></div>
+        <div class="source-bottom"><p id="source-info">Audio stays on this device.</p><button type="button" class="text-button" id="import-audio">Use your audio<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></svg></button></div>
+        <p class="file-limits">WAV only · up to 30 seconds / 20 MiB</p>
+        <input type="file" id="audio-file" accept="audio/wav,audio/x-wav,.wav" hidden>
+      </section>
+      <section class="prompt-panel" aria-labelledby="prompt-heading">
+        <div class="section-heading"><h2 id="prompt-heading">Describe the sound</h2><span>Next phase</span></div>
+        <p class="prompt-example">“Metallic growl.<br>Keep the pick attack.”</p>
+        <p class="prompt-status">AI generation is not connected in this prototype. Start with a manual preset and shape it below.</p>
+        <div class="prompt-limit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10h12v11H6zM8 10V6a4 4 0 0 1 8 0v4"/></svg>No prompts sent. No generation charges.</div>
+      </section>
+    </div>
+
+    <section class="effects-console" aria-labelledby="effects-heading">
+      <div class="recipe-header">
+        <div><h2 id="effects-heading">Make it yours</h2><p id="preset-description">Five controls. One working sound.</p></div>
+        <div class="preset-field"><label for="preset">Starting preset</label><select id="preset"><option value="">Loading presets…</option></select></div>
+      </div>
+      <div class="macro-bank" id="macro-bank">
+        {% for key, label, description, minimum, maximum, value, unit in [('texture', 'Texture', 'Drive & tone', 0, 100, 0, '%'), ('motion', 'Motion', 'Modulation', 0, 100, 0, '%'), ('space', 'Space', 'Echo & decay', 0, 100, 0, '%'), ('mix', 'Mix', 'Dry / processed', 0, 100, 0, '%'), ('level', 'Level', 'Output gain', -60, 0, -12, 'dB')] %}
+        <div class="macro" data-macro="{{ key }}">
+          <label for="macro-{{ key }}">{{ label }}</label>
+          <div class="dial" aria-hidden="true"><svg viewBox="0 0 120 120"><path class="dial-track" d="M25 96a50 50 0 1 1 70 0"/><path class="dial-tick" d="M60 9v5M10 60h5m90 0h5M24 24l4 4m64 0 4-4"/><circle cx="60" cy="60" r="34"/><path class="dial-hand" d="M60 37v13"/></svg></div>
+          <div class="macro-value"><input id="value-{{ key }}" type="number" inputmode="decimal" min="{{ minimum }}" max="{{ maximum }}" step="any" value="{{ value }}" aria-label="{{ label }} value in {{ unit }}"><span>{{ unit }}</span></div>
+          <input class="macro-range" type="range" id="macro-{{ key }}" min="{{ minimum }}" max="{{ maximum }}" step="1" value="{{ value }}" aria-describedby="hint-{{ key }}">
+          <span class="macro-hint" id="hint-{{ key }}">{{ description }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="comparison-bar">
+        <div class="comparison-group" role="group" aria-label="Compare patch versions"><button type="button" id="compare-a" aria-pressed="false" disabled><b>A</b> Previous</button><button type="button" id="compare-b" aria-pressed="true"><b>B</b> Current</button></div>
+        <button id="clean" class="clean-button" type="button" aria-pressed="false">Compare clean</button>
+        <div class="history-group"><button id="undo" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5 3 10l5 5M3 10h10a7 7 0 0 1 0 14"/></svg>Undo</button><button id="redo" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 5 5 5-5 5m5-5H11a7 7 0 0 0 0 14"/></svg>Redo</button></div>
+      </div>
+      <div class="monitor-line"><span id="monitor-state">Ready for a loop</span><span id="compare-state">B selected · Current patch</span></div>
+    </section>
+
+    <div id="notice" class="message" role="status" aria-live="polite" hidden></div>
+    <div id="error" class="message error" role="alert" hidden></div>
+
+    <section class="output-section" aria-labelledby="output-heading">
+      <div class="output-title"><h2 id="output-heading">Take the sound with you</h2><p>Download to keep it. This session has no cloud patch storage.</p></div>
+      <div class="output-actions">
+        <div class="audio-export"><button type="button" class="export-button" id="export-audio" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v13m-5-5 5 5 5-5M4 17v4h16v-4"/></svg>Download WAV</button><button type="button" id="cancel-export" hidden>Cancel render</button><label class="checkbox-label"><input id="include-tail" type="checkbox" checked>Include 2-second tail</label></div>
+        <div class="recipe-export"><button type="button" id="export-recipe">Download recipe</button><button type="button" id="import-recipe">Import recipe</button><span>Private JSON file · No audio included</span></div>
+        <input type="file" id="recipe-file" accept="application/json,.json" hidden>
+      </div>
+    </section>
+
+    <div class="notes">
+      <details><summary>Privacy &amp; session data</summary><div><p>Your source audio is processed in this browser's memory. This module does not upload audio, save recordings in browser storage, or send prompts to an AI provider. Use only audio you own or have permission to process.</p><p>Closing or reloading the page clears this session. There is no automatic backup or recovery. WAV and recipe files you download remain wherever you save them; delete those files from your device or backup service when you no longer want them.</p><p>V2 account and infrastructure behavior remains separate from this local session. Private account patch storage and its retention policy belong to a later phase.</p><button type="button" id="clear-session">Clear this session</button></div></details>
+      <details><summary>Browser support &amp; playback</summary><div><p id="browser-support">Checking this browser's audio capabilities…</p><p>Use Play to enable audio. Mobile browsers may pause when you lock the screen, switch apps, or change audio devices. Return here and press Play to resume. Keep this page in the foreground for the pilot.</p><p>Imports support mono or stereo RIFF WAV: PCM 16/24/32-bit or 32-bit float, 8–192 kHz, up to 30 seconds and 20 MiB. MP3, compressed WAV, and WAV extensible are unsupported. Import uses basic linear resampling and short loop-edge fades; this is not an archival audio converter. A failed replacement keeps your previous source.</p><p>Hardware, live instrument input, and universal pedal export are outside this prototype. Device and sustained-playback validation is still pending. Capability detection is not a claim of tested device support. Start at a comfortable listening volume.</p></div></details>
+      <details><summary>Controls &amp; recipe versions</summary><div><p>Tab to each control. Use arrow keys on sliders, or enter an exact value. Home and End move to a slider's limits. Each continuous slider adjustment is one undo step.</p><p>A auditions the previous patch. B returns to your current patch. Compare clean bypasses effects independently. Controls are locked while auditioning A; switch to B to continue editing. Downloads use the current B recipe, even while comparing. Changing the source or settings during a WAV render cancels that render.</p><p>Space controls filtered echo. The optional export tail is fixed at two seconds, so a longer echo may be cut short. Recipe files include their schema and engine version. Unsupported or invalid recipes are rejected, keeping the current working patch. Downloaded recipes contain settings only; keep source audio separately to recreate a sound.</p></div></details>
+    </div>
+    <footer><span>Street Banker Noise Lab</span><span>Engine <span id="engine-version">noise-lab-1.0.0</span></span><span>Validation prototype · V2 only</span></footer>
+  </main>
+</body>
+</html>
