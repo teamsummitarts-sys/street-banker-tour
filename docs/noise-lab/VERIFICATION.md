@@ -115,3 +115,34 @@ Browser rationale: [download behavior can vary](https://developer.mozilla.org/en
 [file sharing needs a user gesture](https://developer.mozilla.org/en-US/docs/Web/API/Web_Share_API),
 and [pagehide distinguishes cached navigation](https://developer.mozilla.org/en-US/docs/Web/API/Window/pagehide_event).
 No DSP algorithm, recipe schema, ownership gate or persistent storage changed.
+# Phase 2 generation verification — 2026-09-05
+
+Fresh combined checks on this source: **43 Python tests + 29 JavaScript tests =
+72 passing**, exit status 0. `git diff --check` also passes. Commands:
+
+```
+python -m pytest -q tests/test_noise_lab_generation.py tests/test_noise_lab_routes.py tests/test_noise_lab_v2.py
+node --test tests/noise_lab/controller.test.mjs tests/noise_lab/engine.test.mjs
+```
+
+The new server vertical-slice test initially failed because the session CSRF
+boundary was absent; the new UI test initially failed because no generation
+request was sent. Both now pass against the real route/controller, using a
+synthetic provider boundary. No synthetic output is shipped as a fallback AI.
+
+| Acceptance | Evidence | Status |
+| --- | --- | --- |
+| Auth/ownership/CSRF | Standalone route tests and actual V2 factory in an isolated subprocess; anonymous and switched-account rejection, forged identity/Origin, no host table migration | Confirmed in automated tests |
+| Bounded data, no generated execution | Real JSON parser rejects duplicate/extra fields, refusal, incomplete output, tool calls, nonfinite/out-of-range values; real adapter body has no audio/tools and redirect/response caps tested | Confirmed in automated tests |
+| Working patch retained | Actual controller event tests cover invalid response, expired login, cancellation, clear and late response after edits; manual presets and Undo remain usable | Confirmed with fake DOM/audio boundary |
+| Generation limits | Locked reservations under concurrent threads, account isolation, 20/account and 100/process ceilings, two concurrent requests globally, cooldown, failed usage not refunded | Confirmed within one process |
+| Recipe compatibility/output bounds | Cross-language fixtures pass the unchanged v1 reader; existing engine extrema, switching, WAV and sixty-second DSP tests pass | Confirmed numerically; physical listening unverified |
+| iPhone export regression | Existing 2-step share/cancel/cache-return tests pass; owner confirmed prior release on iPhone | New generation flow not device verified |
+| Provider and cost | Outbound request shape, error redaction, no retries and model snapshot verified with fakes; actual usage is counted only if reported | Live key/model access, invoice cost and sound preference unverified |
+| Deployment | Exact V2 service preflight matches repo/main, auto-deploy off, one worker/instance | Final deploy evidence recorded in Phase 2 PR |
+
+The user reports setting the API key in Render; its value was not read by this
+work. The real provider integration still needs an authenticated Create sound
+request. A public login-page check does not prove the private generation flow.
+No fabricated audio result, participant measurement or completion claim is made.
+See PHASE2.md for the supported single-process scope, retention and disable path.

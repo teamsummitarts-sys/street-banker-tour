@@ -41,7 +41,12 @@ async function setup() {
   const created = [];
   globalThis.document = {getElementById: get, querySelector: get,
     querySelectorAll: () => loops, addEventListener() {},
-    createElement: () => { const e = new Element(); created.push(e); return e; }, body: {append() {}}};
+    createElement: () => { const e = new Element(); created.push(e); return e; },
+    body: {append() {}, dataset: {csrf: 'test-csrf'}}};
+  const requests = [];
+  const availability = {ai_generation: true, generation: {configured: true, usage: {remaining: 20}}};
+  let respond = async () => ({ok: true, json: async () => availability});
+  globalThis.fetch = async (url, options) => { requests.push({url, options}); return respond(url, options); };
   const lifecycle = new Element();
   globalThis.window = lifecycle;
   Object.defineProperty(globalThis, 'navigator', {configurable: true, value: {}});
@@ -71,8 +76,85 @@ async function setup() {
     const done = get('recipe-file').event('change');
     return {resolve: read.resolve, done};
   };
-  return {get, choose, startImport, creation, audio, lifecycle, created};
+  return {get, choose, startImport, creation, audio, lifecycle, created, requests,
+    setResponse: fn => { respond = fn; }};
 }
+
+const generated = recipe => ({ok: true, redirected: false,
+  json: async () => ({recipe, generationVersion: 'noise-lab-prompt-1.0.0',
+    generation: {configured: true, usage: {remaining: 19}}})});
+
+async function readyToGenerate() {
+  const context = await setup();
+  const playing = context.get('play').click();
+  context.creation.resolve(context.audio); await playing;
+  context.get('sound-prompt').value = 'Metallic growl, keep the pick attack';
+  return context;
+}
+
+test('generation sends only description, applies a valid patch without raising level, and supports Undo', async () => {
+  const {get, setResponse, requests} = await readyToGenerate();
+  get('value-level').value = '-30'; await get('value-level').event('change');
+  setResponse(async () => generated(recipe('metal-bloom')));
+  await get('generate-sound').click();
+  const posted = requests.filter(r => r.options?.method === 'POST');
+  assert.equal(posted.length, 1);
+  assert.deepEqual(JSON.parse(posted[0].options.body), {prompt: 'Metallic growl, keep the pick attack'});
+  assert.equal(posted[0].options.headers['X-Noise-Lab-CSRF'], 'test-csrf');
+  assert.equal(get('value-texture').value, '76');
+  assert.equal(get('value-level').value, '-30');
+  await get('undo').click();
+  assert.equal(get('value-texture').value, '10');
+  assert.equal(get('value-level').value, '-30');
+});
+
+test('late generation cannot overwrite newer edits or revive a cleared session', async () => {
+  const {get, setResponse, choose} = await readyToGenerate();
+  const pending = deferred(); setResponse(() => pending.promise);
+  const task = get('generate-sound').click();
+  await choose('dark-room');
+  pending.resolve(generated(recipe('metal-bloom'))); await task;
+  assert.equal(get('preset').value, 'dark-room');
+  assert.match(get('generation-status').textContent, /discarded/i);
+  const next = deferred(); setResponse(() => next.promise);
+  const after = get('generate-sound').click();
+  await get('clear-session').click();
+  next.resolve(generated(recipe('metal-bloom'))); await after;
+  assert.equal(get('preset').value, 'clean');
+  assert.equal(get('sound-prompt').value, '');
+});
+
+test('generation cancellation, malformed settings and authentication failure retain patch and presets', async () => {
+  const {get, setResponse, choose} = await readyToGenerate();
+  await choose('dark-room');
+  const pending = deferred(); setResponse(() => pending.promise);
+  const task = get('generate-sound').click();
+  await get('cancel-generation').click();
+  pending.resolve(generated(recipe('metal-bloom'))); await task;
+  assert.equal(get('preset').value, 'dark-room');
+  assert.equal(get('preset').disabled, false);
+  setResponse(async () => generated({...recipe('metal-bloom'), code: 'never execute'}));
+  await get('generate-sound').click();
+  assert.equal(get('preset').value, 'dark-room');
+  assert.match(get('generation-status').textContent, /retained/);
+  setResponse(async () => ({ok: true, redirected: true, json: () => { throw Error('must not parse login HTML'); }}));
+  await get('generate-sound').click();
+  assert.match(get('generation-status').textContent, /sign in/i);
+  assert.equal(get('preset').value, 'dark-room');
+});
+
+test('empty descriptions and unavailable generation never send a POST', async () => {
+  const {get, setResponse, requests} = await readyToGenerate();
+  get('sound-prompt').value = '   ';
+  await get('generate-sound').click();
+  assert.equal(requests.filter(r => r.options?.method === 'POST').length, 0);
+  setResponse(async () => ({ok: true, json: async () => ({ai_generation: false,
+    generation: {configured: false, usage: {remaining: 20}}})}));
+  await get('refresh-generation').click();
+  assert.equal(get('generate-sound').disabled, true);
+  assert.equal(get('preset').disabled, false);
+  assert.match(get('generation-status').textContent, /unavailable/i);
+});
 
 test('A identifies the preset being auditioned and B retains its own selection', async () => {
   const {get, choose} = await setup();

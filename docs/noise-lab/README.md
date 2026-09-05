@@ -1,22 +1,27 @@
-# Street Banker Noise Lab — V2 Phase 1
+# Street Banker Noise Lab — V2 Phase 2
 
-Status: a default-off, account-gated validation prototype. This is the local audio
-phase, not completion of the proposed AI-to-private-patch product. Real browser
-playback, listening, mobile and sustained-device checks remain release gates.
+Status: an account-gated local audio and prompt-to-settings validation prototype.
+Phase 2 adds a server-side OpenAI adapter; live provider calls and the new mobile
+generation flow remain unverified until activation and an authenticated retest.
+The owner confirmed the preceding iPhone export fix works. Sustained playback,
+listening quality and broader device checks remain pilot gates.
 See [VERIFICATION.md](VERIFICATION.md) for evidence and limitations.
 
 ## Repository and isolation
 
 Built against `teamsummitarts-sys/v2-street-banker` main commit
 `3c878d7723bb80a34a11c2c6b53faffd6e24a540`: Flask, Jinja, browser JavaScript and
-SQLite. No framework or runtime dependency was added. Existing V2 DSP was
+SQLite. Phase 2 builds on `0ac3b12dcaacbeb022b85086dbed3a3bcac74f87` and leaves
+the engine and recipe schema unchanged. No runtime dependency was added. Existing V2 DSP was
 inspected; its DOM and rack-storage coupling led to a separate small engine.
 
-The module owns `noise_lab/`, `tests/noise_lab/`, the two
+The module owns `noise_lab/`, `tests/noise_lab/`, the
 `tests/test_noise_lab_*.py` files and `docs/noise-lab/`. Its only host change is
 registration beside `audio_studio.init` in `app.py`. It does not alter shared
 templates, navigation, styles, databases, V1 repositories or hosting settings.
-No deployment is included. A source branch can be reviewed and pulled later.
+The prior audio and iPhone-save releases are deployed to the separately approved
+V2 service. Phase 2 deployment evidence is recorded in its PR. This source can
+still be copied to another compatible Flask host through the existing seam.
 
 After separate deployment approval, enable only the intended V2 environment
 with `NOISE_LAB_ENABLED=1`, then visit `/noise-lab/` using an existing V2 account.
@@ -30,8 +35,11 @@ require an authenticated identity; the module creates no identity bypass.
 1. Press Play to create the browser audio context and audition an original,
    procedurally synthesized eight-second loop. Two synthetic sources are labeled
    as such; neither is represented as a guitar recording or licensed sample.
-2. Choose one of four explicitly authored presets. The sound-description panel
-   states that AI generation belongs to the next phase; it sends no request.
+2. Choose one of four manual presets, or enter a description and press Create
+   sound after loading a loop. When configured, only the description goes to
+   OpenAI. The server and browser validate the result before replacing B. The
+   prior patch remains available on A/Undo. Unavailable or failed generation
+   keeps the working patch and manual presets. New edits invalidate late results.
 3. Hear the fixed audio graph and adjust Texture, Motion, Space, Mix and Level
    through native sliders or numeric inputs.
 4. A auditions the previous committed settings; B retains the current settings.
@@ -124,10 +132,12 @@ emails or numeric IDs alone is insufficient.
 
 ## Privacy, deletion and backups
 
-| Data | Actual Phase 1 behavior |
+| Data | Actual prototype behavior |
 | --- | --- |
 | Imported/synthesized audio and rendered PCM | Browser page memory only; no upload route, telemetry or provider request. |
 | Settings and undo history | Page memory only. No localStorage, IndexedDB or server persistence. |
+| Sound descriptions | Sent only on Create sound to the authenticated V2 route and OpenAI. No prompt/response-body persistence or logging by this module. Responses API uses `store:false`; this does not disable provider abuse-monitoring retention. |
+| Generation usage | Account-linked attempt/success/failure counters, reported token totals and total request duration in server-process memory until restart. No backup. Clear session does not reset limits. |
 | Downloaded WAV/JSON | Saved wherever the browser/user chooses; the app cannot verify download completion or delete those files. Device backup services may copy them. |
 | Clear, reload, close | Dispose the engine and release application references. No forensic memory-erasure claim. Back/forward restoration preserves the session only when the browser retained the page in memory. |
 | Automatic recovery/backups | None for this module. Download recipes and source audio to keep work. |
@@ -150,17 +160,20 @@ served. These are proposed requirements, not configured services or guarantees.
 | Phase | Required next work and evidence |
 | --- | --- |
 | 1: audio/safety | Current source implementation and automated checks; physical-device/browser/listening matrix still required. |
-| 2: prompt → settings | Server-side authenticated endpoint, CSRF, strict server/client validation against the tested effect allowlist, stale-request protection, manual fallback and last-good state. Use the OpenAI Developers credential workflow before API implementation; no key or provider calls were used here. |
+| 2: prompt → settings | Implemented and tested with synthetic provider responses; real provider and physical-device flow still require verification. See PHASE2.md for the contract, credential authorization, limits and activation. |
 | 3: UI/private storage | Owner-scoped immutable patch versions, save/reload/export/delete, accessible real-device flow, conflict handling, explicit migrations and verified retention/backup/restore. |
 | 4: musician pilot | Consenting musicians, actual task observations, comparison with familiar tools, return-use and payment interviews. No invitations or claims of results in this change. |
 
-Proposed Phase 2 limits: one active request/account, three starts/minute,
-20 provider attempts/day/account, 1,000 prompt characters and 2 KiB request body,
-bounded response size/tokens/time, no automatic paid retries. Count failed billed
-attempts. Enforce atomic quotas across workers and a configured global spend
-ceiling before enabling requests. Reserve maximum request cost, reconcile usage,
-and conservatively retain reservations for unknown timeout billing. These limits
-are not active features; generation is unavailable in Phase 1.
+Current closed-pilot limits supersede the earlier proposal: one active request
+per account, two across the process, ten seconds between starts, 20 attempts per
+account and 100 across the process lifetime, 500 prompt characters, 4 KiB request,
+32 KiB provider response, 256 output tokens and 12-second network timeout. No
+automatic paid retries. Failures and cancelled requests consume attempts. Limits
+are atomic within V2's verified single-worker, single-instance configuration and
+reset on restart; they are not daily quotas or a durable billing cap. Before
+scaling or recruiting a wider pilot, replace the in-memory allowance with shared
+durable quotas and a reconciled monetary budget. Do not scale this implementation
+while generation is enabled.
 
 Test malformed, extra-field, truncated, refused, timeout and out-of-range model
 responses; code/URL injection; stale response after edit/Undo/Cancel; forged owner
@@ -174,7 +187,9 @@ task; return use on separate days; concrete willingness-to-pay responses;
 generation failures/attempts by cause; actual token usage and provider cost per
 attempt and successful saved sound. Local recipe download is not the private-save
 metric. Report denominators, dropouts, uncertainty and observed device versions.
-No analytics, participants, metrics or willingness-to-pay results exist yet.
+Generation counters exist only for requests actually attempted; test figures are
+synthetic and not pilot results. No participant, preference or willingness-to-pay
+results exist yet.
 
 Proposed pilot targets from the approval brief: 12 musicians/14 days; median
 first private save ≤3 minutes; 8/12 prefer this task flow, 6/12 return on two more
@@ -192,13 +207,15 @@ needed. Test host routes afterward. Downloaded user files remain user-owned.
 This procedure has been checked at the isolated blueprint seam; a deployed
 service removal rehearsal has not been performed.
 
-Code is prepared for an isolated V2 branch and draft PR. Both its commit message
-and PR title carry `[skip render]` to request suppression of Render auto-deploys
-and previews, as described in [Render deploys](https://render.com/docs/deploys)
-and [service previews](https://render.com/docs/service-previews). No Render
-configuration was modified. Other deployment automation must be reviewed before
-enabling/merging; live service mapping remains unverified. No merge or deployment
-is authorized by this source change.
+The exact approved Render service is `srv-dad6q3gae00c7393s02g`,
+`street-banker-v2-workflows`, in the previously confirmed Lucas workspace. It
+deploys this repository's `main`, has auto deploy off, one Gunicorn worker and
+one free instance. V2 deployment and a dedicated OpenAI credential were approved
+in the conversation; this is the specific exception to the foundation runbook's
+earlier prohibition on provider credentials. Do not replace other environment
+variables, change accounts or copy any V1 credential. Use one manual deployment
+after merge; the user reports adding the new key in Render. No key value is read
+into this source, tests, docs or PR.
 
 ## iPhone export correction — 2026-09-05
 
