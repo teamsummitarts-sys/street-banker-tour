@@ -143,6 +143,36 @@ test('generation cancellation, malformed settings and authentication failure ret
   assert.equal(get('preset').value, 'dark-room');
 });
 
+for (const [code, expected] of [
+  ['provider_quota', /insufficient API credits or quota/],
+  ['provider_credit', /exhausted API credit balance/],
+  ['provider_spend', /spending limit reached/],
+  ['provider_usage', /assigned monthly usage limit reached/],
+  ['provider_rate_limit', /Wait briefly before trying again/],
+  ['provider_limit', /exact cause is unavailable/],
+]) {
+  test(`${code} gives a specific action, retains the patch, and does not retry`, async () => {
+    const {get, setResponse, choose, requests} = await readyToGenerate();
+    await choose('dark-room');
+    setResponse(async () => ({ok: false, status: 503, json: async () => ({
+      error: code, message: 'untrusted provider message',
+      generation: {usage: {remaining: 19}},
+    })}));
+    await get('generate-sound').click();
+    const message = get('generation-status').textContent;
+    assert.match(message, expected);
+    assert.match(message, /working patch is retained/);
+    assert.doesNotMatch(message, /untrusted/);
+    if (code === 'provider_rate_limit') assert.doesNotMatch(message, /billing|credits/i);
+    assert.equal(get('preset').value, 'dark-room');
+    assert.equal(get('preset').disabled, false);
+    assert.equal(get('value-texture').value, String(recipe('dark-room').macros.texture));
+    assert.equal(requests.filter(r => r.options?.method === 'POST').length, 1);
+    await choose('clean');
+    assert.equal(get('preset').value, 'clean');
+  });
+}
+
 test('empty descriptions and unavailable generation never send a POST', async () => {
   const {get, setResponse, requests} = await readyToGenerate();
   get('sound-prompt').value = '   ';

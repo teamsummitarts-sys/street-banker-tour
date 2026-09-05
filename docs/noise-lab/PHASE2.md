@@ -81,6 +81,26 @@ provider responses appear in this ledger, application logs, or error messages.
 Time-to-first-private-save, preference, repeat use and willingness to pay are
 still Phase 3/4 measures. Downloading a recipe is not an account patch save.
 
+### Provider limit diagnostics — 2026-09-05
+
+An iPhone report showed an upstream limit failure with 19 local attempts still
+available. The preceding release mapped every upstream HTTP 429 to the same
+message and discarded the body, so the cause of that request cannot be recovered
+from the screenshot. It does not establish exhausted credits or a valid key.
+
+The adapter now reads at most 4097 bytes of a 429 body, rejects bodies over 4096
+bytes, and uses strict JSON parsing to select an allowlisted error code/type.
+It distinguishes insufficient quota, exhausted credits, spending limits, assigned
+usage limits and temporary rate limiting. Unknown, oversized or malformed bodies
+keep an explicitly uncertain message. Raw provider messages never reach the UI,
+logs or storage. Each request still makes one attempt; failures retain the working
+patch and manual presets. This changes diagnostics, not the provider account's
+quota or access. A fresh authenticated request is needed to identify its current
+condition. Engine, recipe and generation contracts remain unchanged.
+
+Error meanings checked against the official
+[OpenAI error codes](https://developers.openai.com/api/docs/guides/error-codes).
+
 ## Retention, deletion, backups and removal
 
 Audio and patch/undo/description state live only in browser page memory and in

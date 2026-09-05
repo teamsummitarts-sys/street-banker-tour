@@ -146,3 +146,22 @@ work. The real provider integration still needs an authenticated Create sound
 request. A public login-page check does not prove the private generation flow.
 No fabricated audio result, participant measurement or completion claim is made.
 See PHASE2.md for the supported single-process scope, retention and disable path.
+
+## Provider limit diagnostics regression — 2026-09-05
+
+The user's iPhone screenshot reports an upstream usage/rate limit with 19 local
+attempts remaining. The original code discarded the 429 body; its exact reason
+is unknown. The new insufficient-quota regression failed against that code
+(`provider_limit` instead of `provider_quota`) before the correction.
+
+Fresh combined checks using the commands above pass **58 Python + 35 JavaScript
+tests = 93 total**, exit 0. Added cases cover seven recognized upstream codes,
+unknown codes, legacy type-only errors, malformed/oversized/duplicate-key bodies,
+bounded reads, no retry or raw-body exposure, actionable UI messages, retained
+patch settings and usable manual presets. These use synthetic provider responses
+and the real parser/controller with fake network/DOM boundaries. The existing
+host-auth, CSRF, recipe, DSP and iPhone-save regressions also pass.
+
+No successful live generation or new physical iPhone audio result is claimed.
+This fix does not increase provider credits or limits. Deployment evidence and
+the exact V2 commit are recorded in the associated pull request.
