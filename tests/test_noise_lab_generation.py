@@ -206,6 +206,59 @@ def test_provider_errors_are_not_retried_or_exposed(monkeypatch, status, expecte
     assert 'private' not in str(caught.value)
 
 
+@pytest.mark.parametrize('provider_code, expected', [
+    ('insufficient_quota', 'provider_quota'),
+    ('credit_balance_exhausted', 'provider_credit'),
+    ('organization_spend_limit_exceeded', 'provider_spend'),
+    ('project_spend_limit_exceeded', 'provider_spend'),
+    ('organization_usage_limit_exceeded', 'provider_usage'),
+    ('rate_limit_exceeded', 'provider_rate_limit'),
+    ('slow_down', 'provider_rate_limit'),
+    ('unknown_provider_code', 'provider_limit'),
+])
+def test_429_code_distinguishes_billing_from_transient_rate_limits(monkeypatch, provider_code, expected):
+    import io
+    from noise_lab import generation
+    reads, calls = [], []
+    class BoundedBody(io.BytesIO):
+        def read(self, size=-1):
+            reads.append(size)
+            return super().read(size)
+    payload = json.dumps({'error': {'code': provider_code, 'message': 'private upstream content'}}).encode()
+    class Opener:
+        def open(self, req, timeout):
+            calls.append(True)
+            raise generation.urllib.error.HTTPError(req.full_url, 429, 'rate limit', {}, BoundedBody(payload))
+    monkeypatch.setattr(generation.urllib.request, 'build_opener', lambda *args: Opener())
+    with pytest.raises(generation.GenerationError) as caught:
+        generation.request_settings('synthetic description', 'synthetic-key')
+    assert caught.value.code == expected
+    assert caught.value.status == 503 and len(calls) == 1
+    assert reads == [4097]
+    assert 'private' not in str(caught.value)
+
+
+@pytest.mark.parametrize('body, expected', [
+    (b'not JSON', 'provider_limit'),
+    (b'\xff', 'provider_limit'),
+    (b'x'*4097, 'provider_limit'),
+    (b'{"error":{"type":"insufficient_quota","code":null}}', 'provider_quota'),
+    (b'{"error":{"type":"rate_limit_error","code":null}}', 'provider_rate_limit'),
+    (b'{"error":{"code":[]}}', 'provider_limit'),
+    (b'{"error":{"code":"insufficient_quota","code":"rate_limit_exceeded"}}', 'provider_limit'),
+])
+def test_429_malformed_or_unrecognized_body_keeps_an_honest_generic_error(monkeypatch, body, expected):
+    import io
+    from noise_lab import generation
+    class Opener:
+        def open(self, req, timeout):
+            raise generation.urllib.error.HTTPError(req.full_url, 429, 'error', {}, io.BytesIO(body))
+    monkeypatch.setattr(generation.urllib.request, 'build_opener', lambda *args: Opener())
+    with pytest.raises(generation.GenerationError) as caught:
+        generation.request_settings('x', 'synthetic')
+    assert caught.value.code == expected
+
+
 def test_oversized_response_and_redirect_are_rejected(monkeypatch):
     from noise_lab import generation
     class Response:

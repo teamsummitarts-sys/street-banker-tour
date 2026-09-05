@@ -529,7 +529,12 @@ $('generate-sound').addEventListener('click', async () => {
         cooldown: 'Wait 10 seconds before trying again.', busy: 'A generation is still running. Try again shortly.',
         unconfigured: 'AI generation is unavailable. Use a manual preset.',
         provider_auth: 'The AI provider could not authenticate. Use a manual preset until the server connection is corrected.',
-        provider_limit: 'The AI provider rejected this request because of a usage or rate limit.',
+        provider_quota: 'OpenAI reported insufficient API credits or quota. Check API billing and limits for the project owning this key.',
+        provider_credit: 'OpenAI reported an exhausted API credit balance. Check API billing to add credits.',
+        provider_spend: 'OpenAI reported a spending limit reached. Review the API organization and project spending limits.',
+        provider_usage: 'OpenAI reported its assigned monthly usage limit reached. Review API organization limits.',
+        provider_rate_limit: 'OpenAI is limiting request speed. Wait briefly before trying again.',
+        provider_limit: 'OpenAI returned a usage or rate limit without a recognized reason. Check API billing and limits; the exact cause is unavailable.',
         refused: 'The AI provider declined this description. Try a different sound description.',
       };
       throw new Error(reasons[result.error] || 'Generation failed or returned invalid settings. Choose a manual preset or try again.');

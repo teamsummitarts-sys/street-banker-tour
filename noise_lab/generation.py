@@ -3,6 +3,7 @@
 The pilot allowance is per server process and resets on restart. Run one worker
 and one instance, as V2 currently does; use shared durable limits before scaling.
 """
+import http.client
 import json
 import math
 import threading
@@ -103,6 +104,33 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         raise GenerationError('provider_unavailable')
 
 
+def provider_limit_code(error):
+    """Keep only a recognized reason, never the provider's message or body."""
+    try:
+        raw = error.read(4097)
+        if len(raw) > 4096: return 'provider_limit'
+        body = strict_json(raw)
+        detail = body.get('error') if isinstance(body, dict) else None
+        if not isinstance(detail, dict): return 'provider_limit'
+        codes = {
+            'insufficient_quota': 'provider_quota',
+            'credit_balance_exhausted': 'provider_credit',
+            'organization_spend_limit_exceeded': 'provider_spend',
+            'project_spend_limit_exceeded': 'provider_spend',
+            'organization_usage_limit_exceeded': 'provider_usage',
+            'rate_limit_exceeded': 'provider_rate_limit',
+            'slow_down': 'provider_rate_limit',
+        }
+        code = detail.get('code')
+        if isinstance(code, str) and code in codes: return codes[code]
+        kind = detail.get('type')
+        if kind == 'insufficient_quota': return 'provider_quota'
+        if kind == 'rate_limit_error': return 'provider_rate_limit'
+    except (GenerationError, OSError, http.client.HTTPException, ValueError):
+        pass
+    return 'provider_limit'
+
+
 def request_settings(prompt, api_key):
     body = {'model': MODEL, 'store': False, 'max_output_tokens': 256,
             'instructions': INSTRUCTIONS,
@@ -120,9 +148,12 @@ def request_settings(prompt, api_key):
         return strict_json(raw)
     except urllib.error.HTTPError as error:
         status = error.code
-        error.close()
+        try:
+            limit_code = provider_limit_code(error) if status == 429 else None
+        finally:
+            error.close()
         if status in (401, 403): raise GenerationError('provider_auth', 503) from None
-        if status == 429: raise GenerationError('provider_limit', 503) from None
+        if status == 429: raise GenerationError(limit_code, 503) from None
         raise GenerationError('provider_unavailable') from None
     except (TimeoutError, urllib.error.URLError, OSError):
         raise GenerationError('provider_unavailable') from None
