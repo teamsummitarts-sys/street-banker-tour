@@ -9767,6 +9767,11 @@ def create_app():
     # Every lane is off until its own flag is set, and the page says so per
     # lane rather than hiding what the product does.
     audio_studio.init(app, current_user=current_user)
+    # Noise Lab Phase 1: an independently removable local-audio module.
+    # NOISE_LAB_ENABLED=1 enables its account-gated route; default is off.
+    # No recording uploads, AI calls, database migration or V1 dependencies.
+    import noise_lab
+    noise_lab.init(app, current_user=current_user)
     # Team-Up Board: renew and thread links go into emails, so they are
     # built from the canonical address too.
     board.init(app, base_url=lambda: PUBLIC_BASE_URL)
