@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="song-builder-csrf" content="{{ builder_csrf }}">
+  <meta name="song-builder-base" content="{{ builder_base_url }}">
+  <meta name="theme-color" content="#060707">
+  <title>Song Builder · Street Banker</title>
+  <link rel="stylesheet" href="{{ builder_assets_url }}ui/song-builder.css">
+  <script type="module" src="{{ builder_assets_url }}ui/controller.mjs"></script>
+</head>
+<body class="song-builder">
+<!-- THESIS: A song grows from the parts the artist chooses to keep.
+OWN-WORLD: Inherit Street Banker's black equipment surfaces, brass rules,
+Archivo typography and compact, tactile controls. Scope all styles here.
+STORY: Select a section, add or record layers, audition, keep, arrange and save.
+FIRST VIEWPORT: Compact project bar above ordered sections, real track lanes,
+transport and a section inspector. The selected section owns the gold action.
+FORM: Code-led extension of the approved V2 studio workflow; no new visual world.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance -->
+  <a class="skip-link" href="#song-title">Skip to song editor</a>
+  <header class="site-bar">
+    <a class="brand" href="{{ return_url }}">STREET BANKER <span>NOISE LAB</span></a>
+    <a class="back-link" href="{{ return_url }}">Back to Noise Lab</a>
+  </header>
+  <main>
+    <div class="page-heading">
+      <div><h1>Song <span>Builder.</span></h1><p>Keep the good parts. Build what comes next.</p></div>
+      <div class="session-status"><span id="save-state" role="status">Opening workspace…</span><span id="duration-label">0:00 arranged</span></div>
+    </div>
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <div id="recovery" class="recovery" hidden><p id="recovery-message"></p><button id="recover-copy" type="button">Save my work as a new project</button><button id="reload-saved" type="button">Load saved version</button></div>
+    <section class="project-bar" aria-label="Project controls">
+      <label class="project-title">Song title<input id="song-title" maxlength="120" value="Untitled song" autocomplete="off"></label>
+      <label class="compact-field">Target BPM<input id="song-tempo" type="number" min="40" max="240" step="1" value="120"></label>
+      <label class="key-field">Target key<input id="song-key" maxlength="24" value="" placeholder="e.g. D minor"></label>
+      <button id="save-project" type="button">Save project</button>
+      <details class="project-menu"><summary>Projects & files</summary><div class="menu-content">
+        <label>Saved projects<select id="project-list"><option value="">Choose a project</option></select></label>
+        <div class="button-row"><button id="new-project" type="button">New project</button><button id="import-project" type="button">Import project</button></div>
+        <button id="export-project" type="button">Prepare project backup</button>
+        <p class="hint">A backup includes your arrangement and audio. It can move with you to another Song Builder.</p>
+      </div></details>
+    </section>
+    <div class="workspace">
+      <div class="arrangement">
+        <section aria-labelledby="arrangement-heading" class="section-deck">
+          <div class="section-heading"><h2 id="arrangement-heading">Arrangement</h2><button id="add-section" type="button">Add section</button></div>
+          <ol id="sections" class="sections" aria-label="Song sections"></ol>
+          <div class="transport">
+            <button id="play-song" class="primary" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg>Play song</button>
+            <button id="play-section" type="button">Play section</button>
+            <button id="stop-playback" type="button">Stop</button>
+            <output id="play-time" class="time">0:00 / 0:00</output>
+          </div>
+          <label class="seek-label" for="seek">Playback position</label><input id="seek" class="seek" type="range" min="0" max="48" step="0.1" value="0" aria-label="Playback position">
+        </section>
+        <section class="track-desk" aria-labelledby="tracks-heading">
+          <div class="section-heading"><div><h2 id="tracks-heading">Instrument layers</h2><p id="selected-context" class="hint">Select a section to work on its layers.</p></div><button id="add-track" type="button">Add track</button></div>
+          <div id="tracks" class="tracks"></div>
+          <div id="audio-empty" class="audio-empty"><svg viewBox="0 0 64 36" aria-hidden="true"><path d="M3 18h8m5-7v14m8-20v26m8-29v32m8-23v14m8-18v22m5-11h8"/></svg><h3>Your song starts here.</h3><p>Add your audio to a layer, record a part, or try an original synth demo to learn the controls.</p><button id="load-demo" type="button">Try the synth demo</button><span>Demo audio is synthesized locally. No AI credits.</span></div>
+          <div class="audio-actions"><button id="upload-audio" type="button">Add audio to section</button><button id="record-audio" type="button">Record a part</button><span id="record-status" class="hint"></span></div>
+          <p class="hint">Audio stays at its original pitch and speed. Tempo and key are directions for new music.</p>
+        </section>
+        <section class="export-desk" aria-labelledby="export-heading">
+          <div><h2 id="export-heading">Take it into your session.</h2><p class="hint">Render your mix or one instrument layer as a WAV.</p></div>
+          <div class="button-row"><button id="export-mix" type="button">Prepare mix WAV</button><button id="export-track" type="button">Prepare selected track</button></div>
+        </section>
+      </div>
+      <aside class="inspector" aria-labelledby="section-heading">
+        <div class="inspector-title"><h2 id="section-heading">Verse 1</h2><button id="lock-section" class="lock-button" type="button" aria-pressed="false">Protect</button></div>
+        <p id="lock-hint" class="hint">Protect this section when you want to keep its parts.</p>
+        <div class="section-fields">
+          <label>Section name<input id="section-name" maxlength="60"></label>
+          <label>Length in seconds<input id="section-duration" type="number" min="3" max="120" step="0.1"></label>
+          <label>Musical direction<textarea id="section-direction" maxlength="1000" rows="3" placeholder="Sparse verse. Dry drums, low bass, room for a close vocal."></textarea></label>
+          <label>Lyrics<textarea id="section-lyrics" maxlength="3000" rows="5" placeholder="Write or paste your original lyrics…"></textarea></label>
+        </div>
+        <div class="section-tools"><button id="move-earlier" type="button">Move earlier</button><button id="move-later" type="button">Move later</button><button id="duplicate-section" type="button">Duplicate</button><button id="remove-section" type="button">Remove section</button></div>
+        <details id="clip-inspector" class="clip-inspector" hidden><summary>Edit selected clip</summary><div class="clip-fields">
+          <label>Start within section (seconds)<input id="clip-offset" type="number" min="0" step="0.1"></label>
+          <label>Start within audio (seconds)<input id="clip-source" type="number" min="0" step="0.1"></label>
+          <label>Play for (seconds)<input id="clip-duration" type="number" min="0.1" step="0.1"></label>
+          <label class="checkbox-label"><input id="clip-loop" type="checkbox">Loop this audio</label>
+          <button id="apply-clip" type="button">Apply clip edit</button>
+          <button id="remove-clip" type="button">Remove clip</button>
+        </div></details>
+        <section class="generate-desk" aria-labelledby="generate-heading">
+          <h2 id="generate-heading">Try another take.</h2>
+          <p id="generation-availability" class="hint">Checking music generation…</p>
+          <label for="take-prompt">What should this take do?</label><textarea id="take-prompt" maxlength="1000" rows="3" placeholder="Bring the chorus forward with a wider vocal and heavier drums."></textarea>
+          <p id="generation-cost" class="hint"></p>
+          <button id="generate-take" type="button" disabled>Generate section take</button>
+          <button id="separate-stems" type="button" disabled>Separate selected clip into stems</button>
+          <p class="hint">New takes are auditioned here. Your accepted parts stay in place until you choose a take.</p>
+          <div id="jobs" class="jobs" aria-live="polite"></div>
+        </section>
+      </aside>
+    </div>
+    <section id="file-ready" class="file-ready" hidden aria-labelledby="file-ready-heading"><div><h2 id="file-ready-heading">Your file is ready.</h2><p id="prepared-name"></p><p class="hint">On iPhone, tap Download, then use Share → Save to Files if a preview opens.</p></div><a id="save-download" class="download-link" download>Download file</a><button id="dismiss-download" type="button">Close</button></section>
+    <footer><span id="storage-note">Projects belong to your signed-in account. Keep a project backup.</span><span>Song Builder · Portable project format v1</span></footer>
+    <input id="audio-file" type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden>
+    <input id="project-file" type="file" accept=".sbsong,application/json" hidden>
+  </main>
+</body>
+</html>

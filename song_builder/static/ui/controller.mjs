@@ -1,0 +1,244 @@
+import * as P from '../core/project.mjs';
+import { AudioEngine, createDemoAudio } from '../core/audio.mjs';
+import { readBundle, writeBundle } from './portable.mjs';
+import { PendingRequests } from './requests.mjs';
+
+const $ = id => document.getElementById(id);
+const base = document.querySelector('meta[name="song-builder-base"]').content.replace(/\/$/, '');
+const csrf = document.querySelector('meta[name="song-builder-csrf"]').content;
+const engine = new AudioEngine();
+const pendingRequests = new PendingRequests(sessionStorage, `${base}:${csrf}`);
+const state = { project:null, revision:0, sectionId:null, trackId:null, clipId:null,
+  assets:new Map(), jobs:[], capabilities:null, dirty:false, sequence:0, busy:0,
+  playing:false, previewEnd:null, saveChain:Promise.resolve(), conflict:false,
+  recorder:null, recordingStream:null, recordTimer:null, recordProject:null,
+  preparedUrl:null, polling:null, saveTimer:null, history:[], future:[] };
+
+class ApiError extends Error { constructor(message,status) { super(message); this.status=status; } }
+async function api(path, {method='GET',body,signal}={}) {
+  const headers = {Accept:'application/json'};
+  if(method!=='GET') headers['X-Song-Builder-CSRF']=csrf;
+  if(body && !(body instanceof FormData)) { headers['Content-Type']='application/json'; body=JSON.stringify(body); }
+  const response=await fetch(base+path,{method,headers,body,signal,credentials:'same-origin',cache:'no-store'});
+  if(response.redirected || !(response.headers.get('Content-Type')||'').includes('application/json'))
+    throw new ApiError('Your session expired. Keep this page open and sign in again in another tab, then save.',401);
+  const value=await response.json();
+  if(!response.ok) throw new ApiError(value.message || value.error || 'That action could not finish. Your current song is still here.',response.status);
+  return value;
+}
+function notify(message,error=false) { const n=$('notice'); n.textContent=message; n.hidden=false; n.setAttribute('role',error?'alert':'status'); }
+function failure(error) { notify(error.message || 'That action could not finish. Your current song is still here.',true); }
+function seconds(value) { const s=Math.max(0,Math.floor(value||0));return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; }
+function selectedSection() { return state.project?.sections.find(s=>s.id===state.sectionId); }
+function selectedClip() { return state.project?.clips.find(c=>c.id===state.clipId); }
+function text(tag,value,className) { const node=document.createElement(tag);node.textContent=value;if(className)node.className=className;return node; }
+function button(label,handler,options={}) { const node=text('button',label,options.className);node.type='button';node.disabled=Boolean(options.disabled);if(options.pressed!==undefined)node.setAttribute('aria-pressed',String(options.pressed));node.addEventListener('click',()=>run(handler));return node; }
+async function run(action) { if(state.busy)return; state.busy++;renderDisabled();try { await action(); } catch(e) {failure(e);}finally {state.busy--;renderDisabled();} }
+function stop() { engine.stop();state.playing=false;state.previewEnd=null;$('play-song').setAttribute('aria-pressed','false'); }
+function markDirty() { state.dirty=true;state.sequence++;$('save-state').textContent='Unsaved changes';clearTimeout(state.saveTimer);state.saveTimer=setTimeout(()=>save().catch(failure),800); }
+function commit(project,{redraw=true,history=true,resume=false}={}) {
+  const wasPlaying=resume&&state.playing,from=engine.position();stop();
+  const next=P.validateProject(project);
+  if(history&&state.project){state.history.push(state.project);if(state.history.length>30)state.history.shift();state.future=[];}
+  state.project=next;
+  if(!next.sections.some(s=>s.id===state.sectionId))state.sectionId=next.sections[0].id;
+  if(!next.tracks.some(t=>t.id===state.trackId))state.trackId=next.tracks[0]?.id??null;
+  if(!next.clips.some(c=>c.id===state.clipId))state.clipId=null;
+  markDirty();if(redraw)render();else renderMeta();
+  if(wasPlaying)play(from).catch(failure);
+}
+async function listProjects(){const r=await api('/api/projects');const list=$('project-list');list.replaceChildren(new Option('Choose a project',''));for(const p of r.projects)list.add(new Option(p.title,p.id));list.value=state.revision?state.project.id:'';}
+function showConflict(){state.conflict=true;$('recovery').hidden=false;$('recovery-message').textContent='This project changed in another session. Your edits are still here. Save a separate copy, or load the latest saved version.';}
+async function performSave() {
+  if(!state.project||!state.dirty)return;
+  if(state.conflict)throw new Error('Resolve the saved-project conflict before saving this version.');
+  const snapshot=P.validateProject(state.project),sequence=state.sequence,revision=state.revision;
+  $('save-state').textContent='Saving…';
+  try {
+    const r=revision ? await api(`/api/projects/${snapshot.id}`,{method:'PUT',body:{project:snapshot,expectedRevision:revision}}) : await api('/api/projects',{method:'POST',body:{project:snapshot}});
+    if(state.project.id!==snapshot.id)return;
+    state.revision=r.revision;
+    if(state.sequence===sequence)state.dirty=false;
+    $('save-state').textContent=state.dirty?'Unsaved changes':'Saved';
+    history.replaceState(null,'',`${location.pathname}?project=${snapshot.id}`);
+    await listProjects().catch(()=>notify('Song saved. The project list could not refresh; your changes are stored.',true));
+  } catch(e) { $('save-state').textContent='Not saved';if(e.status===409)showConflict();throw e; }
+}
+function save(){clearTimeout(state.saveTimer);const task=state.saveChain.catch(()=>{}).then(performSave);state.saveChain=task;return task;}
+async function audioBytes(asset){
+  const url=new URL(asset.url,location.href);
+  if(url.origin!==location.origin || !url.pathname.startsWith(base+'/api/assets/'))throw new Error('This audio link is not part of your Song Builder.');
+  const r=await fetch(url,{credentials:'same-origin',cache:'no-store'});
+  if(!r.ok||r.redirected)throw new Error('Audio could not load. Sign in again and reopen this project.');
+  const length=Number(r.headers.get('Content-Length'));if(length>40*1024*1024)throw new Error('This audio is too large for this editor.');
+  const bytes=await r.arrayBuffer();if(bytes.byteLength>40*1024*1024)throw new Error('This audio is too large for this editor.');return bytes;
+}
+async function ensureAudio(asset){if(!engine.has(asset.id))await engine.decode(asset.id,await audioBytes(asset));return engine.buffer(asset.id);}
+function releaseProjectAudio(keep=[]){const retained=new Set(keep);for(const id of state.assets.keys())if(!retained.has(id))engine.remove(id);}
+async function loadProject(id,{skipSave=false}={}) {
+  if(!skipSave)await save();
+  const r=await api(`/api/projects/${id}`),project=P.validateProject(r.project);
+  stop();releaseProjectAudio(r.assets.map(a=>a.id));
+  stop();state.project=project;state.revision=r.revision;state.assets=new Map(r.assets.map(a=>[a.id,a]));state.sectionId=project.sections[0].id;state.trackId=project.tracks[0]?.id??null;state.clipId=null;state.dirty=false;state.conflict=false;state.history=[];state.future=[];state.jobs=[];
+  $('recovery').hidden=true;$('save-state').textContent='Loading audio…';render();
+  history.replaceState(null,'',`${location.pathname}?project=${project.id}`);
+  let failed=0;for(const a of r.assets){try{await ensureAudio(a);}catch{failed++;}}
+  $('save-state').textContent=failed?'Some audio unavailable':'Saved';
+  if(failed)notify('Some audio could not load. Your arrangement is saved. Reopen the project to retry before playing or exporting.',true);
+  await pollJobs();render();
+}
+async function startNew(title='Untitled song'){await save();stop();releaseProjectAudio();state.project=P.newProject(title);state.revision=0;state.sectionId=state.project.sections[0].id;state.trackId=null;state.clipId=null;state.assets=new Map();state.jobs=[];state.history=[];state.future=[];state.conflict=false;$('recovery').hidden=true;markDirty();render();await save();}
+
+function renderMeta(){if(!state.project)return;$('duration-label').textContent=`${seconds(P.projectDuration(state.project))} arranged`;$('seek').max=P.projectDuration(state.project);}
+function render(){if(!state.project)return;renderMeta();$('song-title').value=state.project.title;$('song-tempo').value=state.project.tempo;$('song-key').value=state.project.key;renderSections();renderTracks();renderInspector();renderJobs();renderDisabled();}
+function renderSections(){
+  const list=$('sections');list.replaceChildren();state.project.sections.forEach((s,i)=>{
+    const li=document.createElement('li'),b=button('',()=>{state.sectionId=s.id;state.clipId=null;render();},{pressed:s.id===state.sectionId,className:'section-button'});
+    b.append(text('span',`${String(i+1).padStart(2,'0')} · ${seconds(P.sectionStart(state.project,s.id))}`,'section-number'),text('strong',s.name),text('span',`${s.duration}s${s.locked?' · Protected':''}`));li.append(b);list.append(li);
+  });
+}
+function renderTracks(){
+  const tracks=$('tracks');tracks.replaceChildren();const section=selectedSection();$('selected-context').textContent=`Layers in ${section.name} · ${section.duration} seconds`;
+  for(const track of state.project.tracks){
+    const row=document.createElement('div');row.className='track'+(track.id===state.trackId?' selected':'');row.dataset.trackId=track.id;
+    const controls=document.createElement('div');controls.className='track-controls';const title=document.createElement('div');title.className='track-title';
+    title.append(button(track.name,()=>{state.trackId=track.id;renderTracks();renderDisabled();},{className:'track-name',pressed:track.id===state.trackId}),
+      button('M',()=>commit(P.updateTrack(state.project,track.id,{muted:!track.muted}),{resume:true}),{className:'track-switch',pressed:track.muted}),
+      button('S',()=>commit(P.updateTrack(state.project,track.id,{solo:!track.solo}),{resume:true}),{className:'track-switch',pressed:track.solo}));
+    title.children[1].setAttribute('aria-label',`Mute ${track.name}`);title.children[2].setAttribute('aria-label',`Solo ${track.name}`);
+    const mix=document.createElement('div');mix.className='track-mix';
+    for(const [key,label,min,max,step]of[['gainDb','Level',-60,6,1],['pan','Pan',-1,1,.05]]){
+      const field=document.createElement('label');field.textContent=`${label} ${key==='gainDb'?track[key]+' dB':track[key]===0?'C':track[key]<0?'L':'R'}`;
+      const input=document.createElement('input');input.type='range';input.min=min;input.max=max;input.step=step;input.value=track[key];input.setAttribute('aria-label',`${label} for ${track.name}`);input.addEventListener('change',()=>{try{commit(P.updateTrack(state.project,track.id,{[key]:Number(input.value)}),{resume:true});}catch(e){failure(e);}});field.append(input);mix.append(field);
+    }
+    controls.append(title,mix);const lane=document.createElement('div');lane.className='lane';const content=document.createElement('div');content.className='lane-content';
+    for(const clip of state.project.clips.filter(c=>c.trackId===track.id&&c.sectionId===section.id)){
+      const asset=state.assets.get(clip.assetId);const c=button('',()=>{state.clipId=clip.id;state.trackId=track.id;renderTracks();renderInspector();},{className:'clip'+(state.clipId===clip.id?' selected':'')});
+      c.style.left=`${clip.offset/section.duration*100}%`;c.style.width=`${clip.duration/section.duration*100}%`;c.setAttribute('aria-label',`${asset?.name||'Audio clip'}, ${clip.duration.toFixed(1)} seconds on ${track.name}`);
+      c.append(text('span',asset?.name||'Audio clip'));const canvas=document.createElement('canvas');canvas.width=300;canvas.height=56;canvas.setAttribute('aria-hidden','true');c.append(canvas);
+      if(engine.has(clip.assetId)){const peaks=engine.waveform(clip.assetId,100),ctx=canvas.getContext('2d');ctx.strokeStyle='#dfb86b';ctx.lineWidth=1.5;ctx.beginPath();for(let i=0;i<peaks.length;i++){const x=i/peaks.length*300,v=Math.max(1,peaks[i]*24);ctx.moveTo(x,28-v);ctx.lineTo(x,28+v);}ctx.stroke();}
+      content.append(c);
+    }
+    lane.append(content);row.append(controls,lane);tracks.append(row);
+  }
+  $('audio-empty').hidden=state.project.clips.length>0;
+}
+function renderInspector(){const s=selectedSection();if(!s)return;$('section-heading').textContent=s.name;$('section-name').value=s.name;$('section-duration').value=s.duration;$('section-direction').value=s.direction;$('section-lyrics').value=s.lyrics;$('lock-section').textContent=s.locked?'Protected':'Protect';$('lock-section').setAttribute('aria-pressed',String(s.locked));$('lock-hint').textContent=s.locked?'These parts are protected. Unlock before changing their audio, lyrics or length.':'Protect this section when you want to keep its parts.';
+  const clip=selectedClip();$('clip-inspector').hidden=!clip;if(clip){$('clip-offset').value=clip.offset;$('clip-source').value=clip.sourceOffset;$('clip-duration').value=clip.duration;$('clip-loop').checked=clip.loop;}
+}
+function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boolean(s?.locked),hasAudio=Boolean(state.project?.clips.length),recording=Boolean(state.recorder);
+  for(const id of ['save-project','new-project','import-project','export-project','project-list','load-demo','export-mix','export-track','play-song','play-section','add-section','add-track'])$(id).disabled=busy||recording;
+  for(const id of ['section-name','section-duration','section-direction','section-lyrics','duplicate-section','remove-section','upload-audio','apply-clip','remove-clip','clip-offset','clip-source','clip-duration','clip-loop'])$(id).disabled=busy||lock||recording;
+  for(const id of ['song-title','song-tempo','song-key','lock-section','move-earlier','move-later'])$(id).disabled=busy||recording;
+  $('record-audio').disabled=busy||lock||!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder;
+  $('record-audio').textContent=recording?'Stop recording':'Record a part';
+  const configured=state.capabilities?.generation?.configured;
+  $('generate-take').disabled=busy||lock||!configured||recording;
+  $('separate-stems').disabled=busy||lock||!state.capabilities?.generation?.separationConfigured||!selectedClip()||recording;
+  if(!hasAudio){$('play-song').disabled=true;$('play-section').disabled=true;$('export-mix').disabled=true;$('export-track').disabled=true;}
+  const i=state.project?.sections.findIndex(s=>s.id===state.sectionId);$('move-earlier').disabled=busy||recording||i===0;$('move-later').disabled=busy||recording||i===state.project?.sections.length-1;
+  if(state.project?.sections.length===1)$('remove-section').disabled=true;
+}
+async function play(from=0,{sectionOnly=false}={}){if(!state.project.clips.length)return;await engine.play(state.project,{from,onEnded:()=>{state.playing=false;}});state.playing=true;state.previewEnd=sectionOnly?P.sectionStart(state.project,state.sectionId)+selectedSection().duration:null;$('play-song').setAttribute('aria-pressed','true');}
+function clock(){if(state.project){const position=state.playing?engine.position():Number($('seek').value);if(state.playing){$('seek').value=position;if(state.previewEnd!==null&&position>=state.previewEnd)stop();}$('play-time').textContent=`${seconds(position)} / ${seconds(P.projectDuration(state.project))}`;}requestAnimationFrame(clock);}
+async function uploadWav(bytes,name){const form=new FormData();form.append('file',new Blob([bytes],{type:'audio/wav'}),name.replace(/\.[^.]*$/,'')+'.wav');const r=await api('/api/assets',{method:'POST',body:form});state.assets.set(r.asset.id,r.asset);await engine.decode(r.asset.id,bytes);return r.asset;}
+async function importAudio(file,{sectionId=state.sectionId,trackId=state.trackId}={}){
+  if(!file)return;if(file.size>32*1024*1024)throw new Error('Choose an audio file smaller than 32 MB.');
+  if(state.project.sections.find(s=>s.id===sectionId)?.locked)throw new Error('Unlock this section before adding audio.');
+  const temporary=P.newId();try{await engine.decode(temporary,await file.arrayBuffer());const bytes=engine.normalizedWav(temporary);engine.remove(temporary);const asset=await uploadWav(bytes,file.name);let p=state.project;if(!p.tracks.some(t=>t.id===trackId)){p=P.addTrack(p,file.name.replace(/\.[^.]*$/,'').slice(0,60)||'Audio');trackId=p.tracks.at(-1).id;}
+    const section=p.sections.find(s=>s.id===sectionId),duration=Math.min(section.duration,engine.buffer(asset.id).duration);p=P.addClip(p,{trackId,sectionId,assetId:asset.id,offset:0,sourceOffset:0,duration,loop:false,gainDb:0});state.trackId=trackId;state.clipId=p.clips.at(-1).id;commit(p);await save();notify(`Added ${file.name}. Its original timing and pitch are preserved.`);
+  }finally{engine.remove(temporary);}
+}
+async function loadDemo(){await startNew('After hours — synth demo');let p=state.project;for(const s of p.sections)p=P.updateSection(p,s.id,{duration:8});const demos=createDemoAudio();
+  for(const d of demos){const a=await uploadWav(d.buffer,d.name);p=P.addTrack(p,d.name);const trackId=p.tracks.at(-1).id;for(const s of p.sections)p=P.addClip(p,{trackId,sectionId:s.id,assetId:a.id,offset:0,sourceOffset:0,duration:8,loop:true,gainDb:0});}
+  commit(p);await save();notify('Original synth demo loaded. Select a section, mute a layer, or protect the chorus. This demo used no AI credits.');
+}
+async function toggleRecord(){if(state.recorder){state.recorder.stop();return;}if(selectedSection().locked)throw new Error('Unlock this section before recording.');
+  stop();const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});const chunks=[];let bytes=0;const recorder=new MediaRecorder(stream);state.recorder=recorder;state.recordingStream=stream;state.recordProject={projectId:state.project.id,sectionId:state.sectionId,trackId:state.trackId};
+  recorder.addEventListener('dataavailable',e=>{if(e.data.size){chunks.push(e.data);bytes+=e.data.size;}if(bytes>24*1024*1024&&recorder.state!=='inactive')recorder.stop();});
+  recorder.addEventListener('error',()=>{notify('Recording stopped unexpectedly. Your saved song is unchanged.',true);releaseRecording();});
+  recorder.addEventListener('stop',async()=>{const target=state.recordProject;releaseRecording();if(!chunks.length)return;try{if(target.projectId!==state.project.id)throw new Error('Project changed while recording. The recording was not applied.');await run(()=>importAudio(new File([new Blob(chunks)],`Recorded part.${recorder.mimeType.includes('mp4')?'m4a':'webm'}`,{type:recorder.mimeType}),target));}catch(e){failure(e);}});
+  recorder.start(1000);state.recordTimer=setTimeout(()=>{if(recorder.state!=='inactive')recorder.stop();},120000);$('record-status').textContent='Recording · stops after 2 minutes';renderDisabled();
+}
+function releaseRecording(){clearTimeout(state.recordTimer);state.recordingStream?.getTracks().forEach(t=>t.stop());state.recorder=null;state.recordingStream=null;$('record-status').textContent='';renderDisabled();}
+function showDownload(blob,name){if(state.preparedUrl)URL.revokeObjectURL(state.preparedUrl);state.preparedUrl=URL.createObjectURL(blob);$('save-download').href=state.preparedUrl;$('save-download').download=name;$('prepared-name').textContent=name;$('file-ready').hidden=false;$('file-ready').scrollIntoView({behavior:'auto',block:'nearest'});$('save-download').focus();}
+function filename(extension){return (state.project.title.replace(/[^a-zA-Z0-9_-]+/g,'-').replace(/^-|-$/g,'').slice(0,80)||'song')+extension;}
+async function exportProject(){const blob=await writeBundle(state.project,async id=>{const asset=state.assets.get(id);if(!asset)throw new Error('An audio asset is missing. Reopen this project before exporting.');await ensureAudio(asset);return {name:asset.name,mime:'audio/wav',bytes:engine.normalizedWav(id)};});showDownload(blob,filename('.sbsong'));}
+async function importProject(file){if(!file)return;const bundle=await readBundle(file);await save();const prepared=[];
+  try{for(const a of bundle.assets){const temp=P.newId();await engine.decode(temp,a.bytes);prepared.push({oldId:a.id,name:a.name,bytes:engine.normalizedWav(temp)});engine.remove(temp);}}
+  catch(e){throw new Error('The project contains audio this device cannot decode. No project was replaced.');}
+  let project={...bundle.project,id:P.newId()};const mapping=new Map(),assets=new Map();for(const p of prepared){const asset=await uploadWav(p.bytes,p.name);mapping.set(p.oldId,asset.id);assets.set(asset.id,asset);}
+  project.clips=project.clips.map(c=>({...c,assetId:mapping.get(c.assetId)}));project=P.validateProject(project);
+  stop();releaseProjectAudio([...assets.keys()]);
+  stop();state.project=project;state.revision=0;state.assets=assets;state.sectionId=project.sections[0].id;state.trackId=project.tracks[0]?.id??null;state.clipId=null;state.jobs=[];state.history=[];state.future=[];state.conflict=false;markDirty();render();await save();notify('Imported as a new project with its audio and arrangement intact.');
+}
+async function pollJobs(){if(!state.revision)return;const projectId=state.project.id;try{const r=await api(`/api/jobs?projectId=${encodeURIComponent(projectId)}`);if(state.project.id!==projectId)return;state.jobs=r.jobs;pendingRequests.observe(r.jobs);renderJobs();}catch(e){if(e.status===401)notify(e.message,true);} }
+function renderJobs(){const holder=$('jobs');holder.replaceChildren();if(pendingRequests.get()){holder.append(text('p','A music request has an unknown outcome. Recover the same request before creating another.'),button('Recover previous request',recoverJob));}for(const job of state.jobs){const item=document.createElement('div');item.className='job';const section=state.project.sections.find(s=>s.id===job.sectionId);item.append(text('p',job.kind==='separate'?'Separated instrument layers':`${section?.name||'Section'} · alternate take`),text('p',job.status,'job-status'));
+    if(job.error)item.append(text('p',typeof job.error==='string'?job.error:'This take could not finish. Your accepted parts are unchanged.','hint'));
+    if(job.status==='succeeded'){
+      if(job.asset){const audio=document.createElement('audio');audio.controls=true;audio.preload='none';audio.src=job.asset.url;audio.addEventListener('play',()=>stop());item.append(audio);item.append(button('Use take · replace section audio',()=>acceptTake(job),{disabled:state.busy||!section||section.locked}));}
+      if(job.assets?.length)item.append(button(`Use ${job.assets.length} stems`,()=>acceptStems(job),{disabled:state.busy||selectedSection()?.locked}));
+    }holder.append(item);
+  }}
+async function sendJob(body){
+  try{const r=await api('/api/jobs',{method:'POST',body});pendingRequests.resolve(body.requestId);if(r.job.projectId===state.project.id){state.jobs=state.jobs.filter(j=>j.id!==r.job.id);state.jobs.unshift(r.job);}notify('Music request confirmed. Your accepted audio stays in place.');}
+  catch(e){if([400,403,404,409,429].includes(e.status))pendingRequests.resolve(body.requestId);throw e;}
+  finally{renderJobs();}
+}
+async function recoverJob(){const body=pendingRequests.get();if(body)await sendJob(body);}
+async function submitJob(kind){if(pendingRequests.get())throw new Error('Use Recover previous request below before creating another take.');await save();const body={requestId:P.newId(),kind,projectId:state.project.id,expectedRevision:state.revision};if(kind==='generate'){body.sectionId=state.sectionId;body.prompt=$('take-prompt').value.trim()||selectedSection().direction;if(!body.prompt)throw new Error('Describe the musical direction for this take.');}else{if(!selectedClip())throw new Error('Select a clip to separate.');body.assetId=selectedClip().assetId;}
+  await sendJob(pendingRequests.begin(body));}
+async function acceptTake(job){const s=state.project.sections.find(s=>s.id===job.sectionId);if(!s||s.locked)throw new Error('Unlock the original section before using this take.');const a=job.asset;const audio=await ensureAudio(a);state.assets.set(a.id,a);let p={...state.project,clips:state.project.clips.filter(c=>c.sectionId!==s.id)};let t=p.tracks.find(t=>t.name==='Generated take');if(!t){p=P.addTrack(p,'Generated take');t=p.tracks.at(-1);}p=P.addClip(p,{trackId:t.id,sectionId:s.id,assetId:a.id,offset:0,sourceOffset:0,duration:Math.min(s.duration,audio.duration),loop:false,gainDb:0});state.sectionId=s.id;state.trackId=t.id;state.clipId=p.clips.at(-1).id;commit(p);await save();notify(`Take accepted for ${s.name}. Other sections were preserved.`);}
+async function acceptStems(job){const section=selectedSection();if(section.locked)throw new Error('Unlock this section before adding stems.');const selected=selectedClip();const source=selected&&selected.assetId===job.assetId&&selected.sectionId===section.id?selected:null;if(!source)throw new Error('Select the original clip in the section where you want the stems.');
+  if(state.project.tracks.length+job.assets.length>12)throw new Error('This would exceed 12 tracks. Start a project with fewer layers before adding these stems.');
+  for(const a of job.assets){await ensureAudio(a);state.assets.set(a.id,a);}let p=P.removeClip(state.project,source.id);for(const a of job.assets){p=P.addTrack(p,a.name.slice(0,60));const t=p.tracks.at(-1);const duration=Math.min(source.duration,engine.buffer(a.id).duration-source.sourceOffset);if(duration<=0)throw new Error('The separated audio does not cover this clip’s source range.');p=P.addClip(p,{trackId:t.id,sectionId:section.id,assetId:a.id,offset:source.offset,sourceOffset:source.sourceOffset,duration,loop:source.loop,gainDb:source.gainDb});}commit(p);await save();notify('Separated layers added. Audition them for separation artifacts before exporting.');}
+
+$('save-project').addEventListener('click',()=>run(async()=>{await save();notify('Project saved. You can keep working here.');}));
+$('new-project').addEventListener('click',()=>run(()=>startNew()));
+$('project-list').addEventListener('change',e=>{if(e.target.value)run(()=>loadProject(e.target.value));});
+for(const [id,key]of[['song-title','title'],['song-key','key']])$(id).addEventListener('input',()=>{const value=$(id).value;if(key==='title'&&!value.trim())return;try{commit({...state.project,[key]:value},{redraw:false,history:false});}catch(e){failure(e);}});
+$('song-tempo').addEventListener('change',()=>{try{commit({...state.project,tempo:Number($('song-tempo').value)});notify('Target tempo updated. Existing audio has not been stretched.');}catch(e){failure(e);render();}});
+for(const [id,key]of[['section-name','name'],['section-direction','direction'],['section-lyrics','lyrics']])$(id).addEventListener('input',()=>{const value=$(id).value;if(key==='name'&&!value.trim())return;try{commit(P.updateSection(state.project,state.sectionId,{[key]:value}),{redraw:false,history:false});if(key==='name'){$('section-heading').textContent=value;renderSections();}}catch(e){failure(e);}});
+$('section-duration').addEventListener('change',()=>{try{commit(P.updateSection(state.project,state.sectionId,{duration:Number($('section-duration').value)}));}catch(e){failure(e);renderInspector();}});
+$('add-section').addEventListener('click',()=>run(()=>{const p=P.addSection(state.project,'Chorus');state.sectionId=p.sections.at(-1).id;commit(p);}));
+$('duplicate-section').addEventListener('click',()=>run(()=>{const old=state.project.sections.map(s=>s.id),p=P.duplicateSection(state.project,state.sectionId);state.sectionId=p.sections.find(s=>!old.includes(s.id)).id;commit(p);}));
+$('remove-section').addEventListener('click',()=>run(()=>{if(!confirm('Remove this section and its arranged clips? Saved source audio will remain available in other projects.'))return;commit(P.removeSection(state.project,state.sectionId));}));
+for(const[id,delta]of[['move-earlier',-1],['move-later',1]])$(id).addEventListener('click',()=>run(()=>commit(P.moveSection(state.project,state.sectionId,delta))));
+$('lock-section').addEventListener('click',()=>run(async()=>{commit(P.updateSection(state.project,state.sectionId,{locked:!selectedSection().locked}));await save();}));
+$('add-track').addEventListener('click',()=>run(()=>{const p=P.addTrack(state.project,`Layer ${state.project.tracks.length+1}`);state.trackId=p.tracks.at(-1).id;commit(p);}));
+$('upload-audio').addEventListener('click',()=>{$('audio-file').value='';$('audio-file').click();});
+$('audio-file').addEventListener('change',()=>run(()=>importAudio($('audio-file').files[0])));
+$('record-audio').addEventListener('click',()=>{if(state.recorder)state.recorder.stop();else run(()=>toggleRecord());});
+$('load-demo').addEventListener('click',()=>run(loadDemo));
+$('play-song').addEventListener('click',()=>run(()=>play(Number($('seek').value))));
+$('play-section').addEventListener('click',()=>run(()=>play(P.sectionStart(state.project,state.sectionId),{sectionOnly:true})));
+$('stop-playback').addEventListener('click',()=>{stop();$('seek').value=0;});
+$('seek').addEventListener('change',()=>{if(state.playing)run(()=>play(Number($('seek').value)));});
+$('apply-clip').addEventListener('click',()=>run(()=>{const c=selectedClip();if(!c)return;const patch={offset:Number($('clip-offset').value),sourceOffset:Number($('clip-source').value),duration:Number($('clip-duration').value),loop:$('clip-loop').checked};const audio=engine.buffer(c.assetId);if(patch.sourceOffset>=audio.duration||(!patch.loop&&patch.sourceOffset+patch.duration>audio.duration+.001))throw new Error('This edit extends past the source audio. Shorten it or enable looping.');commit(P.updateClip(state.project,c.id,patch));}));
+$('remove-clip').addEventListener('click',()=>run(()=>{if(selectedClip())commit(P.removeClip(state.project,state.clipId));}));
+$('export-mix').addEventListener('click',()=>run(async()=>showDownload(await engine.render(state.project),filename('.wav'))));
+$('export-track').addEventListener('click',()=>run(async()=>{if(!state.trackId)throw new Error('Select a track to export.');const track=state.project.tracks.find(t=>t.id===state.trackId);if(track.muted)throw new Error('Unmute this track before exporting it.');showDownload(await engine.render(state.project,{trackId:state.trackId}),filename('-'+track.name.replace(/[^a-zA-Z0-9]/g,'-')+'.wav'));}));
+$('export-project').addEventListener('click',()=>run(exportProject));
+$('import-project').addEventListener('click',()=>{$('project-file').value='';$('project-file').click();});
+$('project-file').addEventListener('change',()=>run(()=>importProject($('project-file').files[0])));
+$('dismiss-download').addEventListener('click',()=>{$('file-ready').hidden=true;});
+$('generate-take').addEventListener('click',()=>run(()=>submitJob('generate')));
+$('separate-stems').addEventListener('click',()=>run(()=>submitJob('separate')));
+$('recover-copy').addEventListener('click',()=>run(async()=>{state.project={...state.project,id:P.newId(),title:(state.project.title+' — recovered').slice(0,120)};state.revision=0;state.conflict=false;state.dirty=true;$('recovery').hidden=true;await save();notify('Your edits were saved as a separate project.');}));
+$('reload-saved').addEventListener('click',()=>run(async()=>{if(!confirm('Replace these unsaved edits with the saved version?'))return;await loadProject(state.project.id,{skipSave:true});}));
+window.addEventListener('beforeunload',e=>{if(state.dirty||state.recorder){e.preventDefault();e.returnValue='';}});
+window.addEventListener('pagehide',()=>{stop();if(state.recorder?.state==='recording')state.recorder.stop();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();if(state.recorder?.state==='recording')state.recorder.stop();if(state.dirty)save().catch(()=>{});}else pollJobs();});
+
+async function boot(){state.busy++;try{
+  state.capabilities=await api('/api/capabilities');
+  const gen=state.capabilities.generation;
+  $('generation-availability').textContent=gen.configured?'Create a new section mix with ElevenLabs Music. Exact voice and musical continuity need listening review.':'Music generation is not connected. You can arrange, record and mix your own audio now.';
+  $('generation-cost').textContent=gen.configured?'Generation and stem separation use provider credits. Exact dollar cost is unavailable here. Each click submits one request; failed or abandoned requests may still be billed.':'';
+  $('storage-note').textContent=state.capabilities.storage?.durable?'Private account projects. Download a backup before moving between sites.':'Private account projects on this server. Storage may reset on redeploy; download a project backup.';
+  if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)$('record-status').textContent='Recording is unavailable in this browser. Import audio instead.';
+  const list=await api('/api/projects');const requested=new URLSearchParams(location.search).get('project');const first=list.projects.find(p=>p.id===requested)||list.projects[0];
+  if(first)await loadProject(first.id,{skipSave:true});else await startNew();await listProjects();
+  state.polling=setInterval(()=>{if(!document.hidden&&!state.busy)pollJobs();},5000);clock();
+ }catch(e){failure(e);$('save-state').textContent='Workspace unavailable';}finally{state.busy--;renderDisabled();}}
+boot();

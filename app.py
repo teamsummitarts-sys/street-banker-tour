@@ -9772,6 +9772,10 @@ def create_app():
     # No recording uploads, AI calls, database migration or V1 dependencies.
     import noise_lab
     noise_lab.init(app, current_user=current_user)
+    # Portable Song Builder: separately flagged, authenticated and stored.
+    # Registration is default-off and does not initialize its database.
+    import song_builder
+    song_builder.init(app, current_user=current_user)
     # Team-Up Board: renew and thread links go into emails, so they are
     # built from the canonical address too.
     board.init(app, base_url=lambda: PUBLIC_BASE_URL)
