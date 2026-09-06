@@ -109,8 +109,10 @@ function renderTracks(){
     const mix=document.createElement('div');mix.className='track-mix';
     for(const [key,label,min,max,step]of[['gainDb','Level',-60,6,1],['pan','Pan',-1,1,.05]]){
       const field=document.createElement('label');field.textContent=`${label} ${key==='gainDb'?track[key]+' dB':track[key]===0?'C':track[key]<0?'L':'R'}`;
-      const input=document.createElement('input');input.type='range';input.min=min;input.max=max;input.step=step;input.value=track[key];input.setAttribute('aria-label',`${label} for ${track.name}`);input.addEventListener('change',()=>{try{commit(P.updateTrack(state.project,track.id,{[key]:Number(input.value)}),{resume:true});}catch(e){failure(e);}});field.append(input);mix.append(field);
+      const input=document.createElement('input');input.type='range';input.min=min;input.max=max;input.step=step;input.value=track[key];input.setAttribute('aria-label',`${label} for ${track.name}`);input.addEventListener('change',()=>{try{const value=Number(input.value);const centered=key==='pan'&&Math.abs(value)<=.100001?0:value;commit(P.updateTrack(state.project,track.id,{[key]:centered}),{resume:true});}catch(e){failure(e);}});field.append(input);mix.append(field);
     }
+    const center=button('Center',()=>commit(P.updateTrack(state.project,track.id,{pan:0}),{resume:true}),{className:'pan-center',disabled:track.pan===0});
+    center.setAttribute('aria-label',`Center pan for ${track.name}`);mix.append(center);
     controls.append(title,mix);const lane=document.createElement('div');lane.className='lane';const content=document.createElement('div');content.className='lane-content';
     for(const clip of state.project.clips.filter(c=>c.trackId===track.id&&c.sectionId===section.id)){
       const asset=state.assets.get(clip.assetId);const c=button('',()=>{state.clipId=clip.id;state.trackId=track.id;renderTracks();renderInspector();},{className:'clip'+(state.clipId===clip.id?' selected':'')});
