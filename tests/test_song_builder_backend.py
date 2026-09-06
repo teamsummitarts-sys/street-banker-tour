@@ -79,6 +79,26 @@ def test_music_retry_returns_same_job_after_project_edit(tmp_path):
     assert len(client.get('/song-builder/api/jobs?projectId=' + value['id']).json['jobs']) == 1
 
 
+def test_version_branch_reuses_owned_audio_without_changing_original(tmp_path):
+    app, _ = host(tmp_path)
+    client = app.test_client()
+    headers = auth_headers(client)
+    original = project()
+    asset = upload(client, headers).json['asset']
+    original['tracks'] = [{'id': uid(), 'name': 'Drums', 'gainDb': 0, 'pan': 0,
+                           'muted': False, 'solo': False}]
+    original['clips'] = [{'id': uid(), 'trackId': original['tracks'][0]['id'],
+        'sectionId': original['sections'][0]['id'], 'assetId': asset['id'], 'offset': 0,
+        'sourceOffset': 0, 'duration': 8, 'loop': False, 'gainDb': 0}]
+    first = create(client, headers, original)
+    branch = copy.deepcopy(first['project'])
+    branch['id'] = uid()
+    branch['title'] = 'Heavy Chorus'
+    second = create(client, headers, branch)
+    assert second['project']['clips'][0]['assetId'] == asset['id']
+    assert client.get('/song-builder/api/projects/' + original['id']).json['project']['title'] == 'Untitled song'
+
+
 def test_default_off_and_unauthenticated_fail_closed(tmp_path):
     app, identity = host(tmp_path, SONG_BUILDER_ENABLED=False)
     client = app.test_client()
