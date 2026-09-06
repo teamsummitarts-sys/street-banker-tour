@@ -101,6 +101,8 @@
 .song-builder .clip-inspector { border-top:1px solid var(--line); margin-top:20px; }
 .song-builder .clip-inspector>summary { padding-left:0; }
 .song-builder .clip-fields { display:grid; gap:12px; }
+.song-builder .trim-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.song-builder .trim-row button { min-height:44px; padding:8px; font-size:11px; }
 .song-builder .checkbox-label { display:flex; gap:8px; min-height:44px; align-items:center; color:var(--text); }
 .song-builder .checkbox-label input { width:18px; height:18px; margin:0; }
 .song-builder .generate-desk { margin-top:25px; padding-top:22px; border-top:1px solid var(--line); }
