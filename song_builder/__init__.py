@@ -242,7 +242,10 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
     @bp.post('/api/assets')
     def upload_asset():
         request.max_content_length = v.MAX_UPLOAD_BYTES + 65536
-        request.max_form_memory_size = 65536
+        # The multipart decoder retains partial boundaries between 64 KiB
+        # reads. A 64 KiB memory cap rejects valid binary WAV contents when
+        # a retained suffix plus the next read crosses that cap.
+        request.max_form_memory_size = 512 * 1024
         request.max_form_parts = 2
         if request.mimetype != 'multipart/form-data':
             v.invalid('Choose a WAV file to upload.')
