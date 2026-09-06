@@ -47,8 +47,8 @@
 .song-builder .arrangement { min-width:0; }
 .song-builder .section-heading { display:flex; justify-content:space-between; align-items:center; gap:15px; margin-bottom:16px; }
 .song-builder .section-deck { padding:22px; background:var(--panel); border:1px solid var(--line); }
-.song-builder .sections { display:flex; flex-wrap:wrap; gap:7px; list-style:none; padding:0; margin:0 0 20px; }
-.song-builder .sections li { flex:1 1 120px; min-width:0; }
+.song-builder .sections { display:flex; flex-wrap:nowrap; gap:7px; overflow-x:auto; overscroll-behavior-x:contain; list-style:none; padding:0 0 8px; margin:0 0 12px; }
+.song-builder .sections li { flex:0 0 var(--section-width,120px); min-width:0; }
 .song-builder .section-button { width:100%; min-height:92px; text-align:left; padding:12px; display:flex; flex-direction:column; justify-content:space-between; align-items:start; gap:5px; }
 .song-builder .section-button strong { font-size:15px; overflow-wrap:anywhere; }
 .song-builder .section-button>span { font-size:11px; font-weight:400; font-variant-numeric:tabular-nums; color:var(--muted); }
@@ -60,6 +60,8 @@
 .song-builder .time { margin-left:auto; font-size:12px; font-variant-numeric:tabular-nums; color:var(--muted); }
 .song-builder .seek-label { margin-top:15px; }
 .song-builder .seek { width:100%; min-height:32px; margin:0; cursor:pointer; }
+.song-builder .snap-control { display:flex; align-items:center; gap:10px; width:max-content; max-width:100%; margin:12px 0 5px; font-size:11px; color:var(--muted); }
+.song-builder .snap-control select { min-height:44px; }
 .song-builder .track-desk { padding:25px 0 24px; }
 .song-builder .tracks { border-top:1px solid var(--line); }
 .song-builder .track { display:grid; grid-template-columns:180px minmax(0,1fr); border-bottom:1px solid var(--line); min-height:122px; }
