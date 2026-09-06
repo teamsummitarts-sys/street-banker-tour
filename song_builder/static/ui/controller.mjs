@@ -47,6 +47,10 @@ function commit(project,{redraw=true,history=true,resume=false}={}) {
   markDirty();if(redraw)render();else renderMeta();
   if(wasPlaying)play(from).catch(failure);
 }
+function restoreEdit(direction){
+  const source=direction==='undo'?state.history:state.future,target=direction==='undo'?state.future:state.history;
+  if(!source.length)return;target.push(state.project);commit(source.pop(),{history:false});
+}
 async function listProjects(){const r=await api('/api/projects');const list=$('project-list');list.replaceChildren(new Option('Choose a project',''));for(const p of r.projects)list.add(new Option(p.title,p.id));list.value=state.revision?state.project.id:'';}
 function showConflict(){state.conflict=true;$('recovery').hidden=false;$('recovery-message').textContent='This project changed in another session. Your edits are still here. Save a separate copy, or load the latest saved version.';}
 async function performSave() {
@@ -140,7 +144,14 @@ function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boole
   if(!hasAudio){$('play-song').disabled=true;$('play-section').disabled=true;$('export-mix').disabled=true;$('export-track').disabled=true;}
   const i=state.project?.sections.findIndex(s=>s.id===state.sectionId);$('move-earlier').disabled=busy||recording||i===0;$('move-later').disabled=busy||recording||i===state.project?.sections.length-1;
   if(state.project?.sections.length===1)$('remove-section').disabled=true;
+  $('undo-edit').disabled=busy||recording||!state.history.length;$('redo-edit').disabled=busy||recording||!state.future.length;
 }
+function quickTrim(action){const c=selectedClip();if(!c)return;const audio=engine.buffer(c.assetId),step=.5;let patch={};
+  if(action==='trim-start'){const amount=Math.min(step,c.duration-.1);patch={sourceOffset:c.sourceOffset+amount,offset:c.offset+amount,duration:c.duration-amount};}
+  if(action==='extend-start'){const amount=Math.min(step,c.sourceOffset,c.offset);patch={sourceOffset:c.sourceOffset-amount,offset:c.offset-amount,duration:c.duration+amount};}
+  if(action==='trim-end')patch={duration:Math.max(.1,c.duration-step)};
+  if(action==='extend-end'){const room=selectedSection().duration-c.offset-c.duration,sourceRoom=c.loop?room:audio.duration-c.sourceOffset-c.duration;patch={duration:c.duration+Math.max(0,Math.min(step,room,sourceRoom))};}
+  if(!Object.keys(patch).length||Object.entries(patch).every(([k,v])=>v===c[k]))throw new Error('There is no more audio or section space in that direction.');commit(P.updateClip(state.project,c.id,patch));}
 async function play(from=0,{sectionOnly=false}={}){if(!state.project.clips.length)return;await engine.play(state.project,{from,onEnded:()=>{state.playing=false;}});state.playing=true;state.previewEnd=sectionOnly?P.sectionStart(state.project,state.sectionId)+selectedSection().duration:null;$('play-song').setAttribute('aria-pressed','true');}
 function clock(){if(state.project){const position=state.playing?engine.position():Number($('seek').value);if(state.playing){$('seek').value=position;if(state.previewEnd!==null&&position>=state.previewEnd)stop();}$('play-time').textContent=`${seconds(position)} / ${seconds(P.projectDuration(state.project))}`;}requestAnimationFrame(clock);}
 async function uploadWav(bytes,name){const form=new FormData();form.append('file',new Blob([bytes],{type:'audio/wav'}),name.replace(/\.[^.]*$/,'')+'.wav');const r=await api('/api/assets',{method:'POST',body:form});state.assets.set(r.asset.id,r.asset);await engine.decode(r.asset.id,bytes);return r.asset;}
@@ -216,6 +227,8 @@ $('play-song').addEventListener('click',()=>run(()=>play(Number($('seek').value)
 $('play-section').addEventListener('click',()=>run(()=>play(P.sectionStart(state.project,state.sectionId),{sectionOnly:true})));
 $('stop-playback').addEventListener('click',()=>{stop();$('seek').value=0;});
 $('seek').addEventListener('change',()=>{if(state.playing)run(()=>play(Number($('seek').value)));});
+$('undo-edit').addEventListener('click',()=>run(()=>restoreEdit('undo')));$('redo-edit').addEventListener('click',()=>run(()=>restoreEdit('redo')));
+for(const id of ['trim-start','extend-start','trim-end','extend-end'])$(id).addEventListener('click',()=>run(()=>quickTrim(id)));
 $('apply-clip').addEventListener('click',()=>run(()=>{const c=selectedClip();if(!c)return;const patch={offset:Number($('clip-offset').value),sourceOffset:Number($('clip-source').value),duration:Number($('clip-duration').value),loop:$('clip-loop').checked};const audio=engine.buffer(c.assetId);if(patch.sourceOffset>=audio.duration||(!patch.loop&&patch.sourceOffset+patch.duration>audio.duration+.001))throw new Error('This edit extends past the source audio. Shorten it or enable looping.');commit(P.updateClip(state.project,c.id,patch));}));
 $('remove-clip').addEventListener('click',()=>run(()=>{if(selectedClip())commit(P.removeClip(state.project,state.clipId));}));
 $('export-mix').addEventListener('click',()=>run(async()=>showDownload(await engine.render(state.project),filename('.wav'))));
