@@ -47,7 +47,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     <div class="workspace">
       <div class="arrangement">
         <section aria-labelledby="arrangement-heading" class="section-deck">
-          <div class="section-heading"><h2 id="arrangement-heading">Arrangement</h2><button id="add-section" type="button">Add section</button></div>
+          <div class="section-heading"><h2 id="arrangement-heading">Song Map</h2><button id="add-section" type="button">Add section</button></div>
           <ol id="sections" class="sections" aria-label="Song sections"></ol>
           <div class="transport">
             <button id="play-song" class="primary" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg>Play song</button>
@@ -57,6 +57,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
             <button id="redo-edit" type="button">Redo</button>
             <output id="play-time" class="time">0:00 / 0:00</output>
           </div>
+          <label class="snap-control">Move and trim grid<select id="snap-grid"><option value="free">Free</option><option value="beat" selected>Beat</option><option value="bar">Bar · 4/4</option></select></label>
           <label class="seek-label" for="seek">Playback position</label><input id="seek" class="seek" type="range" min="0" max="48" step="0.1" value="0" aria-label="Playback position">
         </section>
         <section class="track-desk" aria-labelledby="tracks-heading">

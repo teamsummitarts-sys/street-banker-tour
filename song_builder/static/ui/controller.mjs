@@ -102,14 +102,16 @@ function render(){if(!state.project)return;renderMeta();$('song-title').value=st
 function renderSections(){
   const list=$('sections');list.replaceChildren();state.project.sections.forEach((s,i)=>{
     const li=document.createElement('li'),b=button('',()=>{state.sectionId=s.id;state.clipId=null;render();},{pressed:s.id===state.sectionId,className:'section-button'});
+    li.style.setProperty('--section-width',`${Math.max(110,Math.min(320,s.duration*9))}px`);
     b.append(text('span',`${String(i+1).padStart(2,'0')} · ${seconds(P.sectionStart(state.project,s.id))}`,'section-number'),text('strong',s.name),text('span',`${s.duration}s${s.locked?' · Protected':''}`));li.append(b);list.append(li);
   });
 }
+function snapDelta(value){const mode=$('snap-grid').value;if(mode==='free')return Math.round(value*100)/100;const beat=60/state.project.tempo,unit=mode==='bar'?beat*4:beat;return Math.round(value/unit)*unit;}
 function bindTrimHandle(handle,clip,edge,clipNode,section){
   handle.addEventListener('pointerdown',event=>{
     if(selectedSection().locked)return;event.preventDefault();event.stopPropagation();handle.setPointerCapture(event.pointerId);
     const startX=event.clientX,start={...clip},laneWidth=clipNode.parentElement.getBoundingClientRect().width;let candidate=start;
-    const move=e=>{const raw=(e.clientX-startX)/laneWidth*section.duration,delta=Math.round(raw*4)/4,audio=engine.buffer(start.assetId);
+    const move=e=>{const raw=(e.clientX-startX)/laneWidth*section.duration,delta=snapDelta(raw),audio=engine.buffer(start.assetId);
       if(edge==='start'){const applied=Math.max(-Math.min(start.offset,start.sourceOffset),Math.min(start.duration-.1,delta));candidate={...start,offset:start.offset+applied,sourceOffset:start.sourceOffset+applied,duration:start.duration-applied};}
       else{const maximum=Math.min(section.duration-start.offset,start.loop?section.duration-start.offset:audio.duration-start.sourceOffset);candidate={...start,duration:Math.max(.1,Math.min(maximum,start.duration+delta))};}
       clipNode.style.left=`${candidate.offset/section.duration*100}%`;clipNode.style.width=`${candidate.duration/section.duration*100}%`;};
@@ -122,7 +124,7 @@ function bindClipMove(surface,clip,clipNode,section){
   surface.addEventListener('pointerdown',event=>{
     if(selectedSection().locked)return;event.preventDefault();event.stopPropagation();surface.setPointerCapture(event.pointerId);
     const startX=event.clientX,start=clip.offset,laneWidth=clipNode.parentElement.getBoundingClientRect().width;let offset=start,moved=false;
-    const move=e=>{const delta=Math.round(((e.clientX-startX)/laneWidth*section.duration)*4)/4;offset=Math.max(0,Math.min(section.duration-clip.duration,start+delta));moved=moved||Math.abs(e.clientX-startX)>5;clipNode.style.left=`${offset/section.duration*100}%`;};
+    const move=e=>{const delta=snapDelta((e.clientX-startX)/laneWidth*section.duration);offset=Math.max(0,Math.min(section.duration-clip.duration,start+delta));moved=moved||Math.abs(e.clientX-startX)>5;clipNode.style.left=`${offset/section.duration*100}%`;};
     const clean=()=>{surface.removeEventListener('pointermove',move);surface.removeEventListener('pointerup',finish);surface.removeEventListener('pointercancel',cancel);};
     const finish=()=>{clean();state.clipId=clip.id;state.trackId=clip.trackId;if(moved&&offset!==start)commit(P.updateClip(state.project,clip.id,{offset}));else{renderTracks();renderInspector();}};
     const cancel=()=>{clean();renderTracks();};surface.addEventListener('pointermove',move);surface.addEventListener('pointerup',finish);surface.addEventListener('pointercancel',cancel);
