@@ -92,6 +92,10 @@ async function loadProject(id,{skipSave=false}={}) {
   await pollJobs();render();
 }
 async function startNew(title='Untitled song'){await save();stop();releaseProjectAudio();state.project=P.newProject(title);state.revision=0;state.sectionId=state.project.sections[0].id;state.trackId=null;state.clipId=null;state.assets=new Map();state.jobs=[];state.history=[];state.future=[];state.conflict=false;$('recovery').hidden=true;markDirty();render();await save();}
+async function saveVersion(){
+  await save();const suggested=`${state.project.title} — Version 2`,name=prompt('Name this version',suggested);if(name===null)return;if(!name.trim())throw new Error('Give this version a name.');
+  stop();state.project=P.validateProject({...state.project,id:P.newId(),title:name.trim().slice(0,120)});state.revision=0;state.jobs=[];state.history=[];state.future=[];state.conflict=false;markDirty();render();await save();notify(`Saved ${state.project.title} as an independent version. The original is unchanged.`);
+}
 
 function renderMeta(){if(!state.project)return;$('duration-label').textContent=`${seconds(P.projectDuration(state.project))} arranged`;$('seek').max=P.projectDuration(state.project);}
 function render(){if(!state.project)return;renderMeta();$('song-title').value=state.project.title;$('song-tempo').value=state.project.tempo;$('song-key').value=state.project.key;renderSections();renderTracks();renderInspector();renderJobs();renderDisabled();}
@@ -157,7 +161,7 @@ function renderInspector(){const s=selectedSection();if(!s)return;$('section-hea
   const clip=selectedClip();$('clip-inspector').hidden=!clip;if(clip){$('clip-offset').value=clip.offset;$('clip-source').value=clip.sourceOffset;$('clip-duration').value=clip.duration;$('clip-loop').checked=clip.loop;}
 }
 function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boolean(s?.locked),hasAudio=Boolean(state.project?.clips.length),recording=Boolean(state.recorder);
-  for(const id of ['save-project','new-project','import-project','export-project','project-list','load-demo','export-mix','export-track','play-song','play-section','add-section','add-track'])$(id).disabled=busy||recording;
+  for(const id of ['save-project','new-project','save-version','import-project','export-project','project-list','load-demo','export-mix','export-track','play-song','play-section','add-section','add-track'])$(id).disabled=busy||recording;
   for(const id of ['section-name','section-duration','section-direction','section-lyrics','duplicate-section','remove-section','upload-audio','apply-clip','remove-clip','duplicate-clip','split-clip','clip-offset','clip-source','clip-duration','clip-loop'])$(id).disabled=busy||lock||recording;
   for(const id of ['song-title','song-tempo','song-key','lock-section','move-earlier','move-later'])$(id).disabled=busy||recording;
   $('record-audio').disabled=busy||lock||!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder;
@@ -234,6 +238,7 @@ async function acceptStems(job){const section=selectedSection();if(section.locke
 
 $('save-project').addEventListener('click',()=>run(async()=>{await save();notify('Project saved. You can keep working here.');}));
 $('new-project').addEventListener('click',()=>run(()=>startNew()));
+$('save-version').addEventListener('click',()=>run(saveVersion));
 $('project-list').addEventListener('change',e=>{if(e.target.value)run(()=>loadProject(e.target.value));});
 for(const [id,key]of[['song-title','title'],['song-key','key']])$(id).addEventListener('input',()=>{const value=$(id).value;if(key==='title'&&!value.trim())return;try{commit({...state.project,[key]:value},{redraw:false,history:false});}catch(e){failure(e);}});
 $('song-tempo').addEventListener('change',()=>{try{commit({...state.project,tempo:Number($('song-tempo').value)});notify('Target tempo updated. Existing audio has not been stretched.');}catch(e){failure(e);render();}});
