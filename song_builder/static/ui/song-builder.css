@@ -69,6 +69,8 @@
 .song-builder .track-name { flex:1; min-width:0; text-align:left; padding-left:7px; border-color:transparent; font-size:13px; overflow-wrap:anywhere; }
 .song-builder .track-name[aria-pressed=true] { background:transparent; border-color:transparent; }
 .song-builder .track-switch { padding:5px; min-width:36px; min-height:44px; font-size:11px; }
+.song-builder .track-edit,.song-builder .track-remove { min-height:44px; padding:4px 7px; font-size:10px; }
+.song-builder .track-remove { color:#e6a29a; }
 .song-builder .track-mix { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:4px 6px; }
 .song-builder .track-mix label { min-width:0; font-size:10px; }
 .song-builder .track-mix input { width:100%; margin:0; min-height:28px; }
