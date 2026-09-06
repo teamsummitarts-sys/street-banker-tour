@@ -114,6 +114,16 @@ function bindTrimHandle(handle,clip,edge,clipNode,section){
     handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',finish);handle.addEventListener('pointercancel',cancel);
   });
 }
+function bindClipMove(surface,clip,clipNode,section){
+  surface.addEventListener('pointerdown',event=>{
+    if(selectedSection().locked)return;event.preventDefault();event.stopPropagation();surface.setPointerCapture(event.pointerId);
+    const startX=event.clientX,start=clip.offset,laneWidth=clipNode.parentElement.getBoundingClientRect().width;let offset=start,moved=false;
+    const move=e=>{const delta=Math.round(((e.clientX-startX)/laneWidth*section.duration)*4)/4;offset=Math.max(0,Math.min(section.duration-clip.duration,start+delta));moved=moved||Math.abs(e.clientX-startX)>5;clipNode.style.left=`${offset/section.duration*100}%`;};
+    const clean=()=>{surface.removeEventListener('pointermove',move);surface.removeEventListener('pointerup',finish);surface.removeEventListener('pointercancel',cancel);};
+    const finish=()=>{clean();state.clipId=clip.id;state.trackId=clip.trackId;if(moved&&offset!==start)commit(P.updateClip(state.project,clip.id,{offset}));else{renderTracks();renderInspector();}};
+    const cancel=()=>{clean();renderTracks();};surface.addEventListener('pointermove',move);surface.addEventListener('pointerup',finish);surface.addEventListener('pointercancel',cancel);
+  });
+}
 function renderTracks(){
   const tracks=$('tracks');tracks.replaceChildren();const section=selectedSection();$('selected-context').textContent=`Layers in ${section.name} · ${section.duration} seconds`;
   for(const track of state.project.tracks){
@@ -135,7 +145,7 @@ function renderTracks(){
       const asset=state.assets.get(clip.assetId);const c=button('',()=>{state.clipId=clip.id;state.trackId=track.id;renderTracks();renderInspector();},{className:'clip'+(state.clipId===clip.id?' selected':'')});
       c.style.left=`${clip.offset/section.duration*100}%`;c.style.width=`${clip.duration/section.duration*100}%`;c.setAttribute('aria-label',`${asset?.name||'Audio clip'}, ${clip.duration.toFixed(1)} seconds on ${track.name}`);
       const left=text('i','','trim-handle trim-left'),right=text('i','','trim-handle trim-right');left.setAttribute('aria-label','Trim clip start');right.setAttribute('aria-label','Trim clip end');
-      c.append(left,text('span',asset?.name||'Audio clip'));const canvas=document.createElement('canvas');canvas.width=300;canvas.height=56;canvas.setAttribute('aria-hidden','true');c.append(canvas,right);bindTrimHandle(left,clip,'start',c,section);bindTrimHandle(right,clip,'end',c,section);
+      c.append(left,text('span',asset?.name||'Audio clip'));const canvas=document.createElement('canvas');canvas.width=300;canvas.height=56;canvas.setAttribute('aria-label','Drag clip along section');c.append(canvas,right);bindTrimHandle(left,clip,'start',c,section);bindTrimHandle(right,clip,'end',c,section);bindClipMove(canvas,clip,c,section);
       if(engine.has(clip.assetId)){const peaks=engine.waveform(clip.assetId,100),ctx=canvas.getContext('2d');ctx.strokeStyle='#dfb86b';ctx.lineWidth=1.5;ctx.beginPath();for(let i=0;i<peaks.length;i++){const x=i/peaks.length*300,v=Math.max(1,peaks[i]*24);ctx.moveTo(x,28-v);ctx.lineTo(x,28+v);}ctx.stroke();}
       content.append(c);
     }
@@ -148,7 +158,7 @@ function renderInspector(){const s=selectedSection();if(!s)return;$('section-hea
 }
 function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boolean(s?.locked),hasAudio=Boolean(state.project?.clips.length),recording=Boolean(state.recorder);
   for(const id of ['save-project','new-project','import-project','export-project','project-list','load-demo','export-mix','export-track','play-song','play-section','add-section','add-track'])$(id).disabled=busy||recording;
-  for(const id of ['section-name','section-duration','section-direction','section-lyrics','duplicate-section','remove-section','upload-audio','apply-clip','remove-clip','clip-offset','clip-source','clip-duration','clip-loop'])$(id).disabled=busy||lock||recording;
+  for(const id of ['section-name','section-duration','section-direction','section-lyrics','duplicate-section','remove-section','upload-audio','apply-clip','remove-clip','duplicate-clip','split-clip','clip-offset','clip-source','clip-duration','clip-loop'])$(id).disabled=busy||lock||recording;
   for(const id of ['song-title','song-tempo','song-key','lock-section','move-earlier','move-later'])$(id).disabled=busy||recording;
   $('record-audio').disabled=busy||lock||!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder;
   $('record-audio').textContent=recording?'Stop recording':'Record a part';
@@ -166,6 +176,8 @@ function quickTrim(action){const c=selectedClip();if(!c)return;const audio=engin
   if(action==='trim-end')patch={duration:Math.max(.1,c.duration-step)};
   if(action==='extend-end'){const room=selectedSection().duration-c.offset-c.duration,sourceRoom=c.loop?room:audio.duration-c.sourceOffset-c.duration;patch={duration:c.duration+Math.max(0,Math.min(step,room,sourceRoom))};}
   if(!Object.keys(patch).length||Object.entries(patch).every(([k,v])=>v===c[k]))throw new Error('There is no more audio or section space in that direction.');commit(P.updateClip(state.project,c.id,patch));}
+function duplicateClip(){const c=selectedClip();if(!c)return;const section=selectedSection(),offset=Math.min(section.duration-c.duration,c.offset+c.duration);const p=P.addClip(state.project,{...c,id:P.newId(),offset});state.clipId=p.clips.at(-1).id;commit(p);}
+function splitClip(){const c=selectedClip();if(!c)return;if(c.duration<.2)throw new Error('This clip is too short to split.');const first=Math.round(c.duration/2*1000)/1000,second=c.duration-first;let p=P.updateClip(state.project,c.id,{duration:first});p=P.addClip(p,{...c,id:P.newId(),offset:c.offset+first,sourceOffset:c.loop?c.sourceOffset:(c.sourceOffset+first),duration:second});state.clipId=p.clips.at(-1).id;commit(p);}
 async function play(from=0,{sectionOnly=false}={}){if(!state.project.clips.length)return;await engine.play(state.project,{from,onEnded:()=>{state.playing=false;}});state.playing=true;state.previewEnd=sectionOnly?P.sectionStart(state.project,state.sectionId)+selectedSection().duration:null;$('play-song').setAttribute('aria-pressed','true');}
 function clock(){if(state.project){const position=state.playing?engine.position():Number($('seek').value);if(state.playing){$('seek').value=position;if(state.previewEnd!==null&&position>=state.previewEnd)stop();}$('play-time').textContent=`${seconds(position)} / ${seconds(P.projectDuration(state.project))}`;}requestAnimationFrame(clock);}
 async function uploadWav(bytes,name){const form=new FormData();form.append('file',new Blob([bytes],{type:'audio/wav'}),name.replace(/\.[^.]*$/,'')+'.wav');const r=await api('/api/assets',{method:'POST',body:form});state.assets.set(r.asset.id,r.asset);await engine.decode(r.asset.id,bytes);return r.asset;}
@@ -243,6 +255,7 @@ $('stop-playback').addEventListener('click',()=>{stop();$('seek').value=0;});
 $('seek').addEventListener('change',()=>{if(state.playing)run(()=>play(Number($('seek').value)));});
 $('undo-edit').addEventListener('click',()=>run(()=>restoreEdit('undo')));$('redo-edit').addEventListener('click',()=>run(()=>restoreEdit('redo')));
 for(const id of ['trim-start','extend-start','trim-end','extend-end'])$(id).addEventListener('click',()=>run(()=>quickTrim(id)));
+$('duplicate-clip').addEventListener('click',()=>run(duplicateClip));$('split-clip').addEventListener('click',()=>run(splitClip));
 $('apply-clip').addEventListener('click',()=>run(()=>{const c=selectedClip();if(!c)return;const patch={offset:Number($('clip-offset').value),sourceOffset:Number($('clip-source').value),duration:Number($('clip-duration').value),loop:$('clip-loop').checked};const audio=engine.buffer(c.assetId);if(patch.sourceOffset>=audio.duration||(!patch.loop&&patch.sourceOffset+patch.duration>audio.duration+.001))throw new Error('This edit extends past the source audio. Shorten it or enable looping.');commit(P.updateClip(state.project,c.id,patch));}));
 $('remove-clip').addEventListener('click',()=>run(()=>{if(selectedClip())commit(P.removeClip(state.project,state.clipId));}));
 $('export-mix').addEventListener('click',()=>run(async()=>showDownload(await engine.render(state.project),filename('.wav'))));
