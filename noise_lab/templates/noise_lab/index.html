@@ -18,6 +18,9 @@
   <a class="skip-link" href="#source">Skip to audio controls</a>
   <header class="site-bar">
     <a href="{{ return_url }}" class="brand" aria-label="Return to Street Banker V2">STREET BANKER<span>V2</span></a>
+    {% if config.get('SONG_BUILDER_ENABLED') in [true, '1', 'true'] %}
+    <a href="{{ url_for('song_builder.index') }}" class="back-link">Song Builder</a>
+    {% endif %}
     <a href="{{ return_url }}" class="back-link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6M8 12h13"/></svg>Back to your team</a>
   </header>
   <main>
