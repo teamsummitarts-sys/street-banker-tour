@@ -13,7 +13,8 @@ class Element {
   addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
   setAttribute(key, value) { this[key] = value; }
   querySelector() { return this.span ??= new Element(); }
-  replaceChildren() {} append() {} remove() {} focus() {}
+  replaceChildren() {} append() {} remove() {} focus() { this.focused = true; }
+  scrollIntoView() { this.scrolled = true; }
   removeAttribute(key) { delete this[key]; }
   async event(type, event = {}) {
     return Promise.all((this.listeners[type] || []).map(fn => fn({target: this, ...event})));
@@ -59,6 +60,7 @@ async function setup() {
   const audio = {
     playing: false, playCalls: 0, stopCalls: 0, onstatechange: null,
     setRecipe() {}, setBypass() {}, getPosition() { return 0; },
+    getLevels() { return {input: [0.5, 0.25], output: [0.125, 0.0625]}; },
     getInfo() { return {playing: this.playing, duration: 8, channels: 1, sampleRate: 8000, name: 'Test loop'}; },
     loadDemo() { return this.getInfo(); },
     async play() { this.playCalls++; this.playing = true; },
@@ -474,4 +476,40 @@ test('a cleared session ignores late library responses and a switched account ca
   assert.equal(get('save-patch').disabled, true);
   assert.equal(get('generate-sound').disabled, true);
   assert.equal(get('preset').value, 'dark-room');
+});
+
+
+test('Club view and display settings keep the recipe, source and private save flow intact', async () => {
+  const {get, audio, requests} = await readyToGenerate();
+  await get('view-club').click();
+  assert.equal(document.body.dataset.view, 'club');
+  assert.equal(get('view-club')['aria-pressed'], 'true');
+  assert.equal(get('prompt-details').open, false);
+  get('display-brightness').value = 'bright';
+  await get('display-brightness').event('change');
+  assert.equal(document.body.dataset.display, 'bright');
+  assert.equal(get('value-level').value, '-12');
+  assert.equal(audio.playing, true);
+  await get('open-library').click();
+  assert.equal(get('patch-library').focused, true);
+  assert.equal(get('patch-library').scrolled, true);
+  assert.equal(requests.filter(r => r.options?.method === 'POST').length, 0);
+  await get('view-studio').click();
+  assert.equal(get('prompt-details').open, true);
+  await get('stop').click();
+  assert.equal(get('input-reading').textContent, '—');
+  assert.equal(get('output-reading').textContent, '—');
+});
+
+test('signal desk displays measured levels and clears held markers after Stop', async () => {
+  const {get} = await readyToGenerate();
+  assert.equal(get('input-reading').textContent, '-6.0');
+  assert.equal(get('output-reading').textContent, '-18.1');
+  assert.equal(get('input-l-hold').hidden, false);
+  assert.match(get('output-r-meter')['aria-valuetext'], /-24.1 dBFS/);
+  await get('stop').click();
+  assert.equal(get('input-l-hold').hidden, true);
+  assert.equal(get('output-r-hold').hidden, true);
+  assert.equal(get('input-l-meter')['aria-valuetext'], 'Stopped');
+  assert.equal(get('input-l-fill').style.clipPath, 'inset(0 100% 0 0)');
 });

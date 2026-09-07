@@ -1,80 +1,30 @@
-# Noise Lab interface — Phase 1
+# Noise Lab console / 2026-09-07
 
-This standalone surface inherits the approved Street Banker V2 near-black,
-warm-brass console language. The owner's black Noise Lab pedal establishes the
-five macro labels: Texture, Motion, Space, Mix, and Level. It does not establish
-hardware support; no hardware interface is implemented. The root PRODUCT.md and
-DESIGN.md remain the parent authority; the opening template comment records the
-inherited direction contract for this extension.
+Approved direction: the owner's editorial + metallic rack mockups, combined into the existing V2 Flask/Jinja/native-module page. This is not hardware and does not introduce a new frontend stack.
 
-The page is scoped to `.noise-lab`, uses its own template and module-relative
-assets, and returns to the supplied V2 team route. The supplied Archivo font is
-self-hosted with its license in `static/ui/fonts`. No reference photography,
-external font service, V1 asset, or shared layout is required.
+## Behavior
 
-The source and transport come first. The playback strip displays actual source
-position; there is no invented waveform, spectrum, loudness meter, or metric.
-The five SVG dial indicators reflect settings and accompany real labeled range
-inputs plus direct numeric inputs. They are not substitutes for accessible
-controls. Native keyboard range behavior, visible focus, explicit pressed
-states, errors, and reduced-motion support are implemented. Buttons, the select,
-ranges, and numeric inputs have 44px control heights or minimum heights; the tail
-checkbox label is 36px high on desktop and 44px on mobile. This does not certify
-all targets as 44 by 44px. Mobile CSS retains source controls and preview in
-document order; rendered mobile behavior remains unverified.
+- The existing Street Banker SVG brand asset is reused from V2. Module CSS is scoped to `.noise-lab`.
+- Five satin silver dials have gold indices. Each dial overlays an actual native range, with its original label, bounds, keyboard semantics and undo gesture behavior. An adjacent numeric input accepts exact values. Horizontal drag maps to the existing range. Level remains **-60 to 0 dB**; the generated mockup's +12 endpoint was not adopted.
+- Studio exposes sound description; Club view collapses it using native details and removes secondary explanatory lines. Prompt, source, preset, private library, exports and help remain reachable. Display settings change interface metal/mark contrast, never audio gain or device brightness. They persist only while this page remains in memory.
+- At mobile widths, Play, Stop, A/B and Save stay in a bottom bar with safe-area padding. Save opens the private library form and focuses its heading; the existing explicit Save new patch/Save new version actions perform the save. These navigation buttons never claim a successful save.
+- Clean bypass remains independent of A/B. The working heading identifies the heard preset or custom settings; A locks editing as before.
+- Empty, pending, error, account-expiry, duplicate-save, deletion confirmation and two-step iPhone export flows remain in the existing controller/library modules. No fake patches or generation results are inserted.
 
-Manual presets and local source processing are the operative Phase 1 journey.
-The example sound description is static copy, clearly marked as next phase.
-There is no editable prompt, AI request, generation charge, or simulated result.
-No cloud Save action is present. Private recipe JSON download/import and a WAV
-download are labeled by their actual behavior. Preparation reveals an explicit save/share button when supported and a download
-link. No file opens automatically after rendering. The app does not claim a
-verified save to the user's file system.
+## Meters and limits
 
-Each continuous slider gesture is one undo step. A auditions the preceding
-committed patch while retaining current B edits; editing is locked while A is
-selected, and preset metadata reflects the patch being auditioned. Clean
-comparison is independent. WAV and JSON downloads use current B. An optional
-two-second effect tail is explicit. File and recipe failures retain the previous
-working source/settings. Recipe version validation belongs to the engine.
-Later imports, edits, Undo, comparison changes, or session clearing invalidate
-older pending recipe reads. Stop remains available during a pending Play and
-cancels that start.
+`engine/meter.mjs` creates passive stereo analyser branches from the summed source and from the master output after its transport fade. Meter outputs never feed the audible destination. Explicit stereo speaker upmix on the input branch mirrors the mono-to-stereo worklet input. Real PCM data is sampled at most 30 times per second while the page is visible and playing. Each analyser retains at least 50 ms of recent samples; polling/foreground scheduling can miss peaks. The visual markers hold sampled peaks for 1.2 seconds. Stop, suspension, disposal and hidden-page handling clear the display.
 
-Audio and undo history live in page memory. This module does not use
-localStorage or IndexedDB, upload source audio or send prompts, or provide
-backups. Clear session disposes the local engine and drops references.
-User-downloaded files remain under the user's control. Host-backed account
-gating is implemented: the blueprint requires the feature to be enabled and the
-injected V2 user resolver to return an account ID. Cloud patch ownership,
-durable private patch storage, retention, generation limits, and AI validation
-remain outside this Phase 1 implementation.
+The displays are **sampled sample-peak dBFS**, not calibrated loudness, continuous capture, true peak, a microphone input, or an output-safety certification. Nonfinite samples show unavailable and never become UI coordinates. Numeric readouts may show peaks outside the graphical -60..0 range; bars clamp to that range. HIGH appears at -1 dBFS or higher. Existing DSP ceiling and export encoding are unchanged.
 
-The independent finish review reported five controller tests passing and the
-three fixes resolved at source-review scope: stale recipe imports versus later
-edits, A preset metadata, and Stop during pending Play. No valid browser
-screenshot or real audio/device run was obtained; the cloud browser blocked the
-local preview with ERR_BLOCKED_BY_CLIENT. Visual appearance, keyboard/touch
-operation, actual audio and failure recovery, mobile layouts, sustained and
-declared-device playback, and musician evaluation remain unverified. Capability
-detection does not certify device support. This document records implemented
-design and behavior, not a claim that those validation gates have passed.
+The analyser implementation follows the [Web Audio AnalyserNode specification](https://www.w3.org/TR/webaudio/#AnalyserNode), including its unconnected output. No third-party library or remote meter transport is introduced.
 
-The iPhone export correction adds a compact file-ready region beneath the output
-controls. It identifies the prepared filename and snapshot behavior, offers a
-native Save / share file button when file sharing is supported, and retains a
-separate-target Download file link. Cancelling does not clear the patch. Cached
-history returns retain edits and undo; ordinary reload/eviction still loses
-unsaved session data. Device verification remains pending.
-# Phase 2 functional addition — 2026-09-05
+## Compatibility and rollback
 
-The existing prompt panel now contains a labeled sound-description textarea,
-Create sound, Cancel generation, Check connection, and status/allowance text.
-It uses the existing brass/black visual system with no shared-site styles.
-The textarea is 16px and actions wrap with 44px minimum targets. Generation
-requires a loaded loop, B selected and server configuration. It never starts
-playback. Controls remain usable while waiting; newer work invalidates the
-candidate. Failure/cancel text points to manual presets and retains the patch.
-Only the typed description is sent; privacy/retention and restart-scoped limits
-are disclosed. The iPhone prepare-then-share export flow remains unchanged.
-Physical iPhone layout, VoiceOver and live generation require user/device checks.
+Recipe schema **1**, engine **noise-lab-1.0.0**, profiles, parameter mappings, fades, DSP source and WAV behavior remain unchanged. Metering is observation, not a change to recipes or engine behavior. Existing patch files and saved versions need no migration. No server endpoints, database schema, account ownership, retention, backup, generation limit, provider or environment variable is changed.
+
+Removing the UI changes or disabling Noise Lab uses the existing module flag. Reverting this design commit does not require restoring a database. Keep all later V2 changes when reverting. V1 and Song Builder files are outside this change.
+
+## Verification
+
+Automated before publication: 133 Python tests and 46 JavaScript tests passed. Coverage includes private ownership/CSRF/storage, malformed AI and recipes, stale operations, save acknowledgement, iPhone export event ordering, output bounds, switching ramps, meter math, passive routing, stereo values, peak-hold expiry, Stop/suspend/dispose, and view changes without changing recipes. These tests do not certify physical iPhone touch/audio, dark-club readability, continuous device playback, or browser layout. Browser observations and remaining limits are recorded with the deployment result.
