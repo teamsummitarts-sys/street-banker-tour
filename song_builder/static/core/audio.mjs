@@ -49,9 +49,20 @@ export function buildRenderPlan(project,assets,{from=0,to,trackId}={}) {
     const elapsed=eventStart-clipStart; const loopLength=sourceDuration-clip.sourceOffset;
     events.push({clipId:clip.id,assetId:clip.assetId,trackId:clip.trackId,when:eventStart-from,
       duration:eventEnd-eventStart,offset:clip.sourceOffset+(clip.loop?elapsed%loopLength:elapsed),
-      loop:clip.loop,loopStart:clip.sourceOffset,loopEnd:sourceDuration,gain:dbToGain(clip.gainDb)});
+      loop:clip.loop,loopStart:clip.sourceOffset,loopEnd:sourceDuration,gain:dbToGain(clip.gainDb),
+      envelope:fadeEnvelope(clip,elapsed,eventEnd-eventStart)});
   }
   return {duration:end-from,songDuration:duration,from,tracks,events};
+}
+
+/** Linear envelopes retain their song position when seeking or exporting a range. */
+export function fadeEnvelope(clip,elapsed,duration) {
+  let fadeIn=clip.fadeIn||0,fadeOut=clip.fadeOut||0;
+  const scale=Math.min(1,clip.duration/(fadeIn+fadeOut||1));fadeIn*=scale;fadeOut*=scale;
+  const level=t=>Math.max(0,Math.min(1,fadeIn?t/fadeIn:1,fadeOut?(clip.duration-t)/fadeOut:1));
+  const end=elapsed+duration;
+  const times=[elapsed,...[fadeIn,clip.duration-fadeOut].filter(t=>t>elapsed&&t<end),end];
+  return [...new Set(times)].sort((a,b)=>a-b).map(t=>({time:t-elapsed,value:level(t)}));
 }
 
 function wavHeader(frames,channels,sampleRate) {
@@ -96,7 +107,9 @@ function graph(context,plan,buffers,destination,when=0) {
       const source=context.createBufferSource(); const gain=context.createGain(); nodes.push(source,gain); sources.push(source);
       source.buffer=buffers.get(event.assetId); source.loop=event.loop;
       if(event.loop) {source.loopStart=event.loopStart; source.loopEnd=event.loopEnd;}
-      gain.gain.value=event.gain; source.connect(gain); gain.connect(buses.get(event.trackId));
+      gain.gain.setValueAtTime(event.gain*event.envelope[0].value,when+event.when);
+      for(const point of event.envelope.slice(1))gain.gain.linearRampToValueAtTime(event.gain*point.value,when+event.when+point.time);
+      source.connect(gain); gain.connect(buses.get(event.trackId));
       source.start(when+event.when,event.offset,event.duration);
     }
     return {nodes,sources,cleanup};

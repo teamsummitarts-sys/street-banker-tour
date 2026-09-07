@@ -119,7 +119,13 @@ def project(value):
         boolean(t['solo'])
         tracks[t['id']] = t
     for c in value['clips']:
-        exact(c, 'id trackId sectionId assetId offset sourceOffset duration loop gainDb')
+        if type(c) is not dict:
+            invalid()
+        exact(c, 'id trackId sectionId assetId offset sourceOffset duration loop gainDb' +
+              ''.join(' ' + key for key in ('fadeIn', 'fadeOut') if key in c))
+        for key in ('fadeIn', 'fadeOut'):
+            if key in c:
+                number(c[key], 0, 120)
         for field in ('id', 'trackId', 'sectionId', 'assetId'):
             identifier(c[field])
         if c['id'] in clips or c['trackId'] not in tracks or c['sectionId'] not in sections:
