@@ -20,7 +20,7 @@ export function bindRackSlider(input,{read,allowed,preview,apply,display}){
   input.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();cancel();}});
   return cancel;
 }
-export function renderRackPanel(root,{track,blocked,protectedNames,allowed,preview,apply}){
+export function renderRackPanel(root,{track,blocked,protectedNames,allowed,preview,apply,audition=false}){
   root.replaceChildren();const cancellations=[];
   const heading=node('div','','rack-heading');
   const title=node('div','');title.append(node('span','SOUND RACK · 01','rack-eyebrow'),node('h2',track?track.name:'Select an instrument layer'));
@@ -34,7 +34,7 @@ export function renderRackPanel(root,{track,blocked,protectedNames,allowed,previ
   if(hasTrack&&!track.rack)modes.append(action('Assign rack',()=>apply({...RACK_DEFAULT})));
   else if(hasTrack)for(const [label,enabled]of [['Original',false],['Processed',true]])modes.append(action(label,()=>apply({...settings,enabled}),settings.enabled===enabled));
   heading.append(modes);
-  root.append(node('p',!hasTrack?'Add an instrument, upload audio, or try the synth demo. Your rack is ready when you are.':protectedNames.length?`Unlock ${protectedNames.join(', ')} to change this rack. It affects this track throughout the song.`:'Shape this recording while it plays. These settings follow the track through every section and into WAV exports.','hint'));
+  root.append(node('p',!hasTrack?'Add an instrument, upload audio, or try the synth demo. Your rack is ready when you are.':protectedNames.length?`Unlock ${protectedNames.join(', ')} to change this rack. It affects this track throughout the song.`:audition?'Shape this alternate take while it plays. Accept it to keep these settings in a new version.':'Shape this recording while it plays. These settings follow the track through every section and into WAV exports.','hint'));
   const presets=node('div','','rack-presets');presets.setAttribute('aria-label','Sound presets');
   for(const p of RACK_PRESETS){const values=presetSettings(p);const b=action('',()=>apply(values),sameRack(track.rack,values));b.append(node('strong',p.name),node('span',p.detail));presets.append(b);}
   root.append(presets);

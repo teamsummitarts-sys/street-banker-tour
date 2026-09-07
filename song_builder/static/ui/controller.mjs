@@ -5,7 +5,7 @@ import { readBundle, writeBundle } from './portable.mjs';
 import { PendingRequests } from './requests.mjs';
 import { bindFadeHandle, effectiveFades } from './fade-handles.mjs';
 import { renderRackPanel } from './rack-panel.mjs';
-import { sameRack } from '../core/rack.mjs';
+import { RACK_DEFAULT, sameRack } from '../core/rack.mjs';
 
 const $ = id => document.getElementById(id);
 const base = document.querySelector('meta[name="song-builder-base"]').content.replace(/\/$/, '');
@@ -17,7 +17,7 @@ const state = { project:null, revision:0, sectionId:null, trackId:null, clipId:n
   assets:new Map(), jobs:[], capabilities:null, dirty:false, sequence:0, busy:0,
   playing:false, sectionOnly:false, loopSection:false, playRequest:0, previewEnd:null, saveChain:Promise.resolve(), conflict:false,
   recorder:null, recordingStream:null, recordTimer:null, recordProject:null,
-  preparedUrl:null, polling:null, saveTimer:null, history:[], future:[], rejectedJobs:new Set() };
+  preparedUrl:null, polling:null, saveTimer:null, history:[], future:[], rejectedJobs:new Set(), audition:null, auditionRacks:new Map() };
 
 class ApiError extends Error { constructor(message,status) { super(message); this.status=status; } }
 async function api(path, {method='GET',body,signal}={}) {
@@ -39,7 +39,7 @@ function selectedClip() { return state.project?.clips.find(c=>c.id===state.clipI
 function text(tag,value,className) { const node=document.createElement(tag);node.textContent=value;if(className)node.className=className;return node; }
 function button(label,handler,options={}) { const node=text('button',label,options.className);node.type='button';node.disabled=Boolean(options.disabled);if(options.pressed!==undefined)node.setAttribute('aria-pressed',String(options.pressed));node.addEventListener('click',()=>run(handler));return node; }
 async function run(action) { if(state.busy)return; state.busy++;renderDisabled();try { await action(); } catch(e) {failure(e);}finally {state.busy--;renderDisabled();} }
-function stop(except=null) { for(const audio of $('jobs').querySelectorAll('audio'))if(audio!==except)audio.pause();engine.stop();state.playRequest++;state.playing=false;state.previewEnd=null;$('play-song').setAttribute('aria-pressed','false'); }
+function stop(except=null) { for(const audio of $('jobs').querySelectorAll('audio'))if(audio!==except)audio.pause();engine.stop();state.playRequest++;state.playing=false;state.previewEnd=null;$('play-song').setAttribute('aria-pressed','false'); if(state.audition){state.audition=null;$('seek').value=0;document.body.classList.remove('auditioning');$('selected-mixer').hidden=false;renderRack();$('instrument-heading').textContent=state.project.tracks.find(t=>t.id===state.trackId)?.name||'Select an instrument';} }
 function markDirty() { state.dirty=true;state.sequence++;$('save-state').textContent='Unsaved changes';clearTimeout(state.saveTimer);state.saveTimer=setTimeout(()=>save().catch(failure),800); }
 function commit(project,{redraw=true,history=true,resume=false,rackTrackId=null}={}) {
   const wasPlaying=(resume||rackTrackId)&&state.playing,from=engine.position(),sectionOnly=state.sectionOnly;
@@ -110,7 +110,7 @@ function renderMeta(){if(!state.project)return;$('duration-label').textContent=`
 function render(){if(!state.project)return;renderMeta();$('song-title').value=state.project.title;$('song-tempo').value=state.project.tempo;$('song-key').value=state.project.key;renderSections();renderTracks();renderInspector();renderJobs();renderDisabled();}
 function renderSections(){
   const list=$('sections');list.replaceChildren();state.project.sections.forEach((s,i)=>{
-    const li=document.createElement('li'),b=button('',()=>{if(state.playing&&state.sectionOnly)stop();state.sectionId=s.id;state.clipId=null;render();},{pressed:s.id===state.sectionId,className:'section-button'});
+    const li=document.createElement('li'),b=button('',()=>{if(state.audition||(state.playing&&state.sectionOnly))stop();state.sectionId=s.id;state.clipId=null;render();},{pressed:s.id===state.sectionId,className:'section-button'});
     li.style.setProperty('--section-width',`${Math.max(110,Math.min(320,s.duration*9))}px`);
     b.append(text('span',`${String(i+1).padStart(2,'0')} · ${seconds(P.sectionStart(state.project,s.id))}`,'section-number'),text('strong',s.name),text('span',`${s.duration}s${s.locked?' · Protected':''}`));li.append(b);list.append(li);
   });
@@ -144,7 +144,7 @@ function renderTracks(){
   for(const track of state.project.tracks){
     const row=document.createElement('div');row.className='track'+(track.id===state.trackId?' selected':'');row.dataset.trackId=track.id;
     const controls=document.createElement('div');controls.className='track-controls';const title=document.createElement('div');title.className='track-title';
-    title.append(button(track.name,()=>{state.trackId=track.id;studio.focusInstrument();renderTracks();renderDisabled();},{className:'track-name',pressed:track.id===state.trackId}),
+    title.append(button(track.name,()=>{if(state.audition)stop();state.trackId=track.id;studio.focusInstrument();renderTracks();renderDisabled();},{className:'track-name',pressed:track.id===state.trackId}),
       button('M',()=>commit(P.updateTrack(state.project,track.id,{muted:!track.muted}),{resume:true}),{className:'track-switch',pressed:track.muted}),
       button('S',()=>commit(P.updateTrack(state.project,track.id,{solo:!track.solo}),{resume:true}),{className:'track-switch',pressed:track.solo}));
     title.children[1].setAttribute('aria-label',`Mute ${track.name}`);title.children[2].setAttribute('aria-label',`Solo ${track.name}`);
@@ -155,10 +155,10 @@ function renderTracks(){
     }
     const center=button('Center',()=>commit(P.updateTrack(state.project,track.id,{pan:0}),{resume:true}),{className:'pan-center',disabled:track.pan===0});
     center.setAttribute('aria-label',`Center pan for ${track.name}`);const rename=button('Rename',()=>{const name=prompt('Track name',track.name);if(name!==null&&name.trim())commit(P.updateTrack(state.project,track.id,{name:name.trim().slice(0,60)}));},{className:'track-edit'}),remove=button('Remove',()=>{if(confirm(`Remove ${track.name} and its clips from this song?`))commit(P.removeTrack(state.project,track.id));},{className:'track-remove'});mix.append(center,rename,remove);
-    mix.append(button('Rack',()=>{state.trackId=track.id;renderTracks();renderDisabled();$('sound-rack').scrollIntoView({behavior:'smooth',block:'center'});},{className:'track-edit'}));
+    mix.append(button('Rack',()=>{if(state.audition)stop();state.trackId=track.id;renderTracks();renderDisabled();$('sound-rack').scrollIntoView({behavior:'smooth',block:'center'});},{className:'track-edit'}));
     controls.append(title,mix);const lane=document.createElement('div');lane.className='lane';const content=document.createElement('div');content.className='lane-content';
     for(const clip of state.project.clips.filter(c=>c.trackId===track.id&&c.sectionId===section.id)){
-      const asset=state.assets.get(clip.assetId);const c=button('',()=>{state.clipId=clip.id;state.trackId=clip.trackId;studio.focusInstrument();renderTracks();renderInspector();},{className:'clip'+(state.clipId===clip.id?' selected':'')});
+      const asset=state.assets.get(clip.assetId);const c=button('',()=>{if(state.audition)stop();state.clipId=clip.id;state.trackId=clip.trackId;studio.focusInstrument();renderTracks();renderInspector();},{className:'clip'+(state.clipId===clip.id?' selected':'')});
       c.style.left=`${clip.offset/section.duration*100}%`;c.style.width=`${clip.duration/section.duration*100}%`;c.setAttribute('aria-label',`${asset?.name||'Audio clip'}, ${clip.duration.toFixed(1)} seconds on ${track.name}`);
       const left=text('i','','trim-handle trim-left'),right=text('i','','trim-handle trim-right');left.setAttribute('aria-label','Trim clip start');right.setAttribute('aria-label','Trim clip end');
       c.append(left,text('span',asset?.name||'Audio clip'));const canvas=document.createElement('canvas');canvas.width=300;canvas.height=56;canvas.setAttribute('aria-label','Drag clip along section');c.append(canvas,right);bindTrimHandle(left,clip,'start',c,section);bindTrimHandle(right,clip,'end',c,section);bindClipMove(canvas,clip,c,section);
@@ -190,18 +190,21 @@ let cancelRackGesture=()=>{};
 function rackProtectedSections(trackId){return state.project?.sections.filter(s=>s.locked&&state.project.clips.some(c=>c.sectionId===s.id&&c.trackId===trackId)).map(s=>s.name)||[];}
 function renderRack(){
   cancelRackGesture();
-  const track=state.project?.tracks.find(t=>t.id===state.trackId),projectId=state.project?.id,sequence=state.sequence;
-  const protectedNames=rackProtectedSections(track?.id);
-  const allowed=()=>!state.busy&&!state.recorder&&state.project?.id===projectId&&state.sequence===sequence&&!rackProtectedSections(track?.id).length;
-  cancelRackGesture=renderRackPanel($('sound-rack'),{track,protectedNames,blocked:state.busy>0||Boolean(state.recorder)||protectedNames.length>0,
+  const audition=state.audition;
+  const track=audition?.project.tracks[0]||state.project?.tracks.find(t=>t.id===state.trackId),projectId=state.project?.id,sequence=state.sequence;
+  const protectedNames=audition?[]:rackProtectedSections(track?.id);
+  const allowed=()=>!state.busy&&!state.recorder&&state.project?.id===projectId&&state.sequence===sequence&&state.audition===audition&&!rackProtectedSections(track?.id).length;
+  cancelRackGesture=renderRackPanel($('sound-rack'),{track,protectedNames,audition:Boolean(audition),blocked:state.busy>0||Boolean(state.recorder)||protectedNames.length>0,
     allowed,preview:settings=>{if(state.project?.id===projectId)engine.updateRack(track.id,settings);},
     apply:settings=>{try{
       if(!allowed())return;
+      if(audition){audition.project=P.updateTrack(audition.project,track.id,{rack:settings});state.auditionRacks.set(audition.key,{...settings});engine.updateRack(track.id,settings);renderRack();renderDisabled();return;}
       const next=P.updateTrack(state.project,track.id,{rack:settings});
       if(sameRack(track.rack,settings))return;
       commit(next,{rackTrackId:track.id});
     }catch(error){failure(error);renderRack();}}
   });
+  if(audition){const actions=text('div','','audition-actions');actions.append(text('span','TAKE AUDITION · Not yet accepted','audition-label'),button('Replay take',()=>auditionTake(audition.job)),button('Accept into new version',()=>acceptTake(audition.job),{disabled:selectedSection()?.locked}),button('Back to takes',()=>{stop();$('tab-takes').click();}));$('sound-rack').prepend(actions);}
 }
 function renderInspector(){const s=selectedSection();if(!s)return;$('section-heading').textContent=s.name;$('section-name').value=s.name;$('section-duration').value=s.duration;$('section-direction').value=s.direction;$('section-lyrics').value=s.lyrics;$('lock-section').textContent=s.locked?'Protected':'Protect';$('lock-section').setAttribute('aria-pressed',String(s.locked));$('lock-hint').textContent=s.locked?'These parts are protected. Unlock before changing their audio, lyrics or length.':'Protect this section when you want to keep its parts.';
   const protectedCount=state.project.sections.filter(section=>section.id!==s.id&&section.locked).length;
@@ -209,10 +212,10 @@ function renderInspector(){const s=selectedSection();if(!s)return;$('section-hea
   const clip=selectedClip();$('clip-inspector').hidden=!clip;if(clip){$('clip-offset').value=clip.offset;$('clip-source').value=clip.sourceOffset;$('clip-duration').value=clip.duration;$('clip-loop').checked=clip.loop;$('clip-fade-in').value=clip.fadeIn||0;$('clip-fade-out').value=clip.fadeOut||0;}
 }
 function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boolean(s?.locked),hasAudio=Boolean(state.project?.clips.length),recording=Boolean(state.recorder);
-  const rackTrack=state.project?.tracks.find(t=>t.id===state.trackId),rackBlocked=!rackTrack||busy||recording||rackProtectedSections(state.trackId).length>0;
+  const rackTrack=state.audition?.project.tracks[0]||state.project?.tracks.find(t=>t.id===state.trackId),rackBlocked=!rackTrack||busy||recording||(!state.audition&&rackProtectedSections(state.trackId).length>0);
   for(const input of $('sound-rack').querySelectorAll('button,input'))input.disabled=Boolean(rackBlocked||(input.hasAttribute('data-rack-assigned')&&(!rackTrack?.rack||!rackTrack.rack.enabled)));
   $('loop-section').disabled=busy||recording||!hasAudio;$('clear-solos').disabled=busy||recording;
-  for(const input of $('selected-mixer').querySelectorAll('input,button'))input.disabled=busy||recording||(input.classList.contains('pan-center')&&rackTrack?.pan===0);
+  for(const input of $('selected-mixer').querySelectorAll('input,button'))input.disabled=busy||recording||Boolean(state.audition)||(input.classList.contains('pan-center')&&rackTrack?.pan===0);
   for(const id of ['save-project','new-project','save-version','import-project','export-project','project-list','start-ai','load-demo','export-mix','export-section','export-track','export-30','export-15','play-song','play-section','add-section','add-track','prepare-section-test'])$(id).disabled=busy||recording;
   for(const id of ['section-name','section-duration','section-direction','section-lyrics','duplicate-section','remove-section','upload-audio','apply-clip','remove-clip','duplicate-clip','split-clip','clip-offset','clip-source','clip-duration','clip-loop','clip-fade-in','clip-fade-out','crossfade-clip'])$(id).disabled=busy||lock||recording;
   for(const id of ['song-title','song-tempo','song-key','lock-section','move-earlier','move-later'])$(id).disabled=busy||recording;
@@ -245,7 +248,7 @@ async function play(from=0,{sectionOnly=false}={}){
   state.playing=engine.isPlaying();$('play-song').setAttribute('aria-pressed',String(state.playing));
 }
 function clock(time=0){
-  if(state.project){const position=state.playing?engine.position():Number($('seek').value);if(state.playing)$('seek').value=position;$('play-time').textContent=`${seconds(position)} / ${seconds(P.projectDuration(state.project))}`;studio.playhead(position);studio.meter(engine.meterLevels(),time);}
+  if(state.project){const position=state.playing||state.audition?engine.position():Number($('seek').value);if(state.playing)$('seek').value=position;$('play-time').textContent=`${seconds(position)} / ${seconds(P.projectDuration(state.audition?.project||state.project))}${state.audition?' · TAKE':''}`;studio.playhead(state.audition?-1:position);studio.meter(engine.meterLevels(),time);}
   requestAnimationFrame(clock);
 }
 async function uploadWav(bytes,name){const form=new FormData();form.append('file',new Blob([bytes],{type:'audio/wav'}),name.replace(/\.[^.]*$/,'')+'.wav');const r=await api('/api/assets',{method:'POST',body:form});state.assets.set(r.asset.id,r.asset);await engine.decode(r.asset.id,bytes);return r.asset;}
@@ -284,10 +287,33 @@ function takeRejected(job){if(state.rejectedJobs.has(job.id))return true;try{ret
 function renderJobs(){const holder=$('jobs');if([...holder.querySelectorAll('audio')].some(audio=>!audio.paused&&!audio.ended))return;holder.replaceChildren();if(pendingRequests.get()){holder.append(text('p','A music request has an unknown outcome. Recover the same request before creating another.'),button('Recover previous request',recoverJob));}for(const job of state.jobs){if(takeRejected(job))continue;const item=document.createElement('div');item.className='job';const section=state.project.sections.find(s=>s.id===job.sectionId);item.append(text('p',job.kind==='separate'?'Separated instrument layers':`${section?.name||'Section'} · alternate take`),text('p',job.status,'job-status'));
     if(job.error)item.append(text('p',typeof job.error==='string'?job.error:'This take could not finish. Your accepted parts are unchanged.','hint'));
     if(job.status==='succeeded'){
-      if(job.asset){const audio=document.createElement('audio');audio.controls=true;audio.preload='none';audio.src=job.asset.url;audio.addEventListener('play',()=>stop(audio));item.append(text('p','Candidate','hint'),audio);item.append(button('Play original section',()=>auditionOriginal(job),{disabled:state.busy||!section}),button('Accept into new version',()=>acceptTake(job),{disabled:state.busy||!section||section.locked}),button('Reject take',()=>rejectTake(job)));}
+      if(job.asset){item.append(button('Audition with rack',()=>auditionTake(job),{className:'primary',disabled:state.busy}),text('p','Play this take through Body, Bite, Dirt and Space before accepting it.','hint'));item.append(button('Play original section',()=>auditionOriginal(job),{disabled:state.busy||!section}),button('Accept into new version',()=>acceptTake(job),{disabled:state.busy||!section||section.locked}),button('Reject take',()=>rejectTake(job)));}
       if(job.assets?.length)item.append(button(`Use ${job.assets.length} stems`,()=>acceptStems(job),{disabled:state.busy||selectedSection()?.locked}));
     }holder.append(item);
   }}
+// Candidate playback uses the same decoded buffers, rack DSP and meters as the arrangement.
+async function auditionTake(job){
+  stop();const request=state.playRequest,projectId=state.project.id;
+  const section=state.project.sections.find(s=>s.id===job.sectionId);
+  if(!section||!job.asset)throw new Error('This take is no longer available in this project.');
+  const audio=await ensureAudio(job.asset);
+  if(request!==state.playRequest||projectId!==state.project.id)return;
+  const key=`${projectId}:${job.id}`,duration=Math.min(section.duration,audio.duration);
+  let project=P.newProject('Take audition');
+  project={...project,tempo:state.project.tempo,key:state.project.key,sections:[{...project.sections[0],name:section.name,duration}]};
+  project=P.addTrack(project,`${section.name} · take audition`.slice(0,60));
+  const track=project.tracks[0];
+  project=P.updateTrack(project,track.id,{rack:state.auditionRacks.get(key)||{...RACK_DEFAULT}});
+  project=P.addClip(project,{trackId:track.id,sectionId:project.sections[0].id,assetId:job.asset.id,offset:0,sourceOffset:0,duration,loop:false,gainDb:0});
+  state.audition={project,job,key};
+  try{await engine.play(project,{onEnded:()=>{if(request===state.playRequest)state.playing=false;}});}
+  catch(error){if(request===state.playRequest)stop();throw error;}
+  if(request!==state.playRequest)return;
+  state.playing=engine.isPlaying();document.body.classList.add('auditioning');
+  $('tab-sound').click();$('selected-mixer').hidden=true;$('instrument-heading').textContent='Listening to alternate take';
+  renderRack();$('sound-rack').scrollIntoView({behavior:'smooth',block:'center'});
+  notify('Auditioning through the rack. Your changes stay with this take when you accept it.');
+}
 async function sendJob(body){
   try{const r=await api('/api/jobs',{method:'POST',body});pendingRequests.resolve(body.requestId);if(r.job.projectId===state.project.id){state.jobs=state.jobs.filter(j=>j.id!==r.job.id);state.jobs.unshift(r.job);}notify('Music request confirmed. Your accepted audio stays in place.');}
   catch(e){if([400,403,404,409,429].includes(e.status))pendingRequests.resolve(body.requestId);throw e;}
@@ -299,7 +325,7 @@ async function submitJob(kind){if(pendingRequests.get())throw new Error('Use Rec
 async function auditionOriginal(job){const s=state.project.sections.find(section=>section.id===job.sectionId);if(!s)throw new Error('That original section is no longer in this version.');state.sectionId=s.id;state.clipId=null;render();await play(P.sectionStart(state.project,s.id),{sectionOnly:true});}
 function rejectTake(job){stop();state.rejectedJobs.add(job.id);let persisted=true;try{localStorage.setItem(`song-builder:rejected:${job.projectId}:${job.id}`,'1');}catch{persisted=false;}renderJobs();notify(persisted?'Take rejected and hidden on this browser. Your original arrangement is unchanged.':'Take hidden for this session. Browser storage is unavailable; it may return after reopening.');}
 async function prepareSectionTest(){const s=selectedSection();commit(P.prepareSectionTake(state.project,s.id));await save();notify(`${s.name} is ready for an AI test. Every other section is protected.`);}
-async function acceptTake(job){stop();const s=state.project.sections.find(section=>section.id===job.sectionId);if(!s||s.locked)throw new Error('Unlock the original section before using this take.');if(!confirm(`Accept this take for ${s.name} into a new song version? The current version will remain unchanged.`))return;const a=job.asset;const audio=await ensureAudio(a);state.assets.set(a.id,a);await save();let p={...state.project,id:P.newId(),title:`${state.project.title} — ${s.name} AI take`.slice(0,120),clips:state.project.clips.filter(c=>c.sectionId!==s.id)};let t=p.tracks.find(track=>track.name==='Generated take');if(!t){p=P.addTrack(p,'Generated take');t=p.tracks.at(-1);}p=P.addClip(p,{trackId:t.id,sectionId:s.id,assetId:a.id,offset:0,sourceOffset:0,duration:Math.min(s.duration,audio.duration),loop:false,gainDb:0});state.revision=0;state.jobs=[];state.rejectedJobs=new Set();state.history=[];state.future=[];state.sectionId=s.id;state.trackId=t.id;state.clipId=p.clips.at(-1).id;state.project=P.validateProject(p);state.dirty=true;state.sequence++;render();await save();notify(`Take accepted into ${state.project.title}. The prior song version and every other section were preserved.`);}
+async function acceptTake(job){stop();const s=state.project.sections.find(section=>section.id===job.sectionId);if(!s||s.locked)throw new Error('Unlock the original section before using this take.');if(!confirm(`Accept this take for ${s.name} into a new song version? The current version will remain unchanged.`))return;const a=job.asset;const audio=await ensureAudio(a);state.assets.set(a.id,a);await save();let p={...state.project,id:P.newId(),title:`${state.project.title} — ${s.name} AI take`.slice(0,120),clips:state.project.clips.filter(c=>c.sectionId!==s.id)};p=P.addTrack(p,'Generated take');const t=p.tracks.at(-1);p=P.updateTrack(p,t.id,{rack:state.auditionRacks.get(`${state.project.id}:${job.id}`)||{...RACK_DEFAULT}});p=P.addClip(p,{trackId:t.id,sectionId:s.id,assetId:a.id,offset:0,sourceOffset:0,duration:Math.min(s.duration,audio.duration),loop:false,gainDb:0});state.revision=0;state.jobs=[];state.rejectedJobs=new Set();state.history=[];state.future=[];state.sectionId=s.id;state.trackId=t.id;state.clipId=p.clips.at(-1).id;state.project=P.validateProject(p);state.dirty=true;state.sequence++;render();await save();notify(`Take accepted into ${state.project.title}. The prior song version and every other section were preserved.`);}
 async function acceptStems(job){const section=selectedSection();if(section.locked)throw new Error('Unlock this section before adding stems.');const selected=selectedClip();const source=selected&&selected.assetId===job.assetId&&selected.sectionId===section.id?selected:null;if(!source)throw new Error('Select the original clip in the section where you want the stems.');
   if(state.project.tracks.length+job.assets.length>12)throw new Error('This would exceed 12 tracks. Start a project with fewer layers before adding these stems.');
   for(const a of job.assets){await ensureAudio(a);state.assets.set(a.id,a);}let p=P.removeClip(state.project,source.id);for(const a of job.assets){p=P.addTrack(p,a.name.slice(0,60));const t=p.tracks.at(-1);const duration=Math.min(source.duration,engine.buffer(a.id).duration-source.sourceOffset);if(duration<=0)throw new Error('The separated audio does not cover this clip’s source range.');p=P.addClip(p,{trackId:t.id,sectionId:section.id,assetId:a.id,offset:source.offset,sourceOffset:source.sourceOffset,duration,loop:source.loop,gainDb:source.gainDb});}commit(p);await save();notify('Separated layers added. Audition them for separation artifacts before exporting.');}
