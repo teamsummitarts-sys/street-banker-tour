@@ -2,6 +2,7 @@ import * as P from '../core/project.mjs';
 import { AudioEngine, createDemoAudio } from '../core/audio.mjs';
 import { readBundle, writeBundle } from './portable.mjs';
 import { PendingRequests } from './requests.mjs';
+import { bindFadeHandle, effectiveFades } from './fade-handles.mjs';
 
 const $ = id => document.getElementById(id);
 const base = document.querySelector('meta[name="song-builder-base"]').content.replace(/\/$/, '');
@@ -153,6 +154,20 @@ function renderTracks(){
       const left=text('i','','trim-handle trim-left'),right=text('i','','trim-handle trim-right');left.setAttribute('aria-label','Trim clip start');right.setAttribute('aria-label','Trim clip end');
       c.append(left,text('span',asset?.name||'Audio clip'));const canvas=document.createElement('canvas');canvas.width=300;canvas.height=56;canvas.setAttribute('aria-label','Drag clip along section');c.append(canvas,right);bindTrimHandle(left,clip,'start',c,section);bindTrimHandle(right,clip,'end',c,section);bindClipMove(canvas,clip,c,section);
       if(engine.has(clip.assetId)){const peaks=engine.waveform(clip.assetId,100),ctx=canvas.getContext('2d');ctx.strokeStyle='#dfb86b';ctx.lineWidth=1.5;ctx.beginPath();for(let i=0;i<peaks.length;i++){const x=i/peaks.length*300,v=Math.max(1,peaks[i]*24);ctx.moveTo(x,28-v);ctx.lineTo(x,28+v);}ctx.stroke();}
+      const incoming=text('i','','fade-region fade-region-in'),outgoing=text('i','','fade-region fade-region-out');
+      const showFades=values=>{incoming.style.width=`${values.fadeIn/clip.duration*100}%`;outgoing.style.width=`${values.fadeOut/clip.duration*100}%`;};
+      showFades(effectiveFades(clip));c.append(incoming,outgoing);
+      if(state.clipId===clip.id&&!section.locked){
+        const projectId=state.project.id,sequence=state.sequence;
+        for(const [key,label]of [['fadeIn','IN'],['fadeOut','OUT']]){
+          const handle=text('i',label,`fade-handle ${key==='fadeIn'?'fade-handle-in':'fade-handle-out'}`);handle.title=`Drag inward to adjust ${key==='fadeIn'?'fade in':'fade out'}`;
+          bindFadeHandle(handle,clip,key,{width:()=>c.getBoundingClientRect().width,
+            allowed:()=>!state.busy&&!state.recorder&&state.project.id===projectId&&state.sequence===sequence&&!selectedSection()?.locked,
+            preview:showFades,restore:()=>showFades(effectiveFades(clip)),
+            apply:patch=>{try{commit(P.updateClip(state.project,clip.id,patch));}catch(error){failure(error);renderTracks();}}});
+          c.append(handle);
+        }
+      }
       content.append(c);
     }
     lane.append(content);row.append(controls,lane);tracks.append(row);
