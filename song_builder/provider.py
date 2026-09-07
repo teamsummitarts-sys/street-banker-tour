@@ -86,8 +86,11 @@ def composition_payload(snapshot):
     # The simple-prompt contract is shared by music_v1 and music_v2 and lets us
     # request an exact section duration without maintaining two incompatible
     # composition-plan schemas.
+    prompt = '\n'.join(value for value in directions if value)
+    if len(prompt) > 4100:
+        raise SongError('prompt_too_long', 'Shorten the take prompt, musical direction or lyrics. The combined music request must fit within 4,100 characters.', 400)
     return {'model_id': MODEL, 'store_for_inpainting': False,
-            'prompt': '\n'.join(value for value in directions if value),
+            'prompt': prompt,
             'music_length_ms': round(section['duration'] * 1000)}
 
 

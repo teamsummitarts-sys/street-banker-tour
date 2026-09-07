@@ -7,6 +7,7 @@ from pathlib import Path
 import sqlite3
 import time
 import uuid
+from .provider import composition_payload
 
 from .validation import (MAX_ASSETS, MAX_PROJECTS, MAX_STORAGE_BYTES, SongError,
                          enforce_locks, invalid, safe_name)
@@ -237,6 +238,7 @@ class Store:
                 if section['locked']:
                     raise SongError('section_locked', 'Unlock and save this section before generating a new take.', 409)
                 snapshot.update(section=section, tempo=value['tempo'], key=value['key'], prompt=request['prompt'])
+                composition_payload(snapshot)  # Reject invalid input before reserving quota.
             else:
                 asset = db.execute('SELECT * FROM assets WHERE id=? AND owner=?', (request['assetId'], owner)).fetchone()
                 if asset is None:
