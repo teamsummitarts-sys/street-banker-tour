@@ -165,3 +165,46 @@ host-auth, CSRF, recipe, DSP and iPhone-save regressions also pass.
 No successful live generation or new physical iPhone audio result is claimed.
 This fix does not increase provider credits or limits. Deployment evidence and
 the exact V2 commit are recorded in the associated pull request.
+
+## Phase 3 private patch library — 2026-09-05
+
+The owner subsequently reported that generation, A/B, Undo and audio export all
+worked on their iPhone after adding API credit. This supersedes the earlier
+absence of user-reported success for those features; it does not establish
+measured API cost, sustained device playback, or results for this new library.
+
+Fresh combined checks on the Phase 3 source pass **133 Python + 41 JavaScript
+tests = 174 total**, exit 0. Commands:
+
+```
+python -m pytest -q tests/test_noise_lab_patches.py tests/test_noise_lab_storage_admin.py tests/test_noise_lab_generation.py tests/test_noise_lab_routes.py tests/test_noise_lab_v2.py
+node --test tests/noise_lab/controller.test.mjs tests/noise_lab/engine.test.mjs
+```
+
+| Acceptance | Evidence | Status |
+| --- | --- | --- |
+| Private ownership and mutation protection | Real SQLite, two-account list/read/version/export/delete isolation, anonymous access, CSRF/Origin checks, bounded strict request parsing | Automated checks pass |
+| Immutable versions and limits | Concurrent creates/appends, stale base versions, idempotent retries, deleted-request tombstones, per-account and per-patch ceilings | Automated checks pass |
+| Compatibility and failure retention | Unknown/partial store schemas fail closed; unsupported/corrupt recipes remain exportable; controller preserves working audio after errors and newer edits after late acknowledgements | Automated checks pass; controller uses fake DOM/audio/network boundaries |
+| Host integration and persistence | Actual V2 factory with synthetic identity; save, reopen the same SQLite file through a new factory/client, read and export owned versions | Local database reopening passes; Render restart test pending |
+| Durable-storage gate | Flag off by default; production requires a real persistent mount with the resolved database below it; path/symlink escape rejection | Automated checks pass; paid mount not provisioned |
+| Native database recovery helper | Live WAL content and user IDs preserved, SQLite integrity and foreign keys checked, private destination permissions, no overwrite, invalid source/path/mount rejection, safe failure cleanup | 18 helper tests pass; actual V2 backup/restore not performed |
+| Library controls and iPhone export regression | Save/version, older-version load with Undo, duplicate-save prevention, lost-response retry, conflict/session errors, two-step archive export, explicit deletion confirmation, clear and account-change invalidation | 26 controller tests pass; physical device and visual review pending |
+| Existing AI and audio behavior | Provider diagnostics/auth/limits and unchanged DSP extrema, finite output, switching ramps, WAV export, worklet equivalence and simulated sustained processing | Existing regressions pass; no new live generation or listening claim |
+
+The isolated local preview at `http://127.0.0.1:5061/noise-lab/` was blocked by the
+available browser with `net::ERR_BLOCKED_BY_CLIENT`. It used a synthetic local
+identity and did not call the provider. No rendered library screenshot,
+screen-reader/keyboard/touch result, real browser playback, or new iPhone result
+was obtained. Automated DOM tests are not a visual or accessibility certification.
+
+Phase 3 is prepared for review, not activated. No paid Render upgrade, persistent
+disk, environment change, production data copy, backup schedule or Phase 3
+deployment is included in this evidence. V1 was not modified. The existing Free
+V2 filesystem is unsuitable for durable account saves. The concrete paid-storage
+approval, pre-upgrade whole-database backup, activation, restart verification and
+rollback steps are documented in PHASE3.md. The project-wide CI workflow does not
+currently select these Noise Lab paths; these are local test results, not a claim
+that GitHub CI ran. Musician preference, repeat use, willingness to pay,
+time-to-first-saved-sound, generation failure rate and actual cost remain
+unmeasured.

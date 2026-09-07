@@ -35,7 +35,7 @@ def test_capabilities_do_not_claim_unbuilt_features():
     response = host(user={"id": "owner"}).test_client().get("/noise-lab/capabilities")
     assert response.status_code == 200
     payload = response.get_json()
-    assert payload["phase"] == 2
+    assert payload["phase"] == 3
     assert payload["ai_generation"] is False
     assert payload["cloud_patch_storage"] is False
     assert payload["audio_uploads"] is False

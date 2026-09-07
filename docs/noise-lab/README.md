@@ -1,11 +1,15 @@
-# Street Banker Noise Lab — V2 Phase 2
+# Street Banker Noise Lab — V2 validation prototype
 
-Status: an account-gated local audio and prompt-to-settings validation prototype.
-Phase 2 adds a server-side OpenAI adapter; live provider calls and the new mobile
-generation flow remain unverified until activation and an authenticated retest.
-The owner confirmed the preceding iPhone export fix works. Sustained playback,
-listening quality and broader device checks remain pilot gates.
-See [VERIFICATION.md](VERIFICATION.md) for evidence and limitations.
+Status: Phase 2 is deployed. The owner reports generation, A/B, Undo and audio
+export worked on their iPhone. Phase 3 private patch/version storage is prepared
+for review and remains disabled pending durable V2 hosting activation. The
+current Free Render filesystem is ephemeral; do not call it durable storage.
+See [PHASE3.md](PHASE3.md) for the new contract, pricing approval and backup plan,
+and [VERIFICATION.md](VERIFICATION.md) for the exact evidence and limits.
+Sustained playback, broader devices and musician outcome metrics remain pilot gates.
+
+The sections below record the earlier implementation and phase boundaries;
+PHASE3.md supersedes earlier statements about the absence of patch-write routes.
 
 ## Repository and isolation
 

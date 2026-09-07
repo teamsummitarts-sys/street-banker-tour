@@ -1,4 +1,5 @@
 import { NoiseEngine, PRESETS, LOOPS, DEFAULT_RECIPE, validateRecipe, supportsAudio } from '../engine/index.mjs';
+import {createPatchLibrary} from './patch-library.mjs';
 
 const $ = id => document.getElementById(id);
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -34,6 +35,7 @@ let aiBusy = false;
 let aiSequence = 0;
 let aiController = null;
 let aiRemaining = 0;
+let patchLibrary = null;
 
 function message(text, error = false) {
   const target = $(error ? 'error' : 'notice');
@@ -89,6 +91,7 @@ function renderControls() {
   $('redo').disabled = cursor >= history.length - 1 || comparison === 'a';
   $('compare-state').textContent = clean ? `Clean selected · ${comparison.toUpperCase()} patch retained` : `${comparison.toUpperCase()} selected · ${comparison === 'a' ? 'Previous patch · editing locked' : 'Current patch'}`;
   renderGeneration();
+  patchLibrary?.changed();
 }
 
 function renderTransport() {
@@ -471,6 +474,11 @@ async function refreshGeneration() {
     const response = await fetch('/noise-lab/capabilities', {credentials: 'same-origin', cache: 'no-store', signal: controller.signal});
     if (!response.ok || response.redirected) throw new Error('Sign in');
     const result = await response.json();
+    if (result.account_scope && result.account_scope !== document.body.dataset.csrf) {
+      await patchLibrary?.setAvailability(false);
+      throw new Error('Account changed');
+    }
+    await patchLibrary?.setAvailability(result.cloud_patch_storage === true);
     aiReady = result.ai_generation === true && result.generation?.configured === true;
     aiRemaining = Number.isInteger(result.generation?.usage?.remaining) ? result.generation.usage.remaining : 0;
     generationMessage(aiReady
@@ -478,6 +486,7 @@ async function refreshGeneration() {
       : 'AI generation is unavailable. Choose a manual preset below; your working patch is retained.');
   } catch {
     aiReady = false;
+    await patchLibrary?.setAvailability(false);
     generationMessage('Could not check the AI connection. Manual presets still work. Retry, or sign in again if your session expired.', true);
   } finally { clearTimeout(timer); renderGeneration(); }
 }
@@ -561,6 +570,7 @@ $('generate-sound').addEventListener('click', async () => {
 
 function clearSession({ announce = true } = {}) {
   generation++;
+  patchLibrary?.reset();
   cancelGeneration(false);
   $('sound-prompt').value = '';
   generationMessage('Description and local session cleared. Generation allowance is unchanged.');
@@ -597,6 +607,7 @@ function clearSession({ announce = true } = {}) {
 $('clear-session').addEventListener('click', () => clearSession());
 window.addEventListener('pagehide', event => {
   transportRevision++;
+  patchLibrary?.suspend();
   if (aiBusy) cancelGeneration();
   if (event.persisted) {
     engine?.stop();
@@ -608,6 +619,7 @@ window.addEventListener('pageshow', event => {
     renderControls();
     renderTransport();
     message('Your session is still here. Press Play to resume.');
+    refreshGeneration();
   }
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) renderTransport(); });
@@ -625,4 +637,8 @@ if (initialSource) {
 }
 renderControls();
 renderTransport();
+patchLibrary = createPatchLibrary({
+  getRecipe: () => clone(current), getRevision: () => `${generation}:${recipeRevision}`,
+  applyRecipe: recipe => replaceRecipe(recipe), prepareDownload,
+});
 await refreshGeneration();

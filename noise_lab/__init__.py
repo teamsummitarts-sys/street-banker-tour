@@ -2,12 +2,15 @@
 
 Importing this package does not initialize a database, register a provider or
 change a host. The host injects its existing authenticated-user resolver.
-There is no server recording or patch-write route. Generation accepts text only.
+Audio is never stored. Private versioned settings require an explicitly enabled
+durable host database. Generation accepts text only.
 """
 import os
 import secrets
 
 from flask import Blueprint, current_app, g, jsonify, render_template, request, session, url_for
+
+from .patches import register_patch_routes, storage_ready
 
 from .generation import (Allowance, GenerationError, GENERATION_VERSION, MODEL,
                          parse_response, request_settings, response_usage, strict_json)
@@ -78,14 +81,14 @@ def create_blueprint(current_user):
     @bp.get("/capabilities")
     def capabilities():
         return jsonify(
-            phase=2, ai_generation=configured(), cloud_patch_storage=False,
+            phase=3, ai_generation=configured(), cloud_patch_storage=storage_ready(),
+            account_scope=csrf_token(),
             audio_uploads=False, local_audio_processing=True,
             local_recipe_download=True, device_verification="unverified",
             generation=generation_status(),
         )
 
-    @bp.post('/api/generate')
-    def generate():
+    def check_csrf():
         # Bind CSRF to the authenticated account; never accept identity from JSON.
         saved = session.get('noise_lab_csrf', {})
         token = request.headers.get('X-Noise-Lab-CSRF', '')
@@ -95,6 +98,14 @@ def create_blueprint(current_user):
                 or request.headers.get('Sec-Fetch-Site') == 'cross-site'
                 or ('Origin' in request.headers and request.headers['Origin'] != request.host_url.rstrip('/'))):
             return jsonify(error='session_check', message='Reload Noise Lab after signing in again.'), 403
+        return None
+
+    register_patch_routes(bp, check_csrf)
+
+    @bp.post('/api/generate')
+    def generate():
+        rejected = check_csrf()
+        if rejected is not None: return rejected
         if not request.is_json:
             return jsonify(error='json_required'), 415
         if request.content_length is not None and request.content_length > 4096:
@@ -146,4 +157,6 @@ def init(app, current_user):
     app.config.setdefault("NOISE_LAB_ENABLED", os.environ.get("NOISE_LAB_ENABLED", "0"))
     app.config.setdefault('NOISE_LAB_AI_ENABLED', os.environ.get('NOISE_LAB_AI_ENABLED', '1'))
     app.config.setdefault('OPENAI_API_KEY', os.environ.get('OPENAI_API_KEY', ''))
+    app.config.setdefault('NOISE_LAB_PATCH_STORAGE_ENABLED', os.environ.get('NOISE_LAB_PATCH_STORAGE_ENABLED', '0'))
+    app.config.setdefault('NOISE_LAB_PERSISTENT_ROOT', os.environ.get('NOISE_LAB_PERSISTENT_ROOT', ''))
     app.register_blueprint(create_blueprint(current_user))
