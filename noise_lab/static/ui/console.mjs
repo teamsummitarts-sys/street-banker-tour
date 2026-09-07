@@ -29,7 +29,37 @@ export function createConsoleUI() {
     const value = $('display-brightness').value;
     document.body.dataset.display = ['dim', 'bright'].includes(value) ? value : 'standard';
   });
-  const reveal = id => { $(id).scrollIntoView({behavior: 'instant', block: 'start'}); $(id).focus({preventScroll: true}); };
+  const phone = window.matchMedia?.('(max-width: 600px)');
+  const drawer = $('library-drawer');
+  let modalActive = false;
+  // One library DOM and one set of handlers across desktop and mobile.
+  const syncDrawer = () => {
+    if (!drawer?.showModal) return;
+    if (modalActive) {
+      modalActive = false;
+      drawer.close();
+    }
+    // Attribute-only desktop visibility avoids stealing focus on page load.
+    drawer.open = !phone.matches;
+  };
+  if (phone && drawer?.showModal) {
+    syncDrawer();
+    phone.addEventListener('change', syncDrawer);
+    if (phone.matches) $('prompt-details').open = false;
+    $('close-library').addEventListener('click', () => drawer.close());
+    drawer.addEventListener('close', () => {
+      if (modalActive && phone.matches) $('open-library').focus({preventScroll: true});
+      modalActive = false;
+    });
+  }
+  const reveal = id => {
+    if (phone?.matches && drawer?.showModal && !drawer.open) {
+      drawer.showModal();
+      modalActive = true;
+    }
+    $(id).scrollIntoView({behavior: 'instant', block: 'start'});
+    $(id).focus({preventScroll: true});
+  };
   $('open-library').addEventListener('click', () => reveal('patch-library'));
   $('open-export').addEventListener('click', () => reveal('output'));
   return {
