@@ -80,7 +80,7 @@ async function performSave() {
 function save(){clearTimeout(state.saveTimer);const task=state.saveChain.catch(()=>{}).then(performSave);state.saveChain=task;return task;}
 async function audioBytes(asset){
   const url=new URL(asset.url,location.href);
-  if(url.origin!==location.origin || !url.pathname.startsWith(base+'/api/assets/'))throw new Error('This audio link is not part of your Song Builder.');
+  if(url.origin!==location.origin || !url.pathname.startsWith(base+'/api/assets/'))throw new Error('This audio link is not part of The Room.');
   const r=await fetch(url,{credentials:'same-origin',cache:'no-store'});
   if(!r.ok||r.redirected)throw new Error('Audio could not load. Sign in again and reopen this project.');
   const length=Number(r.headers.get('Content-Length'));if(length>40*1024*1024)throw new Error('This audio is too large for this editor.');
@@ -209,11 +209,11 @@ function renderInspector(){const s=selectedSection();if(!s)return;$('section-hea
   const clip=selectedClip();$('clip-inspector').hidden=!clip;if(clip){$('clip-offset').value=clip.offset;$('clip-source').value=clip.sourceOffset;$('clip-duration').value=clip.duration;$('clip-loop').checked=clip.loop;$('clip-fade-in').value=clip.fadeIn||0;$('clip-fade-out').value=clip.fadeOut||0;}
 }
 function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boolean(s?.locked),hasAudio=Boolean(state.project?.clips.length),recording=Boolean(state.recorder);
-  const rackTrack=state.project?.tracks.find(t=>t.id===state.trackId),rackBlocked=busy||recording||rackProtectedSections(state.trackId).length>0;
+  const rackTrack=state.project?.tracks.find(t=>t.id===state.trackId),rackBlocked=!rackTrack||busy||recording||rackProtectedSections(state.trackId).length>0;
   for(const input of $('sound-rack').querySelectorAll('button,input'))input.disabled=Boolean(rackBlocked||(input.hasAttribute('data-rack-assigned')&&(!rackTrack?.rack||!rackTrack.rack.enabled)));
   $('loop-section').disabled=busy||recording||!hasAudio;$('clear-solos').disabled=busy||recording;
   for(const input of $('selected-mixer').querySelectorAll('input,button'))input.disabled=busy||recording||(input.classList.contains('pan-center')&&rackTrack?.pan===0);
-  for(const id of ['save-project','new-project','save-version','import-project','export-project','project-list','load-demo','export-mix','export-section','export-track','export-30','export-15','play-song','play-section','add-section','add-track','prepare-section-test'])$(id).disabled=busy||recording;
+  for(const id of ['save-project','new-project','save-version','import-project','export-project','project-list','start-ai','load-demo','export-mix','export-section','export-track','export-30','export-15','play-song','play-section','add-section','add-track','prepare-section-test'])$(id).disabled=busy||recording;
   for(const id of ['section-name','section-duration','section-direction','section-lyrics','duplicate-section','remove-section','upload-audio','apply-clip','remove-clip','duplicate-clip','split-clip','clip-offset','clip-source','clip-duration','clip-loop','clip-fade-in','clip-fade-out','crossfade-clip'])$(id).disabled=busy||lock||recording;
   for(const id of ['song-title','song-tempo','song-key','lock-section','move-earlier','move-later'])$(id).disabled=busy||recording;
   $('record-audio').disabled=busy||lock||!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder;
@@ -356,7 +356,7 @@ async function boot(){state.busy++;try{
   const gen=state.capabilities.generation;
   $('generation-availability').textContent=gen.configured?'Create a new section mix with ElevenLabs Music. Exact voice and musical continuity need listening review.':'Music generation is not connected. You can arrange, record and mix your own audio now.';
   $('generation-cost').textContent=gen.configured?'Generation and stem separation use provider credits. Exact dollar cost is unavailable here. Each click submits one request; failed or abandoned requests may still be billed.':'';
-  $('storage-note').textContent=state.capabilities.storage?.durable?'Private account projects. Download a backup before moving between sites.':'Private account projects on this server. Storage may reset on redeploy; download a project backup.';
+  $('storage-note').textContent=state.capabilities.storage?.durable?'Saved to persistent storage. Export a project backup anytime.':'Private account projects on this server. Storage may reset on redeploy; download a project backup.';
   if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)$('record-status').textContent='Recording is unavailable in this browser. Import audio instead.';
   const list=await api('/api/projects');const requested=new URLSearchParams(location.search).get('project');const first=list.projects.find(p=>p.id===requested)||list.projects[0];
   if(first)await loadProject(first.id,{skipSave:true});else await startNew();await listProjects();

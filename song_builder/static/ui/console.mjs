@@ -16,6 +16,7 @@ export function bindConsole(document){
     const tab=$(`tab-${name}`);tab.addEventListener('click',()=>select(name));
     tab.addEventListener('keydown',e=>{let next;if(e.key==='ArrowRight')next=(index+1)%3;if(e.key==='ArrowLeft')next=(index+2)%3;if(e.key==='Home')next=0;if(e.key==='End')next=2;if(next!==undefined){e.preventDefault();select(tabs[next],{focus:true});}});
   });
+  $('start-ai')?.addEventListener('click',()=>{select('takes');$('panel-takes').scrollIntoView({behavior:'smooth',block:'start'});$('take-prompt').focus();});
   $('all-instruments').addEventListener('click',()=>document.body.classList.remove('instrument-focus'));
   let clipping=false,lastPaint=0,viewStart=0,viewDuration=1;
   $('clear-clip').addEventListener('click',()=>{clipping=false;paintClip();});

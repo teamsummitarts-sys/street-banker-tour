@@ -6,7 +6,7 @@
   <meta name="song-builder-csrf" content="{{ builder_csrf }}">
   <meta name="song-builder-base" content="{{ builder_base_url }}">
   <meta name="theme-color" content="#060707">
-  <title>Song Builder · Street Banker</title>
+  <title>The Room · Street Banker</title>
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/song-builder.css">
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/console.css">
   <script type="module" src="{{ builder_assets_url }}ui/controller.mjs"></script>
@@ -22,12 +22,12 @@ FORM: Code-led extension of the approved V2 studio workflow; no new visual world
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance -->
   <a class="skip-link" href="#song-title">Skip to song editor</a>
   <header class="site-bar">
-    <a class="brand" href="{{ return_url }}"><span class="brand-crop"><img src="{{ builder_assets_url }}ui/images/street-banker-logo.png" alt="Street Banker"></span><span class="console-label">SONG BUILDER</span></a>
+    <a class="brand" href="{{ return_url }}"><span class="brand-crop"><img src="{{ builder_assets_url }}ui/images/street-banker-logo.png" alt="Street Banker"></span><span class="console-label">THE ROOM</span></a>
     <a class="back-link" href="{{ return_url }}">Back to Noise Lab</a>
   </header>
   <main>
     <div class="page-heading">
-      <h1>Song Builder</h1>
+      <h1>The Room</h1>
       <div class="session-status"><span id="save-state" role="status">Opening workspace…</span><span id="duration-label">0:00 arranged</span></div>
     </div>
     <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
@@ -42,7 +42,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         <div class="button-row"><button id="new-project" type="button">New project</button><button id="save-version" type="button">Save as new version</button></div>
         <button id="import-project" type="button">Import project</button>
         <button id="export-project" type="button">Prepare project backup</button>
-        <p class="hint">A backup includes your arrangement and audio. It can move with you to another Song Builder.</p>
+        <p class="hint">A backup includes your arrangement and audio. It can move with you to another The Room.</p>
       </div></details>
     </section>
     <div class="workspace">
@@ -67,7 +67,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
           <div class="track-toolbar"><button id="all-instruments" type="button">All instruments</button><span id="solo-status" role="status" hidden></span><button id="clear-solos" type="button" hidden>Clear solo</button></div>
           <div id="section-ruler" class="section-ruler" aria-label="Section beat ruler"></div>
           <div id="tracks" class="tracks"></div>
-          <div id="audio-empty" class="audio-empty"><svg viewBox="0 0 64 36" aria-hidden="true"><path d="M3 18h8m5-7v14m8-20v26m8-29v32m8-23v14m8-18v22m5-11h8"/></svg><h3>Your song starts here.</h3><p>Add your audio to a layer, record a part, or try an original synth demo to learn the controls.</p><button id="load-demo" type="button">Try the synth demo</button><span>Demo audio is synthesized locally. No AI credits.</span></div>
+          <div id="audio-empty" class="audio-empty"><svg viewBox="0 0 64 36" aria-hidden="true"><path d="M3 18h8m5-7v14m8-20v26m8-29v32m8-23v14m8-18v22m5-11h8"/></svg><h3>Bring an idea. Build a record.</h3><p>Add your audio to a layer, record a part, or try an original synth demo to learn the controls.</p><button id="start-ai" type="button">Create a section with AI</button><button id="load-demo" type="button">Try the synth demo</button><span>Demo audio is synthesized locally. No AI credits.</span></div>
           <div class="audio-actions"><button id="upload-audio" type="button">Add audio to section</button><button id="record-audio" type="button">Record a part</button><span id="record-status" class="hint"></span></div>
           <p class="hint">Audio stays at its original pitch and speed. Tempo and key are directions for new music.</p>
         </section>
@@ -132,7 +132,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     </div>
     <section id="sound-rack" class="sound-rack" aria-label="Selected track sound rack"></section>
     <section id="file-ready" class="file-ready" hidden aria-labelledby="file-ready-heading"><div><h2 id="file-ready-heading">Your file is ready.</h2><p id="prepared-name"></p><p class="hint">On iPhone, tap Download, then use Share → Save to Files if a preview opens.</p></div><a id="save-download" class="download-link" download>Download file</a><button id="dismiss-download" type="button">Close</button></section>
-    <footer><span id="storage-note">Projects belong to your signed-in account. Keep a project backup.</span><span>Song Builder · Portable project format v1</span></footer>
+    <footer><span id="storage-note">Projects belong to your signed-in account. Keep a project backup.</span><span>The Room · Portable project format v1</span></footer>
     <input id="audio-file" type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden>
     <input id="project-file" type="file" accept=".sbsong,application/json" hidden>
   </main>

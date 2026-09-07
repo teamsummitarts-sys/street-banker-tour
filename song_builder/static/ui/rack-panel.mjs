@@ -25,14 +25,16 @@ export function renderRackPanel(root,{track,blocked,protectedNames,allowed,previ
   const heading=node('div','','rack-heading');
   const title=node('div','');title.append(node('span','SOUND RACK · 01','rack-eyebrow'),node('h2',track?track.name:'Select an instrument layer'));
   heading.append(title);root.append(heading);
-  if(!track){root.append(node('p','Add a track or try the synth demo to start shaping a sound.','hint'));return ()=>{};}
+  const hasTrack=Boolean(track);
+  blocked=blocked||!hasTrack;
+  track=track||{name:'Select an instrument layer'};
   const settings=track.rack||RACK_DEFAULT;
   const action=(label,fn,pressed)=>{const b=node('button',label);b.type='button';b.disabled=blocked;b.dataset.rackAction='';if(pressed!==undefined)b.setAttribute('aria-pressed',String(pressed));b.addEventListener('click',()=>{if(allowed())fn();});return b;};
   const modes=node('div','','button-row');
-  if(!track.rack)modes.append(action('Assign rack',()=>apply({...RACK_DEFAULT})));
-  else for(const [label,enabled]of [['Original',false],['Processed',true]])modes.append(action(label,()=>apply({...settings,enabled}),settings.enabled===enabled));
+  if(hasTrack&&!track.rack)modes.append(action('Assign rack',()=>apply({...RACK_DEFAULT})));
+  else if(hasTrack)for(const [label,enabled]of [['Original',false],['Processed',true]])modes.append(action(label,()=>apply({...settings,enabled}),settings.enabled===enabled));
   heading.append(modes);
-  root.append(node('p',protectedNames.length?`Unlock ${protectedNames.join(', ')} to change this rack. It affects this track throughout the song.`:'Shape this recording while it plays. These settings follow the track through every section and into WAV exports.','hint'));
+  root.append(node('p',!hasTrack?'Add an instrument, upload audio, or try the synth demo. Your rack is ready when you are.':protectedNames.length?`Unlock ${protectedNames.join(', ')} to change this rack. It affects this track throughout the song.`:'Shape this recording while it plays. These settings follow the track through every section and into WAV exports.','hint'));
   const presets=node('div','','rack-presets');presets.setAttribute('aria-label','Sound presets');
   for(const p of RACK_PRESETS){const values=presetSettings(p);const b=action('',()=>apply(values),sameRack(track.rack,values));b.append(node('strong',p.name),node('span',p.detail));presets.append(b);}
   root.append(presets);
