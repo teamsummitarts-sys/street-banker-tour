@@ -4,7 +4,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ROOT = ['schemaVersion','id','title','tempo','key','sections','tracks','clips'];
 const SECTION = ['id','name','duration','lyrics','direction','locked'];
 const TRACK = ['id','name','gainDb','pan','muted','solo'];
-const CLIP = ['id','trackId','sectionId','assetId','offset','sourceOffset','duration','loop','gainDb'];
+const CLIP = ['id','trackId','sectionId','assetId','offset','sourceOffset','duration','loop','gainDb','fadeIn','fadeOut'];
 function object(value, fields, label, partial = false) {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
       ![Object.prototype,null].includes(Object.getPrototypeOf(value))) throw new TypeError(`${label} must be an object.`);
@@ -61,7 +61,10 @@ export function validateProject(value) {
     bool(track.muted,'Track mute'); bool(track.solo,'Track solo'); tracks.add(track.id); output.tracks.push({...track});
   }
   for (const clip of value.clips) {
-    object(clip,CLIP,'Clip'); unique(clip.id); id(clip.trackId,'Track reference'); id(clip.sectionId,'Section reference'); id(clip.assetId,'Asset reference');
+    object(clip,CLIP,'Clip',true);
+    for(const key of CLIP.filter(key=>!['fadeIn','fadeOut'].includes(key)))if(!Object.hasOwn(clip,key))throw new TypeError('Clip has missing fields.');
+    for(const key of ['fadeIn','fadeOut'])if(Object.hasOwn(clip,key))number(clip[key],0,120,'Fade duration');
+    unique(clip.id); id(clip.trackId,'Track reference'); id(clip.sectionId,'Section reference'); id(clip.assetId,'Asset reference');
     if(!tracks.has(clip.trackId) || !sections.has(clip.sectionId)) throw new TypeError('Each clip must reference an existing track and section.');
     number(clip.offset,0,Number.MAX_VALUE,'Clip position'); number(clip.sourceOffset,0,Number.MAX_VALUE,'Source trim');
     number(clip.duration,Number.MIN_VALUE,LIMITS.duration,'Clip duration'); number(clip.gainDb,-60,6,'Clip gain'); bool(clip.loop,'Clip loop');
@@ -126,3 +129,20 @@ export function updateClip(project,identifier,patch) {
   return mutate(project,p=>{const clip=find(p.clips,identifier,'Clip'); unlocked(p,clip.sectionId); if(patch.sectionId!==undefined) unlocked(p,patch.sectionId); Object.assign(clip,patch);});
 }
 export function removeClip(project,identifier) { return mutate(project,p=>{const clip=find(p.clips,identifier,'Clip'); unlocked(p,clip.sectionId); p.clips=p.clips.filter(clip=>clip.id!==identifier);}); }
+
+/** Crossfade a simple two-clip overlap without moving or rewriting either source. */
+export function crossfadeClip(project,identifier) {
+  return mutate(project,p=>{
+    const selected=find(p.clips,identifier,'Clip');unlocked(p,selected.sectionId);
+    const peers=p.clips.filter(c=>c.sectionId===selected.sectionId&&c.trackId===selected.trackId);
+    const overlaps=peers.filter(c=>c.id!==identifier&&c.offset<selected.offset+selected.duration&&c.offset+c.duration>selected.offset);
+    if(overlaps.length!==1)throw new Error('Overlap exactly two clips on the same track and section, then select one.');
+    const [left,right]=[selected,overlaps[0]].sort((a,b)=>a.offset-b.offset);
+    if(left.offset===right.offset||left.offset+left.duration>=right.offset+right.duration)throw new Error('Stagger the clips so one starts earlier and ends earlier.');
+    const overlap=left.offset+left.duration-right.offset;
+    if(peers.some(c=>c!==left&&c!==right&&c.offset<left.offset+left.duration&&c.offset+c.duration>right.offset))throw new Error('Remove the third clip from this overlap before crossfading.');
+    left.fadeOut=overlap;right.fadeIn=overlap;
+    left.fadeIn=Math.min(left.fadeIn||0,left.duration-overlap);
+    right.fadeOut=Math.min(right.fadeOut||0,right.duration-overlap);
+  });
+}

@@ -234,6 +234,20 @@ def test_foreign_asset_and_out_of_bounds_audio_rejected(tmp_path):
     assert client.post('/song-builder/api/projects', headers=headers, json={'project': value}).status_code == 400
 
 
+def test_clip_fades_persist_and_respect_section_protection(tmp_path):
+    app, _ = host(tmp_path)
+    client = app.test_client()
+    headers = auth_headers(client)
+    value = with_clip(project(), upload(client, headers).json['asset'])
+    value['clips'][0].update(fadeIn=.5, fadeOut=1.5)
+    value['sections'][0]['locked'] = True
+    saved = create(client, headers, value)
+    route = '/song-builder/api/projects/' + value['id']
+    assert client.get(route).json['project']['clips'][0]['fadeOut'] == 1.5
+    value['clips'][0]['fadeOut'] = 2
+    assert client.put(route, headers=headers, json={'project': value, 'expectedRevision': saved['revision']}).status_code == 409
+
+
 def test_upload_rejects_malformed_truncated_and_oversized_wav(tmp_path):
     app, _ = host(tmp_path)
     client = app.test_client()
