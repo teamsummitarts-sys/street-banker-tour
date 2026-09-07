@@ -167,3 +167,25 @@
 @media(forced-colors:active){.room-console::before,.room-console::after{display:none}.room-console .dial-face{background:ButtonFace;border:2px solid ButtonText}.room-console .dial-face::after{background:ButtonText}}
 .room-console .audition-actions~.rack-level-summary{grid-row:5;}
 @media(max-width:800px){.room-console .audition-actions~.rack-level-summary{grid-row:auto;}}
+/* Remove inherited spacing that displaced the rack in the live 1363px check. */
+.room-console .brand .room-brand-crop{display:block;}
+.room-console .audio-actions .snap-control{margin:0 0 0 auto;}
+.room-console .audio-actions{padding-bottom:0;}
+.room-console .section-deck>.seek{min-height:16px;}
+@media(min-width:801px){
+ .room-console .site-bar{height:80px;}.room-console .brand{flex-basis:218px;}.room-console .room-brand-crop{width:218px;}
+ .room-console .track-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+ .room-console .inspector{padding:8px 10px;}
+ .room-console .master-meter{grid-template-rows:auto 76px 24px;gap:4px 8px;margin-bottom:5px;padding-bottom:5px;}
+ .room-console .master-meter .analog-meter{height:76px;}
+ .room-console #instrument-heading{margin:5px 0;line-height:1.2;}
+ .room-console .inspector-tabs{margin:5px 0;}
+ .room-console #selected-mixer .track-mix input{height:26px;}
+ .room-console #selected-mixer .track-mix button{min-height:24px;}
+ .room-console .section-settings{padding:0;margin:4px 0 0;}
+ .room-console .rack-dial{width:100px;height:100px;}
+ .room-console .rack-control>button{position:absolute;top:2px;right:7px;min-height:24px;width:24px;padding:0;font-size:0;}
+ .room-console .rack-control>button::after{content:'↺';font-size:14px;}
+ .room-console .rack-control{padding-bottom:2px;}
+}
+@media(max-width:800px){.room-console .audio-actions .snap-control{margin:0;}.room-console .brand .room-brand-crop{margin:auto;}}
