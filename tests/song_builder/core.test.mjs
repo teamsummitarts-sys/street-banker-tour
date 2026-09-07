@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {webcrypto} from 'node:crypto';
-import {newProject,newId,validateProject,projectDuration,sectionStart,addSection,updateSection,moveSection,duplicateSection,removeSection,addTrack,updateTrack,removeTrack,addClip,updateClip,removeClip} from '../../song_builder/static/core/project.mjs';
+import {newProject,newId,validateProject,projectDuration,sectionStart,addSection,updateSection,prepareSectionTake,moveSection,duplicateSection,removeSection,addTrack,updateTrack,removeTrack,addClip,updateClip,removeClip} from '../../song_builder/static/core/project.mjs';
 import {AudioEngine,buildRenderPlan,encodeWav,createDemoAudio} from '../../song_builder/static/core/audio.mjs';
 if(!globalThis.crypto) globalThis.crypto=webcrypto;
 
@@ -57,6 +57,13 @@ test('locked content requires a separate unlock; mixing and whole-section reorde
 test('moving a clip cannot introduce content into a locked target section',()=>{
   const {project,clipId}=fixture(); const target=project.sections[1].id; const locked=updateSection(project,target,{locked:true});
   assert.throws(()=>updateClip(locked,clipId,{sectionId:target}),/Unlock/);
+});
+test('preparing an AI section test unlocks only its target and protects every other section',()=>{
+  const project=newProject(); const target=project.sections[1].id;
+  const prepared=prepareSectionTake(project,target);
+  assert.deepEqual(prepared.sections.map(section=>section.locked),[true,false,true]);
+  assert.deepEqual(project.sections.map(section=>section.locked),[false,false,false]);
+  assert.throws(()=>prepareSectionTake(project,newId()),/not found/);
 });
 test('project limits remain enforced through normal editing operations',()=>{
   let p=newProject(); for(let i=0;i<9;i++) p=addTrack(p,`Layer ${i}`);

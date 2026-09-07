@@ -1,6 +1,6 @@
 """Optional ElevenLabs adapter. Fixed endpoints, bounded bytes, zero retries.
 
-Contract verified 2026-09-05 against official Music compose, inpainting and
+Contract verified 2026-09-07 against official Music compose and
 stem-separation documentation. Generation creates one new audition section.
 It does not upload neighboring clips or promise contextual regeneration.
 """
@@ -77,14 +77,18 @@ def audio_result(data, name):
 
 def composition_payload(snapshot):
     section = snapshot['section']
-    styles = [snapshot['prompt'], section['direction'], f"Target tempo {snapshot['tempo']} BPM",
-              f"Target key {snapshot['key']}" if snapshot['key'] else '']
+    directions = [snapshot['prompt'], section['direction'],
+                  f"Target tempo: {snapshot['tempo']} BPM.",
+                  f"Target key: {snapshot['key']}." if snapshot['key'] else '',
+                  f"Section: {section['name']}."]
+    if section['lyrics']:
+        directions.append(f"Use these original lyrics:\n{section['lyrics']}")
+    # The simple-prompt contract is shared by music_v1 and music_v2 and lets us
+    # request an exact section duration without maintaining two incompatible
+    # composition-plan schemas.
     return {'model_id': MODEL, 'store_for_inpainting': False,
-            'composition_plan': {'chunks': [{
-                'text': f"[{section['name']}]\n{section['lyrics']}",
-                'duration_ms': round(section['duration'] * 1000),
-                'positive_styles': [s for s in styles if s],
-                'negative_styles': [], 'context_adherence': 'high'}]}}
+            'prompt': '\n'.join(value for value in directions if value),
+            'music_length_ms': round(section['duration'] * 1000)}
 
 
 def generate(snapshot, key):

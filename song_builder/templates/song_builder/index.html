@@ -96,10 +96,12 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
           <h2 id="generate-heading">Try another take.</h2>
           <p id="generation-availability" class="hint">Checking music generation…</p>
           <label for="take-prompt">What should this take do?</label><textarea id="take-prompt" maxlength="1000" rows="3" placeholder="Bring the chorus forward with a wider vocal and heavier drums."></textarea>
+          <button id="prepare-section-test" type="button">Protect every other section</button>
+          <p id="section-test-status" class="hint">The selected section stays editable. Every other section is protected.</p>
           <p id="generation-cost" class="hint"></p>
           <button id="generate-take" type="button" disabled>Generate section take</button>
           <button id="separate-stems" type="button" disabled>Separate selected clip into stems</button>
-          <p class="hint">New takes are auditioned here. Your accepted parts stay in place until you choose a take.</p>
+          <p class="hint">New takes are auditioned here. Accepting creates a new song version; rejecting never changes your arrangement.</p>
           <div id="jobs" class="jobs" aria-live="polite"></div>
         </section>
       </aside>

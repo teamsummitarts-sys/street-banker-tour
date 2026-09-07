@@ -93,6 +93,12 @@ export function updateSection(project,identifier,patch) {
     Object.assign(section,patch);
   });
 }
+export function prepareSectionTake(project,identifier) {
+  return mutate(project,p=>{
+    find(p.sections,identifier,'Section');
+    for(const section of p.sections) section.locked=section.id!==identifier;
+  });
+}
 export function moveSection(project,identifier,delta) {
   if(!Number.isInteger(delta)) throw new TypeError('Section movement must be a whole number.');
   return mutate(project,p=>{const section=find(p.sections,identifier,'Section'); const index=p.sections.indexOf(section); const target=Math.max(0,Math.min(p.sections.length-1,index+delta)); p.sections.splice(index,1); p.sections.splice(target,0,section);});
