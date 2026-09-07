@@ -248,6 +248,32 @@ def test_clip_fades_persist_and_respect_section_protection(tmp_path):
     assert client.put(route, headers=headers, json={'project': value, 'expectedRevision': saved['revision']}).status_code == 409
 
 
+def test_track_rack_survives_restart_and_protected_sections_reject_changes(tmp_path):
+    app, _ = host(tmp_path)
+    client = app.test_client()
+    headers = auth_headers(client)
+    value = with_clip(project(), upload(client, headers).json['asset'])
+    rack = dict(enabled=True, body=30, bite=-20, dirt=40, space=25, outputDb=-3)
+    value['tracks'][0]['rack'] = rack
+    value['sections'][0]['locked'] = True
+    saved = create(client, headers, value)
+    route = '/song-builder/api/projects/' + value['id']
+    restarted, _ = host(tmp_path)
+    again = restarted.test_client()
+    assert again.get(route).json['project']['tracks'][0]['rack'] == rack
+    changed = copy.deepcopy(value)
+    changed['tracks'][0]['rack']['dirt'] = 80
+    assert client.put(route, headers=headers, json={'project': changed, 'expectedRevision': saved['revision']}).status_code == 409
+    # An unlock must be saved separately; it cannot smuggle a rack change through.
+    changed['sections'][0]['locked'] = False
+    assert client.put(route, headers=headers, json={'project': changed, 'expectedRevision': saved['revision']}).status_code == 409
+    for patch in ({'dirt': 101}, {'body': True}, {'outputDb': 7}, {'enabled': 'true'}, {'unknown': 1}):
+        malformed = copy.deepcopy(value)
+        malformed['id'] = uid()
+        malformed['tracks'][0]['rack'].update(patch)
+        assert client.post('/song-builder/api/projects', headers=headers, json={'project': malformed}).status_code == 400
+
+
 def test_upload_rejects_malformed_truncated_and_oversized_wav(tmp_path):
     app, _ = host(tmp_path)
     client = app.test_client()

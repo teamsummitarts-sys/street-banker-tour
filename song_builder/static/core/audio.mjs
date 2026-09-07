@@ -1,4 +1,5 @@
 import {validateProject} from './project.mjs';
+import {createRack,validateRack,RACK_PREROLL_SECONDS} from './rack.mjs';
 
 export const MAX_INPUT_BYTES=40*1024*1024;
 export const MAX_DECODED_BYTES=96*1024*1024;
@@ -27,7 +28,7 @@ export function buildRenderPlan(project,assets,{from=0,to,trackId}={}) {
   if(trackId!==undefined&&!p.tracks.some(track=>track.id===trackId)) throw new RangeError('Export track was not found.');
   const solo=p.tracks.some(track=>track.solo);
   const tracks=p.tracks.filter(track=>(trackId===undefined||track.id===trackId)&&!track.muted&&(trackId!==undefined||!solo||track.solo))
-    .map(track=>({id:track.id,gain:dbToGain(track.gainDb),pan:track.pan}));
+    .map(track=>({id:track.id,gain:dbToGain(track.gainDb),pan:track.pan,...(track.rack?{rack:track.rack}:{})}));
   const audible=new Set(tracks.map(track=>track.id));
   const sectionById=new Map(p.sections.map(section=>[section.id,section]));
   const events=[];
@@ -97,22 +98,31 @@ function graph(context,plan,buffers,destination,when=0) {
   const nodes=[]; const sources=[];
   const cleanup=()=>{for(const source of sources) {try{source.stop();}catch{ /* already finished */ }} for(const node of nodes) {try{node.disconnect();}catch{ /* disconnected */ }}};
   try {
-    const buses=new Map();
+    const buses=new Map(),racks=new Map();
     for(const track of plan.tracks) {
       if(typeof context.createStereoPanner!=='function') throw new Error('Stereo panning is not supported in this browser.');
       const gain=context.createGain(); const pan=context.createStereoPanner(); nodes.push(gain,pan);
       gain.gain.value=track.gain; pan.pan.value=track.pan; gain.connect(pan); pan.connect(destination); buses.set(track.id,gain);
+      if(track.rack){const rack=createRack(context,track.rack);nodes.push(...rack.nodes);rack.output.connect(gain);buses.set(track.id,rack.input);racks.set(track.id,rack);}
     }
+    const schedule=cycleAt=>{
     for(const event of plan.events) {
       const source=context.createBufferSource(); const gain=context.createGain(); nodes.push(source,gain); sources.push(source);
       source.buffer=buffers.get(event.assetId); source.loop=event.loop;
       if(event.loop) {source.loopStart=event.loopStart; source.loopEnd=event.loopEnd;}
-      gain.gain.setValueAtTime(event.gain*event.envelope[0].value,when+event.when);
-      for(const point of event.envelope.slice(1))gain.gain.linearRampToValueAtTime(event.gain*point.value,when+event.when+point.time);
+      gain.gain.setValueAtTime(event.gain*event.envelope[0].value,cycleAt+event.when);
+      for(const point of event.envelope.slice(1))gain.gain.linearRampToValueAtTime(event.gain*point.value,cycleAt+event.when+point.time);
       source.connect(gain); gain.connect(buses.get(event.trackId));
-      source.start(when+event.when,event.offset,event.duration);
+      source.onended=()=>{
+        source.disconnect();gain.disconnect();
+        for(const item of [source,gain]){const index=nodes.indexOf(item);if(index>=0)nodes.splice(index,1);}
+        const index=sources.indexOf(source);if(index>=0)sources.splice(index,1);
+      };
+      source.start(cycleAt+event.when,event.offset,event.duration);
     }
-    return {nodes,sources,cleanup};
+    };
+    schedule(when);
+    return {nodes,sources,cleanup,racks,schedule};
   } catch(error) {cleanup(); throw error;}
 }
 
@@ -220,10 +230,23 @@ export class AudioEngine {
     }
     return peaks;
   }
-  async play(project,{from=0,onEnded}={}) {
+  _output() {
+    const context=this._audioContext();if(this._master)return this._master;
+    const master=context.createGain();master.channelCount=2;master.channelCountMode='explicit';master.connect(context.destination);
+    const splitter=context.createChannelSplitter(2);master.connect(splitter);
+    this._meters=[0,1].map(channel=>{const analyser=context.createAnalyser();analyser.fftSize=2048;splitter.connect(analyser,channel);return {analyser,samples:new Float32Array(analyser.fftSize)};});
+    this._master=master;this._splitter=splitter;return master;
+  }
+  meterLevels() {
+    if(!this._active||!this._meters)return [-Infinity,-Infinity];
+    return this._meters.map(({analyser,samples})=>{analyser.getFloatTimeDomainData(samples);let peak=0;for(const value of samples)peak=Math.max(peak,Math.abs(value));return peak?20*Math.log10(peak):-Infinity;});
+  }
+  isPlaying(){return Boolean(this._active);}
+  async play(project,{from=0,to,loop=false,onEnded}={}) {
     this._assert(); if(this._decoding||this._rendering) throw new Error('Wait for the current audio operation to finish.');
     if(onEnded!==undefined&&typeof onEnded!=='function') throw new TypeError('Playback completion callback must be a function.');
-    const plan=buildRenderPlan(project,this._buffers,{from}); this.stop(); const token=this._generation;
+    if(typeof loop!=='boolean')throw new TypeError('Loop must be a boolean.');
+    const plan=buildRenderPlan(project,this._buffers,{from,to}); this.stop(); const token=this._generation;
     this._position=from;
     if(plan.duration===0) {onEnded?.(); return;}
     const context=this._audioContext();
@@ -233,25 +256,42 @@ export class AudioEngine {
     const startAt=context.currentTime+0.035;
     let playing;
     try {
-      playing=graph(context,plan,this._buffers,context.destination,startAt);
+      playing=graph(context,plan,this._buffers,this._output(),startAt);
       // Silent clock source makes completion follow the audio clock, including
       // empty tails, background suspension and entirely silent arrangements.
       const clock=context.createBufferSource(); const silence=context.createGain(); silence.gain.value=0;
       clock.buffer=context.createBuffer(1,1,context.sampleRate); clock.loop=true; clock.connect(silence); silence.connect(context.destination);
       playing.nodes.push(clock,silence); playing.sources.push(clock);
-      const active={...playing,from,startAt,duration:plan.duration,clock}; this._active=active;
-      clock.onended=()=>{if(this._active!==active) return; this._position=plan.songDuration; this._active=null; active.cleanup(); onEnded?.();};
-      clock.start(startAt); clock.stop(startAt+plan.duration);
+      const active={...playing,from,startAt,duration:plan.duration,clock,loop,loopTimer:null}; this._active=active;
+      clock.onended=()=>{if(this._active!==active) return; this._position=from+plan.duration; this._active=null; clearInterval(active.loopTimer);active.cleanup(); onEnded?.();};
+      clock.start(startAt);
+      if(loop){
+        let next=startAt+plan.duration;
+        const ahead=()=>{
+          if(this._active!==active)return;
+          // Two full cycles queued on the audio clock. UI frames never end a section.
+          if(next<context.currentTime)next+=Math.ceil((context.currentTime-next)/plan.duration)*plan.duration;
+          while(next<context.currentTime+plan.duration*2){playing.schedule(next);next+=plan.duration;}
+        };
+        ahead();active.loopTimer=setInterval(ahead,Math.max(16,Math.min(250,plan.duration*250)));
+      }else clock.stop(startAt+plan.duration);
     } catch(error) {playing?.cleanup(); this._active=null; throw error;}
   }
   position() {
     if(!this._active) return this._position;
     const active=this._active;
-    return active.from+Math.min(active.duration,Math.max(0,this._context.currentTime-active.startAt));
+    const elapsed=Math.max(0,this._context.currentTime-active.startAt);
+    return active.from+(active.loop?elapsed%active.duration:Math.min(active.duration,elapsed));
+  }
+  /** Update an already assigned rack without restarting playback or its playhead. */
+  updateRack(trackId,settings){
+    this._assert();const value=validateRack(settings);
+    const rack=this._active?.racks.get(trackId);if(!rack)return false;
+    rack.update(value);return true;
   }
   stop() {
     this._generation++;
-    if(this._active) {const active=this._active; this._position=this.position(); this._active=null; active.clock.onended=null; active.cleanup();}
+    if(this._active) {const active=this._active; this._position=this.position(); this._active=null; active.clock.onended=null; clearInterval(active.loopTimer);active.cleanup();}
     return this._position;
   }
   async render(project,{trackId,from=0,to}={}) {
@@ -261,17 +301,20 @@ export class AudioEngine {
     if(!Offline) throw new Error('Audio export is not available in this browser.');
     const frames=Math.ceil(complete.duration*EXPORT_SAMPLE_RATE); const outputBytes=44+frames*4;
     const chunkFrames=EXPORT_SAMPLE_RATE*8; // bounded 8-second stereo render scratch
+    const preRollFrames=p.tracks.some(t=>t.rack?.enabled)?EXPORT_SAMPLE_RATE*RACK_PREROLL_SECONDS:0;
+    const rackReserve=p.tracks.some(t=>t.rack)?8*1024*1024:0;
     // Include Blob copy, decoded assets, offline output and a conservative scratch reserve.
-    if(this._bytes+2*outputBytes+chunkFrames*16>MAX_WORKING_BYTES) throw new RangeError('This export exceeds the mobile memory limit. Shorten the arrangement or remove unused sources.');
+    if(this._bytes+2*outputBytes+(chunkFrames+preRollFrames)*16+rackReserve>MAX_WORKING_BYTES) throw new RangeError('This export exceeds the mobile memory limit. Shorten the arrangement or remove unused sources.');
     this.stop(); this._rendering=true;
     try {
       const output=wavHeader(frames,2,EXPORT_SAMPLE_RATE); const view=new DataView(output);
       for(let start=0;start<frames;start+=chunkFrames) {
         this._assert(); const length=Math.min(chunkFrames,frames-start); const chunkFrom=complete.from+start/EXPORT_SAMPLE_RATE;
         const end=Math.min(complete.from+complete.duration,complete.from+(start+length)/EXPORT_SAMPLE_RATE);
-        const plan=buildRenderPlan(p,this._buffers,{from:chunkFrom,to:end,trackId});
-        const offline=new Offline(2,length,EXPORT_SAMPLE_RATE); const playing=graph(offline,plan,this._buffers,offline.destination);
-        try {const rendered=await offline.startRendering(); this._assert(); writePCM(view,[rendered.getChannelData(0),rendered.getChannelData(1)],start);}
+        const warmFrames=Math.min(preRollFrames,Math.round(chunkFrom*EXPORT_SAMPLE_RATE));
+        const plan=buildRenderPlan(p,this._buffers,{from:chunkFrom-warmFrames/EXPORT_SAMPLE_RATE,to:end,trackId});
+        const offline=new Offline(2,length+warmFrames,EXPORT_SAMPLE_RATE); const playing=graph(offline,plan,this._buffers,offline.destination);
+        try {const rendered=await offline.startRendering(); this._assert(); writePCM(view,[rendered.getChannelData(0).subarray(warmFrames),rendered.getChannelData(1).subarray(warmFrames)],start);}
         finally {playing.cleanup();}
         // Yield so the browser can paint export progress and respond on iPhone.
         await new Promise(resolve=>setTimeout(resolve,0));
@@ -282,6 +325,7 @@ export class AudioEngine {
   dispose() {
     if(this._disposed) return;
     this.stop(); this._disposed=true; this._buffers.clear(); this._bytes=0;
+    this._master?.disconnect();this._splitter?.disconnect();for(const meter of this._meters||[])meter.analyser.disconnect();
     if(this._context&&this._context.state!=='closed') this._context.close().catch(()=>{});
     this._context=null;
   }

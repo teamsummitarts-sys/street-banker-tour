@@ -63,6 +63,28 @@
 .song-builder .snap-control { display:flex; align-items:center; gap:10px; width:max-content; max-width:100%; margin:12px 0 5px; font-size:11px; color:var(--muted); }
 .song-builder .snap-control select { min-height:44px; }
 .song-builder .track-desk { padding:25px 0 24px; }
+.song-builder .sound-rack { border:1px solid #6b5c3d; border-top:3px solid var(--brass); background:linear-gradient(115deg,#1c1d19,#0c0e0e); padding:22px; margin:0 0 24px; }
+.song-builder .rack-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:12px; }
+.song-builder .rack-heading h2 { margin-top:4px; overflow-wrap:anywhere; }
+.song-builder .rack-eyebrow { font-size:10px; letter-spacing:.18em; color:var(--bright); }
+.song-builder .rack-presets { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:18px 0; }
+.song-builder .rack-presets button { text-align:left; min-height:68px; background:#111310; }
+.song-builder .rack-presets strong,.song-builder .rack-presets span { display:block; }
+.song-builder .rack-presets span { color:var(--muted); font-size:11px; margin-top:5px; }
+.song-builder .rack-controls { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; }
+.song-builder .rack-control { border-top:1px solid #55513e; padding-top:12px; min-width:0; }
+.song-builder .rack-control-label { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px; color:var(--text); }
+.song-builder .rack-control output { font-variant-numeric:tabular-nums; color:var(--bright); }
+.song-builder .rack-control input { width:100%; height:44px; margin:4px 0; cursor:ew-resize; }
+.song-builder .rack-control .hint { display:block; min-height:22px; font-size:10px; }
+.song-builder .rack-control button { padding:5px 9px; margin-top:8px; font-size:11px; }
+.song-builder .rack-footnote { color:var(--muted); font-size:11px; margin-top:16px; }
+@media(max-width:640px) {
+  .song-builder .sound-rack { padding:16px; }
+  .song-builder .rack-presets { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .song-builder .rack-controls { grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+  .song-builder .rack-control:last-child { grid-column:1 / -1; }
+}
 .song-builder .tracks { border-top:1px solid var(--line); }
 .song-builder .track { display:grid; grid-template-columns:180px minmax(0,1fr); border-bottom:1px solid var(--line); min-height:122px; }
 .song-builder .track.selected { background:#10110e; }
