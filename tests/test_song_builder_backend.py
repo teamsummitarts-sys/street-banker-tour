@@ -99,6 +99,22 @@ def test_version_branch_reuses_owned_audio_without_changing_original(tmp_path):
     assert client.get('/song-builder/api/projects/' + original['id']).json['project']['title'] == 'Untitled song'
 
 
+def test_oversized_combined_prompt_does_not_reserve_music_job(tmp_path):
+    app, _ = host(tmp_path, SONG_BUILDER_MUSIC_ENABLED=True,
+                  ELEVENLABS_API_KEY='test-placeholder', SONG_BUILDER_JOB_AUTOSTART=False)
+    client = app.test_client()
+    headers = auth_headers(client)
+    value = project()
+    value['sections'][0].update(lyrics='L' * 3000, direction='D' * 1000)
+    saved = create(client, headers, value)
+    response = client.post('/song-builder/api/jobs', headers=headers, json={
+        'requestId': uid(), 'kind': 'generate', 'projectId': value['id'],
+        'sectionId': value['sections'][0]['id'], 'expectedRevision': saved['revision'],
+        'prompt': 'P' * 1000})
+    assert response.status_code == 400
+    assert client.get('/song-builder/api/jobs?projectId=' + value['id']).json['jobs'] == []
+
+
 def test_default_off_and_unauthenticated_fail_closed(tmp_path):
     app, identity = host(tmp_path, SONG_BUILDER_ENABLED=False)
     client = app.test_client()
