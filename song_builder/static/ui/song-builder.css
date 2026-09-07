@@ -85,6 +85,12 @@
 .song-builder .clip span { position:relative; display:block; z-index:1; color:#f2dfb8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10px; }
 .song-builder .clip canvas { display:block; width:100%; height:42px; cursor:grab; touch-action:none; }
 .song-builder .clip canvas:active { cursor:grabbing; }
+.song-builder .fade-region { position:absolute; top:22px; bottom:0; background:rgba(255,228,157,.24); pointer-events:none; z-index:2; }
+.song-builder .fade-region-in { left:0; clip-path:polygon(0 0,100% 100%,0 100%); }
+.song-builder .fade-region-out { right:0; clip-path:polygon(100% 0,100% 100%,0 100%); }
+.song-builder .fade-handle { position:absolute; bottom:0; width:min(32px,50%); height:26px; z-index:4; display:grid; place-items:center; background:#ddba72; color:#15130e; font:700 9px sans-serif; touch-action:none; cursor:ew-resize; user-select:none; }
+.song-builder .fade-handle-in { left:0; border-radius:0 4px 0 0; }
+.song-builder .fade-handle-out { right:0; border-radius:4px 0 0 0; }
 .song-builder .trim-handle { position:absolute; top:0; bottom:0; width:18px; z-index:3; touch-action:none; }
 .song-builder .trim-handle::after { content:''; position:absolute; top:25px; bottom:14px; width:3px; border-radius:3px; background:var(--bright); }
 .song-builder .trim-left { left:0; }
