@@ -28,3 +28,9 @@ Visual verification is performed on the deployed desktop page. Physical iPhone t
 
 ## Scope
 Only song_builder, its tests and this document. No Noise Lab, V1, storage migration, provider contract or portable project schema changes.
+
+## Live finish review
+The first live pass verified playback at 0:17 with stereo peaks around −20 dBFS and no app error. It exposed unnecessary channel-strip height. The follow-up moves Track options into the instrument caption, opens Section settings through its existing toolbar control, compacts the clip indicator, and puts the footer after transport. The fader scale is calibrated to its −60…+6 dB range.
+
+## Material provenance
+`room-faceplate.png`: built-in image generation; 1254×1254 PNG copied without postprocessing. Final prompt direction: photorealistic dark black anodized brushed aluminium, fine horizontal machining, uniform charcoal near #202224, no controls, text, objects, borders, fake grain, haze or vignette. One illumination correction. Used as a cover texture per module under the consistent upper-left lighting layer. Approved logo and existing knob raster unchanged.
