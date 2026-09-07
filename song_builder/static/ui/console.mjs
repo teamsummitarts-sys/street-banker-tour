@@ -39,27 +39,22 @@ export function bindConsole(document){
   const deck=document.querySelector('.section-deck');main.insertBefore(deck,document.querySelector('.workspace'));
   document.querySelector('.audio-actions').append(document.querySelector('.snap-control'),$('loop-section'),$('play-section'));
   document.querySelector('.workspace').append($('sound-rack'));
-  const nav=document.createElement('nav');nav.className='room-navigation';nav.setAttribute('aria-label','Studio views');
-  for(const [key,label] of [['song','Song'],['instrument','Instrument'],['rack','Rack']]){const b=document.createElement('button');b.type='button';b.textContent=label;b.dataset.roomView=key;b.addEventListener('click',()=>{if(key==='rack')select('sound',{view:'rack'});else showView(key);});nav.append(b);}
-  deck.after(nav);
-  function showView(name){document.body.dataset.roomView=name;for(const b of nav.querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.roomView===name));}
-  showView('song');
+  // A continuous console. Shortcuts scroll; they never change visibility.
+  document.body.classList.add('room-scroll');
+  const jump=element=>element?.scrollIntoView?.({behavior:'auto',block:'start'});
   const sectionTools=document.createElement('div');sectionTools.className='console-section-tools';
-  const settingsButton=document.createElement('button');settingsButton.type='button';settingsButton.textContent='Section settings';settingsButton.addEventListener('click',()=>{showView('instrument');$('section-settings').open=!$('section-settings').open;});
-  sectionTools.append($('lock-section'),settingsButton);document.querySelector('.track-desk>.section-heading').append(sectionTools);
-  const tabs=['sound','trim','takes'];
-  function select(name,{focus=false,view='instrument'}={}){
-    for(const key of tabs){const selected=key===name;const tab=$(`tab-${key}`);tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;$(`panel-${key}`).hidden=!selected;}
-    $('sound-rack').hidden=name!=='sound';
-    showView(view);
-    if(focus)$(`tab-${name}`).focus();
+  const settingsButton=document.createElement('button');settingsButton.type='button';settingsButton.textContent='Section settings';settingsButton.addEventListener('click',()=>{$('section-settings').open=!$('section-settings').open;if($('section-settings').open)jump($('section-settings'));});
+  const controlsButton=document.createElement('button');controlsButton.type='button';controlsButton.textContent='Open controls';controlsButton.addEventListener('click',()=>jump(document.querySelector('.inspector')));
+  sectionTools.append(controlsButton,$('lock-section'),settingsButton);document.querySelector('.track-desk>.section-heading').append(sectionTools);
+  document.querySelector('.inspector-tabs').remove();
+  for(const [key,label] of [['sound','01 / Instrument sound'],['trim','02 / Clip editing'],['takes','03 / Takes & creation']]){
+    const panel=$(`panel-${key}`);panel.hidden=false;panel.removeAttribute('role');panel.removeAttribute('aria-labelledby');
+    const heading=document.createElement('h3');heading.className='module-label';heading.textContent=label;panel.prepend(heading);
   }
-  tabs.forEach((name,index)=>{
-    const tab=$(`tab-${name}`);tab.addEventListener('click',()=>select(name));
-    tab.addEventListener('keydown',e=>{let next;if(e.key==='ArrowRight')next=(index+1)%3;if(e.key==='ArrowLeft')next=(index+2)%3;if(e.key==='Home')next=0;if(e.key==='End')next=2;if(next!==undefined){e.preventDefault();select(tabs[next],{focus:true});}});
-  });
+  $('sound-rack').hidden=false;
+  function select(name){jump(name==='sound'?$('sound-rack'):$(`panel-${name}`));}
   $('start-ai')?.addEventListener('click',()=>{select('takes');$('panel-takes').scrollIntoView({behavior:'smooth',block:'start'});$('take-prompt').focus();});
-  $('all-instruments').addEventListener('click',()=>{document.body.classList.remove('instrument-focus');showView('song');});
+  $('all-instruments').addEventListener('click',()=>jump(document.querySelector('.track-desk')));
   // One tactile channel strip, still using the controller's existing native inputs.
   function dressMixer(mix){
     if(!mix||mix.dataset.dressed)return;mix.dataset.dressed='true';
@@ -79,7 +74,7 @@ export function bindConsole(document){
   $('clear-clip').addEventListener('click',()=>{clipping=false;paintClip();});
   function paintClip(){$('clear-clip').textContent=clipping?'Clipped · reset':'No clipping';$('clear-clip').setAttribute('aria-pressed',String(clipping));}
   return {
-    focusInstrument(){document.body.classList.add('instrument-focus');showView('instrument');},
+    focusInstrument(){/* Selection updates controls in place without moving the page. */},
     sync(project,trackId,section,clip){
       $('selected-context').textContent=`${section.name} · ${(section.duration*project.tempo/240).toFixed(1)} bars · ${project.tempo} BPM${project.key?' · '+project.key:''}`;
       const track=project.tracks.find(t=>t.id===trackId);$('instrument-heading').textContent=track?.name||'Select an instrument';

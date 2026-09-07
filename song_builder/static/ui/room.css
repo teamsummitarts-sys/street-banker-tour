@@ -343,3 +343,82 @@
  .room-console .transport{left:6px;right:6px;gap:5px;padding-top:5px;}
  .room-console .transport .time{font-size:14px;padding:3px;}
 }
+/* Studio 05 — a continuous instrument, with distinct physical surfaces. */
+.room-console.room-scroll{
+ --plate:linear-gradient(125deg,#ffffff0c,transparent 45%),linear-gradient(180deg,#292e30,#181d20);
+ --bevel:inset 0 1px #dbe4dd55,inset 1px 0 #dbe4dd20,inset -1px -2px #000c,0 3px 0 #080b0d,0 12px 22px #0009;
+ background:radial-gradient(ellipse at 15% 0,#283036,#101517 45%,#080b0d 85%);padding-top:20px;
+}
+.room-scroll .site-bar{height:90px;border-radius:12px;padding:10px 22px;background:linear-gradient(110deg,#424a4b,#242b2e 35%,#171d20);margin-bottom:18px;}
+.room-scroll .brand .room-brand-crop{box-shadow:0 1px 0 #ffffff24,0 5px 12px #0006;}
+.room-scroll .project-title input{border-radius:7px;background:#0b1013;box-shadow:inset 0 3px 8px #000b,0 1px #9ca7a13b;}
+.room-scroll .workspace{display:flex;flex-direction:column;gap:20px;}
+.room-scroll .arrangement,.room-scroll .inspector,.room-scroll .sound-rack{width:100%;min-width:0;}
+.room-scroll .section-deck{padding:14px 20px 9px;border-color:#4d595c;background:linear-gradient(110deg,#20292d,#121b1f);margin-bottom:20px;}
+.room-scroll .section-button{height:64px;min-height:64px;border-radius:7px;}
+.room-scroll .section-button[aria-pressed=true]{box-shadow:inset 0 1px #fff9,inset 0 0 0 3px #ffe8ac33,0 4px 0 #624419,0 7px 12px #000a;}
+.room-scroll .track-desk{padding:24px;min-height:0;}
+.room-scroll #tracks-heading{font-size:11px;letter-spacing:.18em;color:#a6b6b8;}
+.room-scroll #selected-context{font-size:21px;color:#eee7d9;margin-top:7px;font-weight:550;}
+.room-scroll .console-section-tools{gap:8px;}
+.room-scroll .tracks{border:1px solid #070c0e;border-radius:8px;overflow:hidden;box-shadow:inset 0 4px 12px #000b,0 1px #bcc8c43b;}
+.room-scroll .track{min-height:100px;border-bottom:1px solid #020708;}
+.room-scroll .track-controls{background:linear-gradient(120deg,#303d41,#19252a);padding:12px;}
+.room-scroll .track.selected .track-controls{background:linear-gradient(115deg,#544b37,#2c302a);}
+.room-scroll .track-name{font-size:12px;letter-spacing:.035em;}
+.room-scroll .lane-content,.room-scroll .track .clip{height:100px;}
+.room-scroll .track .clip{background:linear-gradient(180deg,#ffffff06,transparent 40%),#0c191c;border-color:#485e61;box-shadow:inset 0 3px 7px #0009;}
+.room-scroll .clip canvas{height:80px;opacity:1;}
+.room-scroll .audio-actions{padding-top:16px;gap:10px;}
+.room-scroll .inspector{display:grid;grid-template-columns:minmax(180px,.8fr) minmax(260px,1.1fr) minmax(290px,1.2fr);gap:20px;padding:24px;background:linear-gradient(115deg,#2b3437,#1c2529);}
+.room-scroll .instrument-caption{grid-column:1/-1;min-height:36px;border-bottom:1px solid #9aa9a33b;padding-bottom:14px;margin:0;}
+.room-scroll #instrument-heading{font-size:20px;letter-spacing:.02em;white-space:normal;}
+.room-scroll #panel-sound{grid-column:1;grid-row:2;}
+.room-scroll #panel-trim{grid-column:2;grid-row:2/4;}
+.room-scroll #panel-takes{grid-column:3;grid-row:2/4;}
+.room-scroll .module-label{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#dcc69d;margin:0 0 20px;font-weight:600;}
+.room-scroll #panel-trim,.room-scroll #panel-takes{padding:18px;border:1px solid #0d1518;border-radius:8px;background:linear-gradient(125deg,#182226,#111b1f);box-shadow:inset 0 2px 6px #0008,0 1px #a4b8b32b;min-width:0;}
+.room-scroll .master-meter{grid-column:1;grid-row:3;margin:0;padding-top:18px;border-top:1px solid #a8b5a940;border-bottom:0;align-self:start;}
+.room-scroll #clear-clip{top:12px;}
+.room-scroll .section-settings{grid-column:1/-1;}
+.room-scroll .section-settings>summary{min-height:44px;}
+.room-scroll .generate-desk .hint,.room-scroll .clip-fields label{font-size:12px;}
+.room-scroll .sound-rack{padding:22px 26px;background:linear-gradient(110deg,#ffffff12,transparent 45%),url('images/room-faceplate.png') center/cover #252c2e;border-top:2px solid #bdc7c0;}
+.room-scroll .rack-controls{padding:22px 0 10px;margin-top:10px;}
+.room-scroll .rack-dial{width:134px;height:134px;margin:12px auto 20px;}
+.room-scroll .dial-face{box-shadow:0 0 0 2px #0a0e10,0 3px 0 2px #a0a59a,0 7px 0 2px #202727,4px 14px 14px #000c;}
+.room-scroll .rack-control-label strong{font-size:12px;letter-spacing:.17em;}
+.room-scroll .rack-control-label output{font-size:20px;color:#ead5a9;}
+.room-scroll .rack-control>.hint{font-size:11px;color:#c0c7bc;}
+.room-scroll .pan-dial.rack-dial{width:100px;height:100px;}
+.room-scroll .transport{margin-top:20px;border-radius:9px;}
+.room-scroll #panel-sound,.room-scroll #panel-trim,.room-scroll #panel-takes,.room-scroll .sound-rack,.room-scroll .inspector,.room-scroll .section-settings{scroll-margin-top:18px;}
+.room-scroll button,.room-scroll details>summary{border-radius:6px;}
+@media(max-width:1000px) and (min-width:801px){.room-scroll .inspector{grid-template-columns:1fr 1fr;}.room-scroll #panel-takes{grid-column:1/-1;grid-row:4;}.room-scroll .rack-dial{width:115px;height:115px;}}
+@media(max-width:800px){
+ .room-console.room-scroll{padding:8px 10px calc(120px + env(safe-area-inset-bottom));}
+ .room-scroll .site-bar{height:auto;padding:12px;margin-bottom:14px;border-radius:10px;}
+ .room-scroll .brand{flex-basis:142px;}.room-scroll .brand .room-brand-crop{width:142px;}
+ .room-scroll .section-deck{padding:10px 12px 6px;margin-bottom:14px;}
+ .room-scroll .section-button{height:58px;min-height:58px;}
+ .room-scroll .workspace{gap:16px;}
+ .room-scroll .track-desk{padding:18px 10px 12px;}
+ .room-scroll #selected-context{font-size:16px;line-height:1.4;}
+ .room-scroll .console-section-tools{width:100%;justify-content:flex-start;flex-wrap:wrap;}
+ .room-scroll .console-section-tools button{flex:1;min-height:44px;font-size:11px;}
+ .room-scroll .track{grid-template-columns:100px minmax(0,1fr);}
+ .room-scroll .track-controls{padding:8px;}.room-scroll .section-ruler{margin-left:105px;}
+ .room-scroll .track-switch{min-width:38px;min-height:44px;}
+ .room-scroll .inspector{display:flex;flex-direction:column;padding:18px 14px;gap:20px;}
+ .room-scroll .instrument-caption{min-height:44px;padding-right:44px;}
+ .room-scroll #instrument-heading{font-size:18px;}
+ .room-scroll #panel-sound{order:1;}.room-scroll #panel-trim{order:2;}.room-scroll #panel-takes{order:3;}.room-scroll .section-settings{order:4;}.room-scroll .master-meter{order:5;width:100%;}
+ .room-scroll .module-label{font-size:11px;margin-bottom:16px;}
+ .room-scroll #panel-trim,.room-scroll #panel-takes{padding:16px 12px;}
+ .room-scroll .sound-rack{padding:20px 12px;}
+ .room-scroll .rack-controls{padding-top:18px;row-gap:22px;}
+ .room-scroll .rack-dial{width:120px;height:120px;}
+ .room-scroll .rack-control:last-child{grid-template-columns:1fr 120px 1fr;}
+ .room-scroll .transport{margin:0;}
+ .room-scroll input:not([type=range]),.room-scroll select,.room-scroll textarea{font-size:16px;}
+}

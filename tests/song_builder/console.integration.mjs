@@ -43,13 +43,13 @@ test('native: repeated audio-clock cycles retain stereo signal, pan and live rac
   p=P.updateTrack(p,p.tracks[0].id,{pan:-1});await engine.play(p,{from:0,to:.2});await wait(90);assert.ok(engine.meterLevels()[0]>-20);assert.ok(engine.meterLevels()[1]<-60,'hard left pan reaches output meter');
  }finally{engine.dispose();}
 });
-test('DOM: tabs expose existing tools, selection does not solo, clip latch resets',()=>{
+test('DOM: continuous panels expose tools, selection does not solo, clip latch resets',()=>{
  const html=readFileSync(new URL('../../song_builder/templates/song_builder/index.html',import.meta.url),'utf8');
  const dom=new JSDOM(html),d=dom.window.document,studio=bindConsole(d);
  assert.equal(d.querySelectorAll('#clip-inspector').length,1);
  assert.equal(d.getElementById('panel-trim').contains(d.getElementById('clip-inspector')),true);
- d.getElementById('tab-trim').click();assert.equal(d.getElementById('panel-trim').hidden,false);assert.equal(d.getElementById('panel-sound').hidden,true);
- d.getElementById('tab-trim').dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowRight'}));assert.equal(d.getElementById('tab-takes').getAttribute('aria-selected'),'true');
+ assert.equal(d.getElementById('panel-trim').hidden,false);assert.equal(d.getElementById('panel-sound').hidden,false);
+ assert.equal(d.getElementById('panel-takes').hidden,false);assert.equal(d.querySelector('[role=tablist]'),null);
  let p=P.addTrack(P.newProject(),'Bass');studio.sync(p,p.tracks[0].id,p.sections[0],null);assert.equal(d.getElementById('solo-status').hidden,true);
  p=P.updateTrack(p,p.tracks[0].id,{solo:true});studio.sync(p,p.tracks[0].id,p.sections[0],null);assert.match(d.getElementById('solo-status').textContent,/Bass/);
  studio.meter([1,-7],100);assert.equal(d.getElementById('clear-clip').getAttribute('aria-pressed'),'true');
@@ -137,13 +137,11 @@ test('Room navigation keeps song, instrument, rack and take tools reachable with
  assert.equal(d.querySelector('.site-bar').contains(d.getElementById('song-title')),true);
  assert.equal(d.querySelector('.workspace').contains(d.getElementById('sound-rack')),true);
  assert.equal(d.querySelector('.arrangement').contains(d.querySelector('.section-deck')),false);
- assert.equal(d.body.dataset.roomView,'song');
- d.querySelector('[data-room-view="rack"]').click();assert.equal(d.body.dataset.roomView,'rack');assert.equal(d.getElementById('sound-rack').hidden,false);
- d.getElementById('tab-takes').click();assert.equal(d.body.dataset.roomView,'instrument');assert.equal(d.getElementById('panel-takes').hidden,false);
- d.querySelector('[data-room-view="song"]').click();assert.equal(d.body.dataset.roomView,'song');
- studio.focusInstrument();assert.equal(d.body.dataset.roomView,'instrument');
- d.getElementById('tab-sound').click();assert.equal(d.body.dataset.roomView,'instrument','Sound stays in the Instrument view');
- assert.equal(d.getElementById('panel-sound').hidden,false);
+ assert.equal(d.querySelector('.room-navigation'),null);
+ let scrolled=null;d.defaultView.HTMLElement.prototype.scrollIntoView=function(){scrolled=this;};
+ studio.focusInstrument();assert.equal(scrolled,null,'track selection never jumps away from the timeline');
+ [...d.querySelectorAll('button')].find(b=>b.textContent==='Open controls').click();assert.equal(scrolled,d.querySelector('.inspector'));
+ for(const id of ['panel-sound','panel-trim','panel-takes','sound-rack'])assert.equal(d.getElementById(id).hidden,false,id+' stays available');
  d.querySelector('.console-section-tools button:last-child').click();assert.equal(d.getElementById('section-settings').open,true);
  for(const id of ['song-title','song-tempo','song-key','lock-section','record-audio','play-section','loop-section','generate-take','sound-rack'])assert.equal(d.querySelectorAll('#'+id).length,1,id);
  assert.ok(d.querySelector('.room-brand-crop img').src.endsWith('the-room-approved.png'));
