@@ -204,7 +204,7 @@ function renderRack(){
       commit(next,{rackTrackId:track.id});
     }catch(error){failure(error);renderRack();}}
   });
-  if(audition){const actions=text('div','','audition-actions');actions.append(text('span','TAKE AUDITION · Not yet accepted','audition-label'),button('Replay take',()=>auditionTake(audition.job)),button('Accept into new version',()=>acceptTake(audition.job),{disabled:selectedSection()?.locked}),button('Back to takes',()=>{stop();$('tab-takes').click();}));$('sound-rack').prepend(actions);}
+  if(audition){const actions=text('div','','audition-actions');actions.append(text('span','TAKE AUDITION · Not yet accepted','audition-label'),button('Replay take',()=>auditionTake(audition.job)),button('Accept into new version',()=>acceptTake(audition.job),{disabled:selectedSection()?.locked}),button('Back to takes',()=>{stop();$('panel-takes').scrollIntoView({behavior:'auto',block:'start'});}));$('sound-rack').prepend(actions);}
 }
 function renderInspector(){const s=selectedSection();if(!s)return;$('section-heading').textContent=s.name;$('section-name').value=s.name;$('section-duration').value=s.duration;$('section-direction').value=s.direction;$('section-lyrics').value=s.lyrics;$('lock-section').textContent=s.locked?'Protected':'Protect';$('lock-section').setAttribute('aria-pressed',String(s.locked));$('lock-hint').textContent=s.locked?'These parts are protected. Unlock before changing their audio, lyrics or length.':'Protect this section when you want to keep its parts.';
   const protectedCount=state.project.sections.filter(section=>section.id!==s.id&&section.locked).length;
@@ -313,7 +313,7 @@ async function auditionTake(job){
   catch(error){if(request===state.playRequest)stop();throw error;}
   if(request!==state.playRequest)return;
   state.playing=engine.isPlaying();document.body.classList.add('auditioning');
-  $('tab-sound').click();$('selected-mixer').hidden=true;$('instrument-heading').textContent='Listening to alternate take';
+  $('sound-rack').scrollIntoView({behavior:'auto',block:'start'});$('selected-mixer').hidden=true;$('instrument-heading').textContent='Listening to alternate take';
   renderRack();$('sound-rack').scrollIntoView({behavior:'smooth',block:'center'});
   notify('Auditioning through the rack. Your changes stay with this take when you accept it.');
 }
