@@ -28,6 +28,14 @@ export function bindConsole(document){
   const setupTitle=document.createElement('summary');setupTitle.textContent='Session';setup.append(setupTitle);
   const setupFields=document.createElement('div');setupFields.className='session-fields';
   setupFields.append(document.querySelector('.compact-field'),document.querySelector('.key-field'));setup.append(setupFields);projectBar.append(setup);
+  // Keep the phone's first screen focused on music; reuse every existing action.
+  const projectTools=document.createElement('div');projectTools.id='room-project-tools';projectTools.className='room-project-tools';
+  projectTools.append($('save-project'),document.querySelector('.project-menu'),menu,setup);
+  const toolsToggle=document.createElement('button');toolsToggle.type='button';toolsToggle.className='room-project-toggle';toolsToggle.textContent='Project';toolsToggle.setAttribute('aria-controls',projectTools.id);toolsToggle.setAttribute('aria-expanded','false');
+  const closeTools=()=>{projectTools.classList.remove('is-open');toolsToggle.setAttribute('aria-expanded','false');};
+  toolsToggle.addEventListener('click',()=>{const open=toolsToggle.getAttribute('aria-expanded')!=='true';toolsToggle.setAttribute('aria-expanded',String(open));projectTools.classList.toggle('is-open',open);});
+  projectTools.addEventListener('keydown',event=>{if(event.key==='Escape'){closeTools();toolsToggle.focus();}});
+  projectBar.append(toolsToggle,projectTools);
   const deck=document.querySelector('.section-deck');main.insertBefore(deck,document.querySelector('.workspace'));
   document.querySelector('.audio-actions').append(document.querySelector('.snap-control'),$('loop-section'),$('play-section'));
   document.querySelector('.workspace').append($('sound-rack'));
