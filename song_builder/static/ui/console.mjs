@@ -16,6 +16,7 @@ export function bindConsole(document){
   $('panel-trim').append($('clip-inspector'));
   $('panel-takes').append(document.querySelector('.generate-desk'));
   document.querySelector('main').append(document.querySelector('.transport'));
+  document.querySelector('main').append(document.querySelector('footer'));
   const exports=document.querySelector('.export-desk'),menu=document.createElement('details'),summary=document.createElement('summary');
   menu.className='export-menu';summary.textContent='Export';menu.append(summary,exports);document.querySelector('.project-bar').append(menu);
   for(const side of ['left','right']){const meter=$(`meter-${side}`),housing=document.createElement('span');housing.className='led-meter';meter.before(housing);housing.append(meter);}
@@ -56,15 +57,15 @@ export function bindConsole(document){
     if(!mix||mix.dataset.dressed)return;mix.dataset.dressed='true';
     const [level,pan]=mix.querySelectorAll('label'),levelInput=level.querySelector('input'),panInput=pan.querySelector('input');
     const decorate=(label,name,input)=>{label.replaceChildren();const title=document.createElement('strong'),value=document.createElement('output');title.textContent=name;label.append(title,input,value);return value;};
-    level.className='mixer-level';const levelValue=decorate(level,'Level',levelInput);levelInput.className='mixer-fader';
+    level.className='mixer-level';const levelValue=decorate(level,'Level',levelInput);levelInput.className='mixer-fader';levelInput.setAttribute('aria-orientation','vertical');
     const scale=document.createElement('span');scale.className='fader-scale';scale.setAttribute('aria-hidden','true');for(const value of [6,0,-12,-24,-48]){const mark=document.createElement('i');mark.textContent=value>0?`+${value}`:String(value).replace('-','−');mark.style.top=`${(6-value)/66*100}%`;scale.append(mark);}level.append(scale);
     const updateLevel=()=>{levelValue.value=`${Number(levelInput.value)>0?'+':''}${levelInput.value} dB`;levelInput.setAttribute('aria-valuetext',levelValue.value);};updateLevel();levelInput.addEventListener('input',updateLevel);
     pan.className='mixer-pan';const panValue=decorate(pan,'Pan',panInput),surface=document.createElement('div'),face=document.createElement('i');surface.className='pan-dial rack-dial';face.className='dial-face';face.setAttribute('aria-hidden','true');panInput.before(surface);surface.append(panInput,face);bindKnob(surface,panInput,0);
     const updatePan=()=>{const v=Number(panInput.value);panValue.value=v===0?'CENTER':`${Math.round(Math.abs(v)*100)} ${v<0?'L':'R'}`;panInput.setAttribute('aria-valuetext',panValue.value);surface.style.setProperty('--angle',`${v*135}deg`);};updatePan();panInput.addEventListener('input',updatePan);
     let panStart=panInput.value;surface.addEventListener('pointerdown',()=>{panStart=panInput.value;});panInput.addEventListener('pointercancel',()=>{panInput.value=panStart;updatePan();});
     const options=document.createElement('details'),caption=document.createElement('summary'),actions=document.createElement('div');options.className='track-options';caption.textContent='Track options';actions.className='track-option-actions';
-    for(const button of mix.querySelectorAll('.track-edit,.track-remove')){if(button.textContent==='Rack'){button.addEventListener('click',()=>select('sound',{view:'rack'}));button.textContent='Open rack';}actions.append(button);}
-    options.append(caption,actions);mix.append(options);
+    for(const button of mix.querySelectorAll('.track-edit,.track-remove')){if(button.textContent==='Rack'){button.addEventListener('click',()=>{select('sound',{view:'rack'});$('sound-rack').scrollIntoView({behavior:'smooth',block:'center'});});button.textContent='Open rack';}actions.append(button);}
+    options.append(caption,actions);document.querySelector('.instrument-caption').append(options);
   }
   let clipping=false,lastPaint=0,viewStart=0,viewDuration=1;
   $('clear-clip').addEventListener('click',()=>{clipping=false;paintClip();});
@@ -74,7 +75,7 @@ export function bindConsole(document){
     sync(project,trackId,section,clip){
       $('selected-context').textContent=`${section.name} · ${(section.duration*project.tempo/240).toFixed(1)} bars · ${project.tempo} BPM${project.key?' · '+project.key:''}`;
       const track=project.tracks.find(t=>t.id===trackId);$('instrument-heading').textContent=track?.name||'Select an instrument';
-      const mix=document.querySelector('.track.selected .track-mix');$('selected-mixer').replaceChildren();if(mix){dressMixer(mix);$('selected-mixer').append(mix);}
+      const mix=document.querySelector('.track.selected .track-mix');$('selected-mixer').replaceChildren();document.querySelector('.instrument-caption .track-options')?.remove();if(mix){dressMixer(mix);$('selected-mixer').append(mix);}
       document.body.classList.toggle('has-instrument',Boolean(track));
       const solos=project.tracks.filter(t=>t.solo);$('solo-status').hidden=!solos.length;$('clear-solos').hidden=!solos.length;
       $('solo-status').textContent=solos.length?`Solo active: ${solos.map(t=>t.name).join(', ')}`:'';
