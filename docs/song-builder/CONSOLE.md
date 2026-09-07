@@ -71,3 +71,34 @@ provider requests, disk operations or deployment are included.
 The owner verified the host DB is active on /var/data/v2/streetbanker.db. Before
 restarting V2, independently verify and preserve Song Builder's own project DB
 and audio directory; its storage path is separate from the host DB.
+
+### Follow-up release check
+
+Empty track lanes now retain a real text message alongside the playhead; repeated
+console synchronization does not duplicate either. The five console integration
+checks passed again, with a separate DOM check covering empty and populated lanes.
+
+Render confirms that V2 has a disk mounted at `/var/data`, but its connector does
+not expose environment reads or a shell. Run this read-only check from the V2
+service's project root in Render Shell before deploying. It does not import the
+host app, initialize a database, change configuration, or move files. The default
+below matches the current host's standard Flask instance directory; if the host
+later overrides that directory or passes a data_dir argument, inspect that first.
+
+```sh
+python - <<'PY'
+import os
+from pathlib import Path
+directory = Path(os.environ.get('SONG_BUILDER_DATA_DIR') or 'instance/song_builder').resolve()
+print('Song Builder directory:', directory)
+print('Explicit directory configured:', bool(os.environ.get('SONG_BUILDER_DATA_DIR')))
+print('Persistent disk mounted:', os.path.ismount('/var/data'))
+for label, path in [('Database', directory / 'songs.sqlite3'), ('Audio', directory / 'audio')]:
+    print(label, 'exists:', path.exists(), 'resolved:', path.resolve(),
+          'under persistent disk:', path.resolve().is_relative_to(Path('/var/data')))
+PY
+```
+
+Do not change the directory setting or redeploy merely because a path is outside
+the disk: preserve existing projects and audio together before a storage move.
+This check identifies location only; it does not certify a backup or DB integrity.

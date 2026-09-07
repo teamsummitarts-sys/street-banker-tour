@@ -29,7 +29,11 @@ export function bindConsole(document){
       $('solo-status').textContent=solos.length?`Solo active: ${solos.map(t=>t.name).join(', ')}`:'';
       $('trim-empty').hidden=Boolean(clip);if(clip)$('clip-inspector').open=true;
       viewStart=0;for(const item of project.sections){if(item.id===section.id)break;viewStart+=item.duration;}viewDuration=section.duration;
-      for(const lane of document.querySelectorAll('.lane-content')){const head=document.createElement('i');head.className='lane-playhead';head.setAttribute('aria-hidden','true');lane.append(head);}
+      for(const lane of document.querySelectorAll('.lane-content')){
+        lane.querySelectorAll('.lane-playhead,.lane-empty').forEach(node=>node.remove());
+        if(!lane.querySelector('.clip')){const empty=document.createElement('span');empty.className='lane-empty';empty.textContent='No audio in this section';lane.append(empty);}
+        const head=document.createElement('i');head.className='lane-playhead';head.setAttribute('aria-hidden','true');lane.append(head);
+      }
       document.querySelector('.track-desk').style.setProperty('--bar-width',`${240/project.tempo/section.duration*100}%`);
       const ruler=$('section-ruler');ruler.replaceChildren();const bars=section.duration*project.tempo/240,step=Math.max(1,Math.ceil(bars/12));
       for(let bar=0;bar<bars;bar+=step){const mark=document.createElement('span');mark.style.left=`${bar/bars*100}%`;mark.textContent=String(bar+1);ruler.append(mark);}
