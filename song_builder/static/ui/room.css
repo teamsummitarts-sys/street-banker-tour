@@ -285,3 +285,61 @@
 @media(prefers-reduced-motion:reduce){.room-console *{transition:none!important;scroll-behavior:auto!important;}}
 @media(prefers-contrast:more){.room-console{--muted:#d1d5cc;--line:#8e958a;}.room-console .hint,.room-console .rack-footnote{color:#cdd1c9;}}
 @media(forced-colors:active){.room-console::before,.room-console::after{display:none;}.room-console .dial-face{background:ButtonFace;border:2px solid ButtonText;}.room-console .dial-face::after{background:linear-gradient(ButtonText,ButtonText) center 7px/3px 22% no-repeat;}.room-console .analog-meter{background:Canvas;}.room-console .meter-arc,.room-console .meter-tick,.room-console .meter-redline{stroke:CanvasText;}.room-console .meter-number,.room-console .meter-legend,.room-console .needle-body{fill:CanvasText;}.room-console .led-meter meter{position:static;width:100%;height:100%;clip-path:none;}.room-console .led-meter::before,.room-console .led-meter::after{display:none;}}
+
+/* Mobile workbench: music first, project administration on demand. */
+.room-console .room-project-tools{display:contents;}
+.room-console .room-project-toggle{display:none;}
+@media(max-width:800px){
+ .room-console{padding:4px 8px calc(112px + env(safe-area-inset-bottom));}
+ .room-console .site-bar{padding:7px 10px;gap:4px;margin-bottom:6px;}
+ .room-console .brand{flex:0 0 116px;}
+ .room-console .brand .room-brand-crop{width:116px;margin:0;}
+ .room-console .project-bar{display:grid;grid-template-columns:minmax(0,1fr) 78px;gap:4px 8px;}
+ .room-console .project-title{grid-column:1;grid-row:1;}
+ .room-console .project-title input{height:44px;font-size:16px;padding:8px;}
+ .room-console .room-project-toggle{display:block;grid-column:2;grid-row:1;min-height:44px;font-size:12px;}
+ .room-console .session-status{grid-column:1/-1;grid-row:2;font-size:10px;min-height:17px;}
+ .room-console .room-project-tools{display:none;grid-column:1/-1;grid-row:3;padding:10px 0 4px;border-top:1px solid #72766566;}
+ .room-console .room-project-tools.is-open{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+ .room-console .room-project-tools>button,.room-console .room-project-tools>details>summary{min-height:44px;font-size:12px;padding:9px;}
+ .room-console .room-project-tools .session-menu{grid-column:auto;grid-row:auto;}
+ .room-console .room-project-tools details{position:static;}
+ .room-console .room-project-tools .menu-content,.room-console .room-project-tools .export-desk,.room-console .room-project-tools .session-fields{position:static;width:100%;max-width:none;margin-top:8px;}
+ .room-console .room-project-tools details[open]{grid-column:1/-1;}
+ .room-console .section-deck{padding:7px 9px 4px;margin-bottom:6px;}
+ .room-console .section-deck>.section-heading{margin-bottom:3px;}
+ .room-console #arrangement-heading{font-size:10px;letter-spacing:.15em;}
+ .room-console #add-section{min-height:44px;font-size:11px;padding:6px 10px;}
+ .room-console .sections{gap:6px;scroll-snap-type:x proximity;}
+ .room-console .sections li{flex-basis:105px;scroll-snap-align:start;}
+ .room-console .section-button{height:51px;min-height:51px;padding:6px 9px;}
+ .room-console .section-button strong{font-size:12px;}
+ .room-console .section-deck>.seek{margin:2px 0 0;min-height:26px;}
+ .room-console .room-navigation{position:sticky;top:0;z-index:12;margin-bottom:6px;box-shadow:0 4px 9px #0009;}
+ .room-console .track-desk{padding:10px 8px;}
+ .room-console .console-section-tools{width:auto;margin-left:auto;}
+ .room-console .console-section-tools button{padding:7px;font-size:10px;}
+ .room-console .track-toolbar{margin:3px 0;}
+ .room-console .track{grid-template-columns:92px minmax(0,1fr);}
+ .room-console .track-name{font-size:12px;min-height:32px;}
+ .room-console .track-switch{min-height:44px;min-width:36px;}
+ .room-console .section-ruler{margin-left:97px;}
+ .room-console .audio-empty{padding:18px 10px;}
+ .room-console .audio-empty svg{height:32px;margin:0 auto 10px;}
+ .room-console .audio-empty h3{font-size:19px;margin:6px 0;}
+ .room-console .audio-empty p{font-size:13px;line-height:1.5;margin:8px 0;}
+ .room-console .audio-empty button{min-height:44px;margin:4px;font-size:12px;}
+ .room-console .audio-empty span{font-size:10px;margin-top:6px;}
+ .room-console[data-room-view=instrument] .section-deck,.room-console[data-room-view=rack] .section-deck{display:none;}
+ .room-console.has-instrument[data-room-view=instrument] .track-desk>.section-heading,.room-console.has-instrument[data-room-view=instrument] .section-ruler,.room-console.has-instrument[data-room-view=instrument] .audio-actions,.room-console.has-instrument[data-room-view=instrument] .track-desk>.hint{display:none;}
+ .room-console .inspector{display:flex;flex-direction:column;padding:12px;}
+ .room-console .master-meter{order:5;margin-top:16px;padding-top:12px;border-top:1px solid #8e907052;grid-template-columns:minmax(0,1fr) 54px;}
+ .room-console .analog-meter{height:110px;}
+ .room-console .led-meter{height:75px;}
+ .room-console .rack-control{min-width:0;}
+ .room-console .sound-rack{padding:12px 10px;}
+ .room-console .rack-controls{row-gap:12px;}
+ .room-console .rack-dial{width:108px;height:108px;}
+ .room-console .transport{left:6px;right:6px;gap:5px;padding-top:5px;}
+ .room-console .transport .time{font-size:14px;padding:3px;}
+}

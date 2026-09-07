@@ -149,3 +149,15 @@ test('Room navigation keeps song, instrument, rack and take tools reachable with
  assert.ok(d.querySelector('.room-brand-crop img').src.endsWith('the-room-approved.png'));
  dom.window.close();
 });
+
+test('Project drawer retains action handlers and closes with keyboard focus restored',()=>{
+ const dom=new JSDOM(readFileSync(new URL('../../song_builder/templates/song_builder/index.html',import.meta.url),'utf8'));
+ const d=dom.window.document,save=d.getElementById('save-project');let saves=0;save.addEventListener('click',()=>saves++);
+ bindConsole(d);const toggle=d.querySelector('.room-project-toggle'),drawer=d.getElementById('room-project-tools');
+ toggle.click();assert.equal(toggle.getAttribute('aria-expanded'),'true');assert.ok(drawer.classList.contains('is-open'));
+ drawer.querySelector('#save-project').click();assert.equal(saves,1);assert.equal(d.querySelectorAll('#save-project').length,1);
+ drawer.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+ assert.equal(toggle.getAttribute('aria-expanded'),'false');assert.equal(d.activeElement,toggle);
+ for(const id of ['song-tempo','song-key','project-list','export-mix'])assert.ok(drawer.contains(d.getElementById(id)));
+ dom.window.close();
+});
