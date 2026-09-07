@@ -12,7 +12,7 @@ const state = { project:null, revision:0, sectionId:null, trackId:null, clipId:n
   assets:new Map(), jobs:[], capabilities:null, dirty:false, sequence:0, busy:0,
   playing:false, previewEnd:null, saveChain:Promise.resolve(), conflict:false,
   recorder:null, recordingStream:null, recordTimer:null, recordProject:null,
-  preparedUrl:null, polling:null, saveTimer:null, history:[], future:[] };
+  preparedUrl:null, polling:null, saveTimer:null, history:[], future:[], rejectedJobs:new Set() };
 
 class ApiError extends Error { constructor(message,status) { super(message); this.status=status; } }
 async function api(path, {method='GET',body,signal}={}) {
@@ -83,7 +83,7 @@ async function loadProject(id,{skipSave=false}={}) {
   if(!skipSave)await save();
   const r=await api(`/api/projects/${id}`),project=P.validateProject(r.project);
   stop();releaseProjectAudio(r.assets.map(a=>a.id));
-  stop();state.project=project;state.revision=r.revision;state.assets=new Map(r.assets.map(a=>[a.id,a]));state.sectionId=project.sections[0].id;state.trackId=project.tracks[0]?.id??null;state.clipId=null;state.dirty=false;state.conflict=false;state.history=[];state.future=[];state.jobs=[];
+  stop();state.project=project;state.revision=r.revision;state.assets=new Map(r.assets.map(a=>[a.id,a]));state.sectionId=project.sections[0].id;state.trackId=project.tracks[0]?.id??null;state.clipId=null;state.dirty=false;state.conflict=false;state.history=[];state.future=[];state.jobs=[];state.rejectedJobs=new Set();
   $('recovery').hidden=true;$('save-state').textContent='Loading audio…';render();
   history.replaceState(null,'',`${location.pathname}?project=${project.id}`);
   let failed=0;for(const a of r.assets){try{await ensureAudio(a);}catch{failed++;}}
@@ -91,7 +91,7 @@ async function loadProject(id,{skipSave=false}={}) {
   if(failed)notify('Some audio could not load. Your arrangement is saved. Reopen the project to retry before playing or exporting.',true);
   await pollJobs();render();
 }
-async function startNew(title='Untitled song'){await save();stop();releaseProjectAudio();state.project=P.newProject(title);state.revision=0;state.sectionId=state.project.sections[0].id;state.trackId=null;state.clipId=null;state.assets=new Map();state.jobs=[];state.history=[];state.future=[];state.conflict=false;$('recovery').hidden=true;markDirty();render();await save();}
+async function startNew(title='Untitled song'){await save();stop();releaseProjectAudio();state.project=P.newProject(title);state.revision=0;state.sectionId=state.project.sections[0].id;state.trackId=null;state.clipId=null;state.assets=new Map();state.jobs=[];state.history=[];state.future=[];state.rejectedJobs=new Set();state.conflict=false;$('recovery').hidden=true;markDirty();render();await save();}
 async function saveVersion(){
   await save();const suggested=`${state.project.title} — Version 2`,name=prompt('Name this version',suggested);if(name===null)return;if(!name.trim())throw new Error('Give this version a name.');
   stop();state.project=P.validateProject({...state.project,id:P.newId(),title:name.trim().slice(0,120)});state.revision=0;state.jobs=[];state.history=[];state.future=[];state.conflict=false;markDirty();render();await save();notify(`Saved ${state.project.title} as an independent version. The original is unchanged.`);
@@ -160,10 +160,12 @@ function renderTracks(){
   $('audio-empty').hidden=state.project.clips.length>0;
 }
 function renderInspector(){const s=selectedSection();if(!s)return;$('section-heading').textContent=s.name;$('section-name').value=s.name;$('section-duration').value=s.duration;$('section-direction').value=s.direction;$('section-lyrics').value=s.lyrics;$('lock-section').textContent=s.locked?'Protected':'Protect';$('lock-section').setAttribute('aria-pressed',String(s.locked));$('lock-hint').textContent=s.locked?'These parts are protected. Unlock before changing their audio, lyrics or length.':'Protect this section when you want to keep its parts.';
+  const protectedCount=state.project.sections.filter(section=>section.id!==s.id&&section.locked).length;
+  $('section-test-status').textContent=protectedCount===state.project.sections.length-1&&!s.locked?`${s.name} is editable. All ${protectedCount} other section${protectedCount===1?' is':'s are'} protected.`:'The selected section stays editable. Every other section is protected.';
   const clip=selectedClip();$('clip-inspector').hidden=!clip;if(clip){$('clip-offset').value=clip.offset;$('clip-source').value=clip.sourceOffset;$('clip-duration').value=clip.duration;$('clip-loop').checked=clip.loop;}
 }
 function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boolean(s?.locked),hasAudio=Boolean(state.project?.clips.length),recording=Boolean(state.recorder);
-  for(const id of ['save-project','new-project','save-version','import-project','export-project','project-list','load-demo','export-mix','export-section','export-track','export-30','export-15','play-song','play-section','add-section','add-track'])$(id).disabled=busy||recording;
+  for(const id of ['save-project','new-project','save-version','import-project','export-project','project-list','load-demo','export-mix','export-section','export-track','export-30','export-15','play-song','play-section','add-section','add-track','prepare-section-test'])$(id).disabled=busy||recording;
   for(const id of ['section-name','section-duration','section-direction','section-lyrics','duplicate-section','remove-section','upload-audio','apply-clip','remove-clip','duplicate-clip','split-clip','clip-offset','clip-source','clip-duration','clip-loop'])$(id).disabled=busy||lock||recording;
   for(const id of ['song-title','song-tempo','song-key','lock-section','move-earlier','move-later'])$(id).disabled=busy||recording;
   $('record-audio').disabled=busy||lock||!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder;
@@ -218,10 +220,10 @@ async function importProject(file){if(!file)return;const bundle=await readBundle
   stop();state.project=project;state.revision=0;state.assets=assets;state.sectionId=project.sections[0].id;state.trackId=project.tracks[0]?.id??null;state.clipId=null;state.jobs=[];state.history=[];state.future=[];state.conflict=false;markDirty();render();await save();notify('Imported as a new project with its audio and arrangement intact.');
 }
 async function pollJobs(){if(!state.revision)return;const projectId=state.project.id;try{const r=await api(`/api/jobs?projectId=${encodeURIComponent(projectId)}`);if(state.project.id!==projectId)return;state.jobs=r.jobs;pendingRequests.observe(r.jobs);renderJobs();}catch(e){if(e.status===401)notify(e.message,true);} }
-function renderJobs(){const holder=$('jobs');holder.replaceChildren();if(pendingRequests.get()){holder.append(text('p','A music request has an unknown outcome. Recover the same request before creating another.'),button('Recover previous request',recoverJob));}for(const job of state.jobs){const item=document.createElement('div');item.className='job';const section=state.project.sections.find(s=>s.id===job.sectionId);item.append(text('p',job.kind==='separate'?'Separated instrument layers':`${section?.name||'Section'} · alternate take`),text('p',job.status,'job-status'));
+function renderJobs(){const holder=$('jobs');holder.replaceChildren();if(pendingRequests.get()){holder.append(text('p','A music request has an unknown outcome. Recover the same request before creating another.'),button('Recover previous request',recoverJob));}for(const job of state.jobs){if(state.rejectedJobs.has(job.id))continue;const item=document.createElement('div');item.className='job';const section=state.project.sections.find(s=>s.id===job.sectionId);item.append(text('p',job.kind==='separate'?'Separated instrument layers':`${section?.name||'Section'} · alternate take`),text('p',job.status,'job-status'));
     if(job.error)item.append(text('p',typeof job.error==='string'?job.error:'This take could not finish. Your accepted parts are unchanged.','hint'));
     if(job.status==='succeeded'){
-      if(job.asset){const audio=document.createElement('audio');audio.controls=true;audio.preload='none';audio.src=job.asset.url;audio.addEventListener('play',()=>stop());item.append(audio);item.append(button('Use take · replace section audio',()=>acceptTake(job),{disabled:state.busy||!section||section.locked}));}
+      if(job.asset){const audio=document.createElement('audio');audio.controls=true;audio.preload='none';audio.src=job.asset.url;audio.addEventListener('play',()=>stop());item.append(text('p','Candidate','hint'),audio);item.append(button('Play original section',()=>auditionOriginal(job),{disabled:state.busy||!section}),button('Accept into new version',()=>acceptTake(job),{disabled:state.busy||!section||section.locked}),button('Reject take',()=>rejectTake(job)));}
       if(job.assets?.length)item.append(button(`Use ${job.assets.length} stems`,()=>acceptStems(job),{disabled:state.busy||selectedSection()?.locked}));
     }holder.append(item);
   }}
@@ -233,7 +235,10 @@ async function sendJob(body){
 async function recoverJob(){const body=pendingRequests.get();if(body)await sendJob(body);}
 async function submitJob(kind){if(pendingRequests.get())throw new Error('Use Recover previous request below before creating another take.');await save();const body={requestId:P.newId(),kind,projectId:state.project.id,expectedRevision:state.revision};if(kind==='generate'){body.sectionId=state.sectionId;body.prompt=$('take-prompt').value.trim()||selectedSection().direction;if(!body.prompt)throw new Error('Describe the musical direction for this take.');}else{if(!selectedClip())throw new Error('Select a clip to separate.');body.assetId=selectedClip().assetId;}
   await sendJob(pendingRequests.begin(body));}
-async function acceptTake(job){const s=state.project.sections.find(s=>s.id===job.sectionId);if(!s||s.locked)throw new Error('Unlock the original section before using this take.');const a=job.asset;const audio=await ensureAudio(a);state.assets.set(a.id,a);let p={...state.project,clips:state.project.clips.filter(c=>c.sectionId!==s.id)};let t=p.tracks.find(t=>t.name==='Generated take');if(!t){p=P.addTrack(p,'Generated take');t=p.tracks.at(-1);}p=P.addClip(p,{trackId:t.id,sectionId:s.id,assetId:a.id,offset:0,sourceOffset:0,duration:Math.min(s.duration,audio.duration),loop:false,gainDb:0});state.sectionId=s.id;state.trackId=t.id;state.clipId=p.clips.at(-1).id;commit(p);await save();notify(`Take accepted for ${s.name}. Other sections were preserved.`);}
+async function auditionOriginal(job){const s=state.project.sections.find(section=>section.id===job.sectionId);if(!s)throw new Error('That original section is no longer in this version.');state.sectionId=s.id;state.clipId=null;render();await play(P.sectionStart(state.project,s.id),{sectionOnly:true});}
+function rejectTake(job){state.rejectedJobs.add(job.id);renderJobs();notify('Take rejected. Your original arrangement is unchanged.');}
+async function prepareSectionTest(){const s=selectedSection();commit(P.prepareSectionTake(state.project,s.id));await save();notify(`${s.name} is ready for an AI test. Every other section is protected.`);}
+async function acceptTake(job){const s=state.project.sections.find(section=>section.id===job.sectionId);if(!s||s.locked)throw new Error('Unlock the original section before using this take.');if(!confirm(`Accept this take for ${s.name} into a new song version? The current version will remain unchanged.`))return;const a=job.asset;const audio=await ensureAudio(a);state.assets.set(a.id,a);await save();let p={...state.project,id:P.newId(),title:`${state.project.title} — ${s.name} AI take`.slice(0,120),clips:state.project.clips.filter(c=>c.sectionId!==s.id)};let t=p.tracks.find(track=>track.name==='Generated take');if(!t){p=P.addTrack(p,'Generated take');t=p.tracks.at(-1);}p=P.addClip(p,{trackId:t.id,sectionId:s.id,assetId:a.id,offset:0,sourceOffset:0,duration:Math.min(s.duration,audio.duration),loop:false,gainDb:0});state.revision=0;state.jobs=[];state.rejectedJobs=new Set();state.history=[];state.future=[];state.sectionId=s.id;state.trackId=t.id;state.clipId=p.clips.at(-1).id;state.project=P.validateProject(p);state.dirty=true;state.sequence++;render();await save();notify(`Take accepted into ${state.project.title}. The prior song version and every other section were preserved.`);}
 async function acceptStems(job){const section=selectedSection();if(section.locked)throw new Error('Unlock this section before adding stems.');const selected=selectedClip();const source=selected&&selected.assetId===job.assetId&&selected.sectionId===section.id?selected:null;if(!source)throw new Error('Select the original clip in the section where you want the stems.');
   if(state.project.tracks.length+job.assets.length>12)throw new Error('This would exceed 12 tracks. Start a project with fewer layers before adding these stems.');
   for(const a of job.assets){await ensureAudio(a);state.assets.set(a.id,a);}let p=P.removeClip(state.project,source.id);for(const a of job.assets){p=P.addTrack(p,a.name.slice(0,60));const t=p.tracks.at(-1);const duration=Math.min(source.duration,engine.buffer(a.id).duration-source.sourceOffset);if(duration<=0)throw new Error('The separated audio does not cover this clip’s source range.');p=P.addClip(p,{trackId:t.id,sectionId:section.id,assetId:a.id,offset:source.offset,sourceOffset:source.sourceOffset,duration,loop:source.loop,gainDb:source.gainDb});}commit(p);await save();notify('Separated layers added. Audition them for separation artifacts before exporting.');}
@@ -274,6 +279,7 @@ $('import-project').addEventListener('click',()=>{$('project-file').value='';$('
 $('project-file').addEventListener('change',()=>run(()=>importProject($('project-file').files[0])));
 $('dismiss-download').addEventListener('click',()=>{$('file-ready').hidden=true;});
 $('generate-take').addEventListener('click',()=>run(()=>submitJob('generate')));
+$('prepare-section-test').addEventListener('click',()=>run(prepareSectionTest));
 $('separate-stems').addEventListener('click',()=>run(()=>submitJob('separate')));
 $('recover-copy').addEventListener('click',()=>run(async()=>{state.project={...state.project,id:P.newId(),title:(state.project.title+' — recovered').slice(0,120)};state.revision=0;state.conflict=false;state.dirty=true;$('recovery').hidden=true;await save();notify('Your edits were saved as a separate project.');}));
 $('reload-saved').addEventListener('click',()=>run(async()=>{if(!confirm('Replace these unsaved edits with the saved version?'))return;await loadProject(state.project.id,{skipSave:true});}));
