@@ -8,8 +8,7 @@
   <meta name="theme-color" content="#060707">
   <title>The Room · Street Banker</title>
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/song-builder.css">
-  <link rel="stylesheet" href="{{ builder_assets_url }}ui/console.css">
-  <link rel="stylesheet" href="{{ builder_assets_url }}ui/room.css">
+  <link rel="stylesheet" href="{{ builder_assets_url }}ui/room.css?v=studio-03">
   <script type="module" src="{{ builder_assets_url }}ui/controller.mjs"></script>
 </head>
 <body class="song-builder room-console">
@@ -37,7 +36,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       <label class="project-title">Song title<input id="song-title" maxlength="120" value="Untitled song" autocomplete="off"></label>
       <label class="compact-field">Target BPM<input id="song-tempo" type="number" min="40" max="240" step="1" value="120"></label>
       <label class="key-field">Target key<input id="song-key" maxlength="24" value="" placeholder="e.g. D minor"></label>
-      <button id="save-project" type="button">Save project</button>
+      <button id="save-project" type="button">Save</button>
       <details class="project-menu"><summary>Projects & files</summary><div class="menu-content">
         <label>Saved projects<select id="project-list"><option value="">Choose a project</option></select></label>
         <div class="button-row"><button id="new-project" type="button">New project</button><button id="save-version" type="button">Save as new version</button></div>
@@ -60,7 +59,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
             <button id="redo-edit" type="button">Redo</button>
             <output id="play-time" class="time">0:00 / 0:00</output>
           </div>
-          <label class="snap-control">Move and trim grid<select id="snap-grid"><option value="free">Free</option><option value="beat" selected>Beat</option><option value="bar">Bar · 4/4</option></select></label>
+          <label class="snap-control">Snap<select id="snap-grid" aria-label="Move and trim grid"><option value="free">Free</option><option value="beat" selected>Beat</option><option value="bar">Bar · 4/4</option></select></label>
           <label class="seek-label" for="seek">Playback position</label><input id="seek" class="seek" type="range" min="0" max="48" step="0.1" value="0" aria-label="Playback position">
         </section>
         <section class="track-desk" aria-labelledby="tracks-heading">

@@ -151,7 +151,7 @@ function renderTracks(){
     const mix=document.createElement('div');mix.className='track-mix';
     for(const [key,label,min,max,step]of[['gainDb','Level',-60,6,1],['pan','Pan',-1,1,.05]]){
       const field=document.createElement('label');field.textContent=`${label} ${key==='gainDb'?track[key]+' dB':track[key]===0?'C':track[key]<0?'L':'R'}`;
-      const input=document.createElement('input');input.type='range';input.min=min;input.max=max;input.step=step;input.value=track[key];input.setAttribute('aria-label',`${label} for ${track.name}`);input.addEventListener('change',()=>{try{const value=Number(input.value);const centered=key==='pan'&&Math.abs(value)<=.100001?0:value;commit(P.updateTrack(state.project,track.id,{[key]:centered}),{resume:true});}catch(e){failure(e);}});field.append(input);mix.append(field);
+      const input=document.createElement('input');input.type='range';input.min=min;input.max=max;input.step=step;input.value=track[key];input.setAttribute('aria-label',`${label} for ${track.name}`);input.addEventListener('change',()=>{try{const value=Number(input.value);const centered=key==='pan'&&Math.abs(value)<=.100001?0:value;if(centered===track[key])return;commit(P.updateTrack(state.project,track.id,{[key]:centered}),{resume:true});}catch(e){failure(e);}});field.append(input);mix.append(field);
     }
     const center=button('Center',()=>commit(P.updateTrack(state.project,track.id,{pan:0}),{resume:true}),{className:'pan-center',disabled:track.pan===0});
     center.setAttribute('aria-label',`Center pan for ${track.name}`);const rename=button('Rename',()=>{const name=prompt('Track name',track.name);if(name!==null&&name.trim())commit(P.updateTrack(state.project,track.id,{name:name.trim().slice(0,60)}));},{className:'track-edit'}),remove=button('Remove',()=>{if(confirm(`Remove ${track.name} and its clips from this song?`))commit(P.removeTrack(state.project,track.id));},{className:'track-remove'});mix.append(center,rename,remove);
@@ -193,14 +193,14 @@ function renderRack(){
   const audition=state.audition;
   const track=audition?.project.tracks[0]||state.project?.tracks.find(t=>t.id===state.trackId),projectId=state.project?.id,sequence=state.sequence;
   const protectedNames=audition?[]:rackProtectedSections(track?.id);
-  const allowed=()=>!state.busy&&!state.recorder&&state.project?.id===projectId&&state.sequence===sequence&&state.audition===audition&&!rackProtectedSections(track?.id).length;
+  const allowed=()=>Boolean(track)&&!state.busy&&!state.recorder&&state.project?.id===projectId&&state.sequence===sequence&&state.audition===audition&&!rackProtectedSections(track.id).length;
   cancelRackGesture=renderRackPanel($('sound-rack'),{track,protectedNames,audition:Boolean(audition),blocked:state.busy>0||Boolean(state.recorder)||protectedNames.length>0,
     allowed,preview:settings=>{if(state.project?.id===projectId)engine.updateRack(track.id,settings);},
     apply:settings=>{try{
       if(!allowed())return;
       if(audition){audition.project=P.updateTrack(audition.project,track.id,{rack:settings});state.auditionRacks.set(audition.key,{...settings});engine.updateRack(track.id,settings);renderRack();renderDisabled();return;}
       const next=P.updateTrack(state.project,track.id,{rack:settings});
-      if(sameRack(track.rack,settings))return;
+      if(sameRack(track.rack||RACK_DEFAULT,settings))return;
       commit(next,{rackTrackId:track.id});
     }catch(error){failure(error);renderRack();}}
   });
@@ -213,7 +213,7 @@ function renderInspector(){const s=selectedSection();if(!s)return;$('section-hea
 }
 function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boolean(s?.locked),hasAudio=Boolean(state.project?.clips.length),recording=Boolean(state.recorder);
   const rackTrack=state.audition?.project.tracks[0]||state.project?.tracks.find(t=>t.id===state.trackId),rackBlocked=!rackTrack||busy||recording||(!state.audition&&rackProtectedSections(state.trackId).length>0);
-  for(const input of $('sound-rack').querySelectorAll('button,input'))input.disabled=Boolean(rackBlocked||(input.hasAttribute('data-rack-assigned')&&(!rackTrack?.rack||!rackTrack.rack.enabled)));
+  for(const input of $('sound-rack').querySelectorAll('button,input'))input.disabled=Boolean(rackBlocked||(input.hasAttribute('data-rack-assigned')&&rackTrack?.rack?.enabled===false));
   $('loop-section').disabled=busy||recording||!hasAudio;$('clear-solos').disabled=busy||recording;
   for(const input of $('selected-mixer').querySelectorAll('input,button'))input.disabled=busy||recording||Boolean(state.audition)||(input.classList.contains('pan-center')&&rackTrack?.pan===0);
   for(const id of ['save-project','new-project','save-version','import-project','export-project','project-list','start-ai','load-demo','export-mix','export-section','export-track','export-30','export-15','play-song','play-section','add-section','add-track','prepare-section-test'])$(id).disabled=busy||recording;
@@ -243,7 +243,10 @@ async function play(from=0,{sectionOnly=false}={}){
   const loop=sectionOnly&&state.loopSection;
   if(loop||sectionOnly&&(from<start||from>=end))from=start;
   state.sectionOnly=sectionOnly;
-  await engine.play(state.project,{from,to:sectionOnly?end:undefined,loop,onEnded:()=>{if(request!==state.playRequest)return;state.playing=false;$('seek').value=engine.position();$('play-song').setAttribute('aria-pressed','false');}});
+  // Ready neutral racks belong only to the playback graph. Selecting a track or
+  // cancelling a first adjustment must never add settings to its saved project.
+  const playback={...state.project,tracks:state.project.tracks.map(track=>track.rack?track:{...track,rack:{...RACK_DEFAULT}})};
+  await engine.play(playback,{from,to:sectionOnly?end:undefined,loop,onEnded:()=>{if(request!==state.playRequest)return;state.playing=false;$('seek').value=engine.position();$('play-song').setAttribute('aria-pressed','false');}});
   if(request!==state.playRequest)return;
   state.playing=engine.isPlaying();$('play-song').setAttribute('aria-pressed',String(state.playing));
 }
