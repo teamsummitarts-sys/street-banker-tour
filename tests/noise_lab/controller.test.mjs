@@ -484,12 +484,8 @@ test('a cleared session ignores late library responses and a switched account ca
 });
 
 
-test('Club view and display settings keep the recipe, source and private save flow intact', async () => {
+test('Display settings keep the recipe, source and private save flow intact', async () => {
   const {get, audio, requests} = await readyToGenerate();
-  await get('view-club').click();
-  assert.equal(document.body.dataset.view, 'club');
-  assert.equal(get('view-club')['aria-pressed'], 'true');
-  assert.equal(get('prompt-details').open, false);
   get('display-brightness').value = 'bright';
   await get('display-brightness').event('change');
   assert.equal(document.body.dataset.display, 'bright');
@@ -499,8 +495,6 @@ test('Club view and display settings keep the recipe, source and private save fl
   assert.equal(get('patch-library').focused, true);
   assert.equal(get('patch-library').scrolled, true);
   assert.equal(requests.filter(r => r.options?.method === 'POST').length, 0);
-  await get('view-studio').click();
-  assert.equal(get('prompt-details').open, true);
   await get('stop').click();
   assert.equal(get('input-reading').textContent, '—');
   assert.equal(get('output-reading').textContent, '—');
