@@ -142,7 +142,7 @@ function bindClipMove(surface,clip,clipNode,section){
 function renderTracks(){
   const tracks=$('tracks');tracks.replaceChildren();const section=selectedSection();$('selected-context').textContent=`Layers in ${section.name} · ${section.duration} seconds`;
   for(const track of state.project.tracks){
-    const row=document.createElement('div');row.className='track'+(track.id===state.trackId?' selected':'');row.dataset.trackId=track.id;
+    const row=document.createElement('div');row.className='track'+(track.id===state.trackId?' selected':'');row.dataset.trackId=track.id;const ink=['#a7b59a','#dcac59','#8daec8','#d9cbbc'][state.project.tracks.indexOf(track)%4];row.style.setProperty('--track-ink',ink);
     const controls=document.createElement('div');controls.className='track-controls';const title=document.createElement('div');title.className='track-title';
     title.append(button(track.name,()=>{if(state.audition)stop();state.trackId=track.id;studio.focusInstrument();renderTracks();renderDisabled();},{className:'track-name',pressed:track.id===state.trackId}),
       button('M',()=>commit(P.updateTrack(state.project,track.id,{muted:!track.muted}),{resume:true}),{className:'track-switch',pressed:track.muted}),
@@ -161,8 +161,8 @@ function renderTracks(){
       const asset=state.assets.get(clip.assetId);const c=button('',()=>{if(state.audition)stop();state.clipId=clip.id;state.trackId=clip.trackId;studio.focusInstrument();renderTracks();renderInspector();},{className:'clip'+(state.clipId===clip.id?' selected':'')});
       c.style.left=`${clip.offset/section.duration*100}%`;c.style.width=`${clip.duration/section.duration*100}%`;c.setAttribute('aria-label',`${asset?.name||'Audio clip'}, ${clip.duration.toFixed(1)} seconds on ${track.name}`);
       const left=text('i','','trim-handle trim-left'),right=text('i','','trim-handle trim-right');left.setAttribute('aria-label','Trim clip start');right.setAttribute('aria-label','Trim clip end');
-      c.append(left,text('span',asset?.name||'Audio clip'));const canvas=document.createElement('canvas');canvas.width=300;canvas.height=56;canvas.setAttribute('aria-label','Drag clip along section');c.append(canvas,right);bindTrimHandle(left,clip,'start',c,section);bindTrimHandle(right,clip,'end',c,section);bindClipMove(canvas,clip,c,section);
-      if(engine.has(clip.assetId)){const peaks=engine.waveform(clip.assetId,100),ctx=canvas.getContext('2d');ctx.strokeStyle='#dfb86b';ctx.lineWidth=1.5;ctx.beginPath();for(let i=0;i<peaks.length;i++){const x=i/peaks.length*300,v=Math.max(1,peaks[i]*24);ctx.moveTo(x,28-v);ctx.lineTo(x,28+v);}ctx.stroke();}
+      c.append(left,text('span',asset?.name||'Audio clip'));const canvas=document.createElement('canvas');canvas.width=900;canvas.height=96;canvas.setAttribute('aria-label','Drag clip along section');c.append(canvas,right);bindTrimHandle(left,clip,'start',c,section);bindTrimHandle(right,clip,'end',c,section);bindClipMove(canvas,clip,c,section);
+      if(engine.has(clip.assetId)){const peaks=engine.waveform(clip.assetId,450),ctx=canvas.getContext('2d');ctx.strokeStyle=state.clipId===clip.id?'#f2c57a':ink;ctx.lineWidth=1.5;ctx.beginPath();for(let i=0;i<peaks.length;i++){const x=i/peaks.length*900,v=Math.max(1,peaks[i]*44);ctx.moveTo(x,48-v);ctx.lineTo(x,48+v);}ctx.stroke();}
       const incoming=text('i','','fade-region fade-region-in'),outgoing=text('i','','fade-region fade-region-out');
       const showFades=values=>{incoming.style.width=`${values.fadeIn/clip.duration*100}%`;outgoing.style.width=`${values.fadeOut/clip.duration*100}%`;};
       showFades(effectiveFades(clip));c.append(incoming,outgoing);

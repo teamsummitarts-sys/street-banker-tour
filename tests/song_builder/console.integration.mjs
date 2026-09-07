@@ -123,3 +123,21 @@ test('controller: candidate rack changes reach audio and acceptance; Stop cancel
   assert.equal(h.engine.isPlaying(),false,'late decode cannot restart a stopped audition');assert.equal(h.state.audition,null);
  }finally{h.engine.dispose();dom.window.close();delete globalThis.document;}
 });
+
+test('Room navigation keeps song, instrument, rack and take tools reachable without duplicate controls',()=>{
+ const html=readFileSync(new URL('../../song_builder/templates/song_builder/index.html',import.meta.url),'utf8');
+ const dom=new JSDOM(html),d=dom.window.document;d.defaultView.HTMLElement.prototype.scrollIntoView=()=>{};
+ const studio=bindConsole(d);
+ assert.equal(d.querySelector('.site-bar').contains(d.getElementById('song-title')),true);
+ assert.equal(d.querySelector('.workspace').contains(d.getElementById('sound-rack')),true);
+ assert.equal(d.querySelector('.arrangement').contains(d.querySelector('.section-deck')),false);
+ assert.equal(d.body.dataset.roomView,'song');
+ d.querySelector('[data-room-view="rack"]').click();assert.equal(d.body.dataset.roomView,'rack');assert.equal(d.getElementById('sound-rack').hidden,false);
+ d.getElementById('tab-takes').click();assert.equal(d.body.dataset.roomView,'instrument');assert.equal(d.getElementById('panel-takes').hidden,false);
+ d.querySelector('[data-room-view="song"]').click();assert.equal(d.body.dataset.roomView,'song');
+ studio.focusInstrument();assert.equal(d.body.dataset.roomView,'instrument');
+ d.querySelector('.console-section-tools button:last-child').click();assert.equal(d.getElementById('section-settings').open,true);
+ for(const id of ['song-title','song-tempo','song-key','lock-section','record-audio','play-section','loop-section','generate-take','sound-rack'])assert.equal(d.querySelectorAll('#'+id).length,1,id);
+ assert.ok(d.querySelector('.room-brand-crop img').src.endsWith('the-room-approved.png'));
+ dom.window.close();
+});
