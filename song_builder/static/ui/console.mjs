@@ -6,6 +6,7 @@ export function bindConsole(document){
   document.querySelector('main').append(document.querySelector('.transport'));
   const exports=document.querySelector('.export-desk'),menu=document.createElement('details'),summary=document.createElement('summary');
   menu.className='export-menu';summary.textContent='Export';menu.append(summary,exports);document.querySelector('.project-bar').append(menu);
+  for(const side of ['left','right']){const meter=$(`meter-${side}`),housing=document.createElement('span');housing.className='led-meter';meter.before(housing);housing.append(meter);}
   const tabs=['sound','trim','takes'];
   function select(name,{focus=false}={}){
     for(const key of tabs){const selected=key===name;const tab=$(`tab-${key}`);tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;$(`panel-${key}`).hidden=!selected;}
@@ -46,7 +47,7 @@ export function bindConsole(document){
       if(levels.some(value=>value>=0))clipping=true;
       if(time-lastPaint<70)return;lastPaint=time;
       for(const [index,name]of ['left','right'].entries()){
-        const value=levels[index]??-Infinity;$(`meter-${name}`).value=Math.max(-60,Math.min(0,value));$(`peak-${name}`).value=Number.isFinite(value)?`${value.toFixed(1)} dBFS`:'−∞ dBFS';if(value>=0)clipping=true;
+        const value=levels[index]??-Infinity;$(`meter-${name}`).parentElement.style.setProperty('--level',`${Math.max(0,Math.min(100,(value+60)/60*100))}%`);$(`meter-${name}`).value=Math.max(-60,Math.min(0,value));$(`peak-${name}`).value=Number.isFinite(value)?`${value.toFixed(1)} dBFS`:'−∞ dBFS';if(value>=0)clipping=true;
       }
       const maximum=Math.max(...levels);$('meter-needle').style.transform=`rotate(${-65+Math.max(0,Math.min(1,(maximum+48)/48))*130}deg)`;paintClip();
     }

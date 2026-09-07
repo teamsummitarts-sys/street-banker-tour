@@ -89,3 +89,37 @@ test('controller integration: selected mixer, solo clear and undo remain connect
  d.getElementById('undo-edit').click();await Promise.resolve();assert.equal(h.state.project.tracks[0].solo,true);
  assert.equal(d.getElementById('notice').hidden,true,'no handler error');h.engine.dispose();dom.window.close();delete globalThis.document;
 });
+
+test('controller: candidate rack changes reach audio and acceptance; Stop cancels pending auditions',async()=>{
+ const {PendingRequests}=await import('../../song_builder/static/ui/requests.mjs');
+ const {bindFadeHandle,effectiveFades}=await import('../../song_builder/static/ui/fade-handles.mjs');
+ const {sameRack}=await import('../../song_builder/static/core/rack.mjs');
+ const html=readFileSync(new URL('../../song_builder/templates/song_builder/index.html',import.meta.url),'utf8').replaceAll('{{ builder_base_url }}','/song-builder/');
+ const dom=new JSDOM(html,{url:'https://example.test/song-builder/'}),w=dom.window;globalThis.document=w.document;
+ w.HTMLElement.prototype.scrollIntoView=()=>{};
+ w.HTMLCanvasElement.prototype.getContext=()=>({beginPath(){},moveTo(){},lineTo(){},stroke(){}});
+ const sandbox={document:w.document,window:w,navigator:w.navigator,location:w.location,history:w.history,sessionStorage:w.sessionStorage,localStorage:w.localStorage,URLSearchParams,URL,FormData,Blob,Option:w.Option,console,AudioEngine,P,RACK_DEFAULT,PendingRequests,bindFadeHandle,effectiveFades,renderRackPanel,sameRack,bindConsole,confirm:()=>true,setTimeout:()=>0,clearTimeout:()=>{},setInterval:()=>0,clearInterval:()=>{},requestAnimationFrame:()=>{}};
+ const source=readFileSync(new URL('../../song_builder/static/ui/controller.mjs',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/boot\(\);\s*$/,'');
+ const h=new Function(...Object.keys(sandbox),source+'\nreturn {state,render,engine,auditionTake,stop,acceptTake,setLoader(fn){ensureAudio=fn;},noSave(){save=async()=>{};}};')(...Object.values(sandbox));
+ try{
+  const p=P.newProject(),assetId=P.newId(),job={id:P.newId(),projectId:p.id,sectionId:p.sections[0].id,status:'succeeded',kind:'generate',asset:{id:assetId,url:'/song-builder/api/assets/'+assetId+'/audio'}};
+  h.state.project=p;h.state.sectionId=p.sections[0].id;h.state.jobs=[job];h.render();
+  const wave=Float32Array.from({length:44100*3},(_,i)=>.25*Math.sin(2*Math.PI*440*i/44100));await h.engine.decode(assetId,encodeWav([wave,wave],44100));
+  h.setLoader(async()=>h.engine.buffer(assetId));h.noSave();
+  await h.auditionTake(job);await wait(100);
+  const before=h.engine.meterLevels()[0],input=w.document.querySelector('[data-control="outputDb"]');
+  assert.equal(input.disabled,false);input.value=-18;input.dispatchEvent(new w.Event('input'));input.dispatchEvent(new w.Event('change'));await wait(120);
+  assert.ok(h.engine.meterLevels()[0]<before-15,'candidate output knob changes the actual audible graph');
+  assert.equal(h.state.project,p,'preview never replaces or edits the arrangement');assert.equal(h.state.history.length,0);assert.equal(h.state.dirty,false);
+  const original=[...w.document.querySelectorAll('#sound-rack button')].find(b=>b.textContent==='Original');original.click();await wait(100);
+  assert.ok(Math.abs(h.engine.meterLevels()[0]-before)<1,'Original bypass restores neutral audio');
+  [...w.document.querySelectorAll('#sound-rack button')].find(b=>b.textContent==='Processed').click();await wait(100);
+  assert.ok(h.engine.meterLevels()[0]<before-15);
+  h.stop();assert.equal(h.state.audition,null);assert.equal(h.engine.isPlaying(),false);
+  await h.auditionTake(job);assert.equal(h.state.audition.project.tracks[0].rack.outputDb,-18,'replay retains the take settings');
+  await h.acceptTake(job);assert.notEqual(h.state.project.id,p.id);assert.equal(h.state.project.tracks[0].rack.outputDb,-18);assert.equal(h.state.project.clips[0].assetId,assetId);assert.equal(p.clips.length,0);
+  h.state.project=p;h.state.sectionId=p.sections[0].id;h.render();
+  let resolve;h.setLoader(()=>new Promise(r=>{resolve=r;}));const loading=h.auditionTake(job);h.stop();resolve(h.engine.buffer(assetId));await loading;
+  assert.equal(h.engine.isPlaying(),false,'late decode cannot restart a stopped audition');assert.equal(h.state.audition,null);
+ }finally{h.engine.dispose();dom.window.close();delete globalThis.document;}
+});

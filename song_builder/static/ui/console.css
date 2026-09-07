@@ -178,3 +178,80 @@
   .song-builder #stop-playback,.song-builder #undo-edit,.song-builder #redo-edit {grid-column:span 1;}
   .song-builder .transport .time {grid-column:span 3;width:auto;font-size:12px;justify-self:end;}
 }
+
+/* The Room: machined faceplates, recessed glass and tactile hardware. */
+.song-builder {
+  --brass:#d5ad69;--bright:#f5d79e;
+  border-color:#858782;
+  background:linear-gradient(90deg,#020303,#111414 3%,#0a0c0d 97%,#020303);
+}
+.song-builder .site-bar {
+  background:linear-gradient(180deg,#ffffff0c,transparent 8px),linear-gradient(105deg,#26292a,#101213 60%,#1a1c1e);
+  box-shadow:inset 0 1px #c9cbc244,inset 0 -2px #020303,0 6px 12px #0009;
+}
+.song-builder .section-deck,.song-builder .track-desk,.song-builder .inspector,.song-builder .sound-rack {
+  position:relative;border:1px solid #5b5d58;border-top-color:#999b8f;border-radius:6px;
+  background:linear-gradient(180deg,#f5ead411,transparent 5px,transparent calc(100% - 5px),#0008),linear-gradient(110deg,#262a2b80,transparent 46%,#0003),repeating-linear-gradient(0deg,#191c1e 0 1px,#171a1b 1px 3px);
+  box-shadow:inset 1px 0 #e6e0cc18,inset -1px 0 #000c,inset 0 -3px #050607,0 2px 0 #020303,0 6px 12px #000b;
+}
+.song-builder .sound-rack {border-top:3px ridge #a89c81;margin-top:12px;padding:22px 24px 18px;}
+.song-builder .sound-rack::before,.song-builder .sound-rack::after {
+  content:'';position:absolute;top:7px;width:10px;height:10px;border-radius:50%;
+  background:linear-gradient(135deg,transparent 42%,#161819 44% 55%,transparent 57%),radial-gradient(circle at 35% 25%,#c5c7bc,#686c69 43%,#272a29 68%);
+  border:1px solid #050606;box-shadow:0 1px 2px #000,inset 0 1px #ecebdc77;pointer-events:none;
+}
+.song-builder .sound-rack::before{left:7px}.song-builder .sound-rack::after{right:7px}
+.song-builder button,.song-builder .project-menu>summary,.song-builder .export-menu>summary {
+  border:1px solid #080a0b;border-top-color:#747973;border-radius:4px;
+  background:linear-gradient(180deg,#ffffff12,transparent 5px),linear-gradient(110deg,#303536,#181b1d 70%);
+  box-shadow:inset 1px 0 #a4aba233,inset -1px -2px #0009,0 0 0 1px #555b5255,0 3px 0 #050607,0 5px 7px #0009;
+  text-shadow:0 1px 2px #000;transition:box-shadow .12s,background .12s;
+}
+.song-builder button:hover:not(:disabled) {background:linear-gradient(180deg,#484c48,#25292a);border-top-color:#b9bcb0;}
+.song-builder button:active:not(:disabled) {transform:translateY(2px);box-shadow:inset 0 2px 5px #0009,0 1px 0 #050607;}
+.song-builder button[aria-pressed=true],.song-builder .primary,.song-builder [role=tab][aria-selected=true] {
+  color:#241b0e;text-shadow:0 1px #fff3;border:1px solid #f3d697;border-bottom-color:#765325;
+  background:linear-gradient(180deg,#ffedb6aa,transparent 16%,#7d50121c 88%,#73481477),linear-gradient(110deg,#c99845,#f6d995 58%,#d9aa58);
+  box-shadow:inset 0 0 0 2px #fff0bd44,inset 0 2px 2px #fff8,0 3px 0 #3f2a12,0 5px 8px #000b,0 0 14px #d69c3820;
+}
+.song-builder button:disabled {opacity:.5;text-shadow:none;box-shadow:inset 0 1px #ffffff0a,0 1px 2px #0006;}
+.song-builder input:not([type=range]),.song-builder textarea,.song-builder select,.song-builder .transport .time {
+  background:linear-gradient(180deg,#050708,#111617);border:1px solid #4a504c;border-top-color:#030505;
+  box-shadow:inset 0 3px 6px #000c,0 1px #d8d3bd22;color:#eeeee3;
+}
+.song-builder .lane-content {box-shadow:inset 0 3px 8px #000,inset 0 0 0 1px #62685844;}
+.song-builder .clip {border-top-color:#afbb9477;box-shadow:inset 0 1px #e3e9bd22,0 2px 4px #0009;}
+.song-builder .analog-meter {border:6px ridge #4a4d45;border-radius:5px;background:radial-gradient(ellipse at 50% 80%,#fce6ac,#d0a963 75%,#816135);box-shadow:inset 0 5px 13px #37280dcc,0 1px #d7d0b655,0 4px 7px #000c;}
+.song-builder .analog-meter::after {content:'';position:absolute;inset:0;background:linear-gradient(150deg,#fff4,transparent 38%,#fff1 55%,transparent 57%);pointer-events:none;}
+.song-builder .stereo-meter {justify-content:center;grid-template-columns:70px 70px;padding:12px 8px 8px;background:#070b0b;border:1px solid #343b37;box-shadow:inset 0 3px 5px #000,0 1px #d1c9ac22;}
+.song-builder .stereo-meter>div {justify-items:center;}
+.song-builder .stereo-meter .led-meter {position:relative;display:block;width:16px;height:80px;border:2px solid #070909;border-radius:0;box-shadow:0 0 0 1px #394138;background:#19211c;overflow:hidden;}
+.song-builder .stereo-meter meter::-webkit-meter-bar {background:transparent;border:0;border-radius:0;}
+.song-builder .stereo-meter meter::-webkit-meter-optimum-value,.song-builder .stereo-meter meter::-webkit-meter-suboptimum-value,.song-builder .stereo-meter meter::-webkit-meter-even-less-good-value {background:transparent;}
+.song-builder .stereo-meter meter::-moz-meter-bar {background:transparent;}
+.song-builder .stereo-meter .led-meter::before {content:'';position:absolute;inset:0;background:linear-gradient(to top,#75b97d 0 64%,#eacb70 65% 89%,#d16b4c 90%);clip-path:inset(calc(100% - var(--level,0%)) 0 0);}
+.song-builder .stereo-meter .led-meter::after {content:'';position:absolute;inset:0;background:repeating-linear-gradient(to top,transparent 0 4px,#050a08 4px 6px);}
+.song-builder .rack-heading {padding-bottom:10px;border-bottom:1px solid #080a0a;box-shadow:0 1px #d8cba622;}
+.song-builder .rack-control {border-image:linear-gradient(transparent,#85765a 25%,#85765a 75%,transparent) 1;}
+.song-builder .rack-dial {filter:drop-shadow(0 5px 5px #0007);}
+.song-builder .rack-dial::before {inset:7px;background:radial-gradient(circle,#090c0d 57%,#555b55 59%,#151918 65%,#010202 70%);box-shadow:0 2px 2px #ffffff18;}
+.song-builder .dial-face {inset:14px;border:2px solid #8f9185;
+  background:radial-gradient(circle at 48% 48%,transparent 48%,#090c0d66 82%),conic-gradient(from -35deg,#dadbcc,#686e69 40deg,#c9cabc 88deg,#fcf3d5 125deg,#999b8e 175deg,#535c58 219deg,#deddd0 280deg,#faf4d9 320deg,#dadbcc);
+  box-shadow:inset 0 0 0 2px #ece8d455,inset 1px 2px 2px #ffffe788,inset -2px -4px 3px #22292699,0 0 0 2px #101414,0 4px 0 1px #434840,0 7px 0 #0b0d0d,3px 12px 12px #000e;
+}
+.song-builder .dial-face::after {width:3px;border-color:#fff3c4;box-shadow:0 1px 2px #000b;background:#252a25;}
+.song-builder .rack-control-label output {font:15px/1.4 ui-monospace,monospace;color:#efcc88;text-shadow:0 0 10px #f0b55222;}
+.song-builder .transport {border:3px ridge #6b7068;background:linear-gradient(180deg,#ffffff0c,transparent 8px),linear-gradient(100deg,#2a2e2f,#111617 60%);box-shadow:0 -3px 0 #030505,0 -10px 24px #0009,inset 0 1px #fff2;}
+.song-builder .transport .time {font-family:ui-monospace,monospace;color:#ecd7ad;text-shadow:0 0 10px #d6b77933;}
+.song-builder .audition-actions {display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;margin:0 0 16px;background:linear-gradient(#090e0e,#111918);border:1px solid #80704b;box-shadow:inset 0 2px 5px #000;}
+.song-builder .audition-label {color:var(--bright);font-size:11px;letter-spacing:.09em;flex:1 1 200px;}
+.song-builder .audition-label::before {content:'';display:inline-block;width:7px;height:7px;margin-right:9px;background:#f4cb74;border-radius:50%;box-shadow:0 0 9px #edb148;}
+.song-builder.auditioning .sound-rack {border-top-color:#e8c27c;}
+.song-builder .job {padding:14px 10px;border:1px solid #53594f;background:linear-gradient(145deg,#242b2a,#0c1011);box-shadow:inset 0 1px #e4dbbe22,0 4px 7px #0007;}
+@media(min-width:801px){.song-builder .workspace{align-items:start}.song-builder .inspector{align-self:start}.song-builder .rack-controls{grid-template-columns:repeat(5,minmax(0,1fr))}.song-builder .audio-empty{padding:24px 16px}}
+@media(max-width:800px){.song-builder .sound-rack{padding:20px 10px 12px}.song-builder .stereo-meter{grid-template-columns:1fr 1fr;padding:6px;gap:6px}.song-builder .stereo-meter .led-meter{height:44px;width:12px}.song-builder .analog-meter{height:92px}.song-builder .audition-actions{padding:10px 8px;gap:8px}.song-builder .audition-actions button{flex:1 1 100px;font-size:11px;min-height:44px}.song-builder .audition-label{flex-basis:100%;font-size:10px}}
+@media(prefers-reduced-motion:reduce){.song-builder button{transition:none}}
+@media(forced-colors:active){.song-builder .stereo-meter meter{appearance:auto}.song-builder .stereo-meter .led-meter::before,.song-builder .stereo-meter .led-meter::after{display:none}.song-builder .dial-face{background:ButtonFace}}
+
+.song-builder .led-meter meter {position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden;}
+@media(forced-colors:active){.song-builder .led-meter meter{position:static;width:100%;height:100%;clip-path:none}}
