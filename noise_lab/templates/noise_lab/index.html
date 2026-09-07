@@ -12,6 +12,7 @@
   <title>Noise Lab · Street Banker V2</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('noise_lab.static', filename='brand/noise-lab-symbol.svg') }}">
   <link rel="stylesheet" href="{{ url_for('noise_lab.static', filename='ui/noise-lab.css') }}">
+  <link rel="stylesheet" href="{{ url_for('noise_lab.static', filename='ui/tactile-console.css') }}">
   <script type="module" src="{{ url_for('noise_lab.static', filename='ui/controller.mjs') }}"></script>
 </head>
 <body class="noise-lab" data-view="studio" data-display="bright" data-assets-url="{{ lab_assets_url }}" data-csrf="{{ lab_csrf }}">
@@ -83,7 +84,7 @@
         </details>
       </section>
       <section class="prompt-panel rack-panel" aria-labelledby="prompt-heading">
-        <details id="prompt-details" open>
+        <details id="prompt-details">
           <summary><span id="prompt-heading">Shape your loaded sound</span><span id="generation-label">Checking connection</span></summary>
           <div class="prompt-content">
             <label class="sr-only" for="sound-prompt">What should it sound like?</label>
@@ -120,7 +121,7 @@
           </div>
         {% endfor %}
         </div>
-        <div class="edit-bar"><button id="clean" type="button" aria-pressed="false">Compare clean</button><div class="history-group"><button id="undo" type="button" disabled>↶ Undo</button><button id="redo" type="button" disabled>↷ Redo</button></div><p id="dial-help">Drag across a dial. Arrow keys or exact values work too.</p></div>
+        <div class="edit-bar"><button id="clean" type="button" aria-pressed="false">Compare clean</button><div class="history-group"><button id="undo" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-5 5 5 5M3 10h11a6 6 0 0 1 0 12" transform="translate(0 -2)"/></svg>Undo</button><button id="redo" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 5 5 5-5 5m5-5H10a6 6 0 0 0 0 12" transform="translate(0 -2)"/></svg>Redo</button></div><p id="dial-help">Drag across a dial. Arrow keys or exact values work too.</p></div>
         <div class="performance-bar" id="performance" tabindex="-1">
           <div class="transport"><button class="play-button" id="play" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg><span>Play</span></button><button id="stop" type="button" disabled aria-label="Stop playback"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7Z"/></svg><span class="stop-label">Stop</span></button></div>
           <div class="comparison-group" role="group" aria-label="Compare patch versions"><button type="button" id="compare-a" aria-pressed="false" disabled aria-label="A: previous patch"><b>A</b><span>Previous</span></button><button type="button" id="compare-b" aria-pressed="true" aria-label="B: current patch"><b>B</b><span>Current</span></button></div>

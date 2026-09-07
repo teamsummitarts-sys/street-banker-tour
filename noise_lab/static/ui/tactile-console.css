@@ -1,0 +1,283 @@
+/* Noise Lab tactile finish. Scoped presentation; audio and control semantics stay native.
+   One upper-left light: chassis > raised controls > recessed displays. */
+.noise-lab {
+  --chassis-radius: 22px;
+  --panel-radius: 16px;
+  --control-radius: 9px;
+  --chassis-depth: inset 0 2px 2px #ffffff26, inset 2px 0 2px #ffffff0b,
+    inset 0 -3px 3px #000b, 0 5px 1px #030504, 0 12px 22px #0009;
+  --control-depth: inset 0 1px 1px #ffffff45, inset 0 -2px 1px #0009,
+    0 3px 1px #050706, 0 5px 7px #0008;
+  --glass-depth: inset 0 3px 9px #000, inset 0 1px 2px #000,
+    0 1px 1px #e8efe528;
+  background: radial-gradient(ellipse at 15% 0%, #202624, #0b0f0e 42%, #070908 80%);
+  background-attachment: fixed;
+  caret-color: var(--bright);
+}
+.noise-lab .lab-shell { margin-top: 20px; }
+.noise-lab .workbench { gap: 18px; }
+.noise-lab .signal-cut-masthead {
+  border: 1px solid #545e58;
+  border-radius: var(--chassis-radius);
+  background: linear-gradient(125deg, #383f3b, #1d2320 35%, #0e1411 80%, #222a25);
+  box-shadow: var(--chassis-depth);
+  margin-bottom: 18px;
+}
+.noise-lab .rack-panel {
+  border-radius: var(--panel-radius);
+  border-color: #414b45;
+  box-shadow: inset 0 1px 1px #d9e0d62b, inset 0 -2px 2px #000b,
+    0 3px 1px #040605, 0 7px 12px #0008;
+  margin-bottom: 14px;
+}
+.noise-lab .rack-screw { opacity: .75; }
+.noise-lab .screw-tl, .noise-lab .screw-tr { top: 12px; }
+.noise-lab .screw-bl, .noise-lab .screw-br { bottom: 12px; }
+.noise-lab .screw-tl, .noise-lab .screw-bl { left: 12px; }
+.noise-lab .screw-tr, .noise-lab .screw-br { right: 12px; }
+
+/* The shared glass recess keeps both measured stereo signals together. */
+.noise-lab .meter-panel { padding: 17px 24px 13px; }
+.noise-lab .meter-caption { padding: 0 5px 12px; border: 0; font-size: 11px; gap: 12px; }
+.noise-lab .meter-caption h2 { font-size: 11px; letter-spacing: .12em; }
+.noise-lab .meter-pair {
+  gap: 24px;
+  padding: 18px 20px 15px;
+  border: 1px solid #050807;
+  border-radius: 12px;
+  background: linear-gradient(155deg, #18201a, #060c08 42%, #0a100c 85%, #141d16);
+  box-shadow: var(--glass-depth);
+}
+.noise-lab .meter-unit + .meter-unit { padding-left: 24px; border-left-color: #46544480; }
+.noise-lab .meter-top { margin: 0 0 12px 18px; gap: 8px; }
+.noise-lab .meter-top h3 { font-size: 12px; letter-spacing: .12em; }
+.noise-lab .meter-top output { font-size: 42px; font-weight: 550; letter-spacing: -.035em; }
+.noise-lab .meter-unit-label { font-size: 11px; }
+.noise-lab .meter-channel { margin-top: 8px; }
+.noise-lab .meter-channel > span { font-size: 11px; }
+.noise-lab .meter-track {
+  height: 25px;
+  border: 0;
+  border-radius: 3px;
+  background: linear-gradient(#263127, #151f18 50%, #1e2920);
+  box-shadow: inset 0 2px 3px #000c, 0 1px 0 #bfccb817;
+}
+.noise-lab .meter-track::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(#ffffff18, transparent 45%, #0004);
+}
+.noise-lab .meter-track::after {
+  background: repeating-linear-gradient(90deg, transparent 0,
+    transparent calc(3.333% - 3px), #071009 calc(3.333% - 3px), #071009 3.333%);
+}
+.noise-lab .meter-fill { box-shadow: inset 0 1px 1px #fff6; }
+.noise-lab .meter-hold { width: 3px; }
+.noise-lab .meter-scale { margin-top: 8px; font-size: 10px; color: #bcc9b8; }
+.noise-lab .meter-help { margin: 10px 0 0; font-size: 10px; }
+
+/* Utility controls sit lower than the instrument and take less visual space. */
+.noise-lab .source-panel, .noise-lab .prompt-panel {
+  background: linear-gradient(130deg, #202823, #101813 75%, #18201b);
+  border-color: #313d35;
+  box-shadow: inset 0 1px 1px #d9e0d617, 0 3px 6px #0006;
+}
+.noise-lab .source-panel { padding-top: 12px; }
+.noise-lab .source-panel .section-heading { top: 29px; }
+.noise-lab .source-choices { gap: 8px; }
+.noise-lab .source-details summary { min-height: 44px; }
+.noise-lab .prompt-panel > details > summary { min-height: 48px; padding: 12px 0; }
+.noise-lab .prompt-panel > details > summary > span:first-child { flex: 1; }
+.noise-lab .sfx-panel > details > summary { justify-content: flex-start; }
+.noise-lab .sfx-panel > details > summary > span:first-child { flex: 0; margin-left: auto; font-size: 10px; color: var(--muted); }
+.noise-lab .prompt-content { padding-bottom: 12px; }
+
+/* Curved housing, machined collars and a directional contact/cast shadow. */
+.noise-lab .effects-console {
+  border-radius: var(--chassis-radius);
+  border-color: #647269;
+  background:
+    repeating-linear-gradient(0deg, #ffffff02 0 .6px, transparent .6px 2.5px),
+    radial-gradient(ellipse at 10% 0%, #49534b80, transparent 55%),
+    linear-gradient(135deg, #323c35, #252e27 38%, #131b16 76%, #263128);
+  box-shadow: var(--chassis-depth);
+}
+.noise-lab .recipe-header { padding: 22px 28px 4px; }
+.noise-lab .recipe-header .eyebrow { display: none; }
+.noise-lab .recipe-header h2 { margin-top: 0; text-shadow: 0 2px 2px #0009; }
+.noise-lab .macro-bank { padding: 20px 20px 24px; }
+.noise-lab .dial-control { width: 100%; max-width: 148px; }
+.noise-lab .dial::before {
+  content: "";
+  position: absolute;
+  inset: 11.5%;
+  border-radius: 50%;
+  background: linear-gradient(140deg, #111a13, #444e45);
+  box-shadow: inset 1px 3px 5px #000, 0 1px 1px #c1cbbc5e;
+}
+.noise-lab .dial-rim {
+  inset: 13%;
+  box-shadow: inset 0 2px 1px #d0d6c17d, inset 0 -2px 2px #000,
+    0 3px 1px #080d09, 3px 9px 8px #000b, 7px 15px 16px #0007;
+}
+.noise-lab .dial-face {
+  border-color: #98a194;
+  box-shadow: inset 0 2px 2px #f6f5dc99, inset 0 -3px 3px #000b,
+    0 0 0 1px #090d0a, 1px 4px 3px #000a;
+}
+.noise-lab .dial-face::after { border-color: #dce5cf45; inset: 3px; }
+.noise-lab .dial-bevel { stroke: #e4ebd7; opacity: .65; }
+.noise-lab .macro + .macro::before { opacity: .4; }
+.noise-lab .macro > label { margin-top: 7px; font-size: 12px; text-shadow: 0 1px 1px #000; }
+.noise-lab .macro-value,
+.noise-lab[data-display=bright] .macro-value {
+  margin-top: 9px;
+  max-width: 100px;
+  border: 1px solid #69775f;
+  border-radius: 8px;
+  background: linear-gradient(150deg, #192418, #060e07 40%, #0b150a);
+  box-shadow: var(--glass-depth);
+}
+.noise-lab .macro-value input { min-height: 46px; font-size: 25px; }
+.noise-lab .macro-hint { display: block; margin-top: 7px; }
+.noise-lab .edit-bar { padding: 13px 24px; border-color: #5e6c5659; background: #080f0a80; }
+.noise-lab .edit-bar svg { width: 17px; height: 17px; }
+.noise-lab .monitor-line { padding: 12px 28px 17px; }
+
+/* Raised keys, a recessed A/B rocker and an unmistakable depressed state. */
+.noise-lab button, .noise-lab .performance-bar button { border-radius: var(--control-radius); }
+.noise-lab button:not(:disabled) { box-shadow: var(--control-depth); }
+.noise-lab button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 5px #0009, 0 1px 0 #b7c1b526;
+}
+.noise-lab[data-display] button[aria-pressed=true] {
+  box-shadow: inset 0 2px 4px #0008, inset 0 0 0 1px #f5d58e80, 0 1px 0 #ddd2b133;
+}
+.noise-lab .gold-button:not(:disabled),
+.noise-lab #save-patch:not(:disabled),
+.noise-lab #generate-sound:not(:disabled),
+.noise-lab #generate-audio:not(:disabled),
+.noise-lab #load-generated-audio:not(:disabled),
+.noise-lab .play-button:not(:disabled) { box-shadow: var(--control-depth); }
+.noise-lab :is(#save-patch, #generate-sound, #generate-audio, #load-generated-audio, .gold-button, .play-button):active:not(:disabled) {
+  box-shadow: inset 0 2px 5px #0009, 0 1px 0 #b7c1b526;
+}
+.noise-lab .performance-bar { padding: 16px 24px; background: linear-gradient(#242e27, #101911); }
+.noise-lab .performance-bar button { min-height: 48px; }
+.noise-lab .comparison-group {
+  border-radius: 12px;
+  padding: 4px;
+  border-color: #56624f;
+  background: #080e09;
+  box-shadow: var(--glass-depth);
+}
+.noise-lab .comparison-group button { border-radius: 7px; }
+.noise-lab .comparison-group button:not([aria-pressed=true]) { box-shadow: none; background: transparent; }
+.noise-lab .console-menu > summary { border-radius: 9px; background: #0a120c70; }
+.noise-lab .console-menu .menu-content { left: auto; right: 0; border-radius: 12px; }
+.noise-lab :is(select, textarea, .patch-field input, #sound-prompt, #audio-prompt) {
+  border-radius: 8px;
+  background-color: #0a120d;
+  box-shadow: inset 0 2px 4px #0008, 0 1px 0 #dbe3d11a;
+}
+.noise-lab .message { border-radius: 10px; }
+.noise-lab .patch-library .section-index { display: none; }
+.noise-lab .patch-library, .noise-lab .output-section { border-color: #38433b; }
+.noise-lab .notes { border-color: #39493c; }
+.noise-lab :focus-visible { outline: 3px solid #ffe0a0; outline-offset: 4px; }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .noise-lab button { transition: transform 100ms ease-out, box-shadow 100ms ease-out, border-color 100ms ease-out; }
+  .noise-lab button:hover:not(:disabled) { transform: translateY(-1px); }
+  .noise-lab button:active:not(:disabled) { transform: translateY(2px); }
+}
+@media (max-width: 600px) {
+  .noise-lab { --chassis-radius: 19px; --panel-radius: 14px; }
+  .noise-lab .lab-shell { margin-top: 10px; padding: 0 10px; }
+  .noise-lab .signal-cut-masthead { margin-bottom: 13px; padding: 16px 12px 9px; }
+  .noise-lab .rack-panel { margin-bottom: 11px; }
+  .noise-lab .rack-screw { width: 9px; height: 9px; opacity: .6; }
+  .noise-lab .screw-tl, .noise-lab .screw-tr { top: 9px; }
+  .noise-lab .screw-bl, .noise-lab .screw-br { bottom: 9px; }
+  .noise-lab .screw-tl, .noise-lab .screw-bl { left: 9px; }
+  .noise-lab .screw-tr, .noise-lab .screw-br { right: 9px; }
+  .noise-lab .meter-panel { padding: 14px 12px 12px; }
+  .noise-lab .meter-caption { padding: 0 4px 11px; gap: 8px; font-size: 9px; }
+  .noise-lab .meter-caption h2 { font-size: 9px; letter-spacing: .08em; }
+  .noise-lab .meter-pair { padding: 12px 10px 11px; gap: 12px; border-radius: 10px; }
+  .noise-lab .meter-unit + .meter-unit { padding-left: 12px; }
+  .noise-lab .meter-top { display: grid; grid-template-columns: 1fr auto; gap: 4px; margin: 0 0 9px 14px; }
+  .noise-lab .meter-top h3 { grid-column: 1; grid-row: 1; font-size: 10px; }
+  .noise-lab .meter-warning { grid-column: 2; grid-row: 1; font-size: 9px; }
+  .noise-lab .meter-top output { grid-column: 1; grid-row: 2; margin: 0; font-size: 30px; }
+  .noise-lab .meter-unit-label { display: block; grid-column: 2; grid-row: 2; align-self: end; font-size: 8px; padding-bottom: 4px; }
+  .noise-lab .meter-channel { gap: 5px; margin-top: 7px; }
+  .noise-lab .meter-channel > span { font-size: 10px; width: 9px; }
+  .noise-lab .meter-track { height: 21px; }
+  .noise-lab .meter-track::after { background: repeating-linear-gradient(90deg, transparent 0, transparent calc(3.333% - 2px), #071009 calc(3.333% - 2px), #071009 3.333%); }
+  .noise-lab .meter-scale { margin-left: 14px; font-size: 9px; }
+  .noise-lab .source-panel { padding: 10px 10px 0; }
+  .noise-lab .source-row { padding-left: 0; gap: 6px; }
+  .noise-lab .source-choices { gap: 6px; }
+  .noise-lab .prompt-panel { padding: 0 13px; }
+  .noise-lab .prompt-panel > details > summary { min-height: 49px; font-size: 10px; gap: 8px; letter-spacing: .06em; }
+  .noise-lab .sfx-panel > details > summary > span { font-size: 9px; }
+  .noise-lab .recipe-header { padding: 18px 17px 5px; }
+  .noise-lab .recipe-header h2 { font-size: 23px; }
+  .noise-lab .preset-field { margin-top: 10px; }
+  .noise-lab .macro-bank { padding: 14px 10px 22px; gap: 22px 6px; }
+  .noise-lab .dial-control { max-width: 112px; }
+  .noise-lab .macro > label { font-size: 11px; margin: 0 0 7px; }
+  .noise-lab .macro-value, .noise-lab[data-display=bright] .macro-value { max-width: 86px; margin-top: 7px; }
+  .noise-lab .macro-value input { font-size: 23px; }
+  .noise-lab .macro-hint { display: none; }
+  .noise-lab .edit-bar { padding: 11px 12px; gap: 8px; }
+  .noise-lab .edit-bar button { padding: 8px 10px; }
+  .noise-lab .history-group { gap: 6px; }
+  .noise-lab .monitor-line { padding: 10px 18px 16px; }
+  .noise-lab .performance-bar {
+    padding: 12px max(8px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    border: 1px solid #7d8a75;
+    border-bottom: 0;
+    border-radius: 20px 20px 0 0;
+    box-shadow: inset 0 2px 2px #d8e4c638, 0 -8px 24px #000b;
+    gap: 7px;
+  }
+  .noise-lab .performance-bar button { min-height: 48px; padding: 10px 12px; }
+  .noise-lab .performance-bar .comparison-group button { min-height: 44px; }
+  .noise-lab .comparison-group { padding: 3px; }
+  .noise-lab .console-menu .menu-content { right: 0; max-width: calc(100vw - 48px); }
+  .noise-lab #library-drawer[open] { border-radius: 20px 20px 0 0; }
+}
+@media (max-width: 360px) {
+  .noise-lab .meter-pair { padding-left: 8px; padding-right: 8px; gap: 8px; }
+  .noise-lab .meter-unit + .meter-unit { padding-left: 8px; }
+  .noise-lab .meter-top output { font-size: 26px; }
+  .noise-lab .meter-unit-label { display: none; }
+  .noise-lab .performance-bar { gap: 5px; }
+  .noise-lab .performance-bar button { padding-left: 9px; padding-right: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .noise-lab button, .noise-lab .meter-fill { transition: none; }
+  .noise-lab button:active:not(:disabled) { transform: none; }
+}
+@media (prefers-contrast: more) {
+  .noise-lab .rack-panel, .noise-lab .signal-cut-masthead { border-color: #a8b4a2; }
+  .noise-lab .meter-pair { border-color: #a8b4a2; }
+}
+@media (forced-colors: active) {
+  .noise-lab, .noise-lab .signal-cut-masthead, .noise-lab .rack-panel,
+  .noise-lab .meter-pair, .noise-lab .macro-value,
+  .noise-lab[data-display=bright] .macro-value, .noise-lab .performance-bar,
+  .noise-lab .comparison-group { background: Canvas; border-color: CanvasText; box-shadow: none; }
+  .noise-lab .meter-track { border: 1px solid CanvasText; background: Canvas; box-shadow: none; }
+  .noise-lab .meter-track::before, .noise-lab .meter-track::after { display: none; }
+  .noise-lab .meter-fill { background: Highlight; }
+  .noise-lab .meter-scale { color: CanvasText; }
+  .noise-lab button, .noise-lab button:not(:disabled),
+  .noise-lab[data-display] button[aria-pressed=true] { box-shadow: none; }
+}
