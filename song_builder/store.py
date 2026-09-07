@@ -8,6 +8,7 @@ import sqlite3
 import time
 import uuid
 from .provider import composition_payload
+from .persistence import on_persistent_disk
 
 from .validation import (MAX_ASSETS, MAX_PROJECTS, MAX_STORAGE_BYTES, SongError,
                          enforce_locks, invalid, safe_name)
@@ -161,8 +162,7 @@ class Store:
     def storage(self, owner):
         with self.connection() as db:
             count, size = db.execute('SELECT count(*),coalesce(sum(size),0) FROM assets WHERE owner=?', (owner,)).fetchone()
-            # A local directory is not evidence of a persistent hosting disk.
-            return {'durable': False, 'usedBytes': size, 'maxBytes': MAX_STORAGE_BYTES, 'assetCount': count}
+            return {'durable': on_persistent_disk(self.directory), 'usedBytes': size, 'maxBytes': MAX_STORAGE_BYTES, 'assetCount': count}
 
     def _quota(self, db, owner, size, count=1):
         current_count, current_size = db.execute('SELECT count(*),coalesce(sum(size),0) FROM assets WHERE owner=?', (owner,)).fetchone()

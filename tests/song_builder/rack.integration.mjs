@@ -79,3 +79,13 @@ test('DOM: presets survive reordered JSON, controls commit, reset and Original d
   assert.equal(track.rack.enabled,false);assert.ok([...root.querySelectorAll('input')].every(input=>input.disabled));
   cancel();dom.window.close();delete globalThis.document;
 });
+
+test('empty Room keeps five disabled metal controls and cannot apply a preset',()=>{
+  const dom=new JSDOM('<section id="rack"></section>');globalThis.document=dom.window.document;
+  const root=document.getElementById('rack');let changes=0;
+  renderRackPanel(root,{track:null,blocked:false,protectedNames:[],allowed:()=>true,preview:()=>{},apply:()=>{changes++;}});
+  assert.equal(root.querySelectorAll('.rack-dial').length,5);
+  assert.ok([...root.querySelectorAll('button,input')].every(el=>el.disabled));
+  root.querySelector('.rack-presets button').click();assert.equal(changes,0);
+  dom.window.close();delete globalThis.document;
+});
