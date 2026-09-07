@@ -39,9 +39,14 @@ async function setup() {
   const loops = ['harmonic-pluck', 'pulse-bass'].map(id => {
     const element = new Element(); element.dataset.loop = id; return element;
   });
+  const ticks = Object.fromEntries(['texture','motion','space','mix','level'].map(key => [key,
+    Array.from({length: 41}, (_, i) => { const e = new Element(); e.dataset.dialTick = String(i); return e; })]));
   const created = [];
   globalThis.document = {getElementById: get, querySelector: get,
-    querySelectorAll: () => loops, addEventListener() {},
+    querySelectorAll: selector => {
+      const key = selector.match(/data-macro="([a-z]+)"/);
+      return key ? ticks[key[1]] : loops;
+    }, addEventListener() {},
     createElement: () => { const e = new Element(); created.push(e); return e; },
     body: {append() {}, dataset: {csrf: 'test-csrf'}}};
   const requests = [];
@@ -78,7 +83,7 @@ async function setup() {
     const done = get('recipe-file').event('change');
     return {resolve: read.resolve, done};
   };
-  return {get, choose, startImport, creation, audio, lifecycle, created, requests,
+  return {get, ticks, choose, startImport, creation, audio, lifecycle, created, requests,
     setResponse: fn => { respond = fn; }};
 }
 
@@ -512,4 +517,23 @@ test('signal desk displays measured levels and clears held markers after Stop', 
   assert.equal(get('output-r-hold').hidden, true);
   assert.equal(get('input-l-meter')['aria-valuetext'], 'Stopped');
   assert.equal(get('input-l-fill').style.clipPath, 'inset(0 100% 0 0)');
+});
+
+
+test('engraved scale follows the heard settings through exact entry, A/B and Undo', async () => {
+  const {get, ticks} = await setup();
+  const lastLit = key => ticks[key].findLastIndex(tick => tick['data-active'] === 'true');
+  get('value-texture').value = '50'; await get('value-texture').event('change');
+  assert.equal(lastLit('texture'), 20, '50% points to the middle hashmark');
+  await get('compare-a').click();
+  assert.equal(get('value-texture').value, '10');
+  assert.equal(lastLit('texture'), 4, 'A shows the previous sound on the scale');
+  await get('compare-b').click();
+  assert.equal(lastLit('texture'), 20);
+  await get('undo').click();
+  assert.equal(lastLit('texture'), 4);
+  get('value-level').value = '-60'; await get('value-level').event('change');
+  assert.equal(lastLit('level'), 0);
+  get('value-level').value = '0'; await get('value-level').event('change');
+  assert.equal(lastLit('level'), 40, '0 dB reaches the final mark without changing the allowed gain range');
 });

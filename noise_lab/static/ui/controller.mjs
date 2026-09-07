@@ -8,7 +8,8 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const keys = ['texture', 'motion', 'space', 'mix', 'level'];
 const controls = Object.fromEntries(keys.map(key => [key, {
   range: $(`macro-${key}`), number: $(`value-${key}`),
-  dial: document.querySelector(`[data-macro="${key}"] .dial-hand`)
+  dial: document.querySelector(`[data-macro="${key}"] .dial-hand`),
+  ticks: document.querySelectorAll(`[data-macro="${key}"] [data-dial-tick]`)
 }]));
 let current = validateRecipe(DEFAULT_RECIPE);
 let history = [clone(current)];
@@ -68,13 +69,15 @@ function applyAudio() {
 function renderControls() {
   const shown = heardRecipe();
   for (const key of keys) {
-    const { range, number, dial } = controls[key];
+    const { range, number, dial, ticks } = controls[key];
     const value = shown.macros[key];
     range.value = String(value);
     number.value = String(value);
     range.setAttribute('aria-valuetext', `${value} ${key === 'level' ? 'decibels' : 'percent'}`);
     const min = Number(range.min), max = Number(range.max);
-    dial.style.transform = `rotate(${-135 + ((value - min) / (max - min)) * 270}deg)`;
+    const fraction = (value - min) / (max - min);
+    dial.style.transform = `rotate(${-135 + fraction * 270}deg)`;
+    ticks.forEach(tick => tick.setAttribute('data-active', String(Number(tick.dataset.dialTick) <= fraction * 40)));
     // Presentation follows the actual recipe, never a simulated signal meter.
     range.disabled = comparison === 'a';
     number.disabled = comparison === 'a';

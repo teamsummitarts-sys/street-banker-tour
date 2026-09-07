@@ -153,3 +153,143 @@
  .noise-lab .notes{margin-top:12px}
 }
 @media(min-width:601px){.noise-lab #library-drawer[open]{display:contents}}
+
+/* Reference restoration: machined faces, engraved scales and recessed rackwork. */
+.noise-lab{
+ --face-shadow:#171818;--face-mid:#474848;--face-light:#a9aaa6;
+ --etched-silver:#c7c8c5;--scale-gold:#f0c878;
+}
+.noise-lab .rack-panel{
+ position:relative;
+ background:repeating-linear-gradient(0deg,#ffffff02 0px,#ffffff02 .65px,transparent .65px,transparent 2.5px),linear-gradient(118deg,#202222 0%,#121414 37%,#0d0f0f 75%,#191b1b 100%);
+ border-color:#555c59;
+ box-shadow:inset 0 1px 0 #bbc2bc24,inset 0 -1px 0 #000,0 2px 5px #0008;
+}
+.noise-lab .effects-console{
+ background:repeating-linear-gradient(0deg,#ffffff03 0px,#ffffff03 .6px,transparent .6px,transparent 2px),linear-gradient(116deg,#353737 0%,#242626 30%,#111313 76%,#262929 100%);
+ border-color:#6d7271;
+}
+.noise-lab .effects-console:before,.noise-lab .effects-console:after{display:none}
+.noise-lab .rack-screw{
+ position:absolute;width:12px;height:12px;z-index:1;border-radius:50%;pointer-events:none;
+ background:radial-gradient(circle at 36% 25%,#818684 0%,#333735 24%,#111413 53%,#040605 58%,#181c1a 68%,#797e79 74%,#121613 86%);
+ box-shadow:0 1px 1px #b5bdae42,inset 0 1px 2px #000,0 -1px 1px #000;
+}
+.noise-lab .rack-screw:before,.noise-lab .rack-screw:after{
+ content:"";position:absolute;left:3px;right:3px;top:5px;height:2px;transform:rotate(-30deg);background:#020403;border-bottom:1px solid #90958b4a;
+}
+.noise-lab .rack-screw:after{transform:rotate(60deg)}
+.noise-lab .screw-tl{top:7px;left:7px}.noise-lab .screw-tr{top:7px;right:7px}
+.noise-lab .screw-bl{bottom:7px;left:7px}.noise-lab .screw-br{bottom:7px;right:7px}
+.noise-lab .screw-tr:before,.noise-lab .screw-bl:before{transform:rotate(-15deg)}
+.noise-lab .screw-tr:after,.noise-lab .screw-bl:after{transform:rotate(75deg)}
+.noise-lab .meter-panel,.noise-lab .patch-library{padding-left:26px;padding-right:26px}
+.noise-lab .dial-rim{
+ position:absolute;inset:12.5%;border-radius:50%;
+ background:repeating-conic-gradient(from 1deg,#070907 0deg 2deg,#747a75 2deg 2.5deg,#181c1a 2.5deg 4.5deg);
+ border:1px solid #161a17;box-shadow:inset 0 1px 1px #d0d6c166,1px 4px 5px #000b;
+}
+.noise-lab .dial-face{
+ inset:16.5%;border:1px solid #686d68;
+ background:
+  repeating-radial-gradient(circle at 50% 50%,transparent 0px,#ffffff06 .35px,#00000021 .65px,transparent 1px),
+  conic-gradient(from -35deg,var(--face-mid) 0deg,var(--face-light) 42deg,#393d3b 82deg,var(--face-shadow) 138deg,#797c75 192deg,#353a37 245deg,var(--face-light) 289deg,#252b27 333deg,var(--face-mid) 360deg);
+ box-shadow:inset 0 1px 1px #efeee080,inset 0 -2px 2px #060807,0 0 0 1px #0b0d0c,0 2px 3px #000a;
+}
+.noise-lab .dial-face:after{
+ content:"";position:absolute;inset:2px;border-radius:50%;border:1px solid #d2d6c527;box-shadow:inset 0 1px 1px #05090577;
+}
+.noise-lab .dial-bevel{stroke:#d4d6c7;stroke-width:.55;opacity:.65;fill:none}
+.noise-lab .dial-tick{stroke:var(--etched-silver);stroke-width:.9;stroke-linecap:butt;opacity:.86}
+.noise-lab .dial-tick.tick-major{stroke-width:1.4;opacity:1}
+.noise-lab .dial-tick[data-active=true]{stroke:var(--scale-gold);opacity:1}
+.noise-lab .dial-hand{stroke:#f8cf7c;stroke-width:2.6;stroke-linecap:butt;filter:drop-shadow(1px 1px .65px #000);transform-origin:60px 60px}
+.noise-lab .macro{position:relative}
+.noise-lab .macro+.macro:before{content:"";position:absolute;left:-6px;top:16px;bottom:16px;width:1px;background:linear-gradient(transparent,#a2ac9345 10%,#a2ac9345 90%,transparent);pointer-events:none}
+.noise-lab .macro>label{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;font-weight:550;letter-spacing:.08em}
+.noise-lab .macro-value{max-width:90px;border-color:#747d6e;background:linear-gradient(#050906,#101610);box-shadow:inset 0 1px 3px #0008,0 1px 0 #c9d3b51a}
+.noise-lab .macro-value input{font-weight:550;font-size:24px}
+.noise-lab .macro-value>span{font-size:12px;font-weight:500}
+.noise-lab .edit-bar{background:#0a0d0c99;border-top-color:#87907d45}
+.noise-lab .performance-bar{background:linear-gradient(#1b201e,#0d1110);border-top-color:#89948078}
+.noise-lab .meter-track{background:linear-gradient(#090b0a,#191d1b);border-color:#6c7570}
+.noise-lab .meter-track:after{background:repeating-linear-gradient(90deg,transparent 0,transparent calc(3.333% - 2px),#0a0d0c calc(3.333% - 2px),#0a0d0c 3.333%)}
+.noise-lab[data-display=dim]{--face-shadow:#0b0f0e;--face-mid:#323836;--face-light:#707974}
+.noise-lab[data-display=bright]{--etched-silver:#f4f3e7;--scale-gold:#ffdd92;--face-light:#c1c3b4}
+.noise-lab[data-display=bright] .dial-tick{stroke:var(--etched-silver);stroke-width:1.25}
+.noise-lab[data-display=bright] .dial-tick.tick-major{stroke-width:1.8}
+.noise-lab[data-display=bright] .dial-tick[data-active=true]{stroke:var(--scale-gold)}
+.noise-lab[data-display=bright] .dial-hand{stroke-width:3}
+@media(max-width:600px){
+ .noise-lab .rack-panel{margin-bottom:3px}
+ .noise-lab .meter-panel{padding:10px 15px 9px}
+ .noise-lab .patch-library{padding:18px 17px}
+ .noise-lab .rack-screw{width:10px;height:10px}
+ .noise-lab .rack-screw:before,.noise-lab .rack-screw:after{left:2px;right:2px;top:4px}
+ .noise-lab .screw-tl,.noise-lab .screw-tr{top:5px}.noise-lab .screw-bl,.noise-lab .screw-br{bottom:5px}
+ .noise-lab .screw-tl,.noise-lab .screw-bl{left:5px}.noise-lab .screw-tr,.noise-lab .screw-br{right:5px}
+ .noise-lab .recipe-header,.noise-lab[data-view=club] .recipe-header{padding:14px 17px 0}
+ .noise-lab .macro-bank,.noise-lab[data-view=club] .macro-bank{padding:12px 12px 15px;gap:14px 8px}
+ .noise-lab .dial-control{max-width:106px}
+ .noise-lab .macro>label{font-size:11px;letter-spacing:.07em;margin-bottom:5px}
+ .noise-lab .macro-value{max-width:82px;margin-top:2px}
+ .noise-lab .macro-value input{font-size:21px}
+ .noise-lab .macro:nth-child(4):before{display:none}
+ .noise-lab .macro+.macro:before{left:-4px;top:22px;bottom:8px}
+ .noise-lab .edit-bar{padding:7px 12px}
+ .noise-lab .monitor-line{padding-left:17px;padding-right:17px;padding-bottom:10px}
+}
+@media(forced-colors:active){
+ .noise-lab .rack-screw,.noise-lab .macro:before{display:none}
+ .noise-lab .rack-panel,.noise-lab .macro-value,.noise-lab .performance-bar{background:Canvas;color:CanvasText;border-color:CanvasText;box-shadow:none}
+}
+/* One rack masthead; mobile navigation and display options stay in the menu. */
+.noise-lab .console-masthead{position:relative;display:grid;grid-template-columns:235px minmax(0,1fr);align-items:center;gap:22px;min-height:100px;margin-bottom:6px;padding:15px 20px;border:1px solid #59615d;border-radius:3px;background:linear-gradient(112deg,#242726,#0d100f 58%,#171b19);box-shadow:inset 0 1px #ced5c52b,0 2px 6px #0007}
+.noise-lab .console-masthead .site-bar{min-height:50px;margin:0;padding:0 20px 0 0;border-bottom:0;border-right:1px solid #858c804d;gap:8px}
+.noise-lab .console-masthead .brand img{width:172px;height:47px}
+.noise-lab .console-masthead .lab-title{display:flex;align-items:center;gap:20px;padding:0;min-width:0}
+.noise-lab .console-masthead h1{font-size:clamp(35px,4.2vw,66px);margin:0;letter-spacing:-.04em;line-height:1.05}
+.noise-lab .console-masthead .view-settings{margin-left:auto;flex-direction:row}
+.noise-lab .console-menu{position:static;margin-left:auto}
+.noise-lab .console-menu>summary{display:flex;align-items:center;justify-content:center;list-style:none;width:44px;height:44px;padding:0;min-height:44px;border:1px solid transparent;border-radius:3px;color:#e0e2d9}
+.noise-lab .console-menu>summary::-webkit-details-marker{display:none}
+.noise-lab .console-menu>summary svg{width:22px;height:22px;stroke-width:1.5}
+.noise-lab .console-menu[open]>summary{border-color:var(--brass);color:var(--bright)}
+.noise-lab .console-menu .menu-content{position:absolute;z-index:20;left:20px;top:calc(100% - 5px);width:255px;padding:12px;background:#141918;border:1px solid #9ca594;border-radius:4px;box-shadow:0 8px 20px #000b}
+.noise-lab .console-menu nav{display:flex;flex-direction:column;gap:0;margin:0 0 8px}
+.noise-lab .console-menu nav a{font-size:14px;padding:8px;min-height:44px}
+.noise-lab .console-menu .display-setting{display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:8px;padding:8px 0 0;border-top:1px solid var(--line);font-size:12px}
+.noise-lab .console-menu select{max-width:155px}
+.noise-lab .performance-bar button{border-radius:7px}
+.noise-lab .comparison-group{gap:0;border:1px solid #788075;border-radius:7px;padding:3px;background:#090d0b}
+.noise-lab .comparison-group button{border-color:transparent;box-shadow:none;border-radius:4px}
+.noise-lab .comparison-group button[aria-pressed=true]{background:linear-gradient(130deg,#e9bd70,#c59548);color:#17130d;border-color:#ffdda2}
+@media(max-width:1050px) and (min-width:601px){
+ .noise-lab .console-masthead{grid-template-columns:205px minmax(0,1fr);gap:14px;padding:12px}
+ .noise-lab .console-masthead .brand img{width:144px}
+ .noise-lab .console-masthead .site-bar{padding-right:12px}
+ .noise-lab .console-masthead h1{font-size:33px}
+ .noise-lab .console-masthead .view-switch button{min-width:65px;padding:8px;font-size:11px}
+}
+@media(max-width:600px){
+ .noise-lab .console-masthead{display:block;min-height:0;margin-bottom:3px;padding:6px 9px 9px}
+ .noise-lab .console-masthead .site-bar{min-height:44px;padding:0;border:0;justify-content:space-between}
+ .noise-lab .console-masthead .brand img{width:145px;height:40px}
+ .noise-lab .console-masthead .lab-title,.noise-lab[data-view=club] .console-masthead .lab-title{display:flex;gap:8px;padding:5px 0 0;align-items:center}
+ .noise-lab .console-masthead h1{font-size:clamp(25px,7.4vw,38px);letter-spacing:-.035em;white-space:nowrap}
+ .noise-lab .console-masthead .view-settings{margin-left:auto;gap:0}
+ .noise-lab .console-masthead .view-switch button{min-height:44px;padding:8px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;border-color:var(--brass);color:var(--bright);background:#111713}
+ .noise-lab .console-masthead .view-switch button[aria-pressed=true]{display:none}
+ .noise-lab .console-menu .menu-content{left:auto;right:8px;top:51px;max-width:calc(100% - 16px)}
+ .noise-lab .comparison-group{padding:2px}
+ .noise-lab .performance-bar .comparison-group button{min-height:44px}
+}
+@media(forced-colors:active){
+ .noise-lab .console-masthead,.noise-lab .console-menu .menu-content,.noise-lab .comparison-group{background:Canvas;color:CanvasText;border-color:CanvasText}
+ .noise-lab .comparison-group button[aria-pressed=true]{background:Highlight;color:HighlightText}
+}
+@media(min-width:601px) and (max-width:800px){
+ .noise-lab .console-masthead{display:block}
+ .noise-lab .console-masthead .site-bar{padding:0;border-right:0}
+ .noise-lab .console-masthead .lab-title{padding-top:7px}
+}
