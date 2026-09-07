@@ -163,7 +163,7 @@ function renderInspector(){const s=selectedSection();if(!s)return;$('section-hea
   const clip=selectedClip();$('clip-inspector').hidden=!clip;if(clip){$('clip-offset').value=clip.offset;$('clip-source').value=clip.sourceOffset;$('clip-duration').value=clip.duration;$('clip-loop').checked=clip.loop;}
 }
 function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boolean(s?.locked),hasAudio=Boolean(state.project?.clips.length),recording=Boolean(state.recorder);
-  for(const id of ['save-project','new-project','save-version','import-project','export-project','project-list','load-demo','export-mix','export-track','play-song','play-section','add-section','add-track'])$(id).disabled=busy||recording;
+  for(const id of ['save-project','new-project','save-version','import-project','export-project','project-list','load-demo','export-mix','export-section','export-track','export-30','export-15','play-song','play-section','add-section','add-track'])$(id).disabled=busy||recording;
   for(const id of ['section-name','section-duration','section-direction','section-lyrics','duplicate-section','remove-section','upload-audio','apply-clip','remove-clip','duplicate-clip','split-clip','clip-offset','clip-source','clip-duration','clip-loop'])$(id).disabled=busy||lock||recording;
   for(const id of ['song-title','song-tempo','song-key','lock-section','move-earlier','move-later'])$(id).disabled=busy||recording;
   $('record-audio').disabled=busy||lock||!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder;
@@ -171,7 +171,7 @@ function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boole
   const configured=state.capabilities?.generation?.configured;
   $('generate-take').disabled=busy||lock||!configured||recording;
   $('separate-stems').disabled=busy||lock||!state.capabilities?.generation?.separationConfigured||!selectedClip()||recording;
-  if(!hasAudio){$('play-song').disabled=true;$('play-section').disabled=true;$('export-mix').disabled=true;$('export-track').disabled=true;}
+  if(!hasAudio)for(const id of ['play-song','play-section','export-mix','export-section','export-track','export-30','export-15'])$(id).disabled=true;
   const i=state.project?.sections.findIndex(s=>s.id===state.sectionId);$('move-earlier').disabled=busy||recording||i===0;$('move-later').disabled=busy||recording||i===state.project?.sections.length-1;
   if(state.project?.sections.length===1)$('remove-section').disabled=true;
   $('undo-edit').disabled=busy||recording||!state.history.length;$('redo-edit').disabled=busy||recording||!state.future.length;
@@ -266,7 +266,9 @@ $('duplicate-clip').addEventListener('click',()=>run(duplicateClip));$('split-cl
 $('apply-clip').addEventListener('click',()=>run(()=>{const c=selectedClip();if(!c)return;const patch={offset:Number($('clip-offset').value),sourceOffset:Number($('clip-source').value),duration:Number($('clip-duration').value),loop:$('clip-loop').checked};const audio=engine.buffer(c.assetId);if(patch.sourceOffset>=audio.duration||(!patch.loop&&patch.sourceOffset+patch.duration>audio.duration+.001))throw new Error('This edit extends past the source audio. Shorten it or enable looping.');commit(P.updateClip(state.project,c.id,patch));}));
 $('remove-clip').addEventListener('click',()=>run(()=>{if(selectedClip())commit(P.removeClip(state.project,state.clipId));}));
 $('export-mix').addEventListener('click',()=>run(async()=>showDownload(await engine.render(state.project),filename('.wav'))));
+$('export-section').addEventListener('click',()=>run(async()=>{const start=P.sectionStart(state.project,state.sectionId),section=selectedSection();showDownload(await engine.render(state.project,{from:start,to:start+section.duration}),filename('-'+section.name.replace(/[^a-zA-Z0-9]/g,'-')+'.wav'));}));
 $('export-track').addEventListener('click',()=>run(async()=>{if(!state.trackId)throw new Error('Select a track to export.');const track=state.project.tracks.find(t=>t.id===state.trackId);if(track.muted)throw new Error('Unmute this track before exporting it.');showDownload(await engine.render(state.project,{trackId:state.trackId}),filename('-'+track.name.replace(/[^a-zA-Z0-9]/g,'-')+'.wav'));}));
+for(const length of [30,15])$(`export-${length}`).addEventListener('click',()=>run(async()=>{const total=P.projectDuration(state.project),start=Math.min(Number($('seek').value),Math.max(0,total-length)),end=Math.min(total,start+length);showDownload(await engine.render(state.project,{from:start,to:end}),filename(`-${length}s.wav`));}));
 $('export-project').addEventListener('click',()=>run(exportProject));
 $('import-project').addEventListener('click',()=>{$('project-file').value='';$('project-file').click();});
 $('project-file').addEventListener('change',()=>run(()=>importProject($('project-file').files[0])));

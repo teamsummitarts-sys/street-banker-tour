@@ -241,12 +241,12 @@ export class AudioEngine {
     if(this._active) {const active=this._active; this._position=this.position(); this._active=null; active.clock.onended=null; active.cleanup();}
     return this._position;
   }
-  async render(project,{trackId}={}) {
+  async render(project,{trackId,from=0,to}={}) {
     this._assert(); if(this._rendering||this._decoding) throw new Error('Wait for the current audio operation to finish.');
-    const p=validateProject(project); const complete=buildRenderPlan(p,this._buffers,{trackId});
+    const p=validateProject(project); const complete=buildRenderPlan(p,this._buffers,{trackId,from,to});
     const Offline=globalThis.OfflineAudioContext||globalThis.webkitOfflineAudioContext;
     if(!Offline) throw new Error('Audio export is not available in this browser.');
-    const frames=Math.ceil(complete.songDuration*EXPORT_SAMPLE_RATE); const outputBytes=44+frames*4;
+    const frames=Math.ceil(complete.duration*EXPORT_SAMPLE_RATE); const outputBytes=44+frames*4;
     const chunkFrames=EXPORT_SAMPLE_RATE*8; // bounded 8-second stereo render scratch
     // Include Blob copy, decoded assets, offline output and a conservative scratch reserve.
     if(this._bytes+2*outputBytes+chunkFrames*16>MAX_WORKING_BYTES) throw new RangeError('This export exceeds the mobile memory limit. Shorten the arrangement or remove unused sources.');
@@ -254,9 +254,9 @@ export class AudioEngine {
     try {
       const output=wavHeader(frames,2,EXPORT_SAMPLE_RATE); const view=new DataView(output);
       for(let start=0;start<frames;start+=chunkFrames) {
-        this._assert(); const length=Math.min(chunkFrames,frames-start); const from=start/EXPORT_SAMPLE_RATE;
-        const end=Math.min(complete.songDuration,(start+length)/EXPORT_SAMPLE_RATE);
-        const plan=buildRenderPlan(p,this._buffers,{from,to:end,trackId});
+        this._assert(); const length=Math.min(chunkFrames,frames-start); const chunkFrom=complete.from+start/EXPORT_SAMPLE_RATE;
+        const end=Math.min(complete.from+complete.duration,complete.from+(start+length)/EXPORT_SAMPLE_RATE);
+        const plan=buildRenderPlan(p,this._buffers,{from:chunkFrom,to:end,trackId});
         const offline=new Offline(2,length,EXPORT_SAMPLE_RATE); const playing=graph(offline,plan,this._buffers,offline.destination);
         try {const rendered=await offline.startRendering(); this._assert(); writePCM(view,[rendered.getChannelData(0),rendered.getChannelData(1)],start);}
         finally {playing.cleanup();}
