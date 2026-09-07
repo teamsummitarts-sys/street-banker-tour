@@ -16,15 +16,6 @@ export function createConsoleUI() {
   const $ = id => document.getElementById(id);
   let lastPaint = -Infinity;
   const holds = Object.fromEntries(['input', 'output'].map(side => [side, [new PeakHold(), new PeakHold()]]));
-  const view = mode => {
-    document.body.dataset.view = mode;
-    $('view-studio').setAttribute('aria-pressed', String(mode === 'studio'));
-    $('view-club').setAttribute('aria-pressed', String(mode === 'club'));
-    // Collapsing a native details element keeps setup available in Club view.
-    $('prompt-details').open = mode === 'studio';
-  };
-  $('view-studio').addEventListener('click', () => view('studio'));
-  $('view-club').addEventListener('click', () => view('club'));
   $('display-brightness').addEventListener('change', () => {
     const value = $('display-brightness').value;
     document.body.dataset.display = ['dim', 'bright'].includes(value) ? value : 'standard';

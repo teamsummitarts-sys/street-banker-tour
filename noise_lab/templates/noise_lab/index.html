@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="{{ url_for('noise_lab.static', filename='ui/noise-lab.css') }}">
   <script type="module" src="{{ url_for('noise_lab.static', filename='ui/controller.mjs') }}"></script>
 </head>
-<body class="noise-lab" data-view="studio" data-display="standard" data-assets-url="{{ lab_assets_url }}" data-csrf="{{ lab_csrf }}">
+<body class="noise-lab" data-view="studio" data-display="bright" data-assets-url="{{ lab_assets_url }}" data-csrf="{{ lab_csrf }}">
   <a class="skip-link" href="#performance">Skip to audio controls</a>
   <div class="lab-shell">
   <header class="console-masthead">
@@ -24,14 +24,11 @@
       {% if config.get('SONG_BUILDER_ENABLED') in [true, '1', 'true'] %}<a href="{{ url_for('song_builder.index') }}">Song Builder</a>{% endif %}
       <a href="{{ return_url }}">Your team <span aria-hidden="true">↗</span></a>
     </nav>
-    <label class="display-setting" for="display-brightness">Display <select id="display-brightness"><option value="standard">Standard</option><option value="dim">Dim metal</option><option value="bright">Bright marks</option></select></label>
+    <label class="display-setting" for="display-brightness">Display <select id="display-brightness"><option value="standard">Standard</option><option value="dim">Dim metal</option><option value="bright" selected>Bright marks</option></select></label>
     </div></details>
   </div>
     <div class="lab-title">
       <div class="title-lockup"><h1>NOISE LAB</h1></div>
-      <div class="view-settings">
-        <div class="view-switch" role="group" aria-label="Console view"><button id="view-studio" type="button" aria-pressed="true">Studio</button><button id="view-club" type="button" aria-pressed="false">Club view</button></div>
-      </div>
     </div>
   </header>
   <main>
