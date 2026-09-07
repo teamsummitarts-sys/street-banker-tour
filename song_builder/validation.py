@@ -108,7 +108,14 @@ def project(value):
     if sum(s['duration'] for s in sections.values()) > 600:
         invalid('Keep the song under ten minutes.')
     for t in value['tracks']:
-        exact(t, 'id name gainDb pan muted solo')
+        exact(t, 'id name gainDb pan muted solo' + (' rack' if type(t) is dict and 'rack' in t else ''))
+        if 'rack' in t:
+            rack = t['rack']
+            exact(rack, 'enabled body bite dirt space outputDb')
+            boolean(rack['enabled'])
+            for key, low, high in [('body', -100, 100), ('bite', -100, 100),
+                                   ('dirt', 0, 100), ('space', 0, 100), ('outputDb', -24, 6)]:
+                number(rack[key], low, high)
         identifier(t['id'])
         if t['id'] in tracks:
             invalid()
@@ -146,12 +153,18 @@ def project(value):
 
 def enforce_locks(old, new):
     sections = {s['id']: s for s in new['sections']}
+    old_tracks = {t['id']: t for t in old['tracks']}
+    new_tracks = {t['id']: t for t in new['tracks']}
     for old_section in old['sections']:
         if not old_section['locked']:
             continue
         newer = sections.get(old_section['id'])
         old_clips = sorted((c for c in old['clips'] if c['sectionId'] == old_section['id']), key=lambda c: c['id'])
         new_clips = sorted((c for c in new['clips'] if c['sectionId'] == old_section['id']), key=lambda c: c['id'])
+        for clip in old_clips:
+            track_id = clip['trackId']
+            if old_tracks[track_id].get('rack') != new_tracks.get(track_id, {}).get('rack'):
+                raise SongError('section_locked', 'Unlock and save the affected sections before changing this track rack.', 409)
         if (newer is None or {k: v for k, v in old_section.items() if k != 'locked'} !=
                 {k: v for k, v in newer.items() if k != 'locked'} or old_clips != new_clips):
             raise SongError('section_locked', 'Unlock and save this section before changing its contents.', 409)

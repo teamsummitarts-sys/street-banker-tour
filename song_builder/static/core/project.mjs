@@ -1,9 +1,10 @@
 /** Portable, immutable song project operations. No host or provider dependencies. */
+import {validateRack} from './rack.mjs';
 export const LIMITS = Object.freeze({sections:30, tracks:12, clips:256, assets:128, duration:600});
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ROOT = ['schemaVersion','id','title','tempo','key','sections','tracks','clips'];
 const SECTION = ['id','name','duration','lyrics','direction','locked'];
-const TRACK = ['id','name','gainDb','pan','muted','solo'];
+const TRACK = ['id','name','gainDb','pan','muted','solo','rack'];
 const CLIP = ['id','trackId','sectionId','assetId','offset','sourceOffset','duration','loop','gainDb','fadeIn','fadeOut'];
 function object(value, fields, label, partial = false) {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
@@ -57,8 +58,11 @@ export function validateProject(value) {
   }
   if (total > LIMITS.duration) throw new RangeError('A song can be no longer than 600 seconds.');
   for (const track of value.tracks) {
-    object(track,TRACK,'Track'); unique(track.id); string(track.name,1,60,'Track name'); number(track.gainDb,-60,6,'Track gain'); number(track.pan,-1,1,'Track pan');
-    bool(track.muted,'Track mute'); bool(track.solo,'Track solo'); tracks.add(track.id); output.tracks.push({...track});
+    object(track,TRACK,'Track',true);
+    for(const key of TRACK.filter(key=>key!=='rack'))if(!Object.hasOwn(track,key))throw new TypeError('Track has missing fields.');
+    unique(track.id); string(track.name,1,60,'Track name'); number(track.gainDb,-60,6,'Track gain'); number(track.pan,-1,1,'Track pan');
+    bool(track.muted,'Track mute'); bool(track.solo,'Track solo'); tracks.add(track.id);
+    output.tracks.push({...track,...(Object.hasOwn(track,'rack')?{rack:validateRack(track.rack)}:{})});
   }
   for (const clip of value.clips) {
     object(clip,CLIP,'Clip',true);
@@ -115,7 +119,13 @@ export function duplicateSection(project,identifier) {
 }
 export function removeSection(project,identifier) { return mutate(project,p=>{unlocked(p,identifier); p.sections=p.sections.filter(section=>section.id!==identifier); p.clips=p.clips.filter(clip=>clip.sectionId!==identifier);}); }
 export function addTrack(project,name='New layer') { return mutate(project,p=>{p.tracks.push({id:newId(),name,gainDb:0,pan:0,muted:false,solo:false});}); }
-export function updateTrack(project,identifier,patch) { object(patch,TRACK.filter(key=>key!=='id'),'Track changes',true); return mutate(project,p=>{Object.assign(find(p.tracks,identifier,'Track'),patch);}); }
+export function updateTrack(project,identifier,patch) {
+  object(patch,TRACK.filter(key=>key!=='id'),'Track changes',true);
+  return mutate(project,p=>{
+    if(Object.hasOwn(patch,'rack'))for(const clip of p.clips.filter(c=>c.trackId===identifier))unlocked(p,clip.sectionId);
+    Object.assign(find(p.tracks,identifier,'Track'),patch);
+  });
+}
 export function removeTrack(project,identifier) {
   return mutate(project,p=>{find(p.tracks,identifier,'Track'); for(const clip of p.clips.filter(clip=>clip.trackId===identifier)) unlocked(p,clip.sectionId); p.tracks=p.tracks.filter(track=>track.id!==identifier); p.clips=p.clips.filter(clip=>clip.trackId!==identifier);});
 }
