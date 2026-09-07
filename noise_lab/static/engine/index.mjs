@@ -1,3 +1,4 @@
+import {StereoMeter} from './meter.mjs';
 import {PRESETS, DEFAULT_RECIPE, validateRecipe} from './recipes.mjs';
 import {LOOPS, createDemo, decodeWav, encodeWav, MAX_FILE_BYTES} from './audio.mjs';
 import {NoiseDSP, TRANSITION_SECONDS, MAX_TAIL_SECONDS, playbackEnvelope} from './dsp.mjs';
@@ -19,7 +20,7 @@ const abortError = () => new DOMException('Audio export cancelled because the so
  * create/play must be invoked from a user gesture. The app owns any patch persistence.
  */
 export class NoiseEngine {
-  #context; #worklet; #master; #source = null; #active = new Set();
+  #context; #worklet; #master; #inputMeter; #outputMeter; #source = null; #active = new Set();
   #recipe = validateRecipe(DEFAULT_RECIPE); #bypass = false; #playing = false;
   #disposed = false; #faulted = false; #revision = 0; #loadRevision = 0; #exportRevision = 0; #transportRevision = 0;
   #startedAt = 0; #masterStart = 0; #masterTarget = 0; #masterAt = 0;
@@ -51,6 +52,9 @@ export class NoiseEngine {
     });
     this.#master = context.createGain(); this.#master.gain.value = 0;
     this.#worklet.connect(this.#master).connect(context.destination);
+    this.#inputMeter = new StereoMeter(context);
+    this.#outputMeter = new StereoMeter(context);
+    this.#master.connect(this.#outputMeter.input);
     this.#worklet.port.onmessage = ({data}) => {
       if (data.type === 'fault') this.#fault(data.message);
       if (data.type === 'rejected') this.#emit('fault', data.message);
@@ -91,6 +95,7 @@ export class NoiseEngine {
     const node = this.#context.createBufferSource(); const gain = this.#context.createGain();
     node.buffer = buffer; node.loop = true; gain.gain.value = 1;
     node.connect(gain).connect(this.#worklet);
+    gain.connect(this.#inputMeter.input);
     const entry = {node, gain}; this.#active.add(entry);
     node.onended = () => { node.disconnect(); gain.disconnect(); this.#active.delete(entry); };
     node.start(); this.#startedAt = this.#context.currentTime;
@@ -174,6 +179,11 @@ export class NoiseEngine {
       name: this.#source?.name || '', playing: this.#playing && this.#context.state === 'running'};
   }
 
+  getLevels() {
+    if (this.#disposed || !this.#playing || this.#context.state !== 'running') return {input: [0, 0], output: [0, 0]};
+    return {input: this.#inputMeter.read(), output: this.#outputMeter.read()};
+  }
+
   getPosition() { return this.#playing && this.#source ? Math.max(0, this.#context.currentTime - this.#startedAt) % this.#source.duration : 0; }
 
   async exportWav({includeTail = true, recipe, bypass} = {}) {
@@ -219,6 +229,7 @@ export class NoiseEngine {
     for (const {node, gain} of this.#active) { try { node.stop(); } catch {} node.disconnect(); gain.disconnect(); }
     this.#active.clear(); this.#worklet.port.postMessage({type: 'dispose'}); this.#worklet.port.close();
     this.#worklet.disconnect(); this.#master.disconnect();
+    this.#inputMeter.dispose(); this.#outputMeter.dispose();
     this.#source = null; this.#context.onstatechange = null;
     await this.#context.close(); this.#emit('closed');
   }

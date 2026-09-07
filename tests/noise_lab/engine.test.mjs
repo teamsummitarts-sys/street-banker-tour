@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {PRESETS, DEFAULT_RECIPE, validateRecipe} from '../../noise_lab/static/engine/recipes.mjs';
 import {NoiseDSP, OUTPUT_CEILING, TRANSITION_SECONDS} from '../../noise_lab/static/engine/dsp.mjs';
 import {createDemo, decodeWav, inspectWav, encodeWav, MAX_FILE_BYTES} from '../../noise_lab/static/engine/audio.mjs';
+import {samplePeak, decibels} from '../../noise_lab/static/engine/meter.mjs';
+import {meterPercent, PeakHold} from '../../noise_lab/static/ui/console.mjs';
 import {NoiseEngine, supportsAudio} from '../../noise_lab/static/engine/index.mjs';
 
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -189,8 +191,10 @@ test('export encoding preserves channel layout and cannot round peaks beyond the
 
 function fakeContext() {
   const gain = () => ({value: 0, cancelScheduledValues() {}, setValueAtTime(value) { this.value = value; }, linearRampToValueAtTime(value) { this.value = value; }});
-  return {audioWorklet: {}, sampleRate: 8000, currentTime: 0, state: 'running', destination: {},
-    createGain() { return {gain: gain(), connect(node) { return node; }, disconnect() {}}; },
+  return {analysers: [], connections: [], audioWorklet: {}, sampleRate: 8000, currentTime: 0, state: 'running', destination: {},
+    createGain() { const context = this; return {gain: gain(), connect(node) { context.connections.push({from: this, to: node}); return node; }, disconnect() {}}; },
+    createChannelSplitter() { return {connect(node) { return node; }, disconnect() {}}; },
+    createAnalyser() { const node = {sample: 0, reads: 0, getFloatTimeDomainData(samples) { this.reads++; samples.fill(this.sample); }, disconnect() { this.disconnected = true; }}; this.analysers.push(node); return node; },
     createBuffer(channels, length) { return {copyToChannel() {}, numberOfChannels: channels, length}; },
     createBufferSource() { return {connect(node) { return node; }, disconnect() {}, start() {}, stop() { this.onended?.(); }}; },
     async resume() { this.state = 'running'; }, async close() { this.state = 'closed'; },
@@ -247,4 +251,53 @@ test('browser support reporting is capability-based and rejects insecure/missing
   assert.equal(supportsAudio().supported, false); assert.match(supportsAudio().reason, /HTTPS/);
   globalThis.isSecureContext = true; assert.equal(supportsAudio().supported, false);
   globalThis.isSecureContext = secure;
+});
+
+
+test('meter math measures absolute PCM peaks, preserves stereo differences, and rejects invalid samples', () => {
+  assert.equal(samplePeak(new Float32Array([0, -.5, .25])), .5);
+  assert.equal(samplePeak(new Float32Array([0, 0])), 0);
+  assert.equal(samplePeak(new Float32Array([1, NaN])), null);
+  assert.equal(samplePeak(new Float32Array([Infinity])), null);
+  assert.ok(Math.abs(decibels(.5) + 6.020599913) < .000001);
+  assert.equal(meterPercent(0), 0);
+  assert.equal(meterPercent(null), 0);
+  assert.equal(meterPercent(NaN), 0);
+  assert.equal(meterPercent(100), 100);
+  assert.equal(meterPercent(.0000001), 0);
+});
+
+test('peak markers hold 1.2 seconds, release, and immediately clear on Stop or invalid data', () => {
+  const hold = new PeakHold();
+  assert.equal(hold.update(.5, 0, true), .5);
+  assert.equal(hold.update(.1, 1199, true), .5);
+  assert.equal(hold.update(.1, 1200, true), .1);
+  assert.equal(hold.update(.8, 1300, true), .8);
+  assert.equal(hold.update(.8, 1301, false), 0);
+  assert.equal(hold.update(.2, 1400, true), .2);
+  assert.equal(hold.update(null, 1401, true), 0);
+});
+
+test('meter taps are passive, output follows master, reads stop when transport suspends or disposes', async () => {
+  const restore = installFakeWorklet(); const context = fakeContext(); const engine = new NoiseEngine(context);
+  try {
+    engine.loadDemo('harmonic-pluck');
+    context.analysers.forEach((node, index) => { node.sample = [0.5, 0.25, 0.125, 0.0625][index]; });
+    assert.deepEqual(engine.getLevels(), {input: [0, 0], output: [0, 0]});
+    assert.ok(context.analysers.every(node => node.reads === 0));
+    const toSpeakers = context.connections.filter(c => c.to === context.destination);
+    assert.equal(toSpeakers.length, 1, 'No metering branch is routed back into the audible mix.');
+    const master = toSpeakers[0].from;
+    assert.equal(context.connections.filter(c => c.from === master).length, 2, 'Master feeds speakers and the output-only metering tap.');
+    await engine.play();
+    assert.deepEqual(engine.getLevels(), {input: [.5, .25], output: [.125, .0625]});
+    context.state = 'suspended';
+    assert.deepEqual(engine.getLevels(), {input: [0, 0], output: [0, 0]});
+    assert.ok(context.analysers.every(node => node.reads === 1));
+    context.state = 'running'; engine.stop();
+    assert.deepEqual(engine.getLevels(), {input: [0, 0], output: [0, 0]});
+    await engine.dispose();
+    assert.ok(context.analysers.every(node => node.disconnected));
+    assert.deepEqual(engine.getLevels(), {input: [0, 0], output: [0, 0]});
+  } finally { await engine.dispose(); restore(); }
 });
