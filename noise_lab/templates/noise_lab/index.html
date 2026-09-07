@@ -10,15 +10,19 @@
   <meta name="theme-color" content="#0b0d0e">
   <meta name="description" content="Street Banker Noise Lab: a private, local audio effects prototype.">
   <title>Noise Lab · Street Banker V2</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('noise_lab.static', filename='brand/noise-lab-symbol.svg') }}">
   <link rel="stylesheet" href="{{ url_for('noise_lab.static', filename='ui/noise-lab.css') }}">
   <script type="module" src="{{ url_for('noise_lab.static', filename='ui/controller.mjs') }}"></script>
 </head>
 <body class="noise-lab" data-view="studio" data-display="bright" data-assets-url="{{ lab_assets_url }}" data-csrf="{{ lab_csrf }}">
   <a class="skip-link" href="#performance">Skip to audio controls</a>
   <div class="lab-shell">
-  <header class="console-masthead">
+  <header class="console-masthead signal-cut-masthead">
+    <div class="lab-title">
+      <div class="title-lockup"><h1><img class="noise-lab-wordmark" src="{{ url_for('noise_lab.static', filename='brand/noise-lab-signal-cut.svg') }}" alt="Noise Lab" width="864" height="119" fetchpriority="high"></h1></div>
+    </div>
   <div class="site-bar">
-    <a href="{{ return_url }}" class="brand" aria-label="Return to Street Banker V2"><img src="{{ url_for('static', filename='img/streetbanker-logo.svg') }}" alt="Street Banker" width="184" height="50"></a>
+    <a href="{{ return_url }}" class="brand" aria-label="Noise Lab by Street Banker — return to your team"><span class="brand-by" aria-hidden="true">by</span><img src="{{ url_for('static', filename='img/streetbanker-logo.svg') }}" alt="Street Banker" width="184" height="50"></a>
     <details class="console-menu"><summary aria-label="Navigation and display settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></summary><div class="menu-content">
     <nav aria-label="V2 navigation">
       {% if config.get('SONG_BUILDER_ENABLED') in [true, '1', 'true'] %}<a href="{{ url_for('song_builder.index') }}">Song Builder</a>{% endif %}
@@ -27,9 +31,6 @@
     <label class="display-setting" for="display-brightness">Display <select id="display-brightness"><option value="standard">Standard</option><option value="dim">Dim metal</option><option value="bright" selected>Bright marks</option></select></label>
     </div></details>
   </div>
-    <div class="lab-title">
-      <div class="title-lockup"><h1>NOISE LAB</h1></div>
-    </div>
   </header>
   <main>
     <div id="support-message" class="message" role="status" hidden></div>
