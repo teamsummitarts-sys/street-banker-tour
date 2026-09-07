@@ -84,6 +84,12 @@ test('controller integration: selected mixer, solo clear and undo remain connect
  const d=w.document;assert.equal(d.querySelectorAll('#selected-mixer [type="range"]').length,2);
  const pan=d.querySelector('[aria-label="Pan for Bass"]');pan.value=.5;pan.dispatchEvent(new w.Event('change'));assert.equal(h.state.project.tracks[0].pan,.5);
  d.querySelector('[aria-label="Center pan for Bass"]').click();await Promise.resolve();assert.equal(h.state.project.tracks[0].pan,0);
+ const panSurface=d.querySelector('.pan-dial');panSurface.setPointerCapture=()=>{};panSurface.releasePointerCapture=()=>{};
+ const panPointer=(type,y)=>{const e=new w.Event(type);Object.assign(e,{button:0,pointerId:12,clientY:y});panSurface.dispatchEvent(e);};
+ const beforeTap=h.state.history.length;panPointer('pointerdown',100);panPointer('pointerup',100);assert.equal(h.state.history.length,beforeTap,'a pan tap does not create an undo edit');
+ panPointer('pointerdown',100);panPointer('pointermove',60);
+ assert.notEqual(panSurface.querySelector('input').value,'0','pan displays the pending gesture');
+ panPointer('pointercancel',60);assert.equal(panSurface.querySelector('input').value,'0');assert.equal(h.state.project.tracks[0].pan,0,'cancel preserves original pan');
  d.querySelector('[aria-label="Solo Bass"]').click();await Promise.resolve();assert.equal(h.state.project.tracks[0].solo,true);assert.equal(d.getElementById('solo-status').hidden,false);
  d.getElementById('clear-solos').click();await Promise.resolve();assert.equal(h.state.project.tracks[0].solo,false);
  d.getElementById('undo-edit').click();await Promise.resolve();assert.equal(h.state.project.tracks[0].solo,true);
@@ -136,6 +142,8 @@ test('Room navigation keeps song, instrument, rack and take tools reachable with
  d.getElementById('tab-takes').click();assert.equal(d.body.dataset.roomView,'instrument');assert.equal(d.getElementById('panel-takes').hidden,false);
  d.querySelector('[data-room-view="song"]').click();assert.equal(d.body.dataset.roomView,'song');
  studio.focusInstrument();assert.equal(d.body.dataset.roomView,'instrument');
+ d.getElementById('tab-sound').click();assert.equal(d.body.dataset.roomView,'instrument','Sound stays in the Instrument view');
+ assert.equal(d.getElementById('panel-sound').hidden,false);
  d.querySelector('.console-section-tools button:last-child').click();assert.equal(d.getElementById('section-settings').open,true);
  for(const id of ['song-title','song-tempo','song-key','lock-section','record-audio','play-section','loop-section','generate-take','sound-rack'])assert.equal(d.querySelectorAll('#'+id).length,1,id);
  assert.ok(d.querySelector('.room-brand-crop img').src.endsWith('the-room-approved.png'));
