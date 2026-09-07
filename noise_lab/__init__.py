@@ -11,6 +11,7 @@ import secrets
 from flask import Blueprint, current_app, g, jsonify, render_template, request, session, url_for
 
 from .patches import register_patch_routes, storage_ready
+from . import sound_effects
 
 from .generation import (Allowance, GenerationError, GENERATION_VERSION, MODEL,
                          parse_response, request_settings, response_usage, strict_json)
@@ -81,7 +82,7 @@ def create_blueprint(current_user):
     @bp.get("/capabilities")
     def capabilities():
         return jsonify(
-            phase=3, ai_generation=configured(), cloud_patch_storage=storage_ready(),
+            phase=3, sound_effects=sound_effects.configured(), sound_effects_status=sound_effects.availability(), ai_generation=configured(), cloud_patch_storage=storage_ready(),
             account_scope=csrf_token(),
             audio_uploads=False, local_audio_processing=True,
             local_recipe_download=True, device_verification="unverified",
@@ -101,6 +102,7 @@ def create_blueprint(current_user):
         return None
 
     register_patch_routes(bp, check_csrf)
+    sound_effects.register(bp, check_csrf)
 
     @bp.post('/api/generate')
     def generate():
@@ -159,4 +161,6 @@ def init(app, current_user):
     app.config.setdefault('OPENAI_API_KEY', os.environ.get('OPENAI_API_KEY', ''))
     app.config.setdefault('NOISE_LAB_PATCH_STORAGE_ENABLED', os.environ.get('NOISE_LAB_PATCH_STORAGE_ENABLED', '0'))
     app.config.setdefault('NOISE_LAB_PERSISTENT_ROOT', os.environ.get('NOISE_LAB_PERSISTENT_ROOT', ''))
+    app.config.setdefault('ELEVENLABS_API_KEY', os.environ.get('ELEVENLABS_API_KEY', ''))
+    app.config.setdefault('NOISE_LAB_SFX_ENABLED', os.environ.get('NOISE_LAB_SFX_ENABLED', '1'))
     app.register_blueprint(create_blueprint(current_user))

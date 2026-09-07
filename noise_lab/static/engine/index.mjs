@@ -1,6 +1,6 @@
 import {StereoMeter} from './meter.mjs';
 import {PRESETS, DEFAULT_RECIPE, validateRecipe} from './recipes.mjs';
-import {LOOPS, createDemo, decodeWav, encodeWav, MAX_FILE_BYTES} from './audio.mjs';
+import {LOOPS, createDemo, decodeWav, encodeWav, applyLoopEdges, MAX_FILE_BYTES} from './audio.mjs';
 import {NoiseDSP, TRANSITION_SECONDS, MAX_TAIL_SECONDS, playbackEnvelope} from './dsp.mjs';
 export {PRESETS, DEFAULT_RECIPE, validateRecipe, LOOPS};
 
@@ -128,6 +128,20 @@ export class NoiseEngine {
     const candidate = decodeWav(bytes, this.#context.sampleRate);
     candidate.name = typeof file.name === 'string' ? file.name : 'Local WAV';
     return this.#install(candidate);
+  }
+
+  async loadGenerated(bytes, accept = () => true) {
+    this.#assert();
+    if (!(bytes instanceof ArrayBuffer) || bytes.byteLength < 128 || bytes.byteLength > 2 * 1024 * 1024) throw new RangeError('Unsupported generated audio size.');
+    const load = ++this.#loadRevision;
+    const decoded = await this.#context.decodeAudioData(bytes);
+    this.#assert();
+    if (load !== this.#loadRevision || !accept()) throw new DOMException('Newer work retained.', 'AbortError');
+    if (![1,2].includes(decoded.numberOfChannels) || !Number.isFinite(decoded.duration) || decoded.duration <= 0 || decoded.duration > 11 || decoded.sampleRate !== this.#context.sampleRate) throw new RangeError('Unsupported generated audio.');
+    const channels = Array.from({length:decoded.numberOfChannels}, (_, ch) => new Float32Array(decoded.getChannelData(ch)));
+    for (const channel of channels) for (const value of channel) if (!Number.isFinite(value)) throw new RangeError('Invalid audio samples.');
+    applyLoopEdges(channels, decoded.sampleRate);
+    return this.#install({channels, sampleRate:decoded.sampleRate, duration:decoded.duration, name:'ElevenLabs generated sound'});
   }
 
   setRecipe(value) {

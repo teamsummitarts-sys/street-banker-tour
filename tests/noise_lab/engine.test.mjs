@@ -301,3 +301,30 @@ test('meter taps are passive, output follows master, reads stop when transport s
     assert.deepEqual(engine.getLevels(), {input: [0, 0], output: [0, 0]});
   } finally { await engine.dispose(); restore(); }
 });
+
+test('generated audio uses protected processing and WAV export without changing recipe', async () => {
+  const restore = installFakeWorklet(), context = fakeContext();
+  context.decodeAudioData = async () => ({numberOfChannels:1,duration:1,sampleRate:8000,getChannelData:()=>new Float32Array(8000).fill(.2)});
+  const engine = new NoiseEngine(context);
+  try {
+    engine.loadDemo('harmonic-pluck'); engine.setRecipe(recipe());
+    const info = await engine.loadGenerated(new ArrayBuffer(256));
+    assert.equal(info.name,'ElevenLabs generated sound'); assert.equal(info.playing,false);
+    const output = await engine.exportWav({includeTail:false});
+    assert.equal(inspectWav(await output.arrayBuffer()).frames,8000);
+  } finally {await engine.dispose();restore();}
+});
+test('invalid and late generated decodes retain the previously loaded source', async () => {
+  const restore = installFakeWorklet(), context = fakeContext(), engine = new NoiseEngine(context);
+  try {
+    engine.loadDemo('harmonic-pluck'); const original=engine.getInfo().name;
+    context.decodeAudioData=async()=>({numberOfChannels:1,duration:31,sampleRate:8000});
+    await assert.rejects(engine.loadGenerated(new ArrayBuffer(256)));assert.equal(engine.getInfo().name,original);
+    let finish;context.decodeAudioData=()=>new Promise(resolve=>finish=resolve);
+    const pending=engine.loadGenerated(new ArrayBuffer(256));engine.loadDemo('pulse-bass');
+    finish({numberOfChannels:1,duration:1,sampleRate:8000,getChannelData:()=>new Float32Array(8000)});
+    await assert.rejects(pending,error=>error.name==='AbortError');assert.match(engine.getInfo().name,/Pulse bass/);
+    context.decodeAudioData=async()=>({numberOfChannels:1,duration:1,sampleRate:8000,getChannelData:()=>new Float32Array(8000)});
+    await assert.rejects(engine.loadGenerated(new ArrayBuffer(256),()=>false));assert.match(engine.getInfo().name,/Pulse bass/);
+  } finally {await engine.dispose();restore();}
+});
