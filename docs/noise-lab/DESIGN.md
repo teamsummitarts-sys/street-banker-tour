@@ -4,9 +4,9 @@ Approved direction: the owner's editorial + metallic rack mockups, combined into
 
 ## Behavior
 
-- The existing Street Banker SVG brand asset is reused from V2. Module CSS is scoped to `.noise-lab`.
+- The existing Street Banker SVG brand asset is reused from V2. Its bundled font is Archivo Expanded ExtraBold (a static font, not a variable face); it is reserved for display headings. System sans-serif handles readable labels and body text. Module CSS is scoped to `.noise-lab`.
 - Five satin silver dials have gold indices. Each dial overlays an actual native range, with its original label, bounds, keyboard semantics and undo gesture behavior. An adjacent numeric input accepts exact values. Horizontal drag maps to the existing range. Level remains **-60 to 0 dB**; the generated mockup's +12 endpoint was not adopted.
-- Studio exposes sound description; Club view collapses it using native details and removes secondary explanatory lines. Prompt, source, preset, private library, exports and help remain reachable. Display settings change interface metal/mark contrast, never audio gain or device brightness. They persist only while this page remains in memory.
+- Studio exposes sound description; Club view collapses it using native details and removes secondary explanatory lines while retaining the current source name. Prompt, source, preset, private library, exports and help remain reachable. Display settings change interface metal/mark contrast, never audio gain or device brightness. They persist only while this page remains in memory.
 - At mobile widths, Play, Stop, A/B and Save stay in a bottom bar with safe-area padding. Save opens the private library form and focuses its heading; the existing explicit Save new patch/Save new version actions perform the save. These navigation buttons never claim a successful save.
 - Clean bypass remains independent of A/B. The working heading identifies the heard preset or custom settings; A locks editing as before.
 - Empty, pending, error, account-expiry, duplicate-save, deletion confirmation and two-step iPhone export flows remain in the existing controller/library modules. No fake patches or generation results are inserted.
