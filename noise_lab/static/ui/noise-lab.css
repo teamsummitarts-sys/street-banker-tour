@@ -313,3 +313,9 @@
  .noise-lab .macro-value{max-width:76px}
  .noise-lab .macro-value input{font-size:20px}
 }
+
+.noise-lab .sfx-panel textarea{width:100%;margin-top:8px;min-height:70px}
+.noise-lab .sfx-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0}
+.noise-lab .sfx-controls label{display:flex;align-items:center;gap:8px;font-size:13px}
+.noise-lab .sfx-controls select{padding:8px;font-size:16px}
+.noise-lab #generate-audio:not(:disabled),.noise-lab #load-generated-audio{background:linear-gradient(130deg,#f6d38b,#c69b4e);color:#17130d;border-color:#ffe1a3}

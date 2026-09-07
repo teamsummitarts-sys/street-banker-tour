@@ -63,12 +63,30 @@
         <details class="source-details"><summary><span id="source-name">Harmonic pluck</span> <span class="detail-cue">Source details</span></summary><p id="source-description">An original synthesized clean loop. Press Play to load and audition it.</p><p id="source-info">Audio stays on this device.</p><p class="file-limits">WAV only · up to 30 seconds / 20 MiB</p></details>
         <input type="file" id="audio-file" accept="audio/wav,audio/x-wav,.wav" hidden>
       </section>
+      <section class="prompt-panel rack-panel sfx-panel" aria-label="Generate new audio">
+        <details id="audio-generation-details">
+          <summary>Generate new audio <span>ElevenLabs</span></summary>
+          <div class="prompt-content">
+            <label for="audio-prompt">Describe a new sound</label>
+            <textarea id="audio-prompt" maxlength="500" rows="2" placeholder="A deep metallic impact with a long, shimmering decay."></textarea>
+            <div class="sfx-controls">
+              <label for="audio-duration">Length <select id="audio-duration"><option value="5">5 seconds</option><option value="8" selected>8 seconds</option><option value="10">10 seconds</option></select></label>
+              <label><input id="audio-loop" type="checkbox"> Loopable</label>
+              <button id="generate-audio" type="button" disabled>Generate audio</button>
+              <button id="cancel-audio-generation" type="button" hidden>Cancel</button>
+            </div>
+            <p id="sfx-status" class="prompt-status" role="status">Checking audio generation…</p>
+            <div class="sfx-controls"><button id="load-generated-audio" type="button" hidden>Load generated audio</button><button id="save-generated-audio" type="button" hidden>Download original</button></div>
+            <details><summary>Usage &amp; saving</summary><p class="prompt-status">Only this description goes to ElevenLabs. Generation uses its credits. Test allowance: 20 attempts per account, 100 for this service; these do not reset on restart. Failed or cancelled requests count. Download audio to keep it; saved patches contain settings only.</p></details>
+          </div>
+        </details>
+      </section>
       <section class="prompt-panel rack-panel" aria-labelledby="prompt-heading">
         <details id="prompt-details" open>
-          <summary><span id="prompt-heading">Describe your sound</span><span id="generation-label">Checking connection</span></summary>
+          <summary><span id="prompt-heading">Shape your loaded sound</span><span id="generation-label">Checking connection</span></summary>
           <div class="prompt-content">
             <label class="sr-only" for="sound-prompt">What should it sound like?</label>
-            <div class="prompt-compose"><textarea id="sound-prompt" rows="2" maxlength="500" aria-describedby="prompt-privacy generation-allowance" placeholder="Metallic growl. Keep the pick attack."></textarea><button type="button" id="generate-sound" disabled>Create sound <span aria-hidden="true">↗</span></button></div>
+            <div class="prompt-compose"><textarea id="sound-prompt" rows="2" maxlength="500" aria-describedby="prompt-privacy generation-allowance" placeholder="Metallic growl. Keep the pick attack."></textarea><button type="button" id="generate-sound" disabled>Shape with AI <span aria-hidden="true">↗</span></button></div>
             <p id="prompt-privacy" class="prompt-status">Only this description goes to OpenAI. Audio stays on this device. Up to 500 characters.</p>
             <div class="generation-actions"><p id="generation-status" class="prompt-status" role="status" aria-live="polite">Checking AI availability. Manual presets are available below.</p><button type="button" id="cancel-generation" hidden>Cancel generation</button><button type="button" id="refresh-generation">Check connection</button></div>
             <details class="generation-details"><summary>Generation allowance</summary><p id="generation-allowance" class="prompt-limit">20 attempts per account, 100 across this server process. Requests are spaced at least 10 seconds apart. Restarts reset the allowance.</p></details>
