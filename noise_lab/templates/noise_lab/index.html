@@ -1,3 +1,6 @@
+{% macro rack_fasteners() -%}
+  <span class="rack-screw screw-tl" aria-hidden="true"></span><span class="rack-screw screw-tr" aria-hidden="true"></span><span class="rack-screw screw-bl" aria-hidden="true"></span><span class="rack-screw screw-br" aria-hidden="true"></span>
+{%- endmacro %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -13,27 +16,31 @@
 <body class="noise-lab" data-view="studio" data-display="standard" data-assets-url="{{ lab_assets_url }}" data-csrf="{{ lab_csrf }}">
   <a class="skip-link" href="#performance">Skip to audio controls</a>
   <div class="lab-shell">
-  <header class="site-bar">
+  <header class="console-masthead">
+  <div class="site-bar">
     <a href="{{ return_url }}" class="brand" aria-label="Return to Street Banker V2"><img src="{{ url_for('static', filename='img/streetbanker-logo.svg') }}" alt="Street Banker" width="184" height="50"></a>
+    <details class="console-menu"><summary aria-label="Navigation and display settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></summary><div class="menu-content">
     <nav aria-label="V2 navigation">
       {% if config.get('SONG_BUILDER_ENABLED') in [true, '1', 'true'] %}<a href="{{ url_for('song_builder.index') }}">Song Builder</a>{% endif %}
       <a href="{{ return_url }}">Your team <span aria-hidden="true">↗</span></a>
     </nav>
-    <span class="edition">PRIVATE EXPERIMENT / V2</span>
-  </header>
-  <main>
-    <header class="lab-title">
-      <div class="title-lockup"><p class="eyebrow">THE SOUND IS YOURS.</p><h1>NOISE LAB<span aria-hidden="true">.</span></h1></div>
+    <label class="display-setting" for="display-brightness">Display <select id="display-brightness"><option value="standard">Standard</option><option value="dim">Dim metal</option><option value="bright">Bright marks</option></select></label>
+    </div></details>
+  </div>
+    <div class="lab-title">
+      <div class="title-lockup"><h1>NOISE LAB</h1></div>
       <div class="view-settings">
         <div class="view-switch" role="group" aria-label="Console view"><button id="view-studio" type="button" aria-pressed="true">Studio</button><button id="view-club" type="button" aria-pressed="false">Club view</button></div>
-        <label class="display-setting" for="display-brightness">Display <select id="display-brightness"><option value="standard">Standard</option><option value="dim">Dim metal</option><option value="bright">Bright marks</option></select></label>
       </div>
-    </header>
+    </div>
+  </header>
+  <main>
     <div id="support-message" class="message" role="status" hidden></div>
     <noscript><p class="message error">Noise Lab needs JavaScript for local audio processing. Enable JavaScript, then reload.</p></noscript>
     <div class="workbench">
     <div class="instrument">
       <section class="meter-panel rack-panel" aria-labelledby="meter-heading">
+        {{ rack_fasteners() }}
         <div class="meter-caption"><h2 id="meter-heading">Signal desk</h2><span id="meter-state">Stopped</span><span>Sample peak / dBFS</span></div>
         <div class="meter-pair">
         {% for position in ['input', 'output'] %}
@@ -72,12 +79,22 @@
         </details>
       </section>
       <section class="effects-console rack-panel" aria-labelledby="effects-heading">
+        {{ rack_fasteners() }}
         <div class="recipe-header"><div><p class="eyebrow">WORKING SOUND / <span id="working-slot">B</span></p><h2 id="effects-heading">Clean start</h2><p id="preset-description">Five controls. One working sound.</p></div><div class="preset-field"><label for="preset">Starting preset</label><select id="preset"><option value="">Loading presets…</option></select></div></div>
         <div class="macro-bank" id="macro-bank">
         {% for key, label, description, minimum, maximum, value, unit in [('texture', 'Texture', 'Drive & tone', 0, 100, 0, '%'), ('motion', 'Motion', 'Modulation', 0, 100, 0, '%'), ('space', 'Space', 'Echo & decay', 0, 100, 0, '%'), ('mix', 'Mix', 'Dry / processed', 0, 100, 0, '%'), ('level', 'Level', 'Output gain', -60, 0, -12, 'dB')] %}
           <div class="macro" data-macro="{{ key }}">
             <div class="dial-control">
-              <div class="dial" aria-hidden="true"><div class="dial-face"></div><svg viewBox="0 0 120 120"><path class="dial-track" d="M25 96a50 50 0 1 1 70 0"/><path class="dial-tick" d="M60 6v8M6 60h8m92 0h8M22 22l6 6m64 0 6-6M15 83l6-3m78 0 6 3M37 13l3 7m40 0 3-7"/><path class="dial-hand" d="M60 27v23"/></svg></div>
+              <div class="dial" aria-hidden="true">
+                <div class="dial-rim"></div><div class="dial-face"></div>
+                <svg viewBox="0 0 120 120" class="dial-scale">
+                  <circle class="dial-bevel" cx="60" cy="60" r="40.5"/>
+                  {% for tick in range(41) %}
+                  <path class="dial-tick{% if tick % 5 == 0 %} tick-major{% endif %}" data-dial-tick="{{ tick }}" d="M60 {{ 3 if tick % 5 == 0 else 5 }}v{{ 7 if tick % 5 == 0 else 3.5 }}" transform="rotate({{ -135 + tick * 6.75 }} 60 60)"/>
+                  {% endfor %}
+                  <path class="dial-hand" d="M60 22v22"/>
+                </svg>
+              </div>
               <input class="macro-range" type="range" id="macro-{{ key }}" min="{{ minimum }}" max="{{ maximum }}" step="1" value="{{ value }}" aria-describedby="hint-{{ key }} dial-help">
             </div>
             <div class="dial-bounds" aria-hidden="true"><span>{{ minimum }}</span><span>{{ maximum }}</span></div>
@@ -101,6 +118,7 @@
     <dialog id="library-drawer" open aria-label="Private patches and exports">
     <div class="drawer-header"><span>YOUR SOUNDS</span><button id="close-library" type="button" aria-label="Close patch library">Close</button></div>
     <section class="patch-library rack-panel" tabindex="-1" id="patch-library" aria-labelledby="patch-heading">
+        {{ rack_fasteners() }}
       <div class="section-heading"><h2 id="patch-heading">Private patches</h2><span class="section-index">02 / LIBRARY</span></div>
       <p class="patch-intro">Your sounds, privately kept. Save B settings; keep your audio separately.</p>
       <div class="patch-save-row"><div class="patch-field"><label for="patch-name">Patch name</label><input id="patch-name" type="text" maxlength="80" autocomplete="off" placeholder="Name your sound" aria-describedby="patch-save-state"></div><button type="button" id="save-patch" disabled>Save new patch</button><button type="button" id="save-version" disabled>Save new version</button></div>
