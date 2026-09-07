@@ -1,4 +1,5 @@
 import { NoiseEngine, PRESETS, LOOPS, DEFAULT_RECIPE, validateRecipe, supportsAudio } from '../engine/index.mjs';
+import {createConsoleUI} from './console.mjs';
 import {createPatchLibrary} from './patch-library.mjs';
 
 const $ = id => document.getElementById(id);
@@ -36,6 +37,7 @@ let aiSequence = 0;
 let aiController = null;
 let aiRemaining = 0;
 let patchLibrary = null;
+const consoleUI = createConsoleUI();
 
 function message(text, error = false) {
   const target = $(error ? 'error' : 'notice');
@@ -79,6 +81,8 @@ function renderControls() {
   }
   const preset = selectedPreset(shown);
   $('preset').value = preset?.id || 'custom';
+  $('effects-heading').textContent = preset?.name || 'Your custom sound';
+  $('working-slot').textContent = comparison.toUpperCase();
   $('preset').disabled = comparison === 'a';
   $('preset-description').textContent = preset?.description || 'Custom settings · adjust, compare, and keep what works.';
   $('engine-version').textContent = current.engineVersion;
@@ -86,7 +90,7 @@ function renderControls() {
   $('compare-a').setAttribute('aria-pressed', String(comparison === 'a'));
   $('compare-b').setAttribute('aria-pressed', String(comparison === 'b'));
   $('clean').setAttribute('aria-pressed', String(clean));
-  $('clean').textContent = clean ? 'Clean comparison on' : 'Compare clean';
+  $('clean').textContent = clean ? 'Clean is on' : 'Compare clean';
   $('undo').disabled = cursor === 0 || comparison === 'a';
   $('redo').disabled = cursor >= history.length - 1 || comparison === 'a';
   $('compare-state').textContent = clean ? `Clean selected · ${comparison.toUpperCase()} patch retained` : `${comparison.toUpperCase()} selected · ${comparison === 'a' ? 'Previous patch · editing locked' : 'Current patch'}`;
@@ -99,7 +103,7 @@ function renderTransport() {
   const playing = Boolean(info?.playing);
   $('play').disabled = loading || !support.supported || faulted;
   $('play').setAttribute('aria-busy', String(loading));
-  $('play').querySelector('span').textContent = loading ? 'Loading…' : playing ? 'Playing loop' : 'Play loop';
+  $('play').querySelector('span').textContent = loading ? 'Loading…' : playing ? 'Playing' : 'Play';
   $('play').setAttribute('aria-pressed', String(playing));
   $('stop').disabled = !playing && !starting;
   $('import-audio').disabled = loading || !support.supported || faulted;
@@ -116,6 +120,7 @@ function renderTransport() {
   else if (faulted) $('monitor-state').textContent = 'Audio stopped · clear session to retry';
   else $('monitor-state').textContent = playing ? 'Playing locally' : loaded ? 'Stopped · source ready' : 'Ready for a loop';
   updatePosition();
+  consoleUI.render(engine, true);
   renderGeneration();
 }
 
@@ -125,12 +130,13 @@ function updatePosition() {
   const position = duration ? Math.min(duration, Math.max(0, engine.getPosition() || 0)) : 0;
   $('source-time').textContent = `${time(position)} / ${duration ? time(duration) : '—'}`;
   $('playback-position').style.width = `${duration ? (position / duration) * 100 : 0}%`;
-  if (info?.playing && animation === null) animation = requestAnimationFrame(tick);
+  if (info?.playing && !document.hidden && animation === null) animation = requestAnimationFrame(tick);
 }
 
 function tick() {
   animation = null;
   updatePosition();
+  consoleUI.render(engine);
 }
 
 function updateSource(info, demo = false) {
@@ -622,7 +628,13 @@ window.addEventListener('pageshow', event => {
     refreshGeneration();
   }
 });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) renderTransport(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (animation !== null) cancelAnimationFrame(animation);
+    animation = null;
+    consoleUI.render(null, true);
+  } else renderTransport();
+});
 
 const support = supportsAudio();
 $('browser-support').textContent = support.supported ? 'This browser exposes the audio APIs needed to attempt local playback and WAV rendering. This does not certify glitch-free operation.' : support.reason || 'This browser is missing a required audio capability. Try another browser; recipe controls and JSON downloads remain available.';

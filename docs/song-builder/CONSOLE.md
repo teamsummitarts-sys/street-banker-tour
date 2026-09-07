@@ -102,3 +102,20 @@ PY
 Do not change the directory setting or redeploy merely because a path is outside
 the disk: preserve existing projects and audio together before a storage move.
 This check identifies location only; it does not certify a backup or DB integrity.
+
+### Integration with the live Noise Lab console
+
+The V2 deployment at 63f5a50e02ebd439eb948f71af8332c3287cc2a5 includes the
+separate Noise Lab metallic console and Club view. Its nine changed files are
+carried into this branch unchanged, with that commit retained as a merge parent.
+The Song Builder diff against that main remains scoped to Song Builder.
+
+The intermediate-width transport rule now retains bottom safe-area padding,
+including iPhone landscape widths. Narrow phones already had transport padding;
+page-bottom clearance now also includes the safe-area inset at both breakpoints.
+This is a CSS review correction, not evidence of a physical iPhone test.
+
+The Render deployment history confirms the newer V2 host is live. It does not
+establish where Song Builder's separate audio files reside. A targeted log search
+returned no Song Builder storage-path evidence. The read-only shell check above
+remains the missing storage evidence; the host disk verification is accepted.
