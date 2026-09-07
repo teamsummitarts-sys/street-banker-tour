@@ -23,7 +23,7 @@ export function bindRackSlider(input,{read,allowed,preview,apply,display}){
 export function renderRackPanel(root,{track,blocked,protectedNames,allowed,preview,apply,audition=false}){
   root.replaceChildren();const cancellations=[];
   const heading=node('div','','rack-heading');
-  const title=node('div','');title.append(node('span','SOUND RACK · 01','rack-eyebrow'),node('h2',track?track.name:'Select an instrument layer'));
+  const title=node('div','');title.append(node('span',audition?'TAKE / SOUND RACK':'INSTRUMENT / SOUND RACK','rack-eyebrow'),node('h2',track?track.name:'Select an instrument layer'));
   heading.append(title);root.append(heading);
   const hasTrack=Boolean(track);
   blocked=blocked||!hasTrack;
@@ -34,7 +34,7 @@ export function renderRackPanel(root,{track,blocked,protectedNames,allowed,previ
   if(hasTrack&&!track.rack)modes.append(action('Assign rack',()=>apply({...RACK_DEFAULT})));
   else if(hasTrack)for(const [label,enabled]of [['Original',false],['Processed',true]])modes.append(action(label,()=>apply({...settings,enabled}),settings.enabled===enabled));
   heading.append(modes);
-  root.append(node('p',!hasTrack?'Add an instrument, upload audio, or try the synth demo. Your rack is ready when you are.':protectedNames.length?`Unlock ${protectedNames.join(', ')} to change this rack. It affects this track throughout the song.`:audition?'Shape this alternate take while it plays. Accept it to keep these settings in a new version.':'Shape this recording while it plays. These settings follow the track through every section and into WAV exports.','hint'));
+  root.append(node('p',!hasTrack?'Add an instrument, upload audio, or try the synth demo. Your rack is ready when you are.':protectedNames.length?`Unlock ${protectedNames.join(', ')} to change this rack. It affects this track throughout the song.`:audition?'Shape this alternate take while it plays. Accept it to keep these settings in a new version.':'Whole song · Processing follows this instrument into your WAV export.','hint'));
   const presets=node('div','','rack-presets');presets.setAttribute('aria-label','Sound presets');
   for(const p of RACK_PRESETS){const values=presetSettings(p);const b=action('',()=>apply(values),sameRack(track.rack,values));b.append(node('strong',p.name),node('span',p.detail));presets.append(b);}
   root.append(presets);
@@ -48,6 +48,7 @@ export function renderRackPanel(root,{track,blocked,protectedNames,allowed,previ
     const reset=action('Reset',()=>apply({...settings,[key]:RACK_DEFAULT[key]}));reset.setAttribute('aria-label',`Reset ${label}`);reset.dataset.rackAssigned='';reset.disabled=input.disabled;
     field.append(top,dial,node('span',detail,'hint'),reset);bank.append(field);
   }
+  const meter=node('output','Master L −∞ / R −∞ dBFS','rack-level-summary');meter.id='rack-level-summary';root.append(meter);
   root.append(bank,node('p',track.rack&&!settings.enabled?'Original selected. Select Processed to hear and adjust your rack.':'Drag a knob up or down. Double-tap to reset, or use its Reset button. No generation credits.','rack-footnote'));
   return ()=>cancellations.forEach(cancel=>cancel());
 }

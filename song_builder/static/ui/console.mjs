@@ -7,10 +7,30 @@ export function bindConsole(document){
   const exports=document.querySelector('.export-desk'),menu=document.createElement('details'),summary=document.createElement('summary');
   menu.className='export-menu';summary.textContent='Export';menu.append(summary,exports);document.querySelector('.project-bar').append(menu);
   for(const side of ['left','right']){const meter=$(`meter-${side}`),housing=document.createElement('span');housing.className='led-meter';meter.before(housing);housing.append(meter);}
+  // One console: project header, full-width song map, arrangement/channel strip, rack.
+  const main=document.querySelector('main'),header=document.querySelector('.site-bar'),projectBar=document.querySelector('.project-bar');
+  header.append(projectBar);document.querySelector('footer').prepend(document.querySelector('.back-link'));
+  projectBar.append(document.querySelector('.session-status'));
+  const setup=document.createElement('details');setup.className='session-menu';
+  const setupTitle=document.createElement('summary');setupTitle.textContent='Session';setup.append(setupTitle);
+  const setupFields=document.createElement('div');setupFields.className='session-fields';
+  setupFields.append(document.querySelector('.compact-field'),document.querySelector('.key-field'));setup.append(setupFields);projectBar.append(setup);
+  const deck=document.querySelector('.section-deck');main.insertBefore(deck,document.querySelector('.workspace'));
+  document.querySelector('.audio-actions').append(document.querySelector('.snap-control'),$('loop-section'),$('play-section'));
+  document.querySelector('.workspace').append($('sound-rack'));
+  const nav=document.createElement('nav');nav.className='room-navigation';nav.setAttribute('aria-label','Studio views');
+  for(const [key,label] of [['song','Song'],['instrument','Instrument'],['rack','Rack']]){const b=document.createElement('button');b.type='button';b.textContent=label;b.dataset.roomView=key;b.addEventListener('click',()=>{if(key==='rack')select('sound');showView(key);});nav.append(b);}
+  deck.after(nav);
+  function showView(name){document.body.dataset.roomView=name;for(const b of nav.querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.roomView===name));}
+  showView('song');
+  const sectionTools=document.createElement('div');sectionTools.className='console-section-tools';
+  const settingsButton=document.createElement('button');settingsButton.type='button';settingsButton.textContent='Section settings';settingsButton.addEventListener('click',()=>{showView('instrument');$('section-settings').open=!$('section-settings').open;});
+  sectionTools.append($('lock-section'),settingsButton);document.querySelector('.track-desk>.section-heading').append(sectionTools);
   const tabs=['sound','trim','takes'];
   function select(name,{focus=false}={}){
     for(const key of tabs){const selected=key===name;const tab=$(`tab-${key}`);tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;$(`panel-${key}`).hidden=!selected;}
     $('sound-rack').hidden=name!=='sound';
+    showView(name==='sound'?'rack':'instrument');
     if(focus)$(`tab-${name}`).focus();
   }
   tabs.forEach((name,index)=>{
@@ -23,8 +43,9 @@ export function bindConsole(document){
   $('clear-clip').addEventListener('click',()=>{clipping=false;paintClip();});
   function paintClip(){$('clear-clip').textContent=clipping?'Clipped · reset':'No clipping';$('clear-clip').setAttribute('aria-pressed',String(clipping));}
   return {
-    focusInstrument(){document.body.classList.add('instrument-focus');},
+    focusInstrument(){document.body.classList.add('instrument-focus');showView('instrument');},
     sync(project,trackId,section,clip){
+      $('selected-context').textContent=`${section.name} · ${(section.duration*project.tempo/240).toFixed(1)} bars · ${project.tempo} BPM${project.key?' · '+project.key:''}`;
       const track=project.tracks.find(t=>t.id===trackId);$('instrument-heading').textContent=track?.name||'Select an instrument';
       const mix=document.querySelector('.track.selected .track-mix');$('selected-mixer').replaceChildren();if(mix)$('selected-mixer').append(mix);
       const solos=project.tracks.filter(t=>t.solo);$('solo-status').hidden=!solos.length;$('clear-solos').hidden=!solos.length;
@@ -49,6 +70,7 @@ export function bindConsole(document){
       for(const [index,name]of ['left','right'].entries()){
         const value=levels[index]??-Infinity;$(`meter-${name}`).parentElement.style.setProperty('--level',`${Math.max(0,Math.min(100,(value+60)/60*100))}%`);$(`meter-${name}`).value=Math.max(-60,Math.min(0,value));$(`peak-${name}`).value=Number.isFinite(value)?`${value.toFixed(1)} dBFS`:'−∞ dBFS';if(value>=0)clipping=true;
       }
+      const rackReadout=$('rack-level-summary');if(rackReadout)rackReadout.textContent=`Master L ${Number.isFinite(levels[0])?levels[0].toFixed(1):'−∞'} / R ${Number.isFinite(levels[1])?levels[1].toFixed(1):'−∞'} dBFS`;
       const maximum=Math.max(...levels);$('meter-needle').style.transform=`rotate(${-65+Math.max(0,Math.min(1,(maximum+48)/48))*130}deg)`;paintClip();
     }
   };
