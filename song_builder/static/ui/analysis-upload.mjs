@@ -123,7 +123,7 @@ export function createUploadDesk({base, csrf, message, inboxCount, onStored, ref
           card.append(player,el('small','Local preview · nothing uploaded yet','preview-note'));
         } catch (error) {entry.status='invalid';status.textContent='Check file';card.dataset.state='error';card.append(el('p',error.message,'file-error'));}
       }
-      clear.hidden=false;state(entries.filter(e=>e.status==='selected').length+' files ready to upload','selected');
+      clear.hidden=false;const ready=entries.filter(e=>e.status==='selected').length;state(ready+' '+(ready===1?'file':'files')+' ready to upload','selected');
     } finally {preparing=false;picker.disabled=false;}
   }
   picker.onclick=()=>{if(!isBusy())input.click();};
@@ -145,6 +145,7 @@ export function createUploadDesk({base, csrf, message, inboxCount, onStored, ref
       try {
         for(const entry of pending) {
           entry.audio?.pause();entry.status='uploading';entry.card.dataset.state='active';entry.label.textContent='Transferring';
+          state(entry.file.name+' · Transferring','active',null);
           const note=entry.card.querySelector('.preview-note');if(note)note.textContent='Preview stays on this device';
           message('Uploading '+entry.file.name+' to your private inbox…');
           try {
