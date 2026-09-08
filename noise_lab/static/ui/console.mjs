@@ -36,14 +36,15 @@ export function createConsoleUI() {
   if (phone && drawer?.showModal) {
     syncDrawer();
     phone.addEventListener('change', syncDrawer);
-    if (phone.matches) $('prompt-details').open = false;
     $('close-library').addEventListener('click', () => drawer.close());
     drawer.addEventListener('close', () => {
-      if (modalActive && phone.matches) $('open-library').focus({preventScroll: true});
+      if (modalActive && phone.matches) $(returnFocus).focus({preventScroll: true});
       modalActive = false;
     });
   }
-  const reveal = id => {
+  let returnFocus = 'open-library';
+  const reveal = (id, trigger = 'open-library') => {
+    returnFocus = trigger;
     if (phone?.matches && drawer?.showModal && !drawer.open) {
       drawer.showModal();
       modalActive = true;
@@ -52,8 +53,15 @@ export function createConsoleUI() {
     $(id).focus({preventScroll: true});
   };
   $('open-library').addEventListener('click', () => reveal('patch-library'));
-  $('open-export').addEventListener('click', () => reveal('output'));
+  $('open-export').addEventListener('click', () => reveal('output', 'open-export'));
+  if (typeof ResizeObserver === 'function') {
+    const dockSize = new ResizeObserver(entries => {
+      document.body.style.setProperty('--transport-height', `${Math.ceil(entries[0].target.getBoundingClientRect().height)}px`);
+    });
+    dockSize.observe($('performance'));
+  }
   return {
+    revealFile() { reveal('file-ready', 'open-export'); },
     render(engine, force = false) {
       const now = performance.now();
       const active = Boolean(engine?.getInfo().playing) && !document.hidden;

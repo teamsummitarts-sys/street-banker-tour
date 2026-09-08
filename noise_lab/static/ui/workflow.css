@@ -1,0 +1,100 @@
+/* Workflow only: retain the approved tactile finish, marks, logo and audio controls. */
+.noise-lab .signal-cut-masthead { padding: 16px 24px 10px; }
+.noise-lab .signal-cut-masthead .title-lockup { max-width: 700px; }
+.noise-lab .signal-cut-masthead .brand img { width: 145px; height: auto; }
+.noise-lab .signal-cut-masthead .site-bar { margin-top: 4px; min-height: 38px; }
+.noise-lab .workflow-nav { display: flex; gap: 24px; padding: 5px 6px 18px; }
+.noise-lab .workflow-nav a { color: var(--text); text-decoration: none; font-size: 13px; }
+.noise-lab .workflow-nav b { color: var(--bright); margin-right: 6px; }
+.noise-lab :is(#source, #shape, #effects) { scroll-margin-top: 18px; }
+.noise-lab .workflow-help { font-size: 12px; color: var(--muted); line-height: 1.55; margin: 6px 0 12px; }
+.noise-lab .source-panel { padding: 18px 22px 6px; }
+.noise-lab .source-panel .section-heading { display: flex; position: static; }
+.noise-lab .source-panel .section-heading > span { display: block; font-size: 10px; }
+.noise-lab .source-row { padding-left: 0; }
+.noise-lab .source-panel .sfx-panel { border: 0; border-top: 1px solid #66736855; border-radius: 0; padding: 0; box-shadow: none; background: transparent; }
+.noise-lab .source-panel .source-details summary { min-height: 36px; }
+.noise-lab .source-required { display: flex; align-items: center; gap: 12px; margin-top: 12px; color: var(--bright); font-size: 12px; }
+.noise-lab .source-required[hidden] { display: none; }
+.noise-lab #load-selected-source { flex-shrink: 0; }
+.noise-lab #generate-sound { min-width: 168px; white-space: normal; }
+.noise-lab .manual-fallback { color: var(--bright); font-size: 12px; padding: 12px 0; display: inline-block; }
+.noise-lab .generation-details { margin-top: 2px; }
+.noise-lab .generation-details summary { min-height: 32px; padding: 7px 0; }
+.noise-lab .recipe-header .eyebrow { display: block; font-size: 10px; margin-bottom: 9px; }
+.noise-lab .recipe-header #preset-description { display: block; }
+.noise-lab .recipe-header .working-save-state { color: var(--bright); font-size: 12px; }
+.noise-lab .effects-console .meter-panel { margin: 14px 20px 0; padding: 12px 14px; box-shadow: none; border-color: #64715e66; background: #0c130ed9; }
+.noise-lab .effects-console .meter-panel .rack-screw { display: none; }
+.noise-lab .meter-top output { font-size: 30px; }
+.noise-lab .meter-pair { padding: 12px 14px; }
+.noise-lab .meter-track { height: 21px; }
+.noise-lab .meter-help { display: block; margin-bottom: 0; }
+.noise-lab .comparison-help { margin: 16px 24px 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.noise-lab .macro-hint { display: block; }
+.noise-lab .comparison-group span, .noise-lab .stop-label { display: inline; }
+.noise-lab .performance-bar .comparison-group button { display: flex; flex-direction: column; gap: 1px; justify-content: center; padding: 6px 10px; }
+.noise-lab .performance-bar .comparison-group span { font-size: 10px; }
+.noise-lab .performance-bar { flex-wrap: wrap; }
+.noise-lab .saved-patches-details { border-top: 1px solid #66736855; margin-top: 12px; padding-top: 8px; }
+.noise-lab :is(.saved-patches-details, .recipe-files) > summary { min-height: 44px; padding: 12px 0; font-size: 12px; color: var(--text); cursor: pointer; }
+.noise-lab .saved-patches-details .patch-browse-row { border: 0; padding-top: 8px; }
+.noise-lab #export-format { color: var(--bright); font-size: 12px; }
+.noise-lab #file-ready { scroll-margin-top: 18px; }
+.noise-lab #prepared-name { overflow-wrap: anywhere; }
+.noise-lab #patch-save-state { color: var(--bright); }
+@media (min-width: 901px) {
+  .noise-lab .library-column { position: sticky; top: 18px; align-self: start; }
+}
+@media (max-width: 600px) {
+  .noise-lab .signal-cut-masthead { padding: 12px 12px 6px; }
+  .noise-lab .signal-cut-masthead .brand img { width: 108px; }
+  .noise-lab .signal-cut-masthead .brand { min-height: 34px; }
+  .noise-lab .signal-cut-masthead .site-bar { min-height: 34px; }
+  .noise-lab .workflow-nav { justify-content: space-between; gap: 8px; padding: 3px 2px 14px; }
+  .noise-lab .workflow-nav a { font-size: 11px; }
+  .noise-lab .workflow-nav b { margin-right: 3px; }
+  .noise-lab .source-panel { padding: 14px 13px 2px; }
+  .noise-lab .source-panel .section-heading h2 { font-size: 11px; }
+  .noise-lab .source-panel .section-heading > span { font-size: 9px; }
+  .noise-lab .source-row { flex-wrap: wrap; }
+  .noise-lab .source-choices { flex-basis: 100%; }
+  .noise-lab .time-readout { display: block; }
+  .noise-lab .workflow-help, .noise-lab .prompt-status { font-size: 12px; }
+  .noise-lab .source-required { align-items: stretch; flex-direction: column; gap: 7px; }
+  .noise-lab #source-required button { min-height: 44px; }
+  .noise-lab .generation-actions { gap: 0; }
+  .noise-lab .manual-fallback { min-height: 44px; }
+  .noise-lab .recipe-header .eyebrow { font-size: 10px; }
+  .noise-lab .recipe-header h2 { font-size: 25px; }
+  .noise-lab .recipe-header .working-save-state { font-size: 11px; }
+  .noise-lab .effects-console .meter-panel { margin: 10px 12px 0; padding: 10px 8px; }
+  .noise-lab .meter-pair { padding: 10px 8px; gap: 10px; }
+  .noise-lab .meter-unit + .meter-unit { padding-left: 10px; }
+  .noise-lab .meter-top { display: flex; flex-wrap: wrap; margin-bottom: 8px; }
+  .noise-lab .meter-top output { margin-left: auto; font-size: 24px; }
+  .noise-lab .meter-unit-label { font-size: 8px; padding-bottom: 0; }
+  .noise-lab .meter-track { height: 18px; }
+  .noise-lab .comparison-help { margin: 13px 17px 0; font-size: 11px; }
+  .noise-lab .macro-hint { display: block; font-size: 10px; margin-top: 6px; }
+  .noise-lab .macro-bank { row-gap: 18px; }
+  .noise-lab .performance-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; padding: 8px max(12px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .noise-lab .performance-bar .transport { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+  .noise-lab .performance-bar .comparison-group { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 2px; }
+  .noise-lab .performance-bar button { min-height: 44px; padding: 6px 9px; font-size: 12px; }
+  .noise-lab .performance-bar #stop { width: 55px; min-width: 0; flex-direction: column; gap: 1px; font-size: 10px; }
+  .noise-lab .performance-bar #stop svg { width: 12px; height: 12px; }
+  .noise-lab .performance-bar .comparison-group button { min-height: 42px; padding: 3px 4px; }
+  .noise-lab .performance-bar .comparison-group b { font-size: 15px; }
+  .noise-lab .performance-bar #open-library { margin: 0; width: 100%; }
+  .noise-lab #open-export { display: flex; justify-content: center; }
+  .noise-lab .stop-label { display: inline; }
+  .noise-lab footer { padding-bottom: calc(var(--transport-height, 150px) + 28px); }
+  .noise-lab #library-drawer[open] { height: 88dvh; }
+  .noise-lab .drawer-header { position: sticky; top: 0; z-index: 1; background: #101714; }
+}
+@media (max-width: 360px) {
+  .noise-lab .workflow-nav a { font-size: 10px; }
+  .noise-lab .performance-bar { gap: 6px; }
+  .noise-lab .performance-bar .play-button { min-width: 60px; }
+}

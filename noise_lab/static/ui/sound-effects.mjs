@@ -49,7 +49,7 @@ export function createSoundEffects({getRevision, loadAudio, prepareDownload}) {
       if (token !== sequence || scope !== document.body.dataset.csrf) return;
       if (bytes.byteLength < 128 || bytes.byteLength > 2*1024*1024) throw new Error('Unsupported audio size.');
       candidate = bytes;
-      status('Audio ready. Load it into the knobs, then press Play. Download the original to keep it.');
+      status('Source ready. Choose Use this source, then Play to listen. Download the original to keep it.');
     } catch (error) {
       if (token === sequence) status(error?.name === 'AbortError'
         ? 'Generation timed out. No automatic retry was made; ElevenLabs may still count the request.'
@@ -65,7 +65,7 @@ export function createSoundEffects({getRevision, loadAudio, prepareDownload}) {
     busy = true; render();
     try {
       await loadAudio(bytes.slice(0), () => token === sequence && revision === getRevision());
-      if (token === sequence) status('Generated audio loaded. Press Play. Knobs and A/B compare effects on this source; Save patch stores settings only.');
+      if (token === sequence) status('Generated source loaded. Press Play, then describe an effect or adjust the knobs. Save patch stores settings only.');
     } catch {
       if (token === sequence) status('Audio could not be loaded, or newer edits took priority. Your previous source is retained.', true);
     } finally { if (token === sequence) {busy = false; render();} }

@@ -99,6 +99,34 @@ async function readyToGenerate() {
   return context;
 }
 
+test('the source-required action enables effects without starting playback', async () => {
+  const {get, creation, audio} = await setup();
+  assert.equal(get('source-required').hidden, false);
+  assert.equal(get('generate-sound').disabled, true);
+  const loading = get('load-selected-source').click();
+  creation.resolve(audio);
+  await loading;
+  assert.equal(get('source-required').hidden, true);
+  assert.equal(get('generate-sound').disabled, false);
+  assert.equal(get('sound-prompt').focused, true);
+  assert.equal(audio.playCalls, 0);
+  assert.match(get('export-format').textContent, /16-bit PCM WAV · 8 kHz/);
+});
+
+test('clean preview and previous settings are explicitly different listening states', async () => {
+  const {get, choose} = await readyToGenerate();
+  await choose('metal-bloom');
+  await get('compare-a').click();
+  assert.match(get('compare-state').textContent, /Previous settings/);
+  assert.equal(get('macro-texture').disabled, true);
+  await get('clean').click();
+  assert.match(get('compare-state').textContent, /Clean preview · A settings retained/);
+  await get('clean').click();
+  await get('compare-b').click();
+  assert.match(get('compare-state').textContent, /Current settings/);
+  assert.equal(get('macro-texture').disabled, false);
+});
+
 test('generation sends only description, applies a valid patch without raising level, and supports Undo', async () => {
   const {get, setResponse, requests} = await readyToGenerate();
   get('value-level').value = '-30'; await get('value-level').event('change');
@@ -214,10 +242,16 @@ test('account save sends only a named settings snapshot and keeps the iPhone ses
   assert.deepEqual(data.recipe, recipe('clean'));
   assert.equal(posted[0].options.headers['X-Noise-Lab-CSRF'], 'test-csrf');
   assert.match(get('patch-status').textContent, /Saved.*version 1/i);
+  assert.equal(get('working-save-state').textContent, 'B settings · Saved v1');
   await get('save-patch').click();
   assert.equal(requests.filter(r => r.options?.method === 'POST').length, 1, 'A repeated tap after acknowledgment does not create a duplicate.');
   assert.equal(audio.disposeCalls, 0);
   assert.equal(created.some(element => element.href), false);
+  get('value-texture').value = '32';
+  await get('value-texture').event('change');
+  assert.equal(get('working-save-state').textContent, 'B settings · Changes not saved');
+  await get('undo').click();
+  assert.equal(get('working-save-state').textContent, 'B settings · Saved v1');
 });
 
 test('A identifies the preset being auditioned and B retains its own selection', async () => {

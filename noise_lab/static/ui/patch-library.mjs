@@ -29,9 +29,12 @@ export function createPatchLibrary({getRecipe, getRevision, applyRecipe, prepare
       || JSON.stringify(saved.recipe) !== JSON.stringify(getRecipe());
     $('patch-save-state').textContent = saved && !dirty ? `Saved snapshot · version ${saved.version}`
       : saved ? 'New edits are not saved' : 'Working settings are not linked to a saved version';
+    const saveState = busy ? 'B settings · Saving or loading…' : saved && !dirty ? `B settings · Saved v${saved.version}` : saved ? 'B settings · Changes not saved' : 'B settings · Not saved';
+    if ($('working-save-state').textContent !== saveState) $('working-save-state').textContent = saveState;
     const alreadySaved = !dirty && saved?.version === selected?.headVersion;
     $('save-patch').disabled = !available || busy || alreadySaved;
     $('save-version').disabled = !available || busy || !selected || alreadySaved;
+    $('save-version').hidden = !selected;
   }
   function controls() {
     for (const id of ['save-patch', 'refresh-patches', 'patch-list']) $(id).disabled = !available || busy;
