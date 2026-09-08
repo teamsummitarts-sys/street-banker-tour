@@ -42,10 +42,15 @@ async function setup() {
   const ticks = Object.fromEntries(['texture','motion','space','mix','level'].map(key => [key,
     Array.from({length: 41}, (_, i) => { const e = new Element(); e.dataset.dialTick = String(i); return e; })]));
   const created = [];
+  const resetButtons = ['texture','motion','space','mix','level'].map(key => {
+    const element = new Element(); element.dataset.resetMacro = key; return element;
+  });
   globalThis.document = {getElementById: get, querySelector: get,
     querySelectorAll: selector => {
       const key = selector.match(/data-macro="([a-z]+)"/);
-      return key ? ticks[key[1]] : loops;
+      if (key) return ticks[key[1]];
+      if (selector === '[data-reset-macro]') return resetButtons;
+      return loops;
     }, addEventListener() {},
     createElement: () => { const e = new Element(); created.push(e); return e; },
     body: {append() {}, dataset: {csrf: 'test-csrf'}}};
@@ -64,7 +69,7 @@ async function setup() {
   const creation = deferred();
   const audio = {
     playing: false, playCalls: 0, stopCalls: 0, onstatechange: null,
-    setRecipe() {}, setBypass() {}, getPosition() { return 0; },
+    bypassCalls: [], setRecipe() {}, setBypass(value) { this.bypassCalls.push(value); }, getPosition() { return 0; },
     getLevels() { return {input: [0.5, 0.25], output: [0.125, 0.0625]}; },
     getInfo() { return {playing: this.playing, duration: 8, channels: 1, sampleRate: 8000, name: 'Test loop'}; },
     loadDemo() { return this.getInfo(); },
@@ -83,7 +88,7 @@ async function setup() {
     const done = get('recipe-file').event('change');
     return {resolve: read.resolve, done};
   };
-  return {get, ticks, choose, startImport, creation, audio, lifecycle, created, requests,
+  return {get, ticks, resetButtons, choose, startImport, creation, audio, lifecycle, created, requests,
     setResponse: fn => { respond = fn; }};
 }
 
@@ -127,6 +132,30 @@ test('clean preview and previous settings are explicitly different listening sta
   assert.equal(get('macro-texture').disabled, false);
 });
 
+test('live controls provide momentary clean preview and a persistent effect bypass', async () => {
+  const {get, audio} = await readyToGenerate();
+  await get('clean').event('pointerdown', {pointerId: 1, currentTarget: get('clean'), preventDefault() {}});
+  assert.equal(audio.bypassCalls.at(-1), true);
+  assert.match(get('compare-state').textContent, /Clean preview/);
+  await get('clean').event('pointerup');
+  assert.equal(audio.bypassCalls.at(-1), false);
+  await get('engage').click();
+  assert.equal(audio.bypassCalls.at(-1), true);
+  assert.equal(get('engage').querySelector('.switch-state').textContent, 'BYPASSED');
+  await get('engage').click();
+  assert.equal(audio.bypassCalls.at(-1), false);
+});
+
+test('each macro can reset independently to Clean start and Undo restores it', async () => {
+  const {get, resetButtons} = await readyToGenerate();
+  get('value-texture').value = '44'; await get('value-texture').event('change');
+  await resetButtons.find(button => button.dataset.resetMacro === 'texture').click();
+  assert.equal(get('value-texture').value, '10');
+  assert.equal(get('value-motion').value, '0');
+  await get('undo').click();
+  assert.equal(get('value-texture').value, '44');
+});
+
 test('generation sends only description, applies a valid patch without raising level, and supports Undo', async () => {
   const {get, setResponse, requests} = await readyToGenerate();
   get('value-level').value = '-30'; await get('value-level').event('change');
@@ -138,6 +167,8 @@ test('generation sends only description, applies a valid patch without raising l
   assert.equal(posted[0].options.headers['X-Noise-Lab-CSRF'], 'test-csrf');
   assert.equal(get('value-texture').value, '76');
   assert.equal(get('value-level').value, '-30');
+  assert.equal(get('generated-recipe').hidden, false);
+  assert.match(get('generated-recipe-summary').textContent, /Changed/);
   await get('undo').click();
   assert.equal(get('value-texture').value, '10');
   assert.equal(get('value-level').value, '-30');

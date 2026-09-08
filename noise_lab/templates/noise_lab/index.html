@@ -81,6 +81,10 @@
             <div class="source-required" id="source-required"><span>Load a source to enable effect generation.</span><button type="button" id="load-selected-source">Load demo loop</button></div>
             <p id="prompt-privacy" class="prompt-status">Only this description goes to OpenAI. Audio stays on this device. Up to 500 characters.</p>
             <div class="generation-actions"><p id="generation-status" class="prompt-status" role="status" aria-live="polite">Checking AI availability. Manual presets are available below.</p><button type="button" id="cancel-generation" hidden>Cancel generation</button><a class="manual-fallback" href="#effects">Use a preset or the knobs ↓</a></div>
+            <div id="generated-recipe" class="generated-recipe" hidden tabindex="-1" aria-labelledby="generated-recipe-name">
+              <span class="generated-recipe-label">Generated recipe</span><strong id="generated-recipe-name">Custom effect recipe</strong>
+              <p id="generated-recipe-summary">The changed controls will appear here.</p><div id="generated-recipe-macros" class="generated-recipe-macros" aria-label="Changed controls"></div>
+            </div>
             <details class="generation-details"><summary>Connection &amp; usage</summary><button type="button" id="refresh-generation">Check connection</button><p id="generation-allowance" class="prompt-limit">20 attempts per account, 100 across this server process. Requests are spaced at least 10 seconds apart. Restarts reset the allowance.</p></details>
           </div>
         </details>
@@ -125,14 +129,21 @@
             <label for="macro-{{ key }}">{{ label }}</label>
             <div class="macro-value"><input id="value-{{ key }}" type="number" inputmode="decimal" min="{{ minimum }}" max="{{ maximum }}" step="any" value="{{ value }}" aria-label="{{ label }} value in {{ unit }}"><span>{{ unit }}</span></div>
             <span class="macro-hint" id="hint-{{ key }}">{{ description }}</span>
+            <button class="macro-reset" type="button" data-reset-macro="{{ key }}" aria-label="Reset {{ label }} to its Clean start value">Reset</button>
           </div>
         {% endfor %}
         </div>
-        <div class="edit-bar"><button id="clean" type="button" aria-pressed="false">Compare clean</button><div class="history-group"><button id="undo" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-5 5 5 5M3 10h11a6 6 0 0 1 0 12" transform="translate(0 -2)"/></svg>Undo</button><button id="redo" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 5 5 5-5 5m5-5H10a6 6 0 0 0 0 12" transform="translate(0 -2)"/></svg>Redo</button></div><p id="dial-help">Drag a dial or tap its value. Undo restores the last edit, including a preset change.</p></div>
+        <div class="edit-bar"><div class="history-group"><button id="undo" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-5 5 5 5M3 10h11a6 6 0 0 1 0 12" transform="translate(0 -2)"/></svg>Undo</button><button id="redo" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 5 5 5-5 5m5-5H10a6 6 0 0 0 0 12" transform="translate(0 -2)"/></svg>Redo</button></div><p id="dial-help">Drag a dial or tap its value. Reset returns one control to Clean start.</p></div>
+        <div class="studio-actions" aria-label="Patch and file actions"><span>STUDIO</span><button type="button" id="open-library" class="gold-button" aria-controls="patch-library">Save patch</button><button type="button" id="open-export" aria-controls="output">Export WAV</button></div>
         <div class="performance-bar" id="performance" tabindex="-1">
+          <div class="performance-title" aria-hidden="true"><b>PERFORMANCE</b><span>LIVE CONTROLS</span></div>
           <div class="transport"><button class="play-button" id="play" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg><span>Play</span></button><button id="stop" type="button" disabled aria-label="Stop playback"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7Z"/></svg><span class="stop-label">Stop</span></button></div>
-          <div class="comparison-group" role="group" aria-label="Compare patch versions"><button type="button" id="compare-a" aria-pressed="false" disabled aria-label="A: previous patch"><b>A</b><span>Previous</span></button><button type="button" id="compare-b" aria-pressed="true" aria-label="B: current patch"><b>B</b><span>Current</span></button></div>
-          <button type="button" id="open-library" class="gold-button" aria-controls="patch-library">Save patch</button><button type="button" id="open-export" aria-controls="output">Export WAV</button>
+          <div class="live-trigger-group" role="group" aria-label="Live effect controls">
+            <button type="button" id="clean" class="stomp-switch" aria-pressed="false" aria-label="Hold to hear the clean source"><i class="switch-led" aria-hidden="true"></i><b>CLEAN</b><span class="switch-state">HOLD</span></button>
+            <button type="button" id="compare-a" class="stomp-switch" aria-pressed="false" disabled aria-label="Previous settings"><i class="switch-led" aria-hidden="true"></i><b>PREVIOUS</b><span class="switch-state">A</span></button>
+            <button type="button" id="compare-b" class="stomp-switch" aria-pressed="true" aria-label="Current settings"><i class="switch-led" aria-hidden="true"></i><b>CURRENT</b><span class="switch-state">B</span></button>
+            <button type="button" id="engage" class="stomp-switch" aria-pressed="true" aria-label="Effects engaged"><i class="switch-led" aria-hidden="true"></i><b>ENGAGE</b><span class="switch-state">ON</span></button>
+          </div>
         </div>
         <div class="monitor-line"><span id="monitor-state">Ready for a loop</span><span id="compare-state">B selected · Current patch</span></div>
       </section>

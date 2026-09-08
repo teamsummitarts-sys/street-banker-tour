@@ -17,6 +17,8 @@ let history = [clone(current)];
 let cursor = 0;
 let comparison = 'b';
 let clean = false;
+let effectsEngaged = true;
+let cleanPointerGesture = false;
 let engine = null;
 let creating = null;
 let sourceId = LOOPS[0]?.id || 'harmonic-pluck';
@@ -65,7 +67,7 @@ function time(seconds) {
 function applyAudio() {
   if (!engine || faulted) return;
   engine.setRecipe(heardRecipe());
-  engine.setBypass(clean);
+  engine.setBypass(clean || !effectsEngaged);
 }
 
 function renderControls() {
@@ -95,7 +97,11 @@ function renderControls() {
   $('compare-a').setAttribute('aria-pressed', String(comparison === 'a'));
   $('compare-b').setAttribute('aria-pressed', String(comparison === 'b'));
   $('clean').setAttribute('aria-pressed', String(clean));
-  $('clean').textContent = clean ? 'Clean preview · On' : 'Compare clean';
+  $('clean').dataset.state = clean ? 'held' : 'idle';
+  $('clean').querySelector('.switch-state').textContent = clean ? 'HEARING CLEAN' : 'HOLD';
+  $('engage').setAttribute('aria-pressed', String(effectsEngaged));
+  $('engage').setAttribute('aria-label', effectsEngaged ? 'Effects engaged' : 'Effects bypassed');
+  $('engage').querySelector('.switch-state').textContent = effectsEngaged ? 'ON' : 'BYPASSED';
   $('undo').disabled = cursor === 0 || comparison === 'a';
   $('redo').disabled = cursor >= history.length - 1 || comparison === 'a';
   $('compare-state').textContent = clean ? `Clean preview · ${comparison.toUpperCase()} settings retained` : `${comparison.toUpperCase()} selected · ${comparison === 'a' ? 'Previous settings · switch to B to edit' : 'Current settings'}`;
@@ -317,13 +323,51 @@ function changeComparison(next) {
 }
 $('compare-a').addEventListener('click', () => changeComparison('a'));
 $('compare-b').addEventListener('click', () => changeComparison('b'));
-$('clean').addEventListener('click', () => {
+function setCleanPreview(next) {
+  if (clean === next) return;
   recipeRevision++;
-  clean = !clean;
+  const before = clean;
+  clean = next;
   try { applyAudio(); }
-  catch (error) { clean = !clean; message(describeError(error, 'Clean comparison could not switch.'), true); }
+  catch (error) { clean = before; message(describeError(error, 'Clean comparison could not switch.'), true); }
+  renderControls();
+}
+$('clean').addEventListener('pointerdown', event => {
+  cleanPointerGesture = true;
+  event.preventDefault?.();
+  event.currentTarget?.setPointerCapture?.(event.pointerId);
+  setCleanPreview(true);
+});
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) $('clean').addEventListener(type, () => setCleanPreview(false));
+$('clean').addEventListener('keydown', event => {
+  if (![' ', 'Enter'].includes(event.key) || event.repeat) return;
+  event.preventDefault?.(); setCleanPreview(true);
+});
+$('clean').addEventListener('keyup', event => {
+  if (![' ', 'Enter'].includes(event.key)) return;
+  event.preventDefault?.(); setCleanPreview(false);
+});
+$('clean').addEventListener('click', () => {
+  if (cleanPointerGesture) { cleanPointerGesture = false; return; }
+  setCleanPreview(!clean);
+});
+$('engage').addEventListener('click', () => {
+  recipeRevision++;
+  const before = effectsEngaged;
+  effectsEngaged = !effectsEngaged;
+  try { applyAudio(); }
+  catch (error) { effectsEngaged = before; message(describeError(error, 'Effect bypass could not switch.'), true); }
   renderControls();
 });
+
+document.querySelectorAll('[data-reset-macro]').forEach(button => button.addEventListener('click', () => {
+  if (comparison === 'a') return;
+  const key = button.dataset.resetMacro;
+  if (!keys.includes(key)) return;
+  const next = clone(current);
+  next.macros[key] = DEFAULT_RECIPE.macros[key];
+  replaceRecipe(next, {announce: `${key[0].toUpperCase()}${key.slice(1)} reset to Clean start. Undo keeps the previous value.`});
+}));
 
 function stepHistory(delta) {
   recipeRevision++;
@@ -577,7 +621,15 @@ $('generate-sound').addEventListener('click', async () => {
     const next = validateRecipe(result.recipe);
     // AI cannot turn up the output; the musician stays in charge of Level.
     next.macros.level = Math.min(next.macros.level, current.macros.level, -12);
+    const changed = keys.filter(key => next.macros[key] !== current.macros[key]);
     replaceRecipe(next);
+    $('generated-recipe-name').textContent = selectedPreset(next)?.name || 'Custom effect recipe';
+    $('generated-recipe-summary').textContent = changed.length ? `Changed ${changed.length} control${changed.length === 1 ? '' : 's'} from your current sound.` : 'The generated settings matched your current sound.';
+    $('generated-recipe-macros').replaceChildren(...changed.map(key => {
+      const chip = document.createElement('span'); chip.textContent = key; return chip;
+    }));
+    $('generated-recipe').hidden = false;
+    $('generated-recipe').focus({preventScroll: true});
     generationMessage('New settings applied to B. A and Undo keep the previous patch. Play to audition; turn off Compare clean to hear the effects.');
   } catch (error) {
     if (sequence === aiSequence && sessionToken === generation) {
