@@ -98,3 +98,51 @@
   .noise-lab .performance-bar { gap: 6px; }
   .noise-lab .performance-bar .play-button { min-width: 60px; }
 }
+
+/* Performance Surface: live controls feel and behave differently from studio actions. */
+.noise-lab .generated-recipe { margin: 10px 0 4px; padding: 14px 16px; border: 1px solid #7d704d; border-radius: 11px; background: linear-gradient(145deg,#1b211b,#0a100c 70%); box-shadow: inset 0 1px #fff1c01a, 0 6px 16px #0005; }
+.noise-lab .generated-recipe-label { display: block; color: var(--bright); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; }
+.noise-lab .generated-recipe strong { display: block; margin-top: 4px; font-size: 18px; }
+.noise-lab .generated-recipe p { color: var(--muted); font-size: 11px; margin: 5px 0 10px; }
+.noise-lab .generated-recipe-macros { display: flex; flex-wrap: wrap; gap: 6px; }
+.noise-lab .generated-recipe-macros span { padding: 5px 9px; border: 1px solid #8c7a4f; border-radius: 999px; color: #ffe1a0; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+.noise-lab .macro-reset { display: block; min-height: 30px; margin: 5px auto 0; padding: 4px 9px; border-color: transparent; background: transparent; box-shadow: none !important; color: var(--muted); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+.noise-lab .macro-reset:hover:not(:disabled), .noise-lab .macro-reset:focus-visible { color: var(--bright); border-color: #7b704e; }
+.noise-lab .studio-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 10px 24px; border-top: 1px solid #5e6c5659; background: #090e0b; }
+.noise-lab .studio-actions > span { margin-right: auto; color: var(--muted); font-size: 9px; letter-spacing: .18em; }
+.noise-lab .studio-actions button { min-height: 40px; }
+.noise-lab .performance-bar { display: grid; grid-template-columns: auto auto minmax(0,1fr); gap: 16px; align-items: stretch; padding: 13px 24px; background: linear-gradient(#262d29,#101613); }
+.noise-lab .performance-title { display: flex; flex-direction: column; justify-content: center; min-width: 92px; }
+.noise-lab .performance-title b { font-size: 10px; letter-spacing: .16em; }
+.noise-lab .performance-title span { margin-top: 3px; color: var(--muted); font-size: 8px; letter-spacing: .12em; }
+.noise-lab .performance-bar .transport { align-items: stretch; margin: 0; }
+.noise-lab .performance-bar .transport button { min-height: 68px; }
+.noise-lab .live-trigger-group { display: grid; grid-template-columns: repeat(4,minmax(82px,1fr)); gap: 8px; }
+.noise-lab .stomp-switch { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 68px; padding: 16px 8px 8px; border: 1px solid #6b756d; border-radius: 10px !important; background: linear-gradient(155deg,#252c29,#101613 60%,#080d0a); color: var(--text); box-shadow: inset 0 1px #e6eddf2b, 0 4px 0 #070a08, 0 8px 13px #0008 !important; }
+.noise-lab .stomp-switch b { font-size: 11px; letter-spacing: .08em; }
+.noise-lab .stomp-switch .switch-state { margin-top: 3px; color: var(--muted); font: 8px ui-monospace,monospace; letter-spacing: .08em; }
+.noise-lab .switch-led { position: absolute; top: 8px; width: 7px; height: 7px; border: 1px solid #77684a; border-radius: 50%; background: #302714; box-shadow: inset 0 1px 2px #000; }
+.noise-lab .stomp-switch[aria-pressed=true] { color: #fff3d1; border-color: #c49b55; transform: translateY(2px); box-shadow: inset 0 3px 7px #000b, 0 2px 0 #080b09, 0 4px 8px #0009 !important; }
+.noise-lab .stomp-switch[aria-pressed=true] .switch-led { background: #ffd27a; border-color: #fff0c1; box-shadow: 0 0 5px #f3b74c, 0 0 12px #e59b2e80; }
+.noise-lab .stomp-switch[aria-pressed=true] .switch-state { color: #ffd998; }
+.noise-lab .stomp-switch:disabled { opacity: .42; }
+@media (max-width: 900px) and (min-width: 601px) {
+  .noise-lab .performance-bar { grid-template-columns: auto 1fr; }
+  .noise-lab .performance-title { display: none; }
+}
+@media (max-width: 600px) {
+  .noise-lab .macro-reset { min-height: 38px; }
+  .noise-lab .studio-actions { padding: 9px 13px; }
+  .noise-lab .studio-actions > span { display: none; }
+  .noise-lab .studio-actions button { flex: 1; min-height: 44px; }
+  .noise-lab .performance-bar { display: grid; grid-template-columns: 92px minmax(0,1fr); gap: 8px; align-items: stretch; padding: 8px max(10px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left)); }
+  .noise-lab .performance-title { display: none; }
+  .noise-lab .performance-bar .transport { display: grid; grid-template-columns: 1fr; gap: 5px; }
+  .noise-lab .performance-bar .transport button { min-height: 44px; width: 100%; min-width: 0; }
+  .noise-lab .performance-bar #stop { width: 100%; }
+  .noise-lab .live-trigger-group { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; }
+  .noise-lab .stomp-switch { min-height: 93px; padding: 18px 3px 7px; }
+  .noise-lab .stomp-switch b { font-size: 8px; letter-spacing: .03em; }
+  .noise-lab .stomp-switch .switch-state { font-size: 7px; letter-spacing: 0; }
+  .noise-lab .switch-led { top: 9px; width: 8px; height: 8px; }
+}
