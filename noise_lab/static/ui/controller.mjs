@@ -95,10 +95,10 @@ function renderControls() {
   $('compare-a').setAttribute('aria-pressed', String(comparison === 'a'));
   $('compare-b').setAttribute('aria-pressed', String(comparison === 'b'));
   $('clean').setAttribute('aria-pressed', String(clean));
-  $('clean').textContent = clean ? 'Clean is on' : 'Compare clean';
+  $('clean').textContent = clean ? 'Clean preview · On' : 'Compare clean';
   $('undo').disabled = cursor === 0 || comparison === 'a';
   $('redo').disabled = cursor >= history.length - 1 || comparison === 'a';
-  $('compare-state').textContent = clean ? `Clean selected · ${comparison.toUpperCase()} patch retained` : `${comparison.toUpperCase()} selected · ${comparison === 'a' ? 'Previous patch · editing locked' : 'Current patch'}`;
+  $('compare-state').textContent = clean ? `Clean preview · ${comparison.toUpperCase()} settings retained` : `${comparison.toUpperCase()} selected · ${comparison === 'a' ? 'Previous settings · switch to B to edit' : 'Current settings'}`;
   renderGeneration();
   patchLibrary?.changed();
 }
@@ -116,6 +116,9 @@ function renderTransport() {
   $('export-audio').setAttribute('aria-busy', String(exporting));
   $('cancel-export').hidden = !exporting;
   $('export-audio').lastChild.textContent = exporting ? ' Rendering…' : 'Prepare WAV';
+  $('export-format').textContent = loaded ? `16-bit PCM WAV · ${Number(info?.sampleRate || 0) / 1000} kHz · Current B effects` : '16-bit PCM WAV · Load a source to see the sample rate.';
+  $('source-required').hidden = loaded;
+  $('load-selected-source').disabled = loading || !support.supported || faulted;
   document.querySelectorAll('[data-loop]').forEach(button => {
     button.disabled = loading || !support.supported || faulted;
     button.setAttribute('aria-pressed', String(button.dataset.loop === sourceId));
@@ -370,6 +373,10 @@ $('stop').addEventListener('click', () => {
 });
 document.querySelectorAll('[data-loop]').forEach(button => button.addEventListener('click', () => loadSource({ loopId: button.dataset.loop })));
 $('import-audio').addEventListener('click', () => $('audio-file').click());
+$('load-selected-source').addEventListener('click', async () => {
+  await loadSource({loopId: sourceId || LOOPS[0].id});
+  if (loaded) $('sound-prompt').focus();
+});
 $('audio-file').addEventListener('change', event => {
   const file = event.target.files?.[0];
   event.target.value = '';
@@ -397,6 +404,7 @@ function prepareDownload(blob, name) {
   $('share-download').hidden = !shareable;
   $('share-download').disabled = false;
   $('file-ready').hidden = false;
+  consoleUI.revealFile();
 }
 
 $('share-download').addEventListener('click', async () => {
@@ -468,13 +476,13 @@ function generationMessage(text, error = false) {
 
 function renderGeneration() {
   $('generate-sound').disabled = !aiReady || aiRemaining <= 0 || aiBusy || !loaded || loading || faulted || comparison === 'a';
-  $('generate-sound').textContent = aiBusy ? 'Creating settings…' : 'Shape with AI';
+  $('generate-sound').textContent = aiBusy ? 'Creating settings…' : 'Generate effect settings';
   $('generate-sound').setAttribute('aria-busy', String(aiBusy));
   $('cancel-generation').hidden = !aiBusy;
   $('refresh-generation').disabled = aiBusy;
   $('generation-label').textContent = aiBusy ? 'Generating' : aiReady ? 'AI settings' : 'Manual presets available';
   $('generation-allowance').textContent = aiReady
-    ? `Last reported allowance: ${aiRemaining} attempts. Load a loop and select B to create a sound. Allowance resets when the server restarts.`
+    ? `Last reported allowance: ${aiRemaining} attempts. Load a source and select B to generate effect settings. Allowance resets when the server restarts.`
     : 'AI connection unavailable. Manual presets and local exports remain available.';
 }
 
