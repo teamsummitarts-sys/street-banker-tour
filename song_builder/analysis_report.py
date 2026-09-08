@@ -33,23 +33,37 @@ def build_report(tracks, payload):
     length = round(sum(t['measured']['durationSeconds']*a['weight'] for t,a in zip(tracks,active))/total)
     center = ', '.join(ranked[:8]) or 'No supported musical traits yet. Add Keep traits or choose musical interpretation.'
     structure = ' → '.join(s['name'] for s in payload['sections']) or 'intro, verse, chorus, verse, chorus, bridge, final chorus, outro (proposed)'
-    pieces = []
-    if ranked: pieces.append('Direction: '+', '.join(ranked[:12]))
-    if bpm: pieces.append('Target tempo: '+str(bpm)+' BPM (verify by ear)')
-    pieces += ['Target length: '+str(length)+' seconds', 'Structure: '+structure]
-    if avoid: pieces.append('Avoid: '+', '.join(sorted(avoid)))
-    prompt = '. '.join(pieces)
-    # Bound by Unicode characters, leaving room below Suno's requested 1000 limit.
-    if len(prompt)>999: prompt=prompt[:996].rsplit(' ',1)[0]+'…'
+    # Reserve exclusions first; never cut a trait or silently lose a constraint.
+    pieces, omitted = [], []
+    exclusions = []
+    for trait in sorted(avoid):
+        candidate = 'Avoid: '+', '.join(exclusions+[trait])
+        if len(candidate) <= 999:
+            exclusions.append(trait)
+        else:
+            omitted.append('Avoid: '+trait)
+    suffix = 'Avoid: '+', '.join(exclusions) if exclusions else ''
+    candidates = []
+    if payload.get('goal'): candidates.append('Goal: '+payload['goal'])
+    if bpm: candidates.append('Target tempo: '+str(bpm)+' BPM (verify by ear)')
+    candidates += ['Target length: '+str(length)+' seconds', 'Structure: '+structure]
+    candidates += ['Trait: '+trait for trait in ranked[:12]]
+    for item in candidates:
+        candidate = '. '.join(pieces+[item]+([suffix] if suffix else []))
+        if len(candidate) <= 999:
+            pieces.append(item)
+        else:
+            omitted.append(item)
+    prompt = '. '.join(pieces+([suffix] if suffix else []))
     return {'schemaVersion':1, 'mode':payload['mode'], 'tracks':tracks, 'works':works,
         'blend':{'center':center, 'shared':shared, 'outliers':outliers, 'excluded':sorted(avoid),
             'method':'Normalized user weights over active references; shared/outlier tags are exact label matches, not a similarity model.',
             'tempoCaution':'Weighted BPM is only a creative target. Half/double-time estimates can make averaging misleading.'},
-        'blueprint':{'prompt':prompt, 'alternates':[
+        'blueprint':{'prompt':prompt, 'omitted':omitted, 'alternates':[
             'Sparse: reduce layers and leave more space around the central motif.',
             'Driving: test a denser rhythmic pulse while retaining the core mood.',
             'Intimate: test a closer, drier presentation and restrained dynamics.'],
-            'note':'Editable creative directions, not analysis facts. Instrument/vocal traits require interpretation or your Keep labels.'},
+            'note':'Editable creative directions, not analysis facts. Instrument/vocal traits require interpretation or your Keep labels.' + (' Character limit: review omitted details before using this prompt: '+ '; '.join(omitted) if omitted else '')},
         'recommendations':recommendations[:5], 'sections':payload['sections'],
         'tempoKeyLab':{'tests':['Optional tempo test: audition ±2 BPM in a separate version.',
                               'Optional key test: audition ±1 semitone only if the performer benefits.'],

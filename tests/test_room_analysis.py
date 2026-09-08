@@ -260,3 +260,18 @@ def test_tempo_periodicity_on_known_120_bpm_pulses():
     m=measure(stream.getvalue())
     assert abs(m['tempoEstimate']['bpm']-120)<1
     assert m['tempoEstimate']['alternatives']==[60,240]
+
+
+def test_blueprint_reserves_exclusions_and_reports_overflow():
+    from song_builder.analysis_report import build_report
+    from song_builder.analysis_signal import measure
+    track = dict(id='a', weight=1, muted=False, keep=['warm'], avoid=['harsh cymbals'])
+    result = dict(id='a', measured=measure(audio()), interpretation=None)
+    data = dict(mode='dna', tracks=[track], sections=[], goal='x' * 990)
+    blueprint = build_report([result], data)['blueprint']
+    assert len(blueprint['prompt']) < 1000
+    assert blueprint['prompt'].endswith('Avoid: harsh cymbals')
+    assert blueprint['omitted'] == ['Goal: '+data['goal']]
+    assert 'review omitted details' in blueprint['note']
+    data['goal'] = 'Restrained chorus'
+    assert 'Goal: Restrained chorus' in build_report([result], data)['blueprint']['prompt']
