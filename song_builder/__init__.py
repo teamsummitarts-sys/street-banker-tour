@@ -299,5 +299,7 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
         v.identifier(job_id)
         return jsonify(job=job_json(service.store.get_job(g.song_builder_account, job_id)))
 
+    from .analysis import register as register_analysis
+    register_analysis(bp, app, directory, csrf, body)
     app.register_blueprint(bp)
     return bp
