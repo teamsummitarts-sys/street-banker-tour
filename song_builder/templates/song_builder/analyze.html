@@ -9,20 +9,20 @@
 </head>
 <body>
 <a class="skip" href="#upload">Skip to upload</a>
-<header><a href="{{ builder_base_url }}/" class="wordmark">THE ROOM <small>BY STREET BANKER</small></a><a href="{{ builder_base_url }}/">Back to song editor</a></header>
+<header><a href="{{ builder_base_url }}/" class="wordmark"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></span></a><a href="{{ builder_base_url }}/">Back to song editor</a></header>
 <main>
-  <div class="intro"><p class="eyebrow">LISTEN FIRST. CHANGE WITH INTENTION.</p><h1>Analyze &amp; Improve</h1><p>Find your creative direction. Protect what already works.</p></div>
+  <div class="intro"><h1>Analyze &amp; Improve</h1><p>Find your creative direction. Protect what already works.</p></div>
   <p id="status" role="status" aria-live="polite">Opening your private analysis inbox…</p>
-  <section aria-labelledby="upload-heading"><div class="section-title"><span>01</span><h2 id="upload-heading">Your private inbox</h2></div>
+  <section class="inbox-desk" aria-labelledby="upload-heading"><div class="section-title"><span>01</span><h2 id="upload-heading">Your private inbox</h2></div>
     <p>Upload first. Assign an analysis destination when you’re ready. Uploading alone sends nothing to an outside provider.</p>
     <label class="check"><input id="authorized" type="checkbox">I own this audio or have permission to analyze it.</label>
-    <div class="upload-row"><input id="upload" type="file" accept="audio/wav,.wav" multiple aria-label="Select authorized WAV files"><button id="upload-button" type="button">Upload to inbox</button></div>
+    <div class="upload-row"><div class="upload-caption"><strong>Bring your sound into the room.</strong><span>Choose up to 12 reference files.</span></div><input id="upload" type="file" accept="audio/wav,.wav" multiple aria-label="Select authorized WAV files"><button id="upload-button" type="button">Upload to inbox</button></div>
     <p class="hint">1–12 references. 16-bit PCM WAV, up to 14 MiB and 10 minutes each. Use a shorter authorized excerpt if the full file is larger. Measurements describe the uploaded copy.</p>
     <div id="inbox"></div>
-    <p class="hint">Analysis copies expire after 24 hours and are removed by the next cleanup. Assigned copies are removed when analysis finishes, including on failure. Reports expire after 30 days. Saved song audio is separate.</p>
+    <details class="retention"><summary>Audio storage &amp; privacy</summary><p class="hint">Analysis copies expire after 24 hours and are removed by the next cleanup. Assigned copies are removed when analysis finishes, including on failure. Reports expire after 30 days. Saved song audio is separate.</p></details>
   </section>
   <section aria-labelledby="assignment-heading"><div class="section-title"><span>02</span><h2 id="assignment-heading">Assign &amp; direct</h2></div>
-    <fieldset><legend>What are we listening for?</legend><label class="check"><input type="radio" name="mode" value="dna" checked>Sound DNA · blend reference traits</label><label class="check"><input type="radio" name="mode" value="improve">Improve My Track · one active track</label></fieldset>
+    <fieldset class="listening-modes"><legend>What are we listening for?</legend><label class="check"><input type="radio" name="mode" value="dna" checked><span><strong>Sound DNA</strong><small>Find the thread between your references.</small></span></label><label class="check"><input type="radio" name="mode" value="improve"><span><strong>Improve My Track</strong><small>Protect the identity. Refine the details.</small></span></label></fieldset>
     <div class="two-col"><label>Analysis destination<select id="destination"><option value="">Choose after upload</option></select></label><div id="destination-detail" class="disclosure">Nothing is assigned yet.</div></div>
     <label id="consent-label" class="check" hidden><input type="checkbox" id="consent">I approve sending the active audio and directions to this destination under the terms shown above.</label>
     <label>Your intention<textarea id="goal" maxlength="1000" rows="2" placeholder="Keep the rough vocal. Make the chorus land a little harder."></textarea></label>
@@ -30,7 +30,7 @@
     <button id="analyze-button" class="primary" type="button">Analyze selected audio</button><p class="hint">Muted and zero-weight references are excluded from processing and external transfer. External analysis makes at most one paid request per active file. No automatic rerouting or retries.</p>
     <details><summary>Spotify references</summary><p>Listen to Spotify separately; this analyzer never downloads or analyzes a Spotify link. Analysis requires an authorized audio file.</p><label>Reference link<input id="spotify" type="url" placeholder="https://open.spotify.com/track/…"></label><a id="spotify-link" target="_blank" rel="noopener noreferrer" hidden>Open reference in Spotify</a></details>
   </section>
-  <section aria-labelledby="reports-heading"><div class="section-title"><span>03</span><h2 id="reports-heading">Review before changing anything</h2></div>
+  <section class="results-desk" aria-labelledby="reports-heading"><div class="section-title"><span>03</span><h2 id="reports-heading">Review before changing anything</h2></div>
     <label>Recent reports<select id="history"><option value="">Choose a report</option></select></label>
     <div id="report"><p class="hint">Your analysis appears here. Accepting a suggestion adds it to your producer notes; it never changes your audio.</p></div>
   </section>
