@@ -299,6 +299,12 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
         v.identifier(job_id)
         return jsonify(job=job_json(service.store.get_job(g.song_builder_account, job_id)))
 
+    if enabled(app.config.get('SONG_BUILDER_ENABLED')):
+        from .advanced import register as register_advanced
+        from .workflow_ui import register as register_workflow_ui
+        workflow = register_advanced(bp, service, body)
+        register_workflow_ui(bp, app, workflow, csrf)
+
     from .analysis import register as register_analysis
     register_analysis(bp, app, directory, csrf, body)
     app.register_blueprint(bp)
