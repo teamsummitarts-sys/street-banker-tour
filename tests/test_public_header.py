@@ -60,13 +60,14 @@ def test_navigation_reaches_real_places():
         assert 'href="/#%s"' % anchor in body, anchor
 
 
-def test_no_navigation_item_bounces_a_visitor_to_login():
+def test_public_story_navigation_does_not_bounce_a_visitor_to_login():
     """A public visitor asking what the product is must not be handed a
-    password field. Every non-anchor destination in the header answers
-    for itself, signed out."""
+    password field. Application shortcuts intentionally keep their existing
+    account gates; the product story and free sweep remain public."""
     app_obj = create_app()
     body = app_obj.test_client().get("/").get_data(as_text=True)
     header = body[body.index('<header class="sbh"'):body.index("</header>")]
+    header = re.sub(r'<nav class="sbh-applications".*?</nav>', '', header, flags=re.S)
     hrefs = set(re.findall(r'href="([^"]+)"', header))
     client = app_obj.test_client()
     for href in hrefs:

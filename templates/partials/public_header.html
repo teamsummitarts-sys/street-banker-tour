@@ -10,6 +10,7 @@
    Takes `nav` if a page passes one, otherwise reads landing_config
    through the public_nav() global. #}
 {% set nav = nav or public_nav() %}
+<link rel="stylesheet" href="/static/css/product-navigation.css?v=1">
 <a class="sbh-skip" href="#main">Skip to content</a>
 
 <header class="sbh" id="sb-header" data-scrolled="false">
@@ -44,6 +45,13 @@
       </button>
     </div>
   </div>
+  <nav class="sbh-applications" aria-label="Applications">
+    <div class="sbh-applications-inner">
+      {% for link in nav.applications %}
+      <a class="sbh-application" href="{{ link.href }}">{{ link.label }}</a>
+      {% endfor %}
+    </div>
+  </nav>
 </header>
 
 {# The drawer lives outside the sticky bar so its backdrop can cover the
@@ -61,6 +69,9 @@
         </svg>
       </button>
     </div>
+    {% for link in nav.applications %}
+    <a class="sbh-drawer-link sbh-drawer-application" href="{{ link.href }}">{{ link.label }}</a>
+    {% endfor %}
     {% for link in nav.drawer_links %}
     <a class="sbh-drawer-link" href="{{ link.href }}">{{ link.label }}</a>
     {% endfor %}
