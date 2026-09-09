@@ -96,3 +96,17 @@ def test_listening_session_cannot_save_and_session_ids_do_not_grant_access(tmp_p
     assert live(guest,gh,pid,sid).status_code==403
     assert save(guest,gh,p,1,sid).status_code==409
     assert owner.get('/song-builder/api/projects/'+pid).json['revision']==1
+
+
+def test_new_audio_on_another_track_does_not_block_guest_merge(tmp_path):
+    import io
+    from test_room_workflow import wav_bytes
+    app,owner,h,guest,gh,p,a,b=pair(tmp_path)
+    asset=owner.post('/song-builder/api/assets',headers=h,data={'file':(io.BytesIO(wav_bytes()),'new-bass.wav')}).json['asset']
+    replacement=copy.deepcopy(p);replacement['clips'][0]['assetId']=asset['id']
+    assert save(owner,h,replacement,2,a).status_code==200
+    guest_edit=copy.deepcopy(p);guest_edit['tracks'][1]['gainDb']=-3
+    response=save(guest,gh,guest_edit,2,b)
+    assert response.status_code==200
+    assert response.json['project']['clips'][0]['assetId']==asset['id']
+    assert response.json['project']['tracks'][1]['gainDb']==-3

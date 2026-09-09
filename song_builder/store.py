@@ -151,6 +151,10 @@ class Store:
                     metadata=db.execute('SELECT data FROM room_workflow WHERE owner=? AND project_id=?',(owner,value['id'])).fetchone()
                     if metadata: enforce_clip_protections(json.loads(metadata['data']),json.loads(row['data']),value)
                 if access:
+                    allowed={c['assetId'] for c in json.loads(row['data'])['clips']}
+                    allowed.update(r[0] for r in db.execute('SELECT asset_id FROM room_guest_uploads WHERE member_id=?',(access['id'],)))
+                    if not {c['assetId'] for c in value['clips']}.issubset(allowed):
+                        raise SongError('room_permission','Only this project’s audio and your uploads may be used.',403)
                     old_sections=json.loads(row['data'])['sections']
                     new_sections={s['id']:s for s in value['sections']}
                     if any(s['locked'] and not new_sections.get(s['id'],{}).get('locked') for s in old_sections):

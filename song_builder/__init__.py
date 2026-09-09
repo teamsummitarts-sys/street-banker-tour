@@ -248,9 +248,6 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
         if value['id'] != project_id:
             v.invalid('The project ID must match this song.')
         member=getattr(g,'room_member',None)
-        if member:
-            from .collaboration import allowed_assets
-            allowed_assets(service,member,[c['assetId'] for c in value['clips']])
         return jsonify(project_json(service.store.save_project(g.song_builder_account, value, expected, access=member, live_session=payload.get('liveSession'))))
 
     @bp.delete('/api/projects/<project_id>')
