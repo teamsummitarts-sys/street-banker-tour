@@ -49,6 +49,26 @@ def test_reach_workspace_keeps_its_access_gate(monkeypatch):
     assert b"Campaign" in unlocked.data
 
 
+
+def test_reach_today_and_campaign_hub_present_clear_workflow(monkeypatch):
+    client = _client(monkeypatch)
+    client.post("/reach/unlock", data={"key": "test-reach-key"})
+
+    today = client.get("/reach")
+    assert today.status_code == 200
+    assert b"Today / Operations" in today.data
+    assert b"Your next move" in today.data
+    assert b"Evidence stays attached" in today.data
+    assert b"Human approval required" in today.data
+    assert b"reach-wordmark.svg" in today.data
+
+    hub = client.get("/reach/campaigns")
+    assert hub.status_code == 200
+    assert b"Campaign Hub" in hub.data
+    assert b"No campaigns yet. Start with one release." in hub.data
+    assert b"Start a campaign" in hub.data
+
+
 def test_reach_database_is_separate_from_v2_database(monkeypatch):
     client = _client(monkeypatch)
     client.post("/reach/unlock", data={"key": "test-reach-key"})

@@ -240,10 +240,10 @@
 {% block content %}
 {% set ep = request.endpoint or '' %}
 {% set primary_nav = [
-  ('reach.index', 'Dashboard', ('reach.index',)),
-  ('reach.all_opportunities', 'Opportunities', ('reach.all_opportunities',)),
-  ('reach.campaigns_list', 'Campaigns', ('reach.campaigns_list', 'reach.new_campaign')),
-  ('reach.all_responses', 'Responses', ('reach.all_responses',)),
+  ('reach.index', 'Today', ('reach.index',)),
+  ('reach.all_opportunities', 'Radar', ('reach.all_opportunities',)),
+  ('reach.campaigns_list', 'Campaign Hub', ('reach.campaigns_list', 'reach.new_campaign')),
+  ('reach.all_responses', 'Inbox', ('reach.all_responses',)),
   ('reach.contacts_view', 'Contacts', ('reach.contacts_view',)),
 ] %}
 
@@ -258,11 +258,8 @@
 
 <header class="sticky top-0 z-40 border-b border-white/[0.08] bg-[#090909]/95 backdrop-blur">
   <div class="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
-    <a href="{{ url_for('reach.index') }}" class="flex items-center gap-2" aria-label="REACH dashboard">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="h-5 w-5 text-amber-500" aria-hidden="true">
-        <circle cx="10" cy="10" r="2"/><path d="M5.8 5.8a6 6 0 000 8.4M14.2 5.8a6 6 0 010 8.4M3 3a10 10 0 000 14M17 3a10 10 0 010 14"/>
-      </svg>
-      <span class="text-sm font-bold tracking-tight">REACH</span>
+    <a href="{{ url_for('reach.index') }}" class="flex items-center" aria-label="REACH Today">
+      <img src="{{ url_for('reach.static', filename='reach-wordmark.svg') }}" alt="REACH" class="h-5 w-auto sm:h-6">
     </a>
 
     {% if campaign_id %}
@@ -409,10 +406,10 @@
 <nav aria-label="Primary" class="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0d0d0f]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
   <div class="grid grid-cols-5">
     {% set mobile_nav = [
-      ('reach.index', 'Home', 'M3 10.5L12 3l9 7.5M5 9.5V21h14V9.5'),
-      ('reach.all_opportunities', 'Finds', 'M12 3l2.4 6.1L21 12l-6.6 2.9L12 21l-2.4-6.1L3 12l6.6-2.9z'),
+      ('reach.index', 'Today', 'M3 10.5L12 3l9 7.5M5 9.5V21h14V9.5'),
+      ('reach.all_opportunities', 'Radar', 'M12 3l2.4 6.1L21 12l-6.6 2.9L12 21l-2.4-6.1L3 12l6.6-2.9z'),
       ('reach.campaigns_list', 'Campaigns', 'M3 11l14-5v12L3 13v-2zm14 1h4M7 14v5h3v-4'),
-      ('reach.all_responses', 'Responses', 'M4 6h16v12H4zM4 7l8 6 8-6'),
+      ('reach.all_responses', 'Inbox', 'M4 6h16v12H4zM4 7l8 6 8-6'),
       ('reach.advanced', 'More', 'M5 12h.01M12 12h.01M19 12h.01'),
     ] %}
     {% for endpoint, label, icon in mobile_nav %}

@@ -1,0 +1,40 @@
+name: REACH checks
+
+on:
+  pull_request:
+    paths:
+      - "reach/**"
+      - "tests/test_reach_v2.py"
+      - "app.py"
+      - "requirements.txt"
+      - ".github/workflows/reach-check.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "reach/**"
+      - "tests/test_reach_v2.py"
+      - "app.py"
+      - "requirements.txt"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APP_ENV: development
+      DATABASE_PATH: /tmp/streetbanker-v2-ci.db
+      REACH_DB_PATH: /tmp/reach-v2-ci.db
+      REACH_ACCESS_KEY: test-reach-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m compileall -q reach
+      - run: python -m pytest -q tests/test_reach_v2.py
