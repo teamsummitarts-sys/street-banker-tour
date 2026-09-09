@@ -8,7 +8,7 @@
   align-items: center;
 }
 
-.sbh-app-menu-panel {
+.sbh-applications {
   position: absolute;
   top: calc(100% + 8px);
   left: -18px;
@@ -25,8 +25,8 @@
   z-index: 75;
 }
 
-.sbh-app-menu:hover .sbh-app-menu-panel,
-.sbh-app-menu:focus-within .sbh-app-menu-panel {
+.sbh-app-menu:hover .sbh-applications,
+.sbh-app-menu:focus-within .sbh-applications {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
@@ -53,10 +53,10 @@
 }
 
 @media (max-width: 1023px) {
-  .sbh-app-menu-panel { display: none; }
+  .sbh-applications { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sbh-app-menu-panel,
+  .sbh-applications,
   .sbh-app-menu-link { transition: none; }
 }
