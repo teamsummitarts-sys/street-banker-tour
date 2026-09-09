@@ -124,9 +124,13 @@ class Store:
         with self.connection() as db:
             return self._project_result(db, self._owned_project(db, owner, project_id))
 
-    def save_project(self, owner, value, expected=None):
+    def save_project(self, owner, value, expected=None, access=None):
         now = time.time()
         with self.connection(write=True) as db:
+            if access:
+                member=db.execute("SELECT * FROM room_members WHERE id=? AND project_id=? AND role='editor' AND revoked=0 AND expires>?", (access['id'],value['id'],now)).fetchone()
+                if member is None or expected is None:
+                    raise SongError('room_permission','Your editing invitation is no longer active.',403)
             if expected is None:
                 if db.execute('SELECT id FROM projects WHERE id=?', (value['id'],)).fetchone():
                     raise SongError('project_exists', 'Choose a new song ID or open the existing song.', 409)
@@ -139,6 +143,11 @@ class Store:
                 row = self._owned_project(db, owner, value['id'])
                 if row['revision'] != expected:
                     conflict()
+                if access:
+                    old_sections=json.loads(row['data'])['sections']
+                    new_sections={s['id']:s for s in value['sections']}
+                    if any(s['locked'] and not new_sections.get(s['id'],{}).get('locked') for s in old_sections):
+                        raise SongError('room_permission','Only the owner can unlock approved sections.',403)
                 enforce_locks(json.loads(row['data']), value)
                 self._assets(db, owner, value)
                 db.execute('UPDATE projects SET title=?,data=?,revision=revision+1,updated_at=? WHERE id=? AND owner=?',
@@ -146,6 +155,8 @@ class Store:
                 db.execute('DELETE FROM project_assets WHERE project_id=?', (value['id'],))
             for asset_id in sorted({c['assetId'] for c in value['clips']}):
                 db.execute('INSERT INTO project_assets VALUES(?,?)', (value['id'], asset_id))
+            if access:
+                db.execute('INSERT INTO room_contributions(project_id,member_id,revision,created) VALUES(?,?,?,?)',(value['id'],access['id'],expected+1,now))
             return self._project_result(db, self._owned_project(db, owner, value['id']))
 
     def delete_project(self, owner, project_id, expected):

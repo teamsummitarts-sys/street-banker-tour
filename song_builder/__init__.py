@@ -105,9 +105,9 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
 
     def csrf():
         saved = session.get('song_builder_csrf')
-        if (not isinstance(saved, dict) or saved.get('account') != g.song_builder_account
+        if (not isinstance(saved, dict) or saved.get('account') != getattr(g, 'song_builder_csrf_account', g.song_builder_account)
                 or not isinstance(saved.get('token'), str)):
-            saved = {'account': g.song_builder_account, 'token': secrets.token_urlsafe(32)}
+            saved = {'account': getattr(g, 'song_builder_csrf_account', g.song_builder_account), 'token': secrets.token_urlsafe(32)}
             session['song_builder_csrf'] = saved
         return saved['token']
 
@@ -115,16 +115,25 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
     def require_account():
         if not enabled(app.config.get('SONG_BUILDER_ENABLED')):
             raise v.SongError('disabled', 'Song Builder is unavailable.', 404)
+        from .collaboration import PUBLIC_ENDPOINTS, guest_member, guard_guest
+        if request.endpoint in PUBLIC_ENDPOINTS:
+            return None
         user = current_user()
         identity = user.get('id') if isinstance(user, dict) else None
         if (type(identity) not in (str, int) or not str(identity).strip()
                 or len(str(identity)) > 128 or (type(identity) is int and identity <= 0)):
-            raise v.SongError('sign_in', 'Sign in to open Song Builder.', 401)
+            member = guest_member(app)
+            if member is None:
+                raise v.SongError('sign_in', 'Sign in or open a valid Room invitation.', 401)
+            guard_guest(service, member)
+            g.room_member = member
+            identity = member['owner']
+            g.song_builder_csrf_account = 'guest:' + member['id']
         g.song_builder_account = str(identity)
         if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
             saved = session.get('song_builder_csrf', {})
             token = request.headers.get('X-Song-Builder-CSRF', '')
-            if (not isinstance(saved, dict) or saved.get('account') != g.song_builder_account
+            if (not isinstance(saved, dict) or saved.get('account') != getattr(g, 'song_builder_csrf_account', g.song_builder_account)
                     or not isinstance(saved.get('token'), str) or not token.isascii() or len(token) > 128
                     or not secrets.compare_digest(saved['token'], token)
                     or request.headers.get('Sec-Fetch-Site') == 'cross-site'
@@ -202,16 +211,22 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
 
     @bp.get('/api/capabilities')
     def capabilities():
-        return jsonify(schemaVersion=1, generation={'configured': service.configured(),
-            'separationConfigured': service.configured(), 'provider': 'elevenlabs', 'model': provider.MODEL,
-            'maxSeconds': 120, 'unitPriceUsd': None}, storage=service.store.storage(g.song_builder_account),
+        member=getattr(g,'room_member',None)
+        access={k:member[k] for k in ('role','name','expires')} if member else {'role':'owner'}
+        storage=service.store.storage(g.song_builder_account)
+        if member: storage={'durable':storage['durable']}
+        return jsonify(schemaVersion=1, access=access, generation={'configured': service.configured() and not getattr(g,'room_member',None),
+            'separationConfigured': service.configured() and not getattr(g,'room_member',None), 'provider': 'elevenlabs', 'model': provider.MODEL,
+            'maxSeconds': 120, 'unitPriceUsd': None}, storage=storage,
             limits={'maxUploadBytes': v.MAX_UPLOAD_BYTES, 'maxProjects': v.MAX_PROJECTS,
                     'maxAssets': v.MAX_ASSETS, 'maxDailyJobs': MAX_DAILY_JOBS,
                     'maxServiceDailyJobs': MAX_SERVICE_DAILY_JOBS, 'maxConcurrentJobs': MAX_CONCURRENT_JOBS})
 
     @bp.get('/api/projects')
     def list_projects():
-        return jsonify(projects=service.store.list_projects(g.song_builder_account))
+        projects=service.store.list_projects(g.song_builder_account)
+        member=getattr(g,'room_member',None)
+        return jsonify(projects=[p for p in projects if not member or p['id']==member['project_id']])
 
     @bp.post('/api/projects')
     def create_project():
@@ -230,7 +245,11 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
         value, expected = v.project(payload['project']), v.revision(payload['expectedRevision'])
         if value['id'] != project_id:
             v.invalid('The project ID must match this song.')
-        return jsonify(project_json(service.store.save_project(g.song_builder_account, value, expected)))
+        member=getattr(g,'room_member',None)
+        if member:
+            from .collaboration import allowed_assets
+            allowed_assets(service,member,[c['assetId'] for c in value['clips']])
+        return jsonify(project_json(service.store.save_project(g.song_builder_account, value, expected, access=member)))
 
     @bp.delete('/api/projects/<project_id>')
     def delete_project(project_id):
@@ -256,6 +275,9 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
         duration = v.wav_info(data)
         row = service.store.add_asset(g.song_builder_account,
             {'name': v.safe_name(upload.filename), 'mime': 'audio/wav', 'data': data, 'duration': duration})
+        if getattr(g,'room_member',None):
+            with service.store.connection(write=True) as db:
+                db.execute('INSERT INTO room_guest_uploads VALUES(?,?)',(g.room_member['id'],row['id']))
         return jsonify(asset=asset_json(row)), 201
 
     @bp.get('/api/assets/<asset_id>/audio')
@@ -292,6 +314,8 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
     def list_jobs():
         project_id = request.args.get('projectId')
         v.identifier(project_id)
+        if getattr(g,'room_member',None):
+            return jsonify(jobs=[])
         return jsonify(jobs=[job_json(row) for row in service.store.list_jobs(g.song_builder_account, project_id)])
 
     @bp.get('/api/jobs/<job_id>')
@@ -300,6 +324,8 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
         return jsonify(job=job_json(service.store.get_job(g.song_builder_account, job_id)))
 
     if enabled(app.config.get('SONG_BUILDER_ENABLED')):
+        from .collaboration import register as register_collaboration
+        register_collaboration(bp, app, service, csrf, body)
         from .advanced import register as register_advanced
         from .workflow_ui import register as register_workflow_ui
         workflow = register_advanced(bp, service, body)

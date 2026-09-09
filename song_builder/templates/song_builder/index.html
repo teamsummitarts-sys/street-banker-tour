@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/song-builder.css">
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/room.css?v=studio-03">
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/unified-console.css?v=1">
+  <link rel="stylesheet" href="{{ builder_assets_url }}ui/collaboration.css">
   <script type="module" src="{{ builder_assets_url }}ui/controller.mjs"></script>
 </head>
 <body class="song-builder room-console">
@@ -47,6 +48,8 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         <p class="hint">A backup includes your arrangement and audio. It can move with you to another The Room.</p>
       </div></details>
     </section>
+    <section id="producer-note" class="producer-note" hidden aria-label="Producer recommendation"></section>
+    <details id="collaboration" class="collaboration-desk"><summary>Invite &amp; collaborators</summary><p id="collaboration-status" role="status">Open a saved project to manage its collaborators.</p><div id="invite-fields"><div class="collaboration-fields"><label>Invitation for<input id="invite-name" maxlength="80" placeholder="Collaborator name"></label><label>Access<select id="invite-role"><option value="viewer">Viewer · listen and export</option><option value="editor">Editor · arrange and save</option></select></label><button id="create-invite" type="button">Create invitation link</button></div><label>Personal invitation link<textarea id="invite-link" class="invite-output" readonly hidden aria-label="Personal invitation link"></textarea></label><p>Editors can change this project’s unprotected parts. Approved section locks and clip protections remain enforced. Shared editing uses revision checks; it is not live simultaneous playback.</p></div><div id="collaborator-list"></div></details>
     <div class="workspace">
       <div class="arrangement">
         <section aria-labelledby="arrangement-heading" class="section-deck">

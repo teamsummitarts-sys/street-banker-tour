@@ -1,3 +1,5 @@
+import {openProducerRecommendation} from './producer-handoff.mjs';
+import {bindCollaboration} from './collaboration.mjs';
 import {bindConsole} from './console.mjs';
 import * as P from '../core/project.mjs';
 import { AudioEngine, createDemoAudio } from '../core/audio.mjs';
@@ -10,6 +12,7 @@ import { RACK_DEFAULT, sameRack } from '../core/rack.mjs';
 const $ = id => document.getElementById(id);
 const base = document.querySelector('meta[name="song-builder-base"]').content.replace(/\/$/, '');
 const csrf = document.querySelector('meta[name="song-builder-csrf"]').content;
+const entryParams=new URLSearchParams(location.search);
 const engine = new AudioEngine();
 const studio = bindConsole(document);
 const pendingRequests = new PendingRequests(sessionStorage, `${base}:${csrf}`);
@@ -42,6 +45,7 @@ async function run(action) { if(state.busy)return; state.busy++;renderDisabled()
 function stop(except=null) { for(const audio of $('jobs').querySelectorAll('audio'))if(audio!==except)audio.pause();engine.stop();state.playRequest++;state.playing=false;state.previewEnd=null;$('play-song').setAttribute('aria-pressed','false'); if(state.audition){state.audition=null;$('seek').value=0;document.body.classList.remove('auditioning');$('selected-mixer').hidden=false;renderRack();$('instrument-heading').textContent=state.project.tracks.find(t=>t.id===state.trackId)?.name||'Select an instrument';} }
 function markDirty() { state.dirty=true;state.sequence++;$('save-state').textContent='Unsaved changes';clearTimeout(state.saveTimer);state.saveTimer=setTimeout(()=>save().catch(failure),800); }
 function commit(project,{redraw=true,history=true,resume=false,rackTrackId=null}={}) {
+  if(state.access?.role==='viewer'){notify('Viewer access: listening and exports only.',true);return;}
   const wasPlaying=(resume||rackTrackId)&&state.playing,from=engine.position(),sectionOnly=state.sectionOnly;
   const next=P.validateProject(project);
   const track=rackTrackId&&next.tracks.find(t=>t.id===rackTrackId);
@@ -118,7 +122,7 @@ function renderSections(){
 function snapDelta(value){const mode=$('snap-grid').value;if(mode==='free')return Math.round(value*100)/100;const beat=60/state.project.tempo,unit=mode==='bar'?beat*4:beat;return Math.round(value/unit)*unit;}
 function bindTrimHandle(handle,clip,edge,clipNode,section){
   handle.addEventListener('pointerdown',event=>{
-    if(selectedSection().locked)return;event.preventDefault();event.stopPropagation();handle.setPointerCapture(event.pointerId);
+    if(selectedSection().locked||state.access?.role==='viewer')return;event.preventDefault();event.stopPropagation();handle.setPointerCapture(event.pointerId);
     const startX=event.clientX,start={...clip},laneWidth=clipNode.parentElement.getBoundingClientRect().width;let candidate=start;
     const move=e=>{const raw=(e.clientX-startX)/laneWidth*section.duration,delta=snapDelta(raw),audio=engine.buffer(start.assetId);
       if(edge==='start'){const applied=Math.max(-Math.min(start.offset,start.sourceOffset),Math.min(start.duration-.1,delta));candidate={...start,offset:start.offset+applied,sourceOffset:start.sourceOffset+applied,duration:start.duration-applied};}
@@ -131,7 +135,7 @@ function bindTrimHandle(handle,clip,edge,clipNode,section){
 }
 function bindClipMove(surface,clip,clipNode,section){
   surface.addEventListener('pointerdown',event=>{
-    if(selectedSection().locked)return;event.preventDefault();event.stopPropagation();surface.setPointerCapture(event.pointerId);
+    if(selectedSection().locked||state.access?.role==='viewer')return;event.preventDefault();event.stopPropagation();surface.setPointerCapture(event.pointerId);
     const startX=event.clientX,start=clip.offset,laneWidth=clipNode.parentElement.getBoundingClientRect().width;let offset=start,moved=false;
     const move=e=>{const delta=snapDelta((e.clientX-startX)/laneWidth*section.duration);offset=Math.max(0,Math.min(section.duration-clip.duration,start+delta));moved=moved||Math.abs(e.clientX-startX)>5;clipNode.style.left=`${offset/section.duration*100}%`;};
     const clean=()=>{surface.removeEventListener('pointermove',move);surface.removeEventListener('pointerup',finish);surface.removeEventListener('pointercancel',cancel);};
@@ -228,6 +232,15 @@ function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boole
   const i=state.project?.sections.findIndex(s=>s.id===state.sectionId);$('move-earlier').disabled=busy||recording||i===0;$('move-later').disabled=busy||recording||i===state.project?.sections.length-1;
   if(state.project?.sections.length===1)$('remove-section').disabled=true;
   $('undo-edit').disabled=busy||recording||!state.history.length;$('redo-edit').disabled=busy||recording||!state.future.length;
+  const guest=state.access&&state.access.role!=='owner';
+  if(guest){
+    for(const id of ['new-project','save-version','import-project','load-demo','start-ai','prepare-section-test','recover-copy','lock-section','create-invite'])if($(id))$(id).disabled=true;
+    for(const a of document.querySelectorAll('a[href]'))if(/\/(analyze|workflow)(\?|$)/.test(a.getAttribute('href')))a.hidden=true;
+    if(state.access.role==='viewer'){
+      const keep=new Set(['play-song','stop-playback','play-section','loop-section','seek','project-list','export-project','export-mix','export-section','export-track','export-30','export-15','dismiss-download','reload-saved']);
+      for(const control of document.querySelectorAll('button,input,select,textarea'))if(!keep.has(control.id)&&!control.matches('.section-button,.track-name,.clip,.room-project-toggle')&&!control.closest('#collaboration'))control.disabled=true;
+    }
+  }
 }
 function quickTrim(action){const c=selectedClip();if(!c)return;const audio=engine.buffer(c.assetId),step=.5;let patch={};
   if(action==='trim-start'){const amount=Math.min(step,c.duration-.1);patch={sourceOffset:c.sourceOffset+amount,offset:c.offset+amount,duration:c.duration-amount};}
@@ -382,13 +395,16 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();if(
 
 async function boot(){state.busy++;try{
   state.capabilities=await api('/api/capabilities');
+  state.access=state.capabilities.access||{role:'owner'};document.body.dataset.guestRole=state.access.role;
   const gen=state.capabilities.generation;
   $('generation-availability').textContent=gen.configured?'Create a new section mix with ElevenLabs Music. Exact voice and musical continuity need listening review.':'Music generation is not connected. You can arrange, record and mix your own audio now.';
   $('generation-cost').textContent=gen.configured?'Generation and stem separation use provider credits. Exact dollar cost is unavailable here. Each click submits one request; failed or abandoned requests may still be billed.':'';
   $('storage-note').textContent=state.capabilities.storage?.durable?'Saved to persistent storage. Export a project backup anytime.':'Private account projects on this server. Storage may reset on redeploy; download a project backup.';
   if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)$('record-status').textContent='Recording is unavailable in this browser. Import audio instead.';
-  const list=await api('/api/projects');const requested=new URLSearchParams(location.search).get('project');const first=list.projects.find(p=>p.id===requested)||list.projects[0];
+  const list=await api('/api/projects');const requested=entryParams.get('project');const first=list.projects.find(p=>p.id===requested)||list.projects[0];
   if(first)await loadProject(first.id,{skipSave:true});else await startNew();await listProjects();
+  if(entryParams.get('report')&&state.access.role==='owner'){try{await openProducerRecommendation({document,params:entryParams,api,state,base,loadProject,save,play,notify,run,render,newId:P.newId});}catch(e){notify(e.message,true);}}
   state.polling=setInterval(()=>{if(!document.hidden&&!state.busy)pollJobs();},5000);clock();
  }catch(e){failure(e);$('save-state').textContent='Workspace unavailable';}finally{state.busy--;renderDisabled();}}
+const collaborators=bindCollaboration({document,api,state,save,loadProject,notify,run});
 boot();

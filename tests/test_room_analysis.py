@@ -203,7 +203,7 @@ def test_analysis_page_preserves_private_host_policy(tmp_path):
     _,client,identity,h=fixture(tmp_path)
     r=client.get('/song-builder/analyze')
     assert r.status_code==200
-    assert b'Assign &amp; direct' in r.data
+    assert b'Analysis direction' in r.data
     assert r.headers['Cache-Control']=='private, no-store'
     assert "connect-src 'self'" in r.headers['Content-Security-Policy']
     identity.clear()
