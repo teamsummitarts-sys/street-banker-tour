@@ -152,15 +152,24 @@ export function createPatchLibrary({getRecipe, getRevision, applyRecipe, prepare
       status('Saving a private settings snapshot…');
       const data = await request(path, 'POST', body, signal);
       if (!active()) return;
-      const patch = checkedPatch(data.patch);
-      const accepted = patch.versions.find(v => v.version === patch.headVersion);
+      const acknowledged = checkedPatch(data.patch);
+      const savedVersion = acknowledged.headVersion;
+
+      // Do not trust only the write response. Read the patch back through the
+      // owner-scoped API before reporting a durable save to the musician.
+      status('Save received. Verifying it in private storage…');
+      const verifiedData = await request(`/${acknowledged.id}`, 'GET', null, signal);
+      if (!active()) return;
+      const patch = checkedPatch(verifiedData.patch);
+      const accepted = patch.versions.find(v => v.version === savedVersion);
       if (!accepted || accepted.name !== name || JSON.stringify(validateRecipe(accepted.recipe)) !== JSON.stringify(recipe)) {
-        throw Error('The save acknowledgment did not match your settings. Refresh the library to check it; your working settings are retained.');
+        throw Error('The saved version could not be verified in private storage. Refresh the library before retrying; your working settings are retained.');
       }
+
       // Mark the submitted snapshot, never newer edits made during the request.
-      select(patch);
-      saved = {name, recipe: copy(recipe), version: patch.headVersion};
-      status(`Saved “${name}” as version ${patch.headVersion}. ${revision !== getRevision() || nameRevision !== edit ? 'Your newer edits are not saved yet.' : 'Audio stays on this device; keep your source separately.'}`);
+      select(patch, savedVersion);
+      saved = {name, recipe: copy(recipe), version: savedVersion};
+      status(`Saved and verified “${name}” as version ${savedVersion}. ${revision !== getRevision() || nameRevision !== edit ? 'Your newer edits are not saved yet.' : 'Audio stays on this device; keep your source separately.'}`);
     });
   }
   $('save-patch').addEventListener('click', () => save(false));
