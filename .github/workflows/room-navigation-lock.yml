@@ -1,0 +1,149 @@
+name: Room Navigation Lock
+
+on:
+  push:
+    paths:
+      - .github/workflows/room-navigation-lock.yml
+
+permissions:
+  contents: write
+
+jobs:
+  lock-room-navigation:
+    if: ${{ !contains(github.event.head_commit.message, '[room-nav-lock]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add Room tool navigation and preservation manifest
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'Expected block not found in {path}')
+              p.write_text(text.replace(old, new, 1))
+
+          index = 'song_builder/templates/song_builder/index.html'
+          analyze = 'song_builder/templates/song_builder/analyze.html'
+          workflow = 'song_builder/templates/song_builder/workflow.html'
+
+          replace_once(index, '''  <header class="site-bar">
+    <a class="brand" href="{{ builder_base_url }}/" aria-label="The Room projects"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></span></a>
+    <a class="back-link" href="{{ builder_base_url }}/analyze" target="_blank" rel="noopener">Analyze &amp; Improve ↗</a>
+    <a class="back-link" href="{{ return_url }}">Back to Noise Lab</a>
+  </header>''', '''  <header class="site-bar">
+    <a class="brand" href="{{ builder_base_url }}/" aria-label="The Room projects"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></span></a>
+    <nav aria-label="The Room tools" style="display:flex;align-items:center;justify-content:flex-end;gap:.45rem;flex:1;flex-wrap:wrap">
+      <a class="back-link" href="{{ builder_base_url }}/">Studio</a>
+      <a class="back-link" href="{{ builder_base_url }}/analyze#sound-dna">Sound DNA</a>
+      <a class="back-link" href="{{ builder_base_url }}/analyze#improve-track">Improve My Track</a>
+      <a class="back-link" href="{{ builder_base_url }}/analyze#reports-heading">Tempo &amp; Key Lab</a>
+      <a class="back-link" href="{{ builder_base_url }}/workflow">Pro Workflow</a>
+      <a class="back-link" href="#session-team">Collaborate + Listen</a>
+    </nav>
+    <a class="back-link" href="{{ return_url }}">Noise Lab</a>
+  </header>''')
+
+          replace_once(index, '</body>', '''  <script>
+    if (window.location.hash === '#session-team') {
+      const panel = document.getElementById('session-team');
+      if (panel) panel.open = true;
+    }
+  </script>
+</body>''')
+
+          replace_once(analyze, '''<header class="site-bar">
+  <a href="{{ builder_base_url }}/" class="wordmark"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker" width="1536" height="1024"></span></a>
+  <span class="header-title">Analyze &amp; Improve</span>
+  <a href="{{ builder_base_url }}/" class="editor-link">Song editor <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
+</header>''', '''<header class="site-bar">
+  <a href="{{ builder_base_url }}/" class="wordmark"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker" width="1536" height="1024"></span></a>
+  <span class="header-title">Analyze &amp; Improve</span>
+  <nav aria-label="The Room tools" style="display:flex;align-items:center;justify-content:flex-end;gap:.45rem;flex:1;flex-wrap:wrap">
+    <a href="{{ builder_base_url }}/" class="editor-link">Studio</a>
+    <a href="{{ builder_base_url }}/analyze#sound-dna" class="editor-link">Sound DNA</a>
+    <a href="{{ builder_base_url }}/analyze#improve-track" class="editor-link">Improve My Track</a>
+    <a href="{{ builder_base_url }}/analyze#reports-heading" class="editor-link">Tempo &amp; Key Lab</a>
+    <a href="{{ builder_base_url }}/workflow" class="editor-link">Pro Workflow</a>
+    <a href="{{ builder_base_url }}/#session-team" class="editor-link">Collaborate + Listen</a>
+  </nav>
+</header>''')
+
+          replace_once(analyze,
+              '<label class="check"><input type="radio" name="mode" value="dna" checked>',
+              '<label id="sound-dna" class="check"><input type="radio" name="mode" value="dna" checked>')
+          replace_once(analyze,
+              '<label class="check"><input type="radio" name="mode" value="improve">',
+              '<label id="improve-track" class="check"><input type="radio" name="mode" value="improve">')
+          replace_once(analyze, '</body>', '''<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const mode = window.location.hash === '#improve-track' ? 'improve' : window.location.hash === '#sound-dna' ? 'dna' : null;
+    if (!mode) return;
+    const input = document.querySelector(`[name="mode"][value="${mode}"]`);
+    if (input) {
+      input.checked = true;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
+</script>
+</body>''')
+
+          replace_once(workflow, '''  <header class="topbar">
+    <div>
+      <a class="workflow-brand" href="{{ builder_base_url }}/"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></a>
+      <h1>Pro Workflow</h1>
+    </div>
+    <a class="back-link" href="{{ builder_base_url }}/">Back to editor</a>
+  </header>''', '''  <header class="topbar">
+    <div>
+      <a class="workflow-brand" href="{{ builder_base_url }}/"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></a>
+      <h1>Pro Workflow</h1>
+    </div>
+    <nav aria-label="The Room tools" style="display:flex;align-items:center;justify-content:flex-end;gap:.45rem;flex-wrap:wrap">
+      <a class="back-link" href="{{ builder_base_url }}/">Studio</a>
+      <a class="back-link" href="{{ builder_base_url }}/analyze#sound-dna">Sound DNA</a>
+      <a class="back-link" href="{{ builder_base_url }}/analyze#improve-track">Improve My Track</a>
+      <a class="back-link" href="{{ builder_base_url }}/analyze#reports-heading">Tempo &amp; Key Lab</a>
+      <a class="back-link" href="{{ builder_base_url }}/workflow">Pro Workflow</a>
+      <a class="back-link" href="{{ builder_base_url }}/#session-team">Collaborate + Listen</a>
+    </nav>
+  </header>''')
+
+          manifest = Path('docs/song-builder/PRESERVATION-20260909-NAV-LOCK.md')
+          manifest.write_text('''# The Room preservation checkpoint — 2026-09-09\n\nThis checkpoint was created before further Room product work.\n\n## Preserved pre-navigation state\n\n- Branch: `preserve-room-2026-09-09-before-nav-lock`\n- Commit: `1a09f437f9c932e7fef36cf17b1d21b0b66e097e`\n\n## Locked Room navigation\n\nThe Room now keeps these existing surfaces visibly reachable without duplicating or moving their underlying logic:\n\n- Studio / song editor\n- Sound DNA (inside Analyze & Improve)\n- Improve My Track (inside Analyze & Improve)\n- Tempo & Key Lab (inside analysis results)\n- Pro Workflow (track groups, section scenes, takes/comparison, clip protection)\n- Collaborate + Listen (collaboration, hosted listening, timestamped feedback)\n\n## Preservation rule\n\nThis change is navigation-only. It must not replace or redesign Room audio, analysis, project persistence, collaboration, listening, workflow metadata, Noise Lab, Reach, database, or storage behavior. The git commit containing this file is the post-navigation locked state and should be preserved as a rollback checkpoint before new feature work.\n''')
+
+          # Safety assertions: all intended destinations exist in the resulting markup.
+          required = {
+              index: ['Sound DNA', 'Improve My Track', 'Tempo &amp; Key Lab', 'Pro Workflow', 'Collaborate + Listen'],
+              analyze: ['id="sound-dna"', 'id="improve-track"', 'Pro Workflow', 'Collaborate + Listen'],
+              workflow: ['Sound DNA', 'Improve My Track', 'Tempo &amp; Key Lab', 'Collaborate + Listen'],
+          }
+          for path, tokens in required.items():
+              text = Path(path).read_text()
+              missing = [token for token in tokens if token not in text]
+              if missing:
+                  raise SystemExit(f'{path} missing {missing}')
+          PY
+
+      - name: Commit locked Room navigation
+        shell: bash
+        run: |
+          git config user.name "street-banker-nav-lock"
+          git config user.email "actions@users.noreply.github.com"
+          git add song_builder/templates/song_builder/index.html song_builder/templates/song_builder/analyze.html song_builder/templates/song_builder/workflow.html docs/song-builder/PRESERVATION-20260909-NAV-LOCK.md
+          git commit -m "Lock Room navigation and preservation checkpoint [room-nav-lock]"
+          git push origin HEAD:main
+
+      - name: Remove temporary workflow
+        shell: bash
+        run: |
+          git rm .github/workflows/room-navigation-lock.yml
+          git commit -m "Remove temporary Room navigation workflow [room-nav-lock]"
+          git push origin HEAD:main
