@@ -6,6 +6,8 @@ on:
       - "song_builder/**"
       - "tests/test_song_builder*.py"
       - "tests/test_room_workflow.py"
+      - "tests/test_room_live.py"
+      - "tests/test_room_collaboration.py"
       - "tests/test_room_phase1_design.py"
       - "tests/song_builder/**"
       - ".github/workflows/song-builder-check.yml"
@@ -38,6 +40,8 @@ jobs:
         run: pytest -q tests/test_song_builder_demo.py
       - name: Pro workflow persistence and protection
         run: pytest -q tests/test_room_workflow.py
+      - name: Shared Room permissions and concurrent editing
+        run: pytest -q tests/test_room_collaboration.py tests/test_room_live.py
       - name: Phase 1 presentation routing
         run: pytest -q tests/test_room_phase1_design.py
       - name: Browser core modules

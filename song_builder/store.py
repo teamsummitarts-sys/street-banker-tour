@@ -124,7 +124,7 @@ class Store:
         with self.connection() as db:
             return self._project_result(db, self._owned_project(db, owner, project_id))
 
-    def save_project(self, owner, value, expected=None, access=None):
+    def save_project(self, owner, value, expected=None, access=None, live_session=None):
         now = time.time()
         with self.connection(write=True) as db:
             if access:
@@ -141,9 +141,20 @@ class Store:
                            (value['id'], owner, value['title'], json.dumps(value), 1, now, now))
             else:
                 row = self._owned_project(db, owner, value['id'])
-                if row['revision'] != expected:
+                if getattr(self,'live_enabled',False):
+                    from .live import prepare_save
+                    value,expected=prepare_save(db,owner,value,expected,json.loads(row['data']),row['revision'],access,live_session)
+                elif row['revision'] != expected:
                     conflict()
+                if getattr(self,'workflow_protections',False):
+                    from .advanced import enforce_clip_protections
+                    metadata=db.execute('SELECT data FROM room_workflow WHERE owner=? AND project_id=?',(owner,value['id'])).fetchone()
+                    if metadata: enforce_clip_protections(json.loads(metadata['data']),json.loads(row['data']),value)
                 if access:
+                    allowed={c['assetId'] for c in json.loads(row['data'])['clips']}
+                    allowed.update(r[0] for r in db.execute('SELECT asset_id FROM room_guest_uploads WHERE member_id=?',(access['id'],)))
+                    if not {c['assetId'] for c in value['clips']}.issubset(allowed):
+                        raise SongError('room_permission','Only this project’s audio and your uploads may be used.',403)
                     old_sections=json.loads(row['data'])['sections']
                     new_sections={s['id']:s for s in value['sections']}
                     if any(s['locked'] and not new_sections.get(s['id'],{}).get('locked') for s in old_sections):
@@ -155,6 +166,9 @@ class Store:
                 db.execute('DELETE FROM project_assets WHERE project_id=?', (value['id'],))
             for asset_id in sorted({c['assetId'] for c in value['clips']}):
                 db.execute('INSERT INTO project_assets VALUES(?,?)', (value['id'], asset_id))
+            if getattr(self,'live_enabled',False):
+                from .live import snapshot
+                snapshot(db,value,1 if expected is None else expected+1)
             if access:
                 db.execute('INSERT INTO room_contributions(project_id,member_id,revision,created) VALUES(?,?,?,?)',(value['id'],access['id'],expected+1,now))
             return self._project_result(db, self._owned_project(db, owner, value['id']))
