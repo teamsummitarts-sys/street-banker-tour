@@ -7,6 +7,7 @@ already refers to it, and ``/`` redirects here.
 
 import hmac
 import json
+import os
 import time
 
 from flask import (Blueprint, abort, jsonify, redirect, render_template, request,
@@ -16,7 +17,7 @@ from . import REACH_VERSION
 from . import (analytics, approvals, audit, campaigns, catalog, clock, compliance,
                contacts, db, drafts, entities, evidence, firewall, firstparty,
                humanactions, jobs, onboarding, outcomes, pipeline, policy, profile,
-               rbac, relationships, scoring, sender)
+               rbac, relationships, scoring, sender, subscriptions)
 from .errors import ReachError
 from .providers import email as email_provider
 from .providers import search as search_provider
@@ -34,6 +35,7 @@ bp = Blueprint(
 # the email webhook, which authenticates every request with its own signature.
 ACCESS_EXEMPT = {
     "reach.landing",
+    "reach.pricing",
     "reach.static",
     "reach.unlock",
     "reach.email_webhook",
@@ -195,6 +197,7 @@ def _shell(campaign_id=None, active=None):
         "needs_you_count": humanactions.open_count(),
         "search_state": search_provider.status(),
         "fixture_mode": not search_provider.connected(),
+        "reach_billing": subscriptions.dashboard(),
     }
     if campaign_id:
         # The stepper needs to know where the campaign actually is, which is
@@ -204,13 +207,19 @@ def _shell(campaign_id=None, active=None):
 
 
 def _json_error(exc, status=400):
-    return jsonify({"ok": False, "error": str(exc),
-                    "kind": getattr(exc, "kind", "ERROR")}), status
+    payload = {"ok": False, "error": str(exc),
+               "kind": getattr(exc, "kind", "ERROR")}
+    if payload["kind"] == "SUBSCRIPTION_REQUIRED":
+        payload["upgrade_url"] = url_for("reach.billing")
+        if status == 400:
+            status = 402
+    return jsonify(payload), status
 
 
 @bp.errorhandler(ReachError)
 def _handle_reach_error(exc):
-    return _json_error(exc)
+    status = 402 if getattr(exc, "kind", "") == "SUBSCRIPTION_REQUIRED" else 400
+    return _json_error(exc, status)
 
 
 @bp.route("/about")
@@ -222,6 +231,94 @@ def landing():
     complete product portable without colliding with V2's own homepage.
     """
     return render_template("reach/landing.html")
+
+
+@bp.route("/plans")
+def pricing():
+    """Public, honest REACH plan comparison. No account data is exposed."""
+    return render_template(
+        "reach/pricing.html", plans=subscriptions.PLANS,
+        plan_order=subscriptions.PLAN_ORDER, account=None, stripe_live=False,
+        allow_plan_switch=False,
+    )
+
+
+@bp.route("/billing")
+def billing():
+    bootstrap()
+    import stripe_provider
+    return render_template(
+        "reach/pricing.html", plans=subscriptions.PLANS,
+        plan_order=subscriptions.PLAN_ORDER, account=subscriptions.dashboard(),
+        stripe_live=stripe_provider.configured(),
+        allow_plan_switch=os.environ.get("REACH_ALLOW_UNBILLED_PLAN_SWITCH") == "1",
+    )
+
+
+@bp.route("/billing/checkout", methods=["POST"])
+def billing_checkout():
+    """Start a real REACH checkout; never grant a paid plan from form data."""
+    import stripe_provider
+
+    bootstrap()
+    plan_key = (request.form.get("plan") or "").strip().lower()
+    interval = (request.form.get("interval") or "monthly").strip().lower()
+    if plan_key not in subscriptions.PLANS or plan_key in ("preview", "enterprise"):
+        return redirect(url_for("reach.billing", error="plan"))
+    if interval not in ("monthly", "annual"):
+        return redirect(url_for("reach.billing", error="interval"))
+    if not stripe_provider.configured():
+        return redirect(url_for("reach.billing", error="checkout"))
+    account = subscriptions.dashboard()
+    amount = subscriptions.PLANS[plan_key][
+        "annual" if interval == "annual" else "monthly"]
+    principal = rbac.current_principal()
+    checkout = stripe_provider.create_reach_checkout(
+        principal.tenant_id, principal.email, plan_key, interval,
+        int(round(amount * 100)), request.url_root.rstrip("/"),
+        account["passport"]["discount_percent"],
+    )
+    if not checkout or not checkout.get("url"):
+        return redirect(url_for("reach.billing", error="checkout"))
+    return redirect(checkout["url"], code=303)
+
+
+@bp.route("/billing/switch", methods=["POST"])
+def billing_switch():
+    """Validation-only switch. Production cannot self-grant paid access."""
+    if os.environ.get("REACH_ALLOW_UNBILLED_PLAN_SWITCH") != "1":
+        abort(404)
+    bootstrap()
+    plan_key = (request.form.get("plan") or "").strip().lower()
+    interval = (request.form.get("interval") or "monthly").strip().lower()
+    subscriptions.set_subscription(plan_key, interval)
+    return redirect(url_for("reach.billing", changed="1"))
+
+
+@bp.route("/billing/portal", methods=["POST"])
+def billing_portal():
+    import stripe_provider
+
+    bootstrap()
+    current = subscriptions.subscription()
+    customer_id = current["stripe_customer_id"]
+    if not (stripe_provider.configured() and customer_id):
+        return redirect(url_for("reach.billing"))
+    portal = stripe_provider.create_portal_session(
+        customer_id, request.url_root.rstrip("/") + url_for("reach.billing"))
+    if not portal or not portal.get("url"):
+        return redirect(url_for("reach.billing", error="portal"))
+    return redirect(portal["url"], code=303)
+
+
+@bp.route("/billing/status")
+def billing_status():
+    bootstrap()
+    state = subscriptions.dashboard()
+    return jsonify({
+        "ok": True, "plan": state["plan_key"], "usage": state["usage"],
+        "period": state["period_key"], "passport": state["passport"],
+    })
 
 
 # --------------------------------------------------------------------------
@@ -612,6 +709,7 @@ def attest(recording_id):
 def create_campaign():
     data = request.get_json(silent=True) or request.form
     try:
+        subscriptions.require("active_campaigns")
         campaign_id = campaigns.create(
             data.get("recording_id"),
             name=data.get("name") or None,
@@ -718,7 +816,9 @@ def start_discovery(campaign_id):
     job_id = None
     try:
         if not jobs.pending_count(campaign_id):
+            subscriptions.require("research_runs")
             job_id = pipeline.start(campaign_id)
+            subscriptions.increment("research_runs")
         processed = pipeline.run_to_completion(campaign_id, max_seconds=20)
     except ReachError as exc:
         return _json_error(exc)
@@ -894,7 +994,9 @@ def edit_draft(draft_id):
 def approve(target_id):
     data = request.get_json(silent=True) or request.form
     try:
+        subscriptions.require("approved_outreach")
         approval_id = approvals.approve(target_id, cost=float(data.get("cost") or 0))
+        subscriptions.increment("approved_outreach")
     except ReachError as exc:
         return _json_error(exc)
     return jsonify({"ok": True, "approval_id": approval_id})

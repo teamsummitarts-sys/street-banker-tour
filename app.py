@@ -3410,6 +3410,18 @@ def create_app():
                                     "Paid fan club membership via Stripe checkout.")
                     store.notify(artist_id, "fan", "New fan club member",
                                  "%s joined your fan club." % email, "/fan-club")
+        elif (etype == "checkout.session.completed" and
+              (obj.get("metadata") or {}).get("kind") == "reach"):
+            meta = obj.get("metadata") or {}
+            tenant_id = meta.get("tenant_id")
+            plan = meta.get("plan")
+            interval = meta.get("interval") or "monthly"
+            from reach import subscriptions as reach_subscriptions
+            if tenant_id and plan in reach_subscriptions.PLANS:
+                reach_subscriptions.set_subscription(
+                    plan, interval, status="active", tenant=tenant_id,
+                    stripe_customer_id=obj.get("customer"),
+                    stripe_subscription_id=obj.get("subscription"))
         elif etype == "checkout.session.completed":
             user_id = obj.get("client_reference_id")
             plan = (obj.get("metadata") or {}).get("plan")
@@ -3424,7 +3436,10 @@ def create_app():
                              "/command-center")
                 _settle_referrals(user_id)
         elif etype == "customer.subscription.deleted":
-            # Fan club cancellations first — they aren't plan subscriptions.
+            from reach import subscriptions as reach_subscriptions
+            if reach_subscriptions.cancel_by_stripe_subscription(obj.get("id")):
+                return jsonify({"ok": True})
+            # Fan club cancellations next — they aren't plan subscriptions.
             artist_id = store.cancel_club_member_by_subscription(obj.get("id"))
             if artist_id:
                 store.notify(artist_id, "fan", "Fan club member left",
@@ -3440,6 +3455,8 @@ def create_app():
                              "untouched — resubscribe anytime to unlock it again.",
                              "/billing")
         elif etype == "invoice.payment_failed":
+            from reach import subscriptions as reach_subscriptions
+            reach_subscriptions.mark_payment_failed(obj.get("customer"))
             user = store.user_by_stripe_customer(obj.get("customer"))
             if user:
                 store.notify(user["id"], "billing", "Payment failed",

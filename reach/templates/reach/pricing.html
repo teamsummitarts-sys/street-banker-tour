@@ -1,0 +1,141 @@
+{% extends "reach/base.html" %}
+{% block title %}REACH Plans — Street Banker{% endblock %}
+{% block content %}
+<style>
+  .reach-price-wrap{width:100%;max-width:72rem;margin-inline:auto}
+  .reach-price-title{font-size:clamp(3rem,7vw,5.5rem);line-height:.9;letter-spacing:-.055em}
+  .reach-plan-grid{display:grid;grid-template-columns:1fr;gap:1rem}
+  .reach-account-grid{display:grid;grid-template-columns:1fr;gap:1.5rem}
+  .reach-usage-grid{display:grid;grid-template-columns:1fr;gap:.75rem}
+  .reach-plan-card{min-height:31rem}
+  @media(min-width:640px){.reach-usage-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media(min-width:768px){.reach-plan-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(min-width:1024px){.reach-account-grid{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}}
+  @media(min-width:1280px){.reach-plan-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+</style>
+<div class="min-h-screen bg-[#090909] text-gray-100">
+  <header class="sticky top-0 z-40 border-b border-white/[0.08] bg-[#090909]/95 backdrop-blur">
+    <div class="mx-auto flex h-16 reach-price-wrap items-center gap-4 px-4 sm:px-6">
+      <a href="{{ url_for('reach.landing') }}" aria-label="REACH home">
+        <img src="{{ url_for('reach.static', filename='reach-wordmark.svg') }}" alt="REACH" class="h-6 w-auto">
+      </a>
+      <div class="ml-auto flex items-center gap-3 text-sm font-semibold">
+        <a href="{{ url_for('reach.landing') }}" class="text-gray-400 hover:text-white">About</a>
+        <a href="{{ url_for('reach.index') }}" class="rounded-lg bg-amber-500 px-4 py-2 text-black hover:bg-amber-400">Open REACH</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="border-b border-white/[0.08] px-4 py-16 sm:px-6 sm:py-24">
+      <div class="mx-auto reach-price-wrap">
+        <div class="max-w-3xl">
+          <div class="font-mono text-xs uppercase tracking-[0.25em] text-amber-400">Standalone REACH membership</div>
+          <h1 class="reach-price-title mt-5 font-black uppercase text-white">Submit smarter.<br>Go further.</h1>
+          <p class="mt-6 max-w-2xl text-lg leading-8 text-gray-400">Choose the operating capacity your releases need. REACH remains separate from Street Banker—your evidence, approvals, safety rules, and campaign history stay intact if a plan changes.</p>
+        </div>
+        <div class="mt-9 inline-flex rounded-xl border border-white/10 bg-white/[0.03] p-1" role="group" aria-label="Billing interval">
+          <button type="button" data-billing="monthly" class="billing-toggle rounded-lg bg-white px-4 py-2 text-sm font-bold text-black">Monthly</button>
+          <button type="button" data-billing="annual" class="billing-toggle rounded-lg px-4 py-2 text-sm font-bold text-gray-400">Annual · two months free</button>
+        </div>
+      </div>
+    </section>
+
+    {% if account %}
+    <section class="border-b border-white/[0.08] bg-[#0d0d0f] px-4 py-8 sm:px-6">
+      <div class="reach-account-grid reach-price-wrap">
+        <div>
+          <div class="font-mono text-[11px] uppercase tracking-[0.22em] text-amber-400">Current membership</div>
+          <div class="mt-2 flex items-baseline gap-3"><h2 class="text-3xl font-black">{{ account.plan.name }}</h2><span class="text-sm capitalize text-gray-500">{{ account.subscription.status }}</span></div>
+          <p class="mt-2 text-sm text-gray-400">Usage resets monthly. Read access and saved campaign history are never erased by a limit.</p>
+          {% if account.passport.verified %}
+          <div class="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4 text-sm text-amber-100"><strong>Street Banker Passport verified.</strong> Your {{ account.passport.discount_percent }}% ecosystem discount is applied automatically at checkout.</div>
+          {% else %}
+          <div class="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-gray-400">Already pay for Street Banker? Sign into that account before checkout and REACH will verify the eligible ecosystem discount.</div>
+          {% endif %}
+        </div>
+        <div class="reach-usage-grid">
+          {% for item in account.usage %}
+          <div class="rounded-2xl border border-white/10 bg-black/30 p-4">
+            <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">{{ item.label }}</div>
+            <div class="mt-3 text-2xl font-black tabular-nums">{{ item.used }} <span class="text-sm font-medium text-gray-500">/ {{ item.limit if item.limit is not none else 'Custom' }}</span></div>
+            {% if item.limit %}<div class="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div class="h-full rounded-full bg-amber-500" style="width: {{ [100, (item.used / item.limit * 100)] | min }}%"></div></div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="px-4 py-12 sm:px-6 sm:py-16">
+      <div class="reach-plan-grid reach-price-wrap">
+        {% for key in plan_order %}
+        {% set plan = plans[key] %}
+        <article class="reach-plan-card relative flex flex-col rounded-2xl border p-5 {{ 'border-amber-500/60 bg-amber-500/[0.08]' if key == 'solo' else 'border-white/10 bg-white/[0.025]' }}">
+          {% if key == 'solo' %}<div class="absolute -top-3 left-5 rounded-full bg-amber-500 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-black">Built for independents</div>{% endif %}
+          <h2 class="mt-2 text-2xl font-black">{{ plan.name }}</h2>
+          <p class="mt-2 min-h-16 text-sm leading-6 text-gray-400">{{ plan.tagline }}</p>
+          {% if plan.monthly is not none %}
+          <div class="mt-6">
+            <div data-price="monthly" class="plan-price text-4xl font-black">${{ plan.monthly }}<span class="text-sm font-medium text-gray-500">/mo</span></div>
+            <div data-price="annual" class="plan-price hidden text-4xl font-black">${{ plan.annual }}<span class="text-sm font-medium text-gray-500">/yr</span></div>
+          </div>
+          {% else %}<div class="mt-6 text-3xl font-black">Custom</div>{% endif %}
+          <ul class="mt-6 flex-1 space-y-3 text-sm text-gray-300">
+            {% for feature in plan.features %}<li class="flex gap-2"><span class="text-amber-400">✓</span><span>{{ feature }}</span></li>{% endfor %}
+          </ul>
+
+          {% if key == 'enterprise' %}
+          <a href="/contact?product=reach" class="mt-7 rounded-xl border border-white/15 px-4 py-3 text-center text-sm font-bold hover:bg-white/5">Talk to Street Banker</a>
+          {% elif account and account.plan_key == key %}
+          <div class="mt-7 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-center text-sm font-bold text-emerald-300">Current plan</div>
+          {% elif account and stripe_live and key != 'preview' %}
+          <form method="post" action="{{ url_for('reach.billing_checkout') }}" class="mt-7">
+            <input type="hidden" name="plan" value="{{ key }}">
+            <input class="billing-interval" type="hidden" name="interval" value="monthly">
+            <button class="w-full rounded-xl bg-white px-4 py-3 text-sm font-black text-black hover:bg-amber-400">Choose {{ plan.name }}</button>
+          </form>
+          {% elif account and allow_plan_switch %}
+          <form method="post" action="{{ url_for('reach.billing_switch') }}" class="mt-7">
+            <input type="hidden" name="plan" value="{{ key }}">
+            <input class="billing-interval" type="hidden" name="interval" value="monthly">
+            <button class="w-full rounded-xl bg-white px-4 py-3 text-sm font-black text-black">Use {{ plan.name }} in validation</button>
+          </form>
+          {% elif account and key == 'preview' %}
+          <form method="post" action="{{ url_for('reach.billing_switch') }}" class="mt-7"><input type="hidden" name="plan" value="preview"><button class="w-full rounded-xl border border-white/15 px-4 py-3 text-sm font-bold">Move to Preview</button></form>
+          {% elif account %}
+          <div class="mt-7 rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-gray-500">Checkout setup pending</div>
+          {% else %}
+          <a href="{{ url_for('reach.index') }}" class="mt-7 rounded-xl {{ 'bg-amber-500 text-black' if key == 'solo' else 'border border-white/15' }} px-4 py-3 text-center text-sm font-black">Open REACH</a>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="border-t border-white/[0.08] px-4 py-14 sm:px-6">
+      <div class="mx-auto grid reach-price-wrap gap-8 md:grid-cols-3">
+        <div><div class="font-mono text-xs uppercase tracking-[0.2em] text-amber-400">No invented claims</div><p class="mt-3 text-sm leading-6 text-gray-400">Evidence stays attached. UNKNOWN stays UNKNOWN. REACH never guarantees placement.</p></div>
+        <div><div class="font-mono text-xs uppercase tracking-[0.2em] text-amber-400">Human control</div><p class="mt-3 text-sm leading-6 text-gray-400">Approval, rights attestation, suppression, and manual platform tasks remain enforced on every plan.</p></div>
+        <div><div class="font-mono text-xs uppercase tracking-[0.2em] text-amber-400">Your work stays yours</div><p class="mt-3 text-sm leading-6 text-gray-400">Reaching a limit pauses new actions. It does not delete campaigns, evidence, contacts, or history.</p></div>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+(() => {
+  const buttons = document.querySelectorAll('.billing-toggle');
+  buttons.forEach(button => button.addEventListener('click', () => {
+    const interval = button.dataset.billing;
+    buttons.forEach(item => {
+      const active = item === button;
+      item.classList.toggle('bg-white', active);
+      item.classList.toggle('text-black', active);
+      item.classList.toggle('text-gray-400', !active);
+    });
+    document.querySelectorAll('.plan-price').forEach(price => price.classList.toggle('hidden', price.dataset.price !== interval));
+    document.querySelectorAll('.billing-interval').forEach(input => { input.value = interval; });
+  }));
+})();
+</script>
+{% endblock %}

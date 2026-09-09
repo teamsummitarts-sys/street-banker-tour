@@ -284,6 +284,13 @@
     {% endif %}
 
     <div class="ml-auto flex items-center gap-2">
+      {% if reach_billing %}
+      <a href="{{ url_for('reach.billing') }}"
+         class="hidden shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-300 hover:border-amber-500/40 hover:text-amber-300 lg:inline-flex">
+        <span class="h-1.5 w-1.5 rounded-full {{ 'bg-amber-400' if reach_billing.plan_key == 'preview' else 'bg-emerald-400' }}" aria-hidden="true"></span>
+        {{ reach_billing.plan.name }}
+      </a>
+      {% endif %}
       {# Sender posture, always in view: whether a message could actually
          leave is not something to discover at the Send button. #}
       {% if not sender_ready %}
@@ -354,6 +361,7 @@
             <a href="{{ url_for('reach.providers_view') }}" class="block rounded-lg px-3 py-1.5 text-gray-300 hover:bg-white/5 hover:text-white">Connections</a>
             <a href="{{ url_for('reach.advanced') }}" class="block rounded-lg px-3 py-1.5 text-gray-300 hover:bg-white/5 hover:text-white">Advanced &amp; system</a>
             <a href="{{ url_for('reach.settings_view') }}" class="block rounded-lg px-3 py-1.5 text-gray-300 hover:bg-white/5 hover:text-white">Settings &amp; safety</a>
+            <a href="{{ url_for('reach.billing') }}" class="flex items-center justify-between rounded-lg px-3 py-1.5 text-gray-300 hover:bg-white/5 hover:text-white"><span>Plan &amp; usage</span>{% if reach_billing %}<span class="font-mono text-[10px] uppercase text-amber-400">{{ reach_billing.plan.name }}</span>{% endif %}</a>
           </nav>
           <div class="mt-1.5 border-t border-white/[0.08] px-3 pb-1 pt-2 text-[11px] text-faint">REACH {{ reach_version }}</div>
         </div>
@@ -419,7 +427,7 @@
       {{ label }}
     </a>
     {% endfor %}
-    {% set more_here = ep in ('reach.catalog_view', 'reach.contacts_view', 'reach.needs_you', 'reach.outreach_setup', 'reach.providers_view', 'reach.settings_view', 'reach.advanced') %}
+    {% set more_here = ep in ('reach.catalog_view', 'reach.contacts_view', 'reach.needs_you', 'reach.outreach_setup', 'reach.providers_view', 'reach.settings_view', 'reach.advanced', 'reach.billing') %}
     <button type="button" id="reach-mobile-modules-trigger" aria-expanded="false" aria-controls="reach-mobile-modules"
             class="flex min-h-14 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold {{ 'text-amber-400' if more_here else 'text-gray-400' }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg>
@@ -480,6 +488,7 @@
         <div class="grid grid-cols-2 gap-2">
           <a href="{{ url_for('reach.settings_view') }}" class="rounded-xl border border-white/[0.08] bg-[#171719] p-3"><span class="block text-sm font-bold text-white">Settings &amp; Safety</span><span class="mt-1 block text-[11px] leading-4 text-gray-400">Controls and audit log</span></a>
           <a href="{{ url_for('reach.advanced') }}" class="rounded-xl border border-white/[0.08] bg-[#171719] p-3"><span class="block text-sm font-bold text-white">Advanced &amp; System</span><span class="mt-1 block text-[11px] leading-4 text-gray-400">Full operating status</span></a>
+          <a href="{{ url_for('reach.billing') }}" class="col-span-2 flex items-center justify-between rounded-xl border border-amber-500/25 bg-amber-500/[0.08] p-3"><span><span class="block text-sm font-bold text-white">Plan &amp; Usage</span><span class="mt-1 block text-[11px] leading-4 text-gray-400">{% if reach_billing %}{{ reach_billing.plan.name }} · {{ reach_billing.usage[0].used }} of {{ reach_billing.usage[0].limit or 'custom' }} active campaigns{% else %}Membership and billing{% endif %}</span></span><span class="text-amber-400" aria-hidden="true">→</span></a>
         </div>
       </div>
     </nav>
@@ -535,7 +544,12 @@
     });
     let data = {};
     try { data = await response.json(); } catch (e) { data = { ok: false, error: 'Unexpected response' }; }
-    if (!data.ok) { reachToast(data.error || 'Request failed', false); }
+    if (!data.ok) {
+      reachToast(data.error || 'Request failed', false);
+      if (data.kind === 'SUBSCRIPTION_REQUIRED' && data.upgrade_url) {
+        setTimeout(() => { window.location = data.upgrade_url; }, 1400);
+      }
+    }
     return data;
   }
 

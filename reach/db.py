@@ -637,6 +637,37 @@ MIGRATIONS = [
         updated_by TEXT
     );
     """,
+
+    # 9 — standalone REACH subscriptions, metered usage and verified passport
+    """
+    CREATE TABLE reach_subscription (
+        tenant_id TEXT PRIMARY KEY REFERENCES tenant(id),
+        plan TEXT NOT NULL DEFAULT 'preview',
+        billing_interval TEXT NOT NULL DEFAULT 'monthly',
+        status TEXT NOT NULL DEFAULT 'active',
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT UNIQUE,
+        current_period_end TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    );
+    CREATE TABLE reach_usage (
+        tenant_id TEXT NOT NULL REFERENCES tenant(id),
+        period_key TEXT NOT NULL,
+        metric TEXT NOT NULL,
+        quantity INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (tenant_id, period_key, metric)
+    );
+    CREATE TABLE reach_passport_product (
+        tenant_id TEXT NOT NULL REFERENCES tenant(id),
+        product_key TEXT NOT NULL,
+        status TEXT NOT NULL,
+        source TEXT NOT NULL,
+        verified_at TEXT NOT NULL,
+        PRIMARY KEY (tenant_id, product_key)
+    );
+    """,
 ]
 
 

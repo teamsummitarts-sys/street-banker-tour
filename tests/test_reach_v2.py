@@ -93,3 +93,96 @@ def test_reach_database_is_separate_from_v2_database(monkeypatch):
 
     assert os.path.basename(reach_db.current_path()) == "reach.db"
     assert reach_db.current_path() != os.environ["DATABASE_PATH"]
+
+
+def test_reach_public_plans_and_private_usage_workspace(monkeypatch):
+    client = _client(monkeypatch)
+
+    public = client.get("/reach/plans")
+    assert public.status_code == 200
+    assert b"Standalone REACH membership" in public.data
+    assert b"$29" in public.data
+    assert b"two months free" in public.data
+
+    client.post("/reach/unlock", data={"key": "test-reach-key"})
+    billing = client.get("/reach/billing")
+    assert billing.status_code == 200
+    assert b"Current membership" in billing.data
+    assert b"Preview" in billing.data
+    assert b"Active campaigns" in billing.data
+    assert b"Your work stays yours" in billing.data
+
+
+def test_reach_validation_plan_switch_is_explicitly_env_gated(monkeypatch):
+    client = _client(monkeypatch)
+    client.post("/reach/unlock", data={"key": "test-reach-key"})
+
+    denied = client.post("/reach/billing/switch", data={"plan": "solo"})
+    assert denied.status_code == 404
+
+    monkeypatch.setenv("REACH_ALLOW_UNBILLED_PLAN_SWITCH", "1")
+    changed = client.post(
+        "/reach/billing/switch",
+        data={"plan": "solo", "interval": "annual"},
+        follow_redirects=True,
+    )
+    assert changed.status_code == 200
+    assert b"Solo" in changed.data
+    status = client.get("/reach/billing/status").get_json()
+    assert status["plan"] == "solo"
+    assert status["period"]
+
+
+def test_reach_preview_limit_blocks_new_mutation_without_deleting_work(monkeypatch):
+    client = _client(monkeypatch)
+    client.post("/reach/unlock", data={"key": "test-reach-key"})
+    client.get("/reach")
+
+    from reach import catalog, profile
+
+    with client.application.app_context():
+        recording = catalog.recordings()[0]
+        catalog.attest_rights(recording["id"])
+        profile_id = profile.get_or_create(recording["id"])
+        profile.set_field(profile_id, "primary_genre", "electronic")
+        profile.set_field(profile_id, "microgenres", ["darkwave"])
+        profile.set_field(profile_id, "mood", ["cinematic"])
+        profile.set_field(profile_id, "language", "en")
+        profile.set_field(profile_id, "comparable_artists", ["Reference artist"])
+
+    first = client.post("/reach/campaigns", json={
+        "recording_id": recording["id"],
+        "name": "First validation campaign",
+        "mode": "SCOUT",
+    })
+    assert first.status_code == 200
+
+    blocked = client.post("/reach/campaigns", json={
+        "recording_id": recording["id"],
+        "name": "Second validation campaign",
+        "mode": "SCOUT",
+    })
+    assert blocked.status_code == 402
+    payload = blocked.get_json()
+    assert payload["kind"] == "SUBSCRIPTION_REQUIRED"
+    assert payload["upgrade_url"] == "/reach/billing"
+
+    campaigns_page = client.get("/reach/campaigns")
+    assert campaigns_page.status_code == 200
+    assert b"First validation campaign" in campaigns_page.data
+
+
+def test_reach_usage_is_persisted_in_its_own_database(monkeypatch):
+    client = _client(monkeypatch)
+    client.post("/reach/unlock", data={"key": "test-reach-key"})
+    client.get("/reach")
+
+    from reach import subscriptions
+
+    with client.application.app_context():
+        assert subscriptions.usage("research_runs") == 0
+        subscriptions.increment("research_runs")
+        assert subscriptions.usage("research_runs") == 1
+        state = subscriptions.dashboard()
+        assert state["plan_key"] == "preview"
+        assert state["passport"]["verified"] is False

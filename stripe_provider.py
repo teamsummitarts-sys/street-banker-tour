@@ -123,6 +123,126 @@ def create_checkout_session(user_id, email, plan, base_url, coupon=None):
         return None
 
 
+
+def ensure_percent_coupon(percent):
+    """Create or reuse a verified ecosystem coupon for REACH checkout."""
+    if not configured() or int(percent or 0) not in (20, 25):
+        return None
+    try:
+        import db
+        key = "reach_ecosystem_coupon_%s" % int(percent)
+        coupon_id = db.get_kv(key)
+        if coupon_id:
+            return coupon_id
+        created = _http("/v1/coupons", {
+            "percent_off": str(int(percent)), "duration": "forever",
+            "name": "Street Banker ecosystem %s%%" % int(percent)})
+        if created.get("id"):
+            db.set_kv(key, created["id"])
+            return created["id"]
+    except Exception:
+        pass
+    return None
+
+
+def create_reach_checkout(tenant_id, email, plan, interval, amount_cents,
+                          base_url, discount_percent=0):
+    """Stripe-hosted REACH subscription checkout, separate from V2 plans."""
+    if not (configured() and tenant_id and email and amount_cents):
+        return None
+    if interval not in ("monthly", "annual"):
+        return None
+    coupon = ensure_percent_coupon(discount_percent)
+    fields = {
+        "mode": "subscription",
+        "client_reference_id": tenant_id,
+        "customer_email": email,
+        "success_url": base_url + "/reach/billing?upgraded=1",
+        "cancel_url": base_url + "/reach/billing",
+        "metadata[kind]": "reach",
+        "metadata[tenant_id]": tenant_id,
+        "metadata[plan]": plan,
+        "metadata[interval]": interval,
+        "subscription_data[metadata][kind]": "reach",
+        "subscription_data[metadata][tenant_id]": tenant_id,
+        "subscription_data[metadata][plan]": plan,
+        "subscription_data[metadata][interval]": interval,
+        "line_items[0][quantity]": "1",
+        "line_items[0][price_data][currency]": "usd",
+        "line_items[0][price_data][unit_amount]": str(int(amount_cents)),
+        "line_items[0][price_data][recurring][interval]":
+            "year" if interval == "annual" else "month",
+        "line_items[0][price_data][product_data][name]":
+            "REACH %s" % str(plan).title(),
+    }
+    if coupon:
+        fields["discounts[0][coupon]"] = coupon
+    try:
+        return _http("/v1/checkout/sessions", fields)
+    except Exception:
+        return None
+
+
+
+def ensure_percent_coupon(percent):
+    """Create or reuse a verified ecosystem coupon for REACH checkout."""
+    if not configured() or int(percent or 0) not in (20, 25):
+        return None
+    try:
+        import db
+        key = "reach_ecosystem_coupon_%s" % int(percent)
+        coupon_id = db.get_kv(key)
+        if coupon_id:
+            return coupon_id
+        created = _http("/v1/coupons", {
+            "percent_off": str(int(percent)), "duration": "forever",
+            "name": "Street Banker ecosystem %s%%" % int(percent)})
+        if created.get("id"):
+            db.set_kv(key, created["id"])
+            return created["id"]
+    except Exception:
+        pass
+    return None
+
+
+def create_reach_checkout(tenant_id, email, plan, interval, amount_cents,
+                          base_url, discount_percent=0):
+    """Stripe-hosted REACH checkout, entirely separate from V2 plan state."""
+    if not (configured() and tenant_id and email and amount_cents):
+        return None
+    if interval not in ("monthly", "annual"):
+        return None
+    coupon = ensure_percent_coupon(discount_percent)
+    fields = {
+        "mode": "subscription",
+        "client_reference_id": tenant_id,
+        "customer_email": email,
+        "success_url": base_url + "/reach/billing?upgraded=1",
+        "cancel_url": base_url + "/reach/billing",
+        "metadata[kind]": "reach",
+        "metadata[tenant_id]": tenant_id,
+        "metadata[plan]": plan,
+        "metadata[interval]": interval,
+        "subscription_data[metadata][kind]": "reach",
+        "subscription_data[metadata][tenant_id]": tenant_id,
+        "subscription_data[metadata][plan]": plan,
+        "subscription_data[metadata][interval]": interval,
+        "line_items[0][quantity]": "1",
+        "line_items[0][price_data][currency]": "usd",
+        "line_items[0][price_data][unit_amount]": str(int(amount_cents)),
+        "line_items[0][price_data][recurring][interval]": (
+            "year" if interval == "annual" else "month"),
+        "line_items[0][price_data][product_data][name]": (
+            "REACH %s" % plan.title()),
+    }
+    if coupon:
+        fields["discounts[0][coupon]"] = coupon
+    try:
+        return _http("/v1/checkout/sessions", fields)
+    except Exception:
+        return None
+
+
 def _http_get(path):
     req = urllib.request.Request(
         "https://api.stripe.com" + path,
