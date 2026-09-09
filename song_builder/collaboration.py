@@ -36,7 +36,8 @@ def guard_guest(service, member):
         raise v.SongError('not_found', 'This project is not part of your invitation.', 404)
     read = {'index', 'static', 'capabilities', 'list_projects', 'get_project',
             'asset_audio', 'list_jobs', 'collaboration_status', 'leave_room',
-            'live_status', 'live_heartbeat', 'live_release'}
+            'live_status', 'live_heartbeat', 'live_release',
+            'listening_status','listening_command','add_feedback','resolve_feedback'}
     write = {'save_project', 'upload_asset'}
     if endpoint not in read | (write if member['role'] == 'editor' else set()):
         raise v.SongError('room_permission', 'Your invitation does not allow this action.', 403)

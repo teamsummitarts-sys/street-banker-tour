@@ -330,6 +330,8 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
         workflow = register_advanced(bp, service, body)
         from .live import register as register_live
         register_live(bp, service, body)
+        from .listening import register as register_listening
+        register_listening(bp, service, body)
         register_workflow_ui(bp, app, workflow, csrf)
 
     from .analysis import register as register_analysis

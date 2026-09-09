@@ -76,6 +76,10 @@ def prepare_save(db, owner, incoming, expected, current, revision, member, sessi
         else:
             incoming=copy.deepcopy(current)
     changed=scopes(current,incoming)
+    if db.execute("SELECT 1 FROM sqlite_master WHERE name='room_listening'").fetchone():
+        from .listening import active_host
+        if changed and active_host(db,incoming['id'],now):
+            raise v.SongError('listening_active','End the listening session before changing this saved mix.',409)
     if session_id and changed and (not active['scope'] or (active['scope']!='arrangement' and changed!={active['scope']})):
         raise v.SongError('part_busy','Claim editing control of this instrument or the arrangement before saving.',409)
     for lock in db.execute('SELECT * FROM room_live_sessions WHERE project_id=? AND scope IS NOT NULL',(incoming['id'],)):
@@ -121,6 +125,9 @@ def register(bp, service, body):
             if member and not db.execute('SELECT 1 FROM room_members WHERE id=? AND revoked=0 AND expires>?',(member['id'],now)).fetchone():
                 raise v.SongError('room_permission','This invitation is no longer active.',403)
             value=json.loads(project['data'])
+            if scope and getattr(service.store,'listening_enabled',False):
+                from .listening import active_host
+                if active_host(db,project_id,now):raise v.SongError('listening_active','Playback review is active. Choose Listen only or end the session.',409)
             if scope is not None and scope!='arrangement' and scope not in {'track:'+t['id'] for t in value['tracks']}:v.invalid('Choose a track in this song.')
             own=db.execute('SELECT * FROM room_live_sessions WHERE session_id=?',(data['sessionId'],)).fetchone()
             if own and (own['actor']!=who or own['project_id']!=project_id):raise v.SongError('room_permission','Use a new live session for this project.',403)

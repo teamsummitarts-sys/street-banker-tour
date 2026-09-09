@@ -1,3 +1,4 @@
+import {bindListening} from './listening.mjs';
 import {bindLive,mergePending} from './live.mjs';
 import {openProducerRecommendation} from './producer-handoff.mjs';
 import {bindCollaboration} from './collaboration.mjs';
@@ -251,13 +252,14 @@ function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boole
       for(const id of ['upload-audio','record-audio'])if(!recording)$(id).disabled=true;
     }
   }
+  if(typeof listening!=='undefined'&&listening.active())for(const id of ['play-song','play-section','loop-section','seek'])$(id).disabled=true;
   const guest=state.access&&state.access.role!=='owner';
   if(guest){
     for(const id of ['new-project','save-version','import-project','load-demo','start-ai','prepare-section-test','recover-copy','lock-section','create-invite'])if($(id))$(id).disabled=true;
     for(const a of document.querySelectorAll('a[href]'))if(/\/(analyze|workflow)(\?|$)/.test(a.getAttribute('href')))a.hidden=true;
     if(state.access.role==='viewer'){
       const keep=new Set(['play-song','stop-playback','play-section','loop-section','seek','project-list','export-project','export-mix','export-section','export-track','export-30','export-15','dismiss-download','reload-saved']);
-      for(const control of document.querySelectorAll('button,input,select,textarea'))if(!keep.has(control.id)&&!control.matches('.section-button,.track-name,.clip,.room-project-toggle')&&!control.closest('#collaboration')&&!control.closest('#live-room'))control.disabled=true;
+      for(const control of document.querySelectorAll('button,input,select,textarea'))if(!keep.has(control.id)&&!control.matches('.section-button,.track-name,.clip,.room-project-toggle')&&!control.closest('#collaboration')&&!control.closest('#live-room')&&!control.closest('#listening-room'))control.disabled=true;
     }
   }
 }
@@ -423,8 +425,10 @@ async function boot(){state.busy++;try{
   const list=await api('/api/projects');const requested=entryParams.get('project');const first=list.projects.find(p=>p.id===requested)||list.projects[0];
   if(first)await loadProject(first.id,{skipSave:true});else await startNew();await listProjects();
   if(entryParams.get('report')&&state.access.role==='owner'){try{await openProducerRecommendation({document,params:entryParams,api,state,base,loadProject,save,play,notify,run,render,newId:P.newId});}catch(e){notify(e.message,true);}}
+  state.listeningTimer=setInterval(()=>{if(!document.hidden&&!state.busy)listening.tick();},1000);
   state.polling=setInterval(()=>{if(!document.hidden&&!state.busy){pollJobs();live.tick();}},3000);clock();
  }catch(e){failure(e);$('save-state').textContent='Workspace unavailable';}finally{state.busy--;renderDisabled();}}
 const live=bindLive({document,state,api,save,loadProject,render,notify,newId:P.newId});
+const listening=bindListening({document,state,api,live,save,play,stop,position:()=>state.playing?engine.position():Number($('seek').value),seek:value=>{$('seek').value=value;},unlock:()=>engine.unlock(),render:renderDisabled,notify,newId:P.newId});
 const collaborators=bindCollaboration({document,api,state,save,loadProject,notify,run});
 boot();
