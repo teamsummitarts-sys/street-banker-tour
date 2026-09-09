@@ -1,3 +1,7 @@
+import {bindSessionArchive} from '../../song_builder/static/ui/session-archive.mjs';
+import {mountSubmissions} from '../../song_builder/static/ui/submissions.mjs';
+import {DraftJournal} from '../../song_builder/static/ui/draft-journal.mjs';
+import {storeAnalysisHandoff} from '../../song_builder/static/ui/analysis-handoff.mjs';
 import {bindListening} from '../../song_builder/static/ui/listening.mjs';
 import {bindLive,mergePending} from '../../song_builder/static/ui/live.mjs';
 import {bindCollaboration} from '../../song_builder/static/ui/collaboration.mjs';
@@ -29,7 +33,7 @@ async function fixture(){
   globalThis.document=w.document;
   w.HTMLElement.prototype.scrollIntoView=()=>{};
   w.HTMLCanvasElement.prototype.getContext=()=>({beginPath(){},moveTo(){},lineTo(){},stroke(){}});
-  const sandbox={document:w.document,window:w,navigator:w.navigator,location:w.location,history:w.history,sessionStorage:w.sessionStorage,localStorage:w.localStorage,URLSearchParams,URL,FormData,Blob,Option:w.Option,console,AudioEngine,P,RACK_DEFAULT,PendingRequests,bindFadeHandle,effectiveFades,renderRackPanel,sameRack,bindConsole,bindLive,mergePending,bindListening,bindCollaboration,openProducerRecommendation,setTimeout:()=>0,clearTimeout:()=>{},setInterval:()=>0,clearInterval:()=>{},requestAnimationFrame:()=>{}};
+  const sandbox={document:w.document,window:w,navigator:w.navigator,location:w.location,history:w.history,sessionStorage:w.sessionStorage,localStorage:w.localStorage,URLSearchParams,URL,FormData,Blob,Option:w.Option,console,AudioEngine,P,RACK_DEFAULT,PendingRequests,bindFadeHandle,effectiveFades,renderRackPanel,sameRack,bindConsole,bindLive,mergePending,bindListening,bindCollaboration,openProducerRecommendation,bindSessionArchive,mountSubmissions,DraftJournal,storeAnalysisHandoff,setTimeout:()=>0,clearTimeout:()=>{},setInterval:()=>0,clearInterval:()=>{},requestAnimationFrame:()=>{}};
   const source=readFileSync(new URL('../../song_builder/static/ui/controller.mjs',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/boot\(\);\s*$/,'');
   const h=new Function(...Object.keys(sandbox),source+'\nreturn {state,render,renderDisabled,engine,play,stop,restoreEdit};')(...Object.values(sandbox));
   let p=P.addTrack(P.newProject(),'Bass');p={...p,sections:[{...p.sections[0],duration:3}]};

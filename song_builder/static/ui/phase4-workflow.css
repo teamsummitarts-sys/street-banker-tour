@@ -1,0 +1,38 @@
+/* Keep the approved hardware finish while making music the first task. */
+.room-console.room-scroll .studio-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 12px;align-items:center}
+.room-console.room-scroll .studio-actions button,.room-console.room-scroll .studio-actions a{min-height:44px;padding:11px 14px;font-size:12px;border-radius:6px}
+.room-console.room-scroll .session-team{margin:0 0 12px;border:1px solid #515956;border-radius:8px;background:linear-gradient(135deg,#252b2b,#101516);box-shadow:inset 0 1px #ffffff25,0 5px 12px #0007}
+.room-console.room-scroll .session-team:not([open]){display:none}
+.room-console.room-scroll .session-team>summary{padding:14px;color:#e6cc99}
+.room-console.room-scroll .session-team>.live-room,.room-console.room-scroll .session-team>.collaboration-desk{margin:8px 12px;padding:12px}
+.room-console.room-scroll .transport{grid-template-columns:58px 80px minmax(150px,1fr) 80px 80px}
+.room-console.room-scroll #play-song{grid-column:1;grid-row:1}
+.room-console.room-scroll #stop-playback{grid-column:2;grid-row:1}
+.room-console.room-scroll #play-time{grid-column:3;grid-row:1}
+.room-console.room-scroll #undo-edit{grid-column:4;grid-row:1}
+.room-console.room-scroll #redo-edit{grid-column:5;grid-row:1}
+.room-console.room-scroll #session-archive,.room-console.room-scroll #submissions-desk{margin-top:16px;scroll-margin-top:18px}
+.room-console.room-scroll #session-archive:not(:empty),.room-console.room-scroll #submissions-desk:not(:empty){border:1px solid #515957;border-radius:8px;background:linear-gradient(120deg,#252b2c,#101617);padding:18px;box-shadow:inset 0 1px #fff2,0 4px 12px #0008}
+.room-console.room-scroll #session-archive button,.room-console.room-scroll #submissions-desk button{min-height:44px}
+.room-console.room-scroll #draft-recovery{border:1px solid #d8ad66;border-left-width:4px;padding:16px;background:#23251f;margin-bottom:12px}
+.room-console.room-scroll #draft-recovery p{margin-top:0}
+.take-comparison{padding:16px;border:1px solid #64706c;background:#0a1011;border-radius:8px;margin-bottom:16px}
+.take-comparison canvas{display:block;width:100%;height:76px;background:#050808;border:1px solid #404a44;border-radius:4px}
+.take-comparison input[type=range]{width:100%}
+@media(max-width:800px){
+ .room-console.room-scroll .studio-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+ .room-console.room-scroll .studio-actions button,.room-console.room-scroll .studio-actions a{font-size:12px;text-align:center;line-height:1.35}
+ .room-console.room-scroll .transport{grid-template-columns:48px 48px minmax(72px,1fr) 44px 44px;gap:5px;min-height:66px}
+ .room-console.room-scroll #play-time{font-size:12px;padding:8px 2px}
+ .room-console.room-scroll #undo-edit,.room-console.room-scroll #redo-edit{display:flex;min-width:44px;min-height:44px;padding:8px;font-size:0;align-items:center;justify-content:center}
+ .room-console.room-scroll #redo-edit::after{content:'↷';font-size:22px}
+ .room-console.room-scroll #undo-edit::after{font-size:22px}
+ .room-console.room-scroll #play-section{display:inline-flex;min-height:44px}
+ .room-console.room-scroll .console-section-tools button,.room-console.room-scroll #add-track{min-height:44px;font-size:12px}
+ .room-console.room-scroll .track{grid-template-columns:116px minmax(0,1fr);min-height:108px}
+ .room-console.room-scroll .section-ruler{margin-left:120px}
+ .room-console.room-scroll .track-title{grid-template-columns:44px 44px;gap:4px}
+ .room-console.room-scroll .track-name{grid-column:1/-1;font-size:12px;line-height:1.3;min-height:40px}
+ .room-console.room-scroll .track-switch{min-width:44px;width:44px;min-height:44px;height:44px;font-size:12px}
+ .room-console.room-scroll #session-archive:not(:empty),.room-console.room-scroll #submissions-desk:not(:empty){padding:12px}
+}

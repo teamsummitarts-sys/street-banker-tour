@@ -9,7 +9,7 @@
   <title>The Room · Street Banker</title>
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/song-builder.css">
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/room.css?v=studio-03">
-  <link rel="stylesheet" href="{{ builder_assets_url }}ui/unified-console.css?v=1">
+  <link rel="stylesheet" href="{{ builder_assets_url }}ui/unified-console.css?v=4">
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/collaboration.css">
   <script type="module" src="{{ builder_assets_url }}ui/controller.mjs"></script>
 </head>
@@ -24,7 +24,7 @@ FORM: Code-led extension of the approved V2 studio workflow; no new visual world
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance -->
   <a class="skip-link" href="#song-title">Skip to song editor</a>
   <header class="site-bar">
-    <a class="brand" href="{{ return_url }}"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></span></a>
+    <a class="brand" href="{{ builder_base_url }}/" aria-label="The Room projects"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></span></a>
     <a class="back-link" href="{{ builder_base_url }}/analyze" target="_blank" rel="noopener">Analyze &amp; Improve ↗</a>
     <a class="back-link" href="{{ return_url }}">Back to Noise Lab</a>
   </header>
@@ -44,12 +44,16 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         <label>Saved projects<select id="project-list"><option value="">Choose a project</option></select></label>
         <div class="button-row"><button id="new-project" type="button">New project</button><button id="save-version" type="button">Save as new version</button></div>
         <button id="import-project" type="button">Import project</button>
-        <button id="export-project" type="button">Prepare project backup</button>
-        <p class="hint">A backup includes your arrangement and audio. It can move with you to another The Room.</p>
+        <button id="export-project" type="button">Active arrangement backup (.sbsong)</button>
+        <p class="hint">Legacy .sbsong backups contain the active arrangement and its audio. Use Full session archive below to include alternate takes, scenes and review history.</p>
       </div></details>
     </section>
+    <section id="draft-recovery" class="recovery" hidden aria-label="Recover unsaved work"><p id="draft-message"></p><div id="draft-actions" class="button-row"></div></section>
+    <nav class="studio-actions" aria-label="Production tools"><a id="open-workflow" class="download-link" href="{{ builder_base_url }}/workflow">Takes, scenes &amp; track groups</a><button id="analyze-section" type="button">Analyze this section</button><button id="analyze-song" type="button">Analyze full mix</button><button id="open-session-team" type="button" aria-controls="session-team" aria-expanded="false">Collaborators &amp; listening</button></nav>
+    <details id="session-team" class="session-team"><summary>Session team</summary>
     <section id="producer-note" class="producer-note" hidden aria-label="Producer recommendation"></section>
     <section id="live-room" class="live-room" aria-label="Live session"><div class="button-row"><strong>Live session</strong><button id="live-connect" type="button">Join live session</button><label>Editing control <select id="live-target" disabled><option value="">Listen only</option></select></label></div><p id="live-status" role="status">Join to see collaborators and receive shared project updates.</p><div id="live-people" aria-live="polite"></div></section><section id="listening-room" class="live-room" aria-label="Hosted listening"><div class="button-row"><strong>Listen together</strong><button id="listen-host" type="button">Host listening</button><button id="listen-follow" type="button">Follow host</button><button id="listen-end" type="button" disabled>End session</button></div><p id="listening-status" role="status">One host leads the saved mix. Each listener chooses when to follow.</p><div class="button-row"><button id="listen-play" type="button" disabled>Play shared mix</button><label>Shared position <input id="listen-seek" type="range" min="0" max="0" step="0.1" value="0" disabled></label></div><details><summary>Timestamped feedback</summary><form id="feedback-form"><label>Your listening note<textarea id="feedback-text" maxlength="1000" required placeholder="Try a quieter backing vocal here."></textarea></label><button id="feedback-add" type="submit">Add note at playhead</button></form><div id="listening-notes"></div></details></section><details id="collaboration" class="collaboration-desk"><summary>Invite &amp; collaborators</summary><p id="collaboration-status" role="status">Open a saved project to manage its collaborators.</p><div id="invite-fields"><div class="collaboration-fields"><label>Invitation for<input id="invite-name" maxlength="80" placeholder="Collaborator name"></label><label>Access<select id="invite-role"><option value="viewer">Viewer · listen and export</option><option value="editor">Editor · arrange and save</option></select></label><button id="create-invite" type="button">Create invitation link</button></div><label>Personal invitation link<textarea id="invite-link" class="invite-output" readonly hidden aria-label="Personal invitation link"></textarea></label><p>Editors can change this project’s unprotected parts. Approved section locks and clip protections remain enforced. Shared editing uses revision checks; it is not live simultaneous playback.</p></div><div id="collaborator-list"></div></details>
+    </details>
     <div class="workspace">
       <div class="arrangement">
         <section aria-labelledby="arrangement-heading" class="section-deck">
@@ -135,6 +139,8 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         </section>
       </aside>
     </div>
+    <section id="submissions-desk" aria-label="Submitted performances"></section>
+    <section id="session-archive" aria-label="Session archives and checkpoints"></section>
     <section id="sound-rack" class="sound-rack" aria-label="Selected track sound rack"></section>
     <section id="file-ready" class="file-ready" hidden aria-labelledby="file-ready-heading"><div><h2 id="file-ready-heading">Your file is ready.</h2><p id="prepared-name"></p><p class="hint">On iPhone, tap Download, then use Share → Save to Files if a preview opens.</p></div><a id="save-download" class="download-link" download>Download file</a><button id="dismiss-download" type="button">Close</button></section>
     <footer><span id="storage-note">Projects belong to your signed-in account. Keep a project backup.</span><span>The Room · Portable project format v1</span></footer>

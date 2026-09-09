@@ -1,3 +1,7 @@
+import {bindSessionArchive} from '../../song_builder/static/ui/session-archive.mjs';
+import {mountSubmissions} from '../../song_builder/static/ui/submissions.mjs';
+import {DraftJournal} from '../../song_builder/static/ui/draft-journal.mjs';
+import {storeAnalysisHandoff} from '../../song_builder/static/ui/analysis-handoff.mjs';
 import {bindListening} from '../../song_builder/static/ui/listening.mjs';
 import {bindLive,mergePending} from '../../song_builder/static/ui/live.mjs';
 import {bindCollaboration} from '../../song_builder/static/ui/collaboration.mjs';
@@ -82,7 +86,7 @@ test('controller integration: selected mixer, solo clear and undo remain connect
  const {sameRack}=await import('../../song_builder/static/core/rack.mjs');
  const html=readFileSync(new URL('../../song_builder/templates/song_builder/index.html',import.meta.url),'utf8').replaceAll('{{ builder_base_url }}','/song-builder/');
  const dom=new JSDOM(html,{url:'https://example.test/song-builder/'}),w=dom.window;globalThis.document=w.document;
- const sandbox={document:w.document,window:w,navigator:w.navigator,location:w.location,history:w.history,sessionStorage:w.sessionStorage,localStorage:w.localStorage,URLSearchParams,URL,FormData,Blob,Option:w.Option,console,AudioEngine,P,PendingRequests,bindFadeHandle,effectiveFades,renderRackPanel,sameRack,bindConsole,bindLive,mergePending,bindListening,bindCollaboration,openProducerRecommendation,setTimeout:()=>0,clearTimeout:()=>{},setInterval:()=>0,clearInterval:()=>{},requestAnimationFrame:()=>{}};
+ const sandbox={document:w.document,window:w,navigator:w.navigator,location:w.location,history:w.history,sessionStorage:w.sessionStorage,localStorage:w.localStorage,URLSearchParams,URL,FormData,Blob,Option:w.Option,console,AudioEngine,P,PendingRequests,bindFadeHandle,effectiveFades,renderRackPanel,sameRack,bindConsole,bindLive,mergePending,bindListening,bindCollaboration,openProducerRecommendation,bindSessionArchive,mountSubmissions,DraftJournal,storeAnalysisHandoff,setTimeout:()=>0,clearTimeout:()=>{},setInterval:()=>0,clearInterval:()=>{},requestAnimationFrame:()=>{}};
  const source=readFileSync(new URL('../../song_builder/static/ui/controller.mjs',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/boot\(\);\s*$/,'');
  const h=new Function(...Object.keys(sandbox),source+'\nreturn {state,render,engine};')(...Object.values(sandbox));let p=P.addTrack(P.newProject(),'Bass');p=P.addTrack(p,'Drums');h.state.project=p;h.state.sectionId=p.sections[0].id;h.state.trackId=p.tracks[0].id;h.render();
  const d=w.document;assert.equal(d.querySelectorAll('#selected-mixer [type="range"]').length,2);
@@ -108,9 +112,9 @@ test('controller: candidate rack changes reach audio and acceptance; Stop cancel
  const dom=new JSDOM(html,{url:'https://example.test/song-builder/'}),w=dom.window;globalThis.document=w.document;
  w.HTMLElement.prototype.scrollIntoView=()=>{};
  w.HTMLCanvasElement.prototype.getContext=()=>({beginPath(){},moveTo(){},lineTo(){},stroke(){}});
- const sandbox={document:w.document,window:w,navigator:w.navigator,location:w.location,history:w.history,sessionStorage:w.sessionStorage,localStorage:w.localStorage,URLSearchParams,URL,FormData,Blob,Option:w.Option,console,AudioEngine,P,RACK_DEFAULT,PendingRequests,bindFadeHandle,effectiveFades,renderRackPanel,sameRack,bindConsole,bindLive,mergePending,bindListening,bindCollaboration,openProducerRecommendation,confirm:()=>true,setTimeout:()=>0,clearTimeout:()=>{},setInterval:()=>0,clearInterval:()=>{},requestAnimationFrame:()=>{}};
+ const sandbox={document:w.document,window:w,navigator:w.navigator,location:w.location,history:w.history,sessionStorage:w.sessionStorage,localStorage:w.localStorage,URLSearchParams,URL,FormData,Blob,Option:w.Option,console,AudioEngine,P,RACK_DEFAULT,PendingRequests,bindFadeHandle,effectiveFades,renderRackPanel,sameRack,bindConsole,bindLive,mergePending,bindListening,bindCollaboration,openProducerRecommendation,bindSessionArchive,mountSubmissions,DraftJournal,storeAnalysisHandoff,confirm:()=>true,setTimeout:()=>0,clearTimeout:()=>{},setInterval:()=>0,clearInterval:()=>{},requestAnimationFrame:()=>{}};
  const source=readFileSync(new URL('../../song_builder/static/ui/controller.mjs',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/boot\(\);\s*$/,'');
- const h=new Function(...Object.keys(sandbox),source+'\nreturn {state,render,engine,auditionTake,stop,acceptTake,setLoader(fn){ensureAudio=fn;},noSave(){save=async()=>{};}};')(...Object.values(sandbox));
+ const h=new Function(...Object.keys(sandbox),source+'\nreturn {state,render,engine,auditionTake,stop,acceptTake,setLoader(fn){ensureAudio=fn;},noSave(){save=async()=>{};let version;api=async(path,options)=>{if(path.endsWith("/fork")){version=P.validateProject({...options.body.project,id:P.newId(),title:options.body.title});return {projectId:version.id};}throw Error("Unexpected request "+path);};loadProject=async()=>{state.project=version;state.revision=1;};listProjects=async()=>{};}};')(...Object.values(sandbox));
  try{
   const p=P.newProject(),assetId=P.newId(),job={id:P.newId(),projectId:p.id,sectionId:p.sections[0].id,status:'succeeded',kind:'generate',asset:{id:assetId,url:'/song-builder/api/assets/'+assetId+'/audio'}};
   h.state.project=p;h.state.sectionId=p.sections[0].id;h.state.jobs=[job];h.render();

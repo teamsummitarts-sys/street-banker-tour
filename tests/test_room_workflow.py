@@ -50,7 +50,7 @@ def metadata(**changes):
 def test_workflow_page_and_default_metadata(tmp_path):
     _,client,headers=app_client(tmp_path);saved=make_project(client,headers);project=saved['project']
     page=client.get('/song-builder/workflow?project='+project['id'])
-    assert page.status_code==200 and b'Group Buses' in page.data and b'Takes + Comping' in page.data
+    assert page.status_code==200 and b'Track Groups' in page.data and b'Takes + Comparison' in page.data
     result=client.get('/song-builder/api/workflow?projectId='+project['id'])
     assert result.status_code==200
     assert result.json=={'metadata':metadata(),'revision':0}

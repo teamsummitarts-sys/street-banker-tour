@@ -12,6 +12,7 @@ from flask import Blueprint, g, jsonify, render_template, request, send_file, se
 from werkzeug.exceptions import BadRequest, RequestEntityTooLarge
 
 from . import provider, validation as v
+from .account_scope import account_scope
 from .store import (MAX_CONCURRENT_JOBS, MAX_DAILY_JOBS, MAX_SERVICE_DAILY_JOBS,
                     Store, iso)
 
@@ -201,6 +202,9 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
                 result['asset'] = assets[0]
             else:
                 result['assets'] = assets
+        with service.store.connection() as db:
+            decision=db.execute('SELECT decision FROM room_take_decisions WHERE job_id=?',(row['id'],)).fetchone()
+        result['decision']=decision['decision'] if decision else 'pending'
         return result
 
     @bp.get('/')
@@ -215,7 +219,7 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
         access={k:member[k] for k in ('role','name','expires')} if member else {'role':'owner'}
         storage=service.store.storage(g.song_builder_account)
         if member: storage={'durable':storage['durable']}
-        return jsonify(schemaVersion=1, access=access, generation={'configured': service.configured() and not getattr(g,'room_member',None),
+        return jsonify(schemaVersion=1, accountScope=account_scope(app), access=access, generation={'configured': service.configured() and not getattr(g,'room_member',None),
             'separationConfigured': service.configured() and not getattr(g,'room_member',None), 'provider': 'elevenlabs', 'model': provider.MODEL,
             'maxSeconds': 120, 'unitPriceUsd': None}, storage=storage,
             limits={'maxUploadBytes': v.MAX_UPLOAD_BYTES, 'maxProjects': v.MAX_PROJECTS,
@@ -332,6 +336,12 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
         register_live(bp, service, body)
         from .listening import register as register_listening
         register_listening(bp, service, body)
+        from .session_archive import register as register_session_archive
+        register_session_archive(bp, app, service, body)
+        from .submissions import register as register_submissions
+        register_submissions(bp, app, service, body)
+        from .take_decisions import register as register_take_decisions
+        register_take_decisions(bp, service, body)
         register_workflow_ui(bp, app, workflow, csrf)
 
     from .analysis import register as register_analysis

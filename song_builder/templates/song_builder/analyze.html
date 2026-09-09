@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="song-builder-base" content="{{ builder_base_url }}"><meta name="song-builder-csrf" content="{{ builder_csrf }}">
+  <meta name="song-builder-base" content="{{ builder_base_url }}"><meta name="room-account-scope" content="{{ builder_account_scope }}">
+<meta name="song-builder-csrf" content="{{ builder_csrf }}">
   <title>Analyze &amp; Improve · The Room</title>
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/analysis.css">
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/unified-console.css?v=1">
@@ -37,9 +38,9 @@
           <svg class="icon upload-symbol" aria-hidden="true"><use href="#icon-upload"/></svg>
           <h3>Drop your audio here</h3>
           <p class="hint">Up to 12 authorized references</p>
-          <input id="upload" class="file-input" type="file" accept="audio/wav,.wav" multiple aria-label="Select authorized WAV files" tabindex="-1">
+          <input id="upload" class="file-input" type="file" accept="audio/wav,audio/mpeg,.wav,.mp3" multiple aria-label="Select authorized WAV or MP3 files" tabindex="-1">
           <button id="choose-files" type="button">Choose audio files</button>
-          <p class="hint format-note">16-bit WAV · 14 MiB / 10 min per file</p>
+          <p class="hint format-note">Upload: 16-bit WAV, up to 14 MiB. WAV/MP3 sources can be prepared as local excerpts.</p>
         </div>
         <figure class="upload-art"><img src="{{ builder_assets_url }}ui/images/analysis-editor.jpg" alt="The Room song map and actual instrument waveforms" width="1284" height="548"><figcaption>The Room · song editor</figcaption></figure>
       </div>
