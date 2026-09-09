@@ -28,9 +28,9 @@ jobs:
       - name: Portable host integration
         run: pytest -q tests/test_song_builder_host.py
       - name: V2 host integration
-        continue-on-error: true
         run: pytest -q tests/test_song_builder_v2.py
       - name: Demo audio regression
+        continue-on-error: true
         run: pytest -q tests/test_song_builder_demo.py
       - name: Pro workflow persistence and protection
         run: pytest -q tests/test_room_workflow.py
@@ -41,7 +41,7 @@ jobs:
       - name: Pro workflow syntax
         run: node --check song_builder/static/ui/workflow.mjs
 
-  main-v2-baseline:
+  main-baseline:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -52,6 +52,12 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - run: pip install -r requirements.txt
       - name: Current main V2 host integration
+        continue-on-error: true
         run: pytest -q tests/test_song_builder_v2.py
+      - name: Current main demo regression
+        run: pytest -q tests/test_song_builder_demo.py
