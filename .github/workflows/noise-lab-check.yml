@@ -1,7 +1,15 @@
 name: Noise Lab verification
 
 on:
+  workflow_dispatch:
   pull_request:
+    paths:
+      - "noise_lab/**"
+      - "tests/noise_lab/**"
+      - ".github/workflows/noise-lab-check.yml"
+  push:
+    branches:
+      - main
     paths:
       - "noise_lab/**"
       - "tests/noise_lab/**"
@@ -26,3 +34,9 @@ jobs:
           node --check noise_lab/static/engine/meter.mjs
           node --check noise_lab/static/engine/processor.mjs
           node --check noise_lab/static/engine/recipes.mjs
+      - name: UI module syntax
+        run: |
+          node --check noise_lab/static/ui/console.mjs
+          node --check noise_lab/static/ui/controller.mjs
+          node --check noise_lab/static/ui/patch-library.mjs
+          node --check noise_lab/static/ui/sound-effects.mjs
