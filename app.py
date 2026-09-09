@@ -641,6 +641,11 @@ def create_app():
     if app_env in ("staging", "production") and not secret_key:
         raise RuntimeError("SECRET_KEY is required in staging and production")
     app.config["SECRET_KEY"] = secret_key or "street-banker-v2-local-development-only"
+    @app.get("/healthz")
+    def healthz():
+        """Public liveness probe for Render and deployment verification."""
+        return jsonify({"ok": True, "service": "street-banker-v2"})
+
     global PUBLIC_BASE_URL, _PARTNER_ROOT
     PUBLIC_BASE_URL = _resolved_public_base_url()
     _PARTNER_ROOT = (os.environ.get("PARTNER_ROOT_DOMAIN")
@@ -3125,7 +3130,7 @@ def create_app():
                         # The Team-Up Board's one-click renew link from the
                         # expiry email; single-use token, renews one listing.
                         "/board-renew/")
-    _PUBLIC_EXACT = {"/", "/reach", "/login", "/signup", "/logout", "/submit", "/forgot",
+    _PUBLIC_EXACT = {"/", "/healthz", "/reach", "/login", "/signup", "/logout", "/submit", "/forgot",
                      "/catalog-sweep", "/demo-open", "/plan",
                      "/terms", "/privacy", "/sw.js", "/demo-access",
                      "/api/artist-signal-profile",
