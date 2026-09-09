@@ -6,6 +6,7 @@ on:
       - "song_builder/**"
       - "tests/test_song_builder*.py"
       - "tests/test_room_workflow.py"
+      - "tests/test_room_phase1_design.py"
       - "tests/song_builder/**"
       - ".github/workflows/song-builder-check.yml"
 
@@ -35,6 +36,8 @@ jobs:
         run: pytest -q tests/test_song_builder_demo.py
       - name: Pro workflow persistence and protection
         run: pytest -q tests/test_room_workflow.py
+      - name: Phase 1 presentation routing
+        run: pytest -q tests/test_room_phase1_design.py
       - name: Browser core modules
         run: node --test tests/song_builder/*.test.mjs
       - name: Editor controller syntax
