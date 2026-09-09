@@ -1,0 +1,59 @@
+name: V2 App Shell Capture
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v2-app-shell-capture.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Install capture tools
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0 >/dev/null 2>&1
+          npx playwright install --with-deps chromium
+      - name: Capture signed-in V2 app shell
+        env:
+          V2_URL: https://street-banker-v2-workflows.onrender.com
+        run: |
+          mkdir -p screenshots
+          node <<'NODE'
+          const { chromium, devices } = require('playwright');
+          async function loginAndCapture(context, path, output) {
+            const page = await context.newPage();
+            await page.goto(process.env.V2_URL + '/login', {waitUntil:'networkidle', timeout:120000});
+            const form = page.locator('form[action="/demo-open"]');
+            await form.locator('[name="demo_workspace"]').fill('demo-artist@streetbanker.io');
+            await form.locator('[name="demo_password"]').fill('sweep');
+            await Promise.all([
+              page.waitForLoadState('networkidle'),
+              form.locator('button[type="submit"], input[type="submit"]').first().click()
+            ]);
+            await page.goto(process.env.V2_URL + path, {waitUntil:'networkidle', timeout:120000});
+            await page.screenshot({path:output, fullPage:true});
+          }
+          (async()=>{
+            const browser = await chromium.launch({headless:true});
+            const desktop = await browser.newContext({viewport:{width:1440,height:1000}, deviceScaleFactor:1});
+            await loginAndCapture(desktop, '/command-center', 'screenshots/v2-app-desktop.png');
+            await desktop.close();
+            const mobile = await browser.newContext({...devices['iPhone 14 Pro']});
+            await loginAndCapture(mobile, '/command-center', 'screenshots/v2-app-mobile.png');
+            await mobile.close();
+            await browser.close();
+          })();
+          NODE
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: v2-app-shell-screenshots
+          path: screenshots/*.png
+          if-no-files-found: error
+          retention-days: 1
