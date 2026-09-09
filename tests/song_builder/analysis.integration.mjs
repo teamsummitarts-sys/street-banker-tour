@@ -32,6 +32,8 @@ test('real Flask + DOM: upload stays unassigned, choose local, review and persis
   d.getElementById('upload').dispatchEvent(new dom.window.Event('change'));
   await until(()=>d.querySelector('#upload-queue .file-wave'));
   assert.equal(d.querySelectorAll('#upload-queue audio').length,1);
+  assert.equal(d.getElementById('preview-empty').hidden,true);
+  assert.match(d.querySelector('#upload-queue .hint').textContent,/0:04/);
   d.getElementById('upload-button').click();
   await until(()=>d.getElementById('status').textContent.includes('Upload complete'));
   assert.equal(d.getElementById('transfer-progress').value,1);
@@ -51,5 +53,8 @@ test('real Flask + DOM: upload stays unassigned, choose local, review and persis
   const report=await (await globalThis.fetch('/song-builder/api/analysis/runs/'+runs.runs[0].id)).json();
   assert.equal(report.run.report.blueprint.prompt,'Dry drums; restrained dynamics.');
   assert.equal((await (await globalThis.fetch('/song-builder/api/analysis/uploads')).json()).tracks.length,0);
+  d.getElementById('clear-queue').click();
+  assert.equal(d.getElementById('preview-empty').hidden,false);
+  assert.equal(d.querySelectorAll('#upload-queue audio').length,0);
  }finally{server.kill();dom?.window.close();globalThis.fetch=nativeFetch;URL.createObjectURL=originalCreate;for(const [key,value] of Object.entries(originalGlobals)){if(value===undefined)delete globalThis[key];else globalThis[key]=value;}}
 });
