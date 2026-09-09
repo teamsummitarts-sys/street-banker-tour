@@ -32,7 +32,12 @@ bp = Blueprint(
 
 # Endpoints reachable while the gate is locked: the unlock form itself, and
 # the email webhook, which authenticates every request with its own signature.
-ACCESS_EXEMPT = {"reach.landing", "reach.unlock", "reach.email_webhook"}
+ACCESS_EXEMPT = {
+    "reach.landing",
+    "reach.static",
+    "reach.unlock",
+    "reach.email_webhook",
+}
 
 
 @bp.before_request
