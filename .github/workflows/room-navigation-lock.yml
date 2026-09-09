@@ -15,121 +15,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Add Room tool navigation and preservation manifest
+      - name: Apply exact Room navigation patch
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          def replace_once(path, old, new):
-              p = Path(path)
-              text = p.read_text()
-              if old not in text:
-                  raise SystemExit(f'Expected block not found in {path}')
-              p.write_text(text.replace(old, new, 1))
-
-          index = 'song_builder/templates/song_builder/index.html'
-          analyze = 'song_builder/templates/song_builder/analyze.html'
-          workflow = 'song_builder/templates/song_builder/workflow.html'
-
-          replace_once(index, '''  <header class="site-bar">
-    <a class="brand" href="{{ builder_base_url }}/" aria-label="The Room projects"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></span></a>
-    <a class="back-link" href="{{ builder_base_url }}/analyze" target="_blank" rel="noopener">Analyze &amp; Improve ↗</a>
-    <a class="back-link" href="{{ return_url }}">Back to Noise Lab</a>
-  </header>''', '''  <header class="site-bar">
-    <a class="brand" href="{{ builder_base_url }}/" aria-label="The Room projects"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></span></a>
-    <nav aria-label="The Room tools" style="display:flex;align-items:center;justify-content:flex-end;gap:.45rem;flex:1;flex-wrap:wrap">
-      <a class="back-link" href="{{ builder_base_url }}/">Studio</a>
-      <a class="back-link" href="{{ builder_base_url }}/analyze#sound-dna">Sound DNA</a>
-      <a class="back-link" href="{{ builder_base_url }}/analyze#improve-track">Improve My Track</a>
-      <a class="back-link" href="{{ builder_base_url }}/analyze#reports-heading">Tempo &amp; Key Lab</a>
-      <a class="back-link" href="{{ builder_base_url }}/workflow">Pro Workflow</a>
-      <a class="back-link" href="#session-team">Collaborate + Listen</a>
-    </nav>
-    <a class="back-link" href="{{ return_url }}">Noise Lab</a>
-  </header>''')
-
-          replace_once(index, '</body>', '''  <script>
-    if (window.location.hash === '#session-team') {
-      const panel = document.getElementById('session-team');
-      if (panel) panel.open = true;
-    }
-  </script>
-</body>''')
-
-          replace_once(analyze, '''<header class="site-bar">
-  <a href="{{ builder_base_url }}/" class="wordmark"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker" width="1536" height="1024"></span></a>
-  <span class="header-title">Analyze &amp; Improve</span>
-  <a href="{{ builder_base_url }}/" class="editor-link">Song editor <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
-</header>''', '''<header class="site-bar">
-  <a href="{{ builder_base_url }}/" class="wordmark"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker" width="1536" height="1024"></span></a>
-  <span class="header-title">Analyze &amp; Improve</span>
-  <nav aria-label="The Room tools" style="display:flex;align-items:center;justify-content:flex-end;gap:.45rem;flex:1;flex-wrap:wrap">
-    <a href="{{ builder_base_url }}/" class="editor-link">Studio</a>
-    <a href="{{ builder_base_url }}/analyze#sound-dna" class="editor-link">Sound DNA</a>
-    <a href="{{ builder_base_url }}/analyze#improve-track" class="editor-link">Improve My Track</a>
-    <a href="{{ builder_base_url }}/analyze#reports-heading" class="editor-link">Tempo &amp; Key Lab</a>
-    <a href="{{ builder_base_url }}/workflow" class="editor-link">Pro Workflow</a>
-    <a href="{{ builder_base_url }}/#session-team" class="editor-link">Collaborate + Listen</a>
-  </nav>
-</header>''')
-
-          replace_once(analyze,
-              '<label class="check"><input type="radio" name="mode" value="dna" checked>',
-              '<label id="sound-dna" class="check"><input type="radio" name="mode" value="dna" checked>')
-          replace_once(analyze,
-              '<label class="check"><input type="radio" name="mode" value="improve">',
-              '<label id="improve-track" class="check"><input type="radio" name="mode" value="improve">')
-          replace_once(analyze, '</body>', '''<script>
-  window.addEventListener('DOMContentLoaded', () => {
-    const mode = window.location.hash === '#improve-track' ? 'improve' : window.location.hash === '#sound-dna' ? 'dna' : null;
-    if (!mode) return;
-    const input = document.querySelector(`[name="mode"][value="${mode}"]`);
-    if (input) {
-      input.checked = true;
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-  });
-</script>
-</body>''')
-
-          replace_once(workflow, '''  <header class="topbar">
-    <div>
-      <a class="workflow-brand" href="{{ builder_base_url }}/"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></a>
-      <h1>Pro Workflow</h1>
-    </div>
-    <a class="back-link" href="{{ builder_base_url }}/">Back to editor</a>
-  </header>''', '''  <header class="topbar">
-    <div>
-      <a class="workflow-brand" href="{{ builder_base_url }}/"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></a>
-      <h1>Pro Workflow</h1>
-    </div>
-    <nav aria-label="The Room tools" style="display:flex;align-items:center;justify-content:flex-end;gap:.45rem;flex-wrap:wrap">
-      <a class="back-link" href="{{ builder_base_url }}/">Studio</a>
-      <a class="back-link" href="{{ builder_base_url }}/analyze#sound-dna">Sound DNA</a>
-      <a class="back-link" href="{{ builder_base_url }}/analyze#improve-track">Improve My Track</a>
-      <a class="back-link" href="{{ builder_base_url }}/analyze#reports-heading">Tempo &amp; Key Lab</a>
-      <a class="back-link" href="{{ builder_base_url }}/workflow">Pro Workflow</a>
-      <a class="back-link" href="{{ builder_base_url }}/#session-team">Collaborate + Listen</a>
-    </nav>
-  </header>''')
-
-          manifest = Path('docs/song-builder/PRESERVATION-20260909-NAV-LOCK.md')
-          manifest.write_text('''# The Room preservation checkpoint — 2026-09-09\n\nThis checkpoint was created before further Room product work.\n\n## Preserved pre-navigation state\n\n- Branch: `preserve-room-2026-09-09-before-nav-lock`\n- Commit: `1a09f437f9c932e7fef36cf17b1d21b0b66e097e`\n\n## Locked Room navigation\n\nThe Room now keeps these existing surfaces visibly reachable without duplicating or moving their underlying logic:\n\n- Studio / song editor\n- Sound DNA (inside Analyze & Improve)\n- Improve My Track (inside Analyze & Improve)\n- Tempo & Key Lab (inside analysis results)\n- Pro Workflow (track groups, section scenes, takes/comparison, clip protection)\n- Collaborate + Listen (collaboration, hosted listening, timestamped feedback)\n\n## Preservation rule\n\nThis change is navigation-only. It must not replace or redesign Room audio, analysis, project persistence, collaboration, listening, workflow metadata, Noise Lab, Reach, database, or storage behavior. The git commit containing this file is the post-navigation locked state and should be preserved as a rollback checkpoint before new feature work.\n''')
-
-          required = {
-              index: ['Sound DNA', 'Improve My Track', 'Tempo &amp; Key Lab', 'Pro Workflow', 'Collaborate + Listen'],
-              analyze: ['id="sound-dna"', 'id="improve-track"', 'Pro Workflow', 'Collaborate + Listen'],
-              workflow: ['Sound DNA', 'Improve My Track', 'Tempo &amp; Key Lab', 'Collaborate + Listen'],
-          }
-          for path, tokens in required.items():
-              text = Path(path).read_text()
-              missing = [token for token in tokens if token not in text]
-              if missing:
-                  raise SystemExit(f'{path} missing {missing}')
-          PY
-
+          echo 'ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCgpkZWYgcmVwbGFjZV9vbmNlKHBhdGgsIG9sZCwgbmV3KToKICAgIHAgPSBQYXRoKHBhdGgpCiAgICB0ZXh0ID0gcC5yZWFkX3RleHQoKQogICAgaWYgb2xkIG5vdCBpbiB0ZXh0OgogICAgICAgIHJhaXNlIFN5c3RlbUV4aXQoZiJFeHBlY3RlZCBibG9jayBub3QgZm91bmQgaW4ge3BhdGh9IikKICAgIHAud3JpdGVfdGV4dCh0ZXh0LnJlcGxhY2Uob2xkLCBuZXcsIDEpKQoKaW5kZXggPSAic29uZ19idWlsZGVyL3RlbXBsYXRlcy9zb25nX2J1aWxkZXIvaW5kZXguaHRtbCIKYW5hbHl6ZSA9ICJzb25nX2J1aWxkZXIvdGVtcGxhdGVzL3NvbmdfYnVpbGRlci9hbmFseXplLmh0bWwiCndvcmtmbG93ID0gInNvbmdfYnVpbGRlci90ZW1wbGF0ZXMvc29uZ19idWlsZGVyL3dvcmtmbG93Lmh0bWwiCgpyZXBsYWNlX29uY2UoaW5kZXgsICIiIiAgPGhlYWRlciBjbGFzcz0ic2l0ZS1iYXIiPgogICAgPGEgY2xhc3M9ImJyYW5kIiBocmVmPSJ7eyBidWlsZGVyX2Jhc2VfdXJsIH19LyIgYXJpYS1sYWJlbD0iVGhlIFJvb20gcHJvamVjdHMiPjxzcGFuIGNsYXNzPSJyb29tLWJyYW5kLWNyb3AiPjxpbWcgc3JjPSJ7eyBidWlsZGVyX2Fzc2V0c191cmwgfX11aS9pbWFnZXMvdGhlLXJvb20tYXBwcm92ZWQucG5nIiBhbHQ9IlRoZSBSb29tIGJ5IFN0cmVldCBCYW5rZXIiPjwvc3Bhbj48L2E+CiAgICA8YSBjbGFzcz0iYmFjay1saW5rIiBocmVmPSJ7eyBidWlsZGVyX2Jhc2VfdXJsIH19L2FuYWx5emUiIHRhcmdldD0iX2JsYW5rIiByZWw9Im5vb3BlbmVyIj5BbmFseXplICZhbXA7IEltcHJvdmUg4oaXP C9hPgogICAgPGEgY2xhc3M9ImJhY2stbGluayIgaHJlZj0ie3sgcmV0dXJuX3VybCB9fSI+QmFjayB0byBOb2lzZSBMYWI8L2E+CiAgPC9oZWFkZXI+IiIiLCAiIiIgIDxoZWFkZXIgY2xhc3M9InNpdGUtYmFyIj4KICAgIDxhIGNsYXNzPSJicmFuZCIgaHJlZj0ie3sgYnVpbGRlcl9iYXNlX3VybCB9fS8iIGFyaWEtbGFiZWw9IlRoZSBSb29tIHByb2plY3RzIj48c3BhbiBjbGFzcz0icm9vbS1icmFuZC1jcm9wIj48aW1nIHNyYz0ie3sgYnVpbGRlcl9hc3NldHNfdXJsIH19dWkvaW1hZ2VzL3RoZS1yb29tLWFwcHJvdmVkLnBuZyIgYWx0PSJUaGUgUm9vbSBieSBTdHJlZXQgQmFua2VyIj48L3NwYW4+PC9hPgogICAgPG5hdiBhcmlhLWxhYmVsPSJUaGUgUm9vbSB0b29scyIgc3R5bGU9ImRpc3BsYXk6ZmxleDthbGlnbi1pdGVtczpjZW50ZXI7anVzdGlmeS1jb250ZW50OmZsZXgtZW5kO2dhcDouNDVyZW07ZmxleDoxO2ZsZXgtd3JhcDp3cmFwIj4KICAgICAgPGEgY2xhc3M9ImJhY2stbGluayIgaHJlZj0ie3sgYnVpbGRlcl9iYXNlX3VybCB9fS8iPlN0dWRpbzwvYT4KICAgICAgPGEgY2xhc3M9ImJhY2stbGluayIgaHJlZj0ie3sgYnVpbGRlcl9iYXNlX3VybCB9fS9hbmFseXplI3NvdW5kLWRuYSI+U291bmQgRE5BPC9hPgogICAgICA8YSBjbGFzcz0iYmFjay1saW5rIiBocmVmPSJ7eyBidWlsZGVyX2Jhc2VfdXJsIH19L2FuYWx5emUjaW1wcm92ZS10cmFjayI+SW1wcm92ZSBNeSBUcmFjazwvYT4KICAgICAgPGEgY2xhc3M9ImJhY2stbGluayIgaHJlZj0ie3sgYnVpbGRlcl9iYXNlX3VybCB9fS9hbmFseXplI3JlcG9ydHMtaGVhZGluZyI+VGVtcG8gJmFtcDsgS2V5IExhYjwvYT4KICAgICAgPGEgY2xhc3M9ImJhY2stbGluayIgaHJlZj0ie3sgYnVpbGRlcl9iYXNlX3VybCB9fS93b3JrZmxvdyI+UHJvIFdvcmtmbG93PC9hPgogICAgICA8YSBjbGFzcz0iYmFjay1saW5rIiBocmVmPSIjc2Vzc2lvbi10ZWFtIj5Db2xsYWJvcmF0ZSArIExpc3RlbjwvYT4KICAgIDwvbmF2PgogICAgPGEgY2xhc3M9ImJhY2stbGluayIgaHJlZj0ie3sgcmV0dXJuX3VybCB9fSI+Tm9pc2UgTGFiPC9hPgogIDwvaGVhZGVyPiIiIikKCnJlcGxhY2Vfb25jZShpbmRleCwgIjwvYm9keT4iLCAiIiIgIDxzY3JpcHQ+CiAgICBpZiAod2luZG93LmxvY2F0aW9uLmhhc2ggPT09ICcjc2Vzc2lvbi10ZWFtJykgewogICAgICBjb25zdCBwYW5lbCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdzZXNzaW9uLXRlYW0nKTsKICAgICAgaWYgKHBhbmVsKSBwYW5lbC5vcGVuID0gdHJ1ZTsKICAgIH0KICA8L3NjcmlwdD4KPC9ib2R5PiIiIikKCnJlcGxhY2Vfb25jZShhbmFseXplLCAiIiI8aGVhZGVyIGNsYXNzPSJzaXRlLWJhciI+CiAgPGEgaHJlZj0ie3sgYnVpbGRlcl9iYXNlX3VybCB9fS8iIGNsYXNzPSJ3b3JkbWFyayI+PHNwYW4gY2xhc3M9InJvb20tYnJhbmQtY3JvcCI+PGltZyBzcmM9Int7IGJ1aWxkZXJfYXNzZXRzX3VybCB9fXVpL2ltYWdlcy90aGUtcm9vbS1hcHByb3ZlZC5wbmciIGFsdD0iVGhlIFJvb20gYnkgU3RyZWV0IEJhbmtlciIgd2lkdGg9IjE1MzYiIGhlaWdodD0iMTAyNCI+PC9zcGFuPjwvYT4KICA8c3BhbiBjbGFzcz0iaGVhZGVyLXRpdGxlIj5BbmFseXplICZhbXA7IEltcHJvdmU8L3NwYW4+CiAgPGEgaHJlZj0ie3sgYnVpbGRlcl9iYXNlX3VybCB9fS8iIGNsYXNzPSJlZGl0b3ItbGluayI+U29uZyBlZGl0b3IgPHN2ZyBjbGFzcz0iaWNvbiIgYXJpYS1oaWRkZW49InRydWUiPjx1c2UgaHJlZj0iI2ljb24tYXJyb3ciLz48L3N2Zz48L2E+CjwvaGVhZGVyPiIiIiwgIiIiPGhlYWRlciBjbGFzcz0ic2l0ZS1iYXIiPgogIDxhIGhyZWY9Int7IGJ1aWxkZXJfYmFzZV91cmwgfX0vIiBjbGFzcz0id29yZG1hcmsiPjxzcGFuIGNsYXNzPSJyb29tLWJyYW5kLWNyb3AiPjxpbWcgc3JjPSJ7eyBidWlsZGVyX2Fzc2V0c191cmwgfX11aS9pbWFnZXMvdGhlLXJvb20tYXBwcm92ZWQucG5nIiBhbHQ9IlRoZSBSb29tIGJ5IFN0cmVldCBCYW5rZXIiIHdpZHRoPSIxNTM2IiBoZWlnaHQ9IjEwMjQiPjwvc3Bhbj48L2E+CiAgPHNwYW4gY2xhc3M9ImhlYWRlci10aXRsZSI+QW5hbHl6ZSAmYW1wOyBJbXByb3ZlPC9zcGFuPgogIDxuYXYgYXJpYS1sYWJlbD0iVGhlIFJvb20gdG9vbHMiIHN0eWxlPSJkaXNwbGF5OmZsZXg7YWxpZ24taXRlbXM6Y2VudGVyO2p1c3RpZnktY29udGVudDpmbGV4LWVuZDtnYXA6LjQ1cmVtO2ZsZXg6MTtmbGV4LXdyYXA6d3JhcCI+CiAgICA8YSBocmVmPSJ7eyBidWlsZGVyX2Jhc2VfdXJsIH19LyIgY2xhc3M9ImVkaXRvci1saW5rIj5TdHVkaW88L2E+CiAgICA8YSBocmVmPSJ7eyBidWlsZGVyX2Jhc2VfdXJsIH19L2FuYWx5emUjc291bmQtZG5hIiBjbGFzcz0iZWRpdG9yLWxpbmsiPlNvdW5kIEROQTwvYT4KICAgIDxhIGhyZWY9Int7IGJ1aWxkZXJfYmFzZV91cmwgfX0vYW5hbHl6ZSNpbXByb3ZlLXRyYWNrIiBjbGFzcz0iZWRpdG9yLWxpbmsiPkltcHJvdmUgTXkgVHJhY2s8L2E+CiAgICA8YSBocmVmPSJ7eyBidWlsZGVyX2Jhc2VfdXJsIH19L2FuYWx5emUjcmVwb3J0cy1oZWFkaW5nIiBjbGFzcz0iZWRpdG9yLWxpbmsiPlRlbXBvICZhbXA7IEtleSBMYWI8L2E+CiAgICA8YSBocmVmPSJ7eyBidWlsZGVyX2Jhc2VfdXJsIH19L3dvcmtmbG93IiBjbGFzcz0iZWRpdG9yLWxpbmsiPlBybyBXb3JrZmxvdzwvYT4KICAgIDxhIGhyZWY9Int7IGJ1aWxkZXJfYmFzZV91cmwgfX0vI3Nlc3Npb24tdGVhbSIgY2xhc3M9ImVkaXRvci1saW5rIj5Db2xsYWJvcmF0ZSArIExpc3RlbjwvYT4KICA8L25hdj4KPC9oZWFkZXI+IiIiKQoKcmVwbGFjZV9vbmNlKGFuYWx5emUsCiAgICAnPGxhYmVsIGNsYXNzPSJjaGVjayI+PGlucHV0IHR5cGU9InJhZGlvIiBuYW1lPSJtb2RlIiB2YWx1ZT0iZG5hIiBjaGVja2VkPicsCiAgICAnPGxhYmVsIGlkPSJzb3VuZC1kbmEiIGNsYXNzPSJjaGVjayI+PGlucHV0IHR5cGU9InJhZGlvIiBuYW1lPSJtb2RlIiB2YWx1ZT0iZG5hIiBjaGVja2VkPicpCnJlcGxhY2Vfb25jZShhbmFseXplLAogICAgJzxsYWJlbCBjbGFzcz0iY2hlY2siPjxpbnB1dCB0eXBlPSJyYWRpbyIgbmFtZT0ibW9kZSIgdmFsdWU9ImltcHJvdmUiPicsCiAgICAnPGxhYmVsIGlkPSJpbXByb3ZlLXRyYWNrIiBjbGFzcz0iY2hlY2siPjxpbnB1dCB0eXBlPSJyYWRpbyIgbmFtZT0ibW9kZSIgdmFsdWU9ImltcHJvdmUiPicpCgpyZXBsYWNlX29uY2UoYW5hbHl6ZSwgIjwvYm9keT4iLCAiIiI8c2NyaXB0PgogIHdpbmRvdy5hZGRFdmVudExpc3RlbmVyKCdET01Db250ZW50TG9hZGVkJywgKCkgPT4gewogICAgY29uc3QgbW9kZSA9IHdpbmRvdy5sb2NhdGlvbi5oYXNoID09PSAnI2ltcHJvdmUtdHJhY2snID8gJ2ltcHJvdmUnIDogd2luZG93LmxvY2F0aW9uLmhhc2ggPT09ICcjc291bmQtZG5hJyA/ICdkbmEnIDogbnVsbDsKICAgIGlmICghbW9kZSkgcmV0dXJuOwogICAgY29uc3QgaW5wdXQgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKGBbbmFtZT0ibW9kZSJdW3ZhbHVlPSIke21vZGV9Il1gKTsKICAgIGlmIChpbnB1dCkgewogICAgICBpbnB1dC5jaGVja2VkID0gdHJ1ZTsKICAgICAgaW5wdXQuZGlzcGF0Y2hFdmVudChuZXcgRXZlbnQoJ2NoYW5nZScsIHsgYnViYmxlczogdHJ1ZSB9KSk7CiAgICB9CiAgfSk7Cjwvc2NyaXB0Pgo8L2JvZHk+IiIiKQoKcmVwbGFjZV9vbmNlKHdvcmtmbG93LCAiIiIgIDxoZWFkZXIgY2xhc3M9InRvcGJhciI+CiAgICA8ZGl2PgogICAgICA8YSBjbGFzcz0id29ya2Zsb3ctYnJhbmQiIGhyZWY9Int7IGJ1aWxkZXJfYmFzZV91cmwgfX0vIj48aW1nIHNyYz0ie3sgYnVpbGRlcl9hc3NldHNfdXJsIH19dWkvaW1hZ2VzL3RoZS1yb29tLWFwcHJvdmVkLnBuZyIgYWx0PSJUaGUgUm9vbSBieSBTdHJlZXQgQmFua2VyIj48L2E+CiAgICAgIDxoMT5Qcm8gV29ya2Zsb3c8L2gxPgogICAgPC9kaXY+CiAgICA8YSBjbGFzcz0iYmFjay1saW5rIiBocmVmPSJ7eyBidWlsZGVyX2Jhc2VfdXJsIH19LyI+QmFjayB0byBlZGl0b3I8L2E+CiAgPC9oZWFkZXI+IiIiLCAiIiIgIDxoZWFkZXIgY2xhc3M9InRvcGJhciI+CiAgICA8ZGl2PgogICAgICA8YSBjbGFzcz0id29ya2Zsb3ctYnJhbmQiIGhyZWY9Int7IGJ1aWxkZXJfYmFzZV91cmwgfX0vIj48aW1nIHNyYz0ie3sgYnVpbGRlcl9hc3NldHNfdXJsIH19dWkvaW1hZ2VzL3RoZS1yb29tLWFwcHJvdmVkLnBuZyIgYWx0PSJUaGUgUm9vbSBieSBTdHJlZXQgQmFua2VyIj48L2E+CiAgICAgIDxoMT5Qcm8gV29ya2Zsb3c8L2gxPgogICAgPC9kaXY+CiAgICA8bmF2IGFyaWEtbGFiZWw9IlRoZSBSb29tIHRvb2xzIiBzdHlsZT0iZGlzcGxheTpmbGV4O2FsaWduLWl0ZW1zOmNlbnRlcjtqdXN0aWZ5LWNvbnRlbnQ6ZmxleC1lbmQ7Z2FwOi40NXJlbTtmbGV4LXdyYXA6d3JhcCI+CiAgICAgIDxhIGNsYXNzPSJiYWNrLWxpbmsiIGhyZWY9Int7IGJ1aWxkZXJfYmFzZV91cmwgfX0vIj5TdHVkaW88L2E+CiAgICAgIDxhIGNsYXNzPSJiYWNrLWxpbmsiIGhyZWY9Int7IGJ1aWxkZXJfYmFzZV91cmwgfX0vYW5hbHl6ZSNzb3VuZC1kbmEiPlNvdW5kIEROQTwvYT4KICAgICAgPGEgY2xhc3M9ImJhY2stbGluayIgaHJlZj0ie3sgYnVpbGRlcl9iYXNlX3VybCB9fS9hbmFseXplI2ltcHJvdmUtdHJhY2siPkltcHJvdmUgTXkgVHJhY2s8L2E+CiAgICAgIDxhIGNsYXNzPSJiYWNrLWxpbmsiIGhyZWY9Int7IGJ1aWxkZXJfYmFzZV91cmwgfX0vYW5hbHl6ZSNyZXBvcnRzLWhlYWRpbmciPlRlbXBvICZhbXA7IEtleSBMYWI8L2E+CiAgICAgIDxhIGNsYXNzPSJiYWNrLWxpbmsiIGhyZWY9Int7IGJ1aWxkZXJfYmFzZV91cmwgfX0vd29ya2Zsb3ciPlBybyBXb3JrZmxvdzwvYT4KICAgICAgPGEgY2xhc3M9ImJhY2stbGluayIgaHJlZj0ie3sgYnVpbGRlcl9iYXNlX3VybCB9fS8jc2Vzc2lvbi10ZWFtIj5Db2xsYWJvcmF0ZSArIExpc3RlbjwvYT4KICAgIDwvbmF2PgogIDwvaGVhZGVyPiIiIikKCm1hbmlmZXN0ID0gUGF0aCgiZG9jcy9zb25nLWJ1aWxkZXIvUFJFU0VSVkFUSU9OLTIwMjYwOTA5LU5BVi1MT0NLLm1kIikKbWFuaWZlc3Qud3JpdGVfdGV4dCgiIiIjIFRoZSBSb29tIHByZXNlcnZhdGlvbiBjaGVja3BvaW50IOKAlCAyMDI2LTA5LTA5CgpUaGlzIGNoZWNrcG9pbnQgd2FzIGNyZWF0ZWQgYmVmb3JlIGZ1cnRoZXIgUm9vbSBwcm9kdWN0IHdvcmsuCgojIyBQcmVzZXJ2ZWQgcHJlLW5hdmlnYXRpb24gc3RhdGUKCi0gQnJhbmNoOiBgcHJlc2VydmUtcm9vbS0yMDI2LTA5LTA5LWJlZm9yZS1uYXYtbG9ja2AKLSBDb21taXQ6IGAxYTA5ZjQzN2Y5YzkzMmU3ZmVmMzZjZjE3YjFkMjFiMGI2NmUwOTdlYAoKIyMgTG9ja2VkIFJvb20gbmF2aWdhdGlvbgoKVGhlIFJvb20ga2VlcHMgdGhlc2UgZXhpc3Rpbmcgc3VyZmFjZXMgdmlzaWJseSByZWFjaGFibGUgd2l0aG91dCBkdXBsaWNhdGluZyBvciBtb3ZpbmcgdGhlaXIgdW5kZXJseWluZyBsb2dpYzoKCi0gU3R1ZGlvIC8gc29uZyBlZGl0b3IKLSBTb3VuZCBETkEgKGluc2lkZSBBbmFseXplICYgSW1wcm92ZSkKLSBJbXByb3ZlIE15IFRyYWNrIChpbnNpZGUgQW5hbHl6ZSAmIEltcHJvdmUpCi0gVGVtcG8gJiBLZXkgTGFiIChpbnNpZGUgYW5hbHlzaXMgcmVzdWx0cykKLSBQcm8gV29ya2Zsb3cgKHRyYWNrIGdyb3Vwcywgc2VjdGlvbiBzY2VuZXMsIHRha2VzL2NvbXBhcmlzb24sIGNsaXAgcHJvdGVjdGlvbikKLSBDb2xsYWJvcmF0ZSArIExpc3RlbiAoY29sbGFib3JhdGlvbiwgaG9zdGVkIGxpc3RlbmluZywgdGltZXN0YW1wZWQgZmVlZGJhY2spCgojIyBQcmVzZXJ2YXRpb24gcnVsZQoKVGhpcyBjaGFuZ2UgaXMgbmF2aWdhdGlvbi1vbmx5LiBJdCBtdXN0IG5vdCByZXBsYWNlIG9yIHJlZGVzaWduIFJvb20gYXVkaW8sIGFuYWx5c2lzLCBwcm9qZWN0IHBlcnNpc3RlbmNlLCBjb2xsYWJvcmF0aW9uLCBsaXN0ZW5pbmcsIHdvcmtmbG93IG1ldGFkYXRhLCBOb2lzZSBMYWIsIFJlYWNoLCBkYXRhYmFzZSwgb3Igc3RvcmFnZSBiZWhhdmlvci4gVGhlIGdpdCBjb21taXQgY29udGFpbmluZyB0aGlzIGZpbGUgaXMgdGhlIHBvc3QtbmF2aWdhdGlvbiBsb2NrZWQgc3RhdGUgYW5kIHNob3VsZCBiZSBwcmVzZXJ2ZWQgYXMgYSByb2xsYmFjayBjaGVja3BvaW50IGJlZm9yZSBuZXcgZmVhdHVyZSB3b3JrLgoiIiIpCgpyZXF1aXJlZCA9IHsKICAgIGluZGV4OiBbIlNvdW5kIEROQSIsICJJbXByb3ZlIE15IFRyYWNrIiwgIlRlbXBvICZhbXA7IEtleSBMYWIiLCAiUHJvIFdvcmtmbG93IiwgIkNvbGxhYm9yYXRlICsgTGlzdGVuIl0sCiAgICBhbmFseXplOiBbJ2lkPSJzb3VuZC1kbmEiJywgJ2lkPSJpbXByb3ZlLXRyYWNrIicsICJQcm8gV29ya2Zsb3ciLCAiQ29sbGFib3JhdGUgKyBMaXN0ZW4iXSwKICAgIHdvcmtmbG93OiBbIlNvdW5kIEROQSIsICJJbXByb3ZlIE15IFRyYWNrIiwgIlRlbXBvICZhbXA7IEtleSBMYWIiLCAiQ29sbGFib3JhdGUgKyBMaXN0ZW4iXSwKfQpmb3IgcGF0aCwgdG9rZW5zIGluIHJlcXVpcmVkLml0ZW1zKCk6CiAgICB0ZXh0ID0gUGF0aChwYXRoKS5yZWFkX3RleHQoKQogICAgbWlzc2luZyA9IFt0b2tlbiBmb3IgdG9rZW4gaW4gdG9rZW5zIGlmIHRva2VuIG5vdCBpbiB0ZXh0XQogICAgaWYgbWlzc2luZzoKICAgICAgICByYWlzZSBTeXN0ZW1FeGl0KGYie3BhdGh9IG1pc3Npbmcge21pc3Npbmd9IikK' | tr -d ' ' | base64 -d > /tmp/room-nav-patch.py
+          python /tmp/room-nav-patch.py
       - name: Commit locked Room navigation
         shell: bash
         run: |
@@ -137,11 +27,4 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add song_builder/templates/song_builder/index.html song_builder/templates/song_builder/analyze.html song_builder/templates/song_builder/workflow.html docs/song-builder/PRESERVATION-20260909-NAV-LOCK.md
           git commit -m "Lock Room navigation and preservation checkpoint [room-nav-lock]"
-          git push origin HEAD:main
-
-      - name: Remove temporary workflow
-        shell: bash
-        run: |
-          git rm .github/workflows/room-navigation-lock.yml
-          git commit -m "Remove temporary Room navigation workflow [room-nav-lock]"
           git push origin HEAD:main
