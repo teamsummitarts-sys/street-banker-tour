@@ -22,13 +22,20 @@ def get_landing_config():
 
         # The public header. Every hash destination is written /#name rather
         # than #name: the header renders on eleven public pages, and a bare
-        # #platform on /rollout scrolls to nothing. Every destination is
-        # reachable without an account: the old nav pointed Platform at /overview and the CTA at
+        # #platform on /rollout scrolls to nothing. Public-story
+        # destinations are reachable without an account.
+        # The applications row opens the actual tools using their existing
+        # sign-in and access rules. The old nav pointed Platform at /overview and the CTA at
         # /recovery, both of which bounce a visitor to a login wall for
         # asking what the product is.
         "nav": {
             "logo": {"primary": "STREET BANKER",
                      "secondary": "THE ARTIST OPERATING SYSTEM"},
+            "applications": [
+                {"label": "The Room", "href": "/song-builder/"},
+                {"label": "Noise Lab", "href": "/noise-lab/"},
+                {"label": "Reach", "href": "/reach/"},
+            ],
             "links": [
                 {"label": "Platform", "href": "/#platform"},
                 {"label": "AI Artist Twin", "href": "/#artist-twin-section"},
