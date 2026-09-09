@@ -1,3 +1,7 @@
+import {bindSessionArchive} from './session-archive.mjs';
+import {mountSubmissions} from './submissions.mjs';
+import {DraftJournal} from './draft-journal.mjs';
+import {storeAnalysisHandoff} from './analysis-handoff.mjs';
 import {bindListening} from './listening.mjs';
 import {bindLive,mergePending} from './live.mjs';
 import {openProducerRecommendation} from './producer-handoff.mjs';
@@ -44,8 +48,8 @@ function selectedClip() { return state.project?.clips.find(c=>c.id===state.clipI
 function text(tag,value,className) { const node=document.createElement(tag);node.textContent=value;if(className)node.className=className;return node; }
 function button(label,handler,options={}) { const node=text('button',label,options.className);node.type='button';node.disabled=Boolean(options.disabled);if(options.pressed!==undefined)node.setAttribute('aria-pressed',String(options.pressed));node.addEventListener('click',()=>run(handler));return node; }
 async function run(action) { if(state.busy)return; state.busy++;renderDisabled();try { await action(); } catch(e) {failure(e);}finally {state.busy--;renderDisabled();} }
-function stop(except=null) { for(const audio of $('jobs').querySelectorAll('audio'))if(audio!==except)audio.pause();engine.stop();state.playRequest++;state.playing=false;state.previewEnd=null;$('play-song').setAttribute('aria-pressed','false'); if(state.audition){state.audition=null;$('seek').value=0;document.body.classList.remove('auditioning');$('selected-mixer').hidden=false;renderRack();$('instrument-heading').textContent=state.project.tracks.find(t=>t.id===state.trackId)?.name||'Select an instrument';} }
-function markDirty() { state.dirty=true;state.sequence++;$('save-state').textContent='Unsaved changes';clearTimeout(state.saveTimer);state.saveTimer=setTimeout(()=>save().catch(failure),800); }
+function stop(except=null) { state.externalPreview=false; for(const audio of $('jobs').querySelectorAll('audio'))if(audio!==except)audio.pause();engine.stop();state.playRequest++;state.playing=false;state.previewEnd=null;$('play-song').setAttribute('aria-pressed','false'); if(state.audition){state.audition=null;$('seek').value=0;document.body.classList.remove('auditioning');$('selected-mixer').hidden=false;renderRack();$('instrument-heading').textContent=state.project.tracks.find(t=>t.id===state.trackId)?.name||'Select an instrument';} }
+function markDirty() { state.dirty=true;state.sequence++;retainDraft();$('save-state').textContent='Unsaved changes';clearTimeout(state.saveTimer);state.saveTimer=setTimeout(()=>save().catch(failure),800); }
 function commit(project,{redraw=true,history=true,resume=false,rackTrackId=null}={}) {
   if(state.access?.role==='viewer'){notify('Viewer access: listening and exports only.',true);return;}
   if(typeof live!=='undefined'&&!live.canEdit(state.project,project))return;
@@ -85,7 +89,7 @@ async function performSave() {
       state.history=[];state.future=[];
     }
     state.revision=r.revision;
-    if(state.sequence===sequence)state.dirty=false;
+    if(state.sequence===sequence){state.dirty=false;try{drafts?.acknowledge(state.project);}catch{/* Saved server state remains authoritative. */}}
     if(liveId){render();for(const asset of r.assets)await ensureAudio(asset);}
 
     $('save-state').textContent=state.dirty?'Unsaved changes':'Saved';
@@ -96,7 +100,7 @@ async function performSave() {
 function save(){clearTimeout(state.saveTimer);const task=state.saveChain.catch(()=>{}).then(performSave);state.saveChain=task;return task;}
 async function audioBytes(asset){
   const url=new URL(asset.url,location.href);
-  if(url.origin!==location.origin || !url.pathname.startsWith(base+'/api/assets/'))throw new Error('This audio link is not part of The Room.');
+  if(url.origin!==location.origin || !(url.pathname.startsWith(base+'/api/assets/')||new RegExp('^'+base+'/api/projects/[0-9a-f-]+/submissions/[0-9a-f-]+/assets/[0-9a-f-]+/audio$').test(url.pathname)))throw new Error('This audio link is not part of The Room.');
   const r=await fetch(url,{credentials:'same-origin',cache:'no-store'});
   if(!r.ok||r.redirected)throw new Error('Audio could not load. Sign in again and reopen this project.');
   const length=Number(r.headers.get('Content-Length'));if(length>40*1024*1024)throw new Error('This audio is too large for this editor.');
@@ -114,15 +118,15 @@ async function loadProject(id,{skipSave=false}={}) {
   let failed=0;for(const a of r.assets){try{await ensureAudio(a);}catch{failed++;}}
   $('save-state').textContent=failed?'Some audio unavailable':'Saved';
   if(failed)notify('Some audio could not load. Your arrangement is saved. Reopen the project to retry before playing or exporting.',true);
-  await pollJobs();render();
+  await pollJobs();render();offerDraft();await archives.refresh();await submissions.refresh();
 }
 async function startNew(title='Untitled song'){await save();stop();releaseProjectAudio();state.project=P.newProject(title);state.revision=0;state.sectionId=state.project.sections[0].id;state.trackId=null;state.clipId=null;state.assets=new Map();state.jobs=[];state.history=[];state.future=[];state.rejectedJobs=new Set();state.conflict=false;$('recovery').hidden=true;markDirty();render();await save();}
 async function saveVersion(){
   await save();const suggested=`${state.project.title} — Version 2`,name=prompt('Name this version',suggested);if(name===null)return;if(!name.trim())throw new Error('Give this version a name.');
-  stop();state.project=P.validateProject({...state.project,id:P.newId(),title:name.trim().slice(0,120)});state.revision=0;state.jobs=[];state.history=[];state.future=[];state.conflict=false;markDirty();render();await save();notify(`Saved ${state.project.title} as an independent version. The original is unchanged.`);
+  const result=await api(`/api/projects/${state.project.id}/fork`,{method:'POST',body:{expectedRevision:state.revision,title:name.trim().slice(0,120)}});await loadProject(result.projectId,{skipSave:true});await listProjects();notify('Saved a separate version with its takes, scenes, protections and listening notes.');
 }
 
-function renderMeta(){if(!state.project)return;$('duration-label').textContent=`${seconds(P.projectDuration(state.project))} arranged`;$('seek').max=P.projectDuration(state.project);}
+function renderMeta(){if(!state.project)return;const q=new URLSearchParams({project:state.project.id,section:state.sectionId||'',track:state.trackId||'',clip:state.clipId||''});$('open-workflow').href=`${base}/workflow?${q}`;$('duration-label').textContent=`${seconds(P.projectDuration(state.project))} arranged`;$('seek').max=P.projectDuration(state.project);}
 function render(){if(!state.project)return;renderMeta();$('song-title').value=state.project.title;$('song-tempo').value=state.project.tempo;$('song-key').value=state.project.key;renderSections();renderTracks();renderInspector();renderJobs();renderDisabled();}
 function renderSections(){
   const list=$('sections');list.replaceChildren();state.project.sections.forEach((s,i)=>{
@@ -228,10 +232,10 @@ function renderInspector(){const s=selectedSection();if(!s)return;$('section-hea
   const clip=selectedClip();$('clip-inspector').hidden=!clip;if(clip){$('clip-offset').value=clip.offset;$('clip-source').value=clip.sourceOffset;$('clip-duration').value=clip.duration;$('clip-loop').checked=clip.loop;$('clip-fade-in').value=clip.fadeIn||0;$('clip-fade-out').value=clip.fadeOut||0;}
 }
 function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boolean(s?.locked),hasAudio=Boolean(state.project?.clips.length),recording=Boolean(state.recorder);
-  const rackTrack=state.audition?.project.tracks[0]||state.project?.tracks.find(t=>t.id===state.trackId),rackBlocked=!rackTrack||busy||recording||(!state.audition&&rackProtectedSections(state.trackId).length>0);
+  const rackTrack=state.audition?.project.tracks[0]||state.project?.tracks.find(t=>t.id===state.trackId),rackBlocked=!rackTrack||busy||recording||state.externalPreview||(!state.audition&&rackProtectedSections(state.trackId).length>0);
   for(const input of $('sound-rack').querySelectorAll('button,input'))input.disabled=Boolean(rackBlocked||(input.hasAttribute('data-rack-assigned')&&rackTrack?.rack?.enabled===false));
   $('loop-section').disabled=busy||recording||!hasAudio;$('clear-solos').disabled=busy||recording;
-  for(const input of document.querySelectorAll('#selected-mixer input,#selected-mixer button,.instrument-caption button'))input.disabled=busy||recording||Boolean(state.audition)||(input.classList.contains('pan-center')&&rackTrack?.pan===0);
+  for(const input of document.querySelectorAll('#selected-mixer input,#selected-mixer button,.instrument-caption button'))input.disabled=busy||recording||(Boolean(state.audition)||state.externalPreview)||(input.classList.contains('pan-center')&&rackTrack?.pan===0);
   for(const id of ['save-project','new-project','save-version','import-project','export-project','project-list','start-ai','load-demo','export-mix','export-section','export-track','export-30','export-15','play-song','play-section','add-section','add-track','prepare-section-test'])$(id).disabled=busy||recording;
   for(const id of ['section-name','section-duration','section-direction','section-lyrics','duplicate-section','remove-section','upload-audio','apply-clip','remove-clip','duplicate-clip','split-clip','clip-offset','clip-source','clip-duration','clip-loop','clip-fade-in','clip-fade-out','crossfade-clip'])$(id).disabled=busy||lock||recording;
   for(const id of ['song-title','song-tempo','song-key','lock-section','move-earlier','move-later'])$(id).disabled=busy||recording;
@@ -244,6 +248,7 @@ function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boole
   const i=state.project?.sections.findIndex(s=>s.id===state.sectionId);$('move-earlier').disabled=busy||recording||i===0;$('move-later').disabled=busy||recording||i===state.project?.sections.length-1;
   if(state.project?.sections.length===1)$('remove-section').disabled=true;
   $('undo-edit').disabled=busy||recording||!state.history.length;$('redo-edit').disabled=busy||recording||!state.future.length;
+  const teamActive=(typeof listening!=='undefined'&&listening.active())||(typeof live!=='undefined'&&live.sessionId());$('open-session-team').textContent=teamActive?'Session active · collaborators':'Collaborators & listening';
   const liveScope=typeof live!=='undefined'?live.editingScope():undefined;
   if(liveScope!==undefined&&liveScope!=='arrangement'){
     for(const id of ['song-title','song-tempo','song-key','lock-section','move-earlier','move-later','add-section','add-track','section-name','section-duration','section-direction','section-lyrics','duplicate-section','remove-section','clear-solos','prepare-section-test'])$(id).disabled=true;
@@ -253,13 +258,14 @@ function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boole
     }
   }
   if(typeof listening!=='undefined'&&listening.active())for(const id of ['play-song','play-section','loop-section','seek'])$(id).disabled=true;
+  for(const id of ['analyze-section','analyze-song']){$(id).disabled=busy||recording||!hasAudio||state.access?.role!=='owner';$(id).hidden=state.access?.role&&state.access.role!=='owner';}
   const guest=state.access&&state.access.role!=='owner';
   if(guest){
     for(const id of ['new-project','save-version','import-project','load-demo','start-ai','prepare-section-test','recover-copy','lock-section','create-invite'])if($(id))$(id).disabled=true;
     for(const a of document.querySelectorAll('a[href]'))if(/\/(analyze|workflow)(\?|$)/.test(a.getAttribute('href')))a.hidden=true;
     if(state.access.role==='viewer'){
       const keep=new Set(['play-song','stop-playback','play-section','loop-section','seek','project-list','export-project','export-mix','export-section','export-track','export-30','export-15','dismiss-download','reload-saved']);
-      for(const control of document.querySelectorAll('button,input,select,textarea'))if(!keep.has(control.id)&&!control.matches('.section-button,.track-name,.clip,.room-project-toggle')&&!control.closest('#collaboration')&&!control.closest('#live-room')&&!control.closest('#listening-room'))control.disabled=true;
+      for(const control of document.querySelectorAll('button,input,select,textarea'))if(!keep.has(control.id)&&!control.matches('.section-button,.track-name,.clip,.room-project-toggle')&&!control.closest('#collaboration')&&!control.closest('#live-room')&&!control.closest('#listening-room')&&!control.closest('#submissions-desk'))control.disabled=true;
     }
   }
 }
@@ -320,11 +326,11 @@ async function importProject(file){if(!file)return;const bundle=await readBundle
   stop();state.project=project;state.revision=0;state.assets=assets;state.sectionId=project.sections[0].id;state.trackId=project.tracks[0]?.id??null;state.clipId=null;state.jobs=[];state.history=[];state.future=[];state.conflict=false;markDirty();render();await save();notify('Imported as a new project with its audio and arrangement intact.');
 }
 async function pollJobs(){if(!state.revision)return;const projectId=state.project.id;try{const r=await api(`/api/jobs?projectId=${encodeURIComponent(projectId)}`);if(state.project.id!==projectId)return;state.jobs=r.jobs;pendingRequests.observe(r.jobs);renderJobs();}catch(e){if(e.status===401)notify(e.message,true);} }
-function takeRejected(job){if(state.rejectedJobs.has(job.id))return true;try{return localStorage.getItem(`song-builder:rejected:${job.projectId}:${job.id}`)==='1';}catch{return false;}}
-function renderJobs(){const holder=$('jobs');if([...holder.querySelectorAll('audio')].some(audio=>!audio.paused&&!audio.ended))return;holder.replaceChildren();if(pendingRequests.get()){holder.append(text('p','A music request has an unknown outcome. Recover the same request before creating another.'),button('Recover previous request',recoverJob));}for(const job of state.jobs){if(takeRejected(job))continue;const item=document.createElement('div');item.className='job';const section=state.project.sections.find(s=>s.id===job.sectionId);item.append(text('p',job.kind==='separate'?'Separated instrument layers':`${section?.name||'Section'} · alternate take`),text('p',job.status,'job-status'));
+function takeRejected(job){return job.decision==='rejected';}
+function renderJobs(){const holder=$('jobs');if([...holder.querySelectorAll('audio')].some(audio=>!audio.paused&&!audio.ended))return;holder.replaceChildren();if(pendingRequests.get()){holder.append(text('p','A music request has an unknown outcome. Recover the same request before creating another.'),button('Recover previous request',recoverJob));}for(const job of state.jobs){if(takeRejected(job)){holder.append(text('p','Rejected alternate take'),button('Return to candidates',()=>setTakeDecision(job,'pending')));continue;}const item=document.createElement('div');item.className='job';const section=state.project.sections.find(s=>s.id===job.sectionId);item.append(text('p',job.kind==='separate'?'Separated instrument layers':`${section?.name||'Section'} · alternate take`),text('p',job.status,'job-status'));
     if(job.error)item.append(text('p',typeof job.error==='string'?job.error:'This take could not finish. Your accepted parts are unchanged.','hint'));
     if(job.status==='succeeded'){
-      if(job.asset){item.append(button('Audition with rack',()=>auditionTake(job),{className:'primary',disabled:state.busy}),text('p','Play this take through Body, Bite, Dirt and Space before accepting it.','hint'));item.append(button('Play original section',()=>auditionOriginal(job),{disabled:state.busy||!section}),button('Accept into new version',()=>acceptTake(job),{disabled:state.busy||!section||section.locked}),button('Reject take',()=>rejectTake(job)));}
+      if(job.asset){item.append(button('Audition with rack',()=>auditionTake(job),{className:'primary',disabled:state.busy}),text('p','Play this take through Body, Bite, Dirt and Space before accepting it.','hint'));item.append(button('Play original section',()=>auditionOriginal(job),{disabled:state.busy||!section}),button('Accept into new version',()=>acceptTake(job),{disabled:state.busy||!section||section.locked}),button(job.decision==='shortlist'?'Remove from shortlist':'Shortlist take',()=>setTakeDecision(job,job.decision==='shortlist'?'pending':'shortlist')),button('Reject take',()=>rejectTake(job)));}
       if(job.assets?.length)item.append(button(`Use ${job.assets.length} stems`,()=>acceptStems(job),{disabled:state.busy||selectedSection()?.locked}));
     }holder.append(item);
   }}
@@ -360,13 +366,56 @@ async function recoverJob(){const body=pendingRequests.get();if(body)await sendJ
 async function submitJob(kind){if(pendingRequests.get())throw new Error('Use Recover previous request below before creating another take.');await save();const body={requestId:P.newId(),kind,projectId:state.project.id,expectedRevision:state.revision};if(kind==='generate'){body.sectionId=state.sectionId;body.prompt=$('take-prompt').value.trim()||selectedSection().direction;if(!body.prompt)throw new Error('Describe the musical direction for this take.');}else{if(!selectedClip())throw new Error('Select a clip to separate.');body.assetId=selectedClip().assetId;}
   await sendJob(pendingRequests.begin(body));}
 async function auditionOriginal(job){const s=state.project.sections.find(section=>section.id===job.sectionId);if(!s)throw new Error('That original section is no longer in this version.');state.sectionId=s.id;state.clipId=null;render();await play(P.sectionStart(state.project,s.id),{sectionOnly:true});}
-function rejectTake(job){stop();state.rejectedJobs.add(job.id);let persisted=true;try{localStorage.setItem(`song-builder:rejected:${job.projectId}:${job.id}`,'1');}catch{persisted=false;}renderJobs();notify(persisted?'Take rejected and hidden on this browser. Your original arrangement is unchanged.':'Take hidden for this session. Browser storage is unavailable; it may return after reopening.');}
+async function setTakeDecision(job,decision){const result=await api(`/api/projects/${job.projectId}/jobs/${job.id}/decision`,{method:'POST',body:{decision}});job.decision=result.decision;renderJobs();notify('Take decision saved with this project across devices.');}
+async function rejectTake(job){stop();await setTakeDecision(job,'rejected');}
 async function prepareSectionTest(){const s=selectedSection();commit(P.prepareSectionTake(state.project,s.id));await save();notify(`${s.name} is ready for an AI test. Every other section is protected.`);}
-async function acceptTake(job){stop();const s=state.project.sections.find(section=>section.id===job.sectionId);if(!s||s.locked)throw new Error('Unlock the original section before using this take.');if(!confirm(`Accept this take for ${s.name} into a new song version? The current version will remain unchanged.`))return;const a=job.asset;const audio=await ensureAudio(a);state.assets.set(a.id,a);await save();let p={...state.project,id:P.newId(),title:`${state.project.title} — ${s.name} AI take`.slice(0,120),clips:state.project.clips.filter(c=>c.sectionId!==s.id)};p=P.addTrack(p,'Generated take');const t=p.tracks.at(-1);p=P.updateTrack(p,t.id,{rack:state.auditionRacks.get(`${state.project.id}:${job.id}`)||{...RACK_DEFAULT}});p=P.addClip(p,{trackId:t.id,sectionId:s.id,assetId:a.id,offset:0,sourceOffset:0,duration:Math.min(s.duration,audio.duration),loop:false,gainDb:0});state.revision=0;state.jobs=[];state.rejectedJobs=new Set();state.history=[];state.future=[];state.sectionId=s.id;state.trackId=t.id;state.clipId=p.clips.at(-1).id;state.project=P.validateProject(p);state.dirty=true;state.sequence++;render();await save();notify(`Take accepted into ${state.project.title}. The prior song version and every other section were preserved.`);}
+async function acceptTake(job){
+ stop();const s=state.project.sections.find(section=>section.id===job.sectionId);if(!s||s.locked)throw new Error('Unlock the original section before using this take.');
+ if(!confirm(`Accept this take for ${s.name} into a new song version? The current version will remain unchanged.`))return;
+ const a=job.asset,audio=await ensureAudio(a);state.assets.set(a.id,a);await save();
+ let p={...state.project,clips:state.project.clips.filter(c=>c.sectionId!==s.id)};p=P.addTrack(p,'Generated take');const t=p.tracks.at(-1);
+ p=P.updateTrack(p,t.id,{rack:state.auditionRacks.get(`${state.project.id}:${job.id}`)||{...RACK_DEFAULT}});
+ p=P.addClip(p,{trackId:t.id,sectionId:s.id,assetId:a.id,offset:0,sourceOffset:0,duration:Math.min(s.duration,audio.duration),loop:false,gainDb:0});
+ const result=await api(`/api/projects/${state.project.id}/fork`,{method:'POST',body:{expectedRevision:state.revision,title:`${state.project.title} — ${s.name} AI take`.slice(0,120),project:p}});
+ await loadProject(result.projectId,{skipSave:true});await listProjects();notify('Take accepted into a separate version with its workflow history. The source song remains saved.');
+}
 async function acceptStems(job){const section=selectedSection();if(section.locked)throw new Error('Unlock this section before adding stems.');const selected=selectedClip();const source=selected&&selected.assetId===job.assetId&&selected.sectionId===section.id?selected:null;if(!source)throw new Error('Select the original clip in the section where you want the stems.');
   if(state.project.tracks.length+job.assets.length>12)throw new Error('This would exceed 12 tracks. Start a project with fewer layers before adding these stems.');
   for(const a of job.assets){await ensureAudio(a);state.assets.set(a.id,a);}let p=P.removeClip(state.project,source.id);for(const a of job.assets){p=P.addTrack(p,a.name.slice(0,60));const t=p.tracks.at(-1);const duration=Math.min(source.duration,engine.buffer(a.id).duration-source.sourceOffset);if(duration<=0)throw new Error('The separated audio does not cover this clip’s source range.');p=P.addClip(p,{trackId:t.id,sectionId:section.id,assetId:a.id,offset:source.offset,sourceOffset:source.sourceOffset,duration,loop:source.loop,gainDb:source.gainDb});}commit(p);await save();notify('Separated layers added. Audition them for separation artifacts before exporting.');}
 
+let drafts=null,draftWarning=false;
+function retainDraft(){
+  if(!drafts||!state.project)return;
+  try{drafts.write(state.project,state.revision,{sectionId:state.sectionId,trackId:state.trackId,clipId:state.clipId});}
+  catch(error){if(!draftWarning){draftWarning=true;notify('Local recovery could not be saved on this device. Keep this page open until the server confirms Saved.',true);}}
+}
+function offerDraft(){
+  const panel=$('draft-recovery');panel.hidden=true;
+  if(!drafts||!state.project)return;
+  let entries;try{entries=drafts.pending(state.project.id,state.project);}catch{return;}
+  if(!entries.length)return;
+  const entry=entries[0];panel.hidden=false;
+  $('draft-message').textContent=`An unsaved draft from ${new Date(entry.updatedAt).toLocaleString()} is available (saved revision ${entry.revision}). Recover it as a separate project to compare safely.`;
+  $('draft-actions').replaceChildren(button('Recover draft as new project',async()=>{
+    await save();const recovered=P.validateProject({...entry.project,id:P.newId(),title:(entry.project.title+' — recovered draft').slice(0,120)});
+    const result=await api('/api/projects',{method:'POST',body:{project:recovered}});
+    drafts.remove(entry.key);await loadProject(result.project.id,{skipSave:true});await listProjects();notify('Recovered the arrangement as a new project. The source project’s saved workflow and feedback stay with the original.');
+  }),button('Discard this draft',()=>{if(confirm('Discard this local draft? The saved project stays unchanged.')){drafts.remove(entry.key);offerDraft();}}));
+}
+async function sendToAnalysis(kind){
+  await save();stop();const section=selectedSection(),project=state.project;
+  const sourceStart=kind==='section'?P.sectionStart(project,section.id):0,sourceEnd=kind==='section'?sourceStart+section.duration:P.projectDuration(project);
+  if(sourceEnd-sourceStart>360)throw new Error('Choose a section for analysis. Full mix handoff is limited to six minutes to keep browser memory bounded.');
+  for(const asset of state.assets.values())await ensureAudio(asset);
+  notify('Rendering an analysis copy with your current mix and rack settings…');
+  const blob=await engine.render(project,{from:sourceStart,to:sourceEnd}),file=new File([blob],filename(kind==='section'?'-'+section.name+'.wav':'-mix.wav'),{type:'audio/wav'});
+  const sections=kind==='section'?[{name:section.name,start:0,end:section.duration}]:project.sections.map(item=>({name:item.name,start:P.sectionStart(project,item.id),end:P.sectionStart(project,item.id)+item.duration}));
+  const token=await storeAnalysisHandoff({scope:state.capabilities.accountScope,file,metadata:{projectId:project.id,projectName:project.title,revision:state.revision,kind,sectionId:kind==='section'?section.id:'',sectionName:kind==='section'?section.name:'',sourceStart,sourceEnd,sections}});
+  location.assign(`${base}/analyze?handoff=${encodeURIComponent(token)}`);
+}
+$('analyze-section').addEventListener('click',()=>run(()=>sendToAnalysis('section')));
+$('analyze-song').addEventListener('click',()=>run(()=>sendToAnalysis('mix')));
+$('open-workflow').addEventListener('click',event=>{event.preventDefault();run(async()=>{await save();location.assign($('open-workflow').href);});});
 $('save-project').addEventListener('click',()=>run(async()=>{await save();notify('Project saved. You can keep working here.');}));
 $('new-project').addEventListener('click',()=>run(()=>startNew()));
 $('save-version').addEventListener('click',()=>run(saveVersion));
@@ -416,7 +465,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();if(
 
 async function boot(){state.busy++;try{
   state.capabilities=await api('/api/capabilities');
-  state.access=state.capabilities.access||{role:'owner'};document.body.dataset.guestRole=state.access.role;
+  state.access=state.capabilities.access||{role:'owner'};
+  if(state.access.role==='owner'&&state.capabilities.accountScope){try{drafts=new DraftJournal(localStorage,state.capabilities.accountScope,P.newId(),P.validateProject);}catch(error){notify('Local recovery is unavailable. Save changes and keep a session archive.',true);}}document.body.dataset.guestRole=state.access.role;
   const gen=state.capabilities.generation;
   $('generation-availability').textContent=gen.configured?'Create a new section mix with ElevenLabs Music. Exact voice and musical continuity need listening review.':'Music generation is not connected. You can arrange, record and mix your own audio now.';
   $('generation-cost').textContent=gen.configured?'Generation and stem separation use provider credits. Exact dollar cost is unavailable here. Each click submits one request; failed or abandoned requests may still be billed.':'';
@@ -424,11 +474,19 @@ async function boot(){state.busy++;try{
   if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)$('record-status').textContent='Recording is unavailable in this browser. Import audio instead.';
   const list=await api('/api/projects');const requested=entryParams.get('project');const first=list.projects.find(p=>p.id===requested)||list.projects[0];
   if(first)await loadProject(first.id,{skipSave:true});else await startNew();await listProjects();
+  if(state.project.sections.some(s=>s.id===entryParams.get('section')))state.sectionId=entryParams.get('section');
+  if(state.project.tracks.some(t=>t.id===entryParams.get('track')))state.trackId=entryParams.get('track');
+  if(state.project.clips.some(c=>c.id===entryParams.get('clip')))state.clipId=entryParams.get('clip');render();
   if(entryParams.get('report')&&state.access.role==='owner'){try{await openProducerRecommendation({document,params:entryParams,api,state,base,loadProject,save,play,notify,run,render,newId:P.newId});}catch(e){notify(e.message,true);}}
   state.listeningTimer=setInterval(()=>{if(!document.hidden&&!state.busy)listening.tick();},1000);
   state.polling=setInterval(()=>{if(!document.hidden&&!state.busy){pollJobs();live.tick();}},3000);clock();
  }catch(e){failure(e);$('save-state').textContent='Workspace unavailable';}finally{state.busy--;renderDisabled();}}
 const live=bindLive({document,state,api,save,loadProject,render,notify,newId:P.newId});
 const listening=bindListening({document,state,api,live,save,play,stop,position:()=>state.playing?engine.position():Number($('seek').value),seek:value=>{$('seek').value=value;},unlock:()=>engine.unlock(),render:renderDisabled,notify,newId:P.newId});
+const archives=bindSessionArchive({document,state,api,save,loadProject,notify,run,base});
+const submissions=mountSubmissions({root:$('submissions-desk'),state,api,save,run,newId:P.newId,notice:notify,stopAudition:stop,
+ upload:async file=>{if(file.size>32*1024*1024)throw Error('Choose a WAV under 32 MiB.');const temporary=P.newId();try{await engine.decode(temporary,await file.arrayBuffer());return await uploadWav(engine.normalizedWav(temporary),file.name);}finally{engine.remove(temporary);}},
+ audition:async preview=>{if(listening.active())throw Error('End shared listening before auditioning a contribution.');stop();const request=state.playRequest;for(const asset of preview.assets)await ensureAudio(asset);if(request!==state.playRequest)return;state.externalPreview=true;await engine.play(P.validateProject(preview.project),{from:preview.start,to:preview.end,onEnded:()=>{state.playing=false;state.externalPreview=false;renderDisabled();}});if(request===state.playRequest)state.playing=engine.isPlaying();},
+ onAccepted:async result=>{stop();await loadProject(result.projectId||result.version.project.id,{skipSave:true});await listProjects();notify('Accepted performance opened in a new version. The original project stays saved.');}});
 const collaborators=bindCollaboration({document,api,state,save,loadProject,notify,run});
 boot();

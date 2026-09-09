@@ -197,13 +197,14 @@ def validate_payload(p):
 
 
 def register(bp, app, directory, csrf, body):
+    from .account_scope import account_scope
     service=Analysis(app,directory)
     app.extensions['room_analysis']=service
 
     @bp.get('/analyze')
     def analysis_page():
         return render_template('song_builder/analyze.html', builder_base_url=url_for('song_builder.index').rstrip('/'),
-            builder_assets_url=url_for('song_builder.static',filename=''), builder_csrf=csrf())
+            builder_assets_url=url_for('song_builder.static',filename=''), builder_csrf=csrf(), builder_account_scope=account_scope(app))
 
     @bp.get('/api/analysis/destinations')
     def analysis_destinations():

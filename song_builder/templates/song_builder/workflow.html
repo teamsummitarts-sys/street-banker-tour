@@ -13,10 +13,10 @@
 <body>
   <header class="topbar">
     <div>
-      <p class="eyebrow">THE ROOM · STREET BANKER</p>
+      <a class="workflow-brand" href="{{ builder_base_url }}/"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></a>
       <h1>Pro Workflow</h1>
     </div>
-    <a href="{{ builder_base_url }}/">Back to editor</a>
+    <a class="back-link" href="{{ builder_base_url }}/">Back to editor</a>
   </header>
   <main>
     <section class="project-select surface">
@@ -38,7 +38,7 @@
 
     <div class="grid">
       <section class="surface module" aria-labelledby="groups-heading">
-        <header><div><p class="eyebrow">01</p><h2 id="groups-heading">Group Buses</h2></div><span>DRUMS · VOCALS · SYNTHS · FX</span></header>
+        <header><div><p class="eyebrow">01</p><h2 id="groups-heading">Track Groups</h2></div><span>DRUMS · VOCALS · SYNTHS · FX</span></header>
         <div class="create-box">
           <label>Group name<input id="group-name" maxlength="60" placeholder="Drums"></label>
           <fieldset><legend>Tracks</legend><div id="group-track-list" class="check-grid"></div></fieldset>
@@ -58,7 +58,7 @@
       </section>
 
       <section class="surface module" aria-labelledby="takes-heading">
-        <header><div><p class="eyebrow">03</p><h2 id="takes-heading">Takes + Comping</h2></div><span>KEEP EVERY PERFORMANCE</span></header>
+        <header><div><p class="eyebrow">03</p><h2 id="takes-heading">Takes + Comparison</h2></div><span>KEEP EVERY PERFORMANCE</span></header>
         <div class="create-box">
           <label>Section<select id="take-section"></select></label>
           <label>Track<select id="take-track"></select></label>

@@ -1,3 +1,4 @@
+import {decodeForPreparation,prepareWav} from './audio-prepare.mjs';
 // Real transfer progress and local previews. No analysis or provider call on selection.
 const LIMIT = 14 * 1024 * 1024;
 const el = (tag, text, cls) => {
@@ -81,7 +82,7 @@ export function waveThumbnail(peaks) {
   return svg;
 }
 
-export function createUploadDesk({base, csrf, message, inboxCount, onStored, refreshInbox, isBusy, onActivity}) {
+export function createUploadDesk({base, csrf, message, inboxCount, onStored, refreshInbox, isBusy, onActivity, onPrepared=()=>{}}) {
   const input = document.getElementById('upload'), list = document.getElementById('upload-queue');
   const picker = document.getElementById('choose-files'), drop = document.getElementById('upload-drop');
   const transfer = document.getElementById('transfer-progress'), label = document.getElementById('transfer-label');
@@ -100,8 +101,26 @@ export function createUploadDesk({base, csrf, message, inboxCount, onStored, ref
     generation++; entries.forEach(release); entries = []; input.value = ''; list.replaceChildren(); clear.hidden = true; document.getElementById('preview-empty').hidden=false;
     state('No files selected');
   }
-  async function choose(files) {
-    if (isBusy() || uploading || preparing) return;
+  function preparation(entry,card){
+    const panel=el('details'),title=el('summary','Prepare an excerpt / convert WAV or MP3');panel.append(title,el('p','Create a separate 16-bit WAV for analysis. Your original file stays unchanged. Changing sample rate resamples audio; mono combines left and right and cannot preserve stereo information.','hint'));
+    const start=el('input'),end=el('input'),rate=el('select'),channels=el('select');
+    for(const [input,label,value] of [[start,'Excerpt start (seconds)',0],[end,'Excerpt end (seconds)',30]]){input.type='number';input.min=0;input.step=.01;input.value=value;input.setAttribute('aria-label',label);const wrap=el('label',label);wrap.append(input);panel.append(wrap);}
+    for(const n of [44100,48000,32000,22050])rate.add(new Option(n+' Hz',n));rate.setAttribute('aria-label','Analysis copy sample rate');
+    channels.add(new Option('Stereo','2'));channels.add(new Option('Mono — combines channels','1'));channels.setAttribute('aria-label','Analysis copy channels');
+    const build=el('button','Create analysis copy');build.type='button';panel.append(rate,channels,build);
+    build.onclick=async()=>{if(preparing||uploading||isBusy())return;preparing=true;build.disabled=true;
+      try{entry.original??=entry.file;const decoded=await decodeForPreparation(entry.original);const prepared=prepareWav(decoded,{start:Number(start.value),end:Number(end.value),sampleRate:Number(rate.value),channels:Number(channels.value)});
+        const file=new File([prepared.bytes],entry.original.name.replace(/\.[^.]*$/,'')+`-analysis-${prepared.start.toFixed(2)}s.wav`,{type:'audio/wav'});
+        release(entry);entry.file=file;entry.status='selected';entry.label.textContent='Copy ready';card.dataset.state='selected';
+        card.querySelectorAll('.file-wave,audio,.file-error,.preview-note,.copy-description').forEach(n=>n.remove());
+        const preview=await previewWav(file);card.append(waveThumbnail(preview.peaks));entry.objectURL=URL.createObjectURL(file);entry.audio=el('audio');entry.audio.controls=true;entry.audio.src=entry.objectURL;entry.audio.onplay=()=>entries.forEach(other=>{if(other!==entry)other.audio?.pause();});card.append(entry.audio,el('p',`${prepared.start.toFixed(2)}–${prepared.end.toFixed(2)} seconds of original · ${prepared.sampleRate} Hz · ${prepared.channels===1?'mono':'stereo'} · 16-bit PCM · ${(file.size/1024/1024).toFixed(2)} MiB. Report timestamps start at zero in this copy.`,'copy-description'));
+        onPrepared({start:prepared.start,end:prepared.end,original:entry.original.name});state('Analysis copy ready · not uploaded','selected');message('Separate WAV prepared locally. Review it before uploading.');
+      }catch(error){message(error.message,true);}finally{preparing=false;build.disabled=false;}
+    };
+    card.append(panel);
+  }
+  async function choose(files,{internal=false}={}) {
+    if ((isBusy()&&!internal) || uploading || preparing) return;
     reset();
     if (!files.length) return;
     if (files.length + inboxCount() > 12) {message('Your inbox holds 12 files. Choose fewer files or remove unused uploads.', true);return;}
@@ -123,7 +142,8 @@ export function createUploadDesk({base, csrf, message, inboxCount, onStored, ref
           entry.objectURL=URL.createObjectURL(file);player.src=entry.objectURL;entry.audio=player;
           player.onplay=()=>entries.forEach(other=>{if(other!==entry)other.audio?.pause();});
           card.append(player,el('small','Local preview · nothing uploaded yet','preview-note'));
-        } catch (error) {entry.status='invalid';status.textContent='Check file';card.dataset.state='error';card.append(el('p',error.message,'file-error'));}
+        } catch (error) {entry.status='invalid';status.textContent='Prepare copy';card.dataset.state='error';card.append(el('p',error.message,'file-error'));}
+        preparation(entry,card);
       }
       clear.hidden=false;const ready=entries.filter(e=>e.status==='selected').length;state(ready+' '+(ready===1?'file':'files')+' ready to upload','selected');
     } finally {preparing=false;picker.disabled=false;}
@@ -137,6 +157,7 @@ export function createUploadDesk({base, csrf, message, inboxCount, onStored, ref
   window.addEventListener('pagehide',()=>{if(!uploading)reset();});
   window.addEventListener('beforeunload',event=>{if(uploading){event.preventDefault();event.returnValue='';}});
   return {
+    choose,
     async upload() {
       if (preparing) throw Error('Wait for the file previews to finish.');
       if (!document.getElementById('authorized').checked) throw Error('Confirm that you are authorized to analyze these files.');

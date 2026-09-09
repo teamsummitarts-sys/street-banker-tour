@@ -1,3 +1,5 @@
 /* Keep the shared Analyze & Improve finish, then override only the Room editor with Phase 1 hardware. */
 @import url('./unified-console-legacy.css');
 @import url('./phase1-hardware.css');
+
+@import url('./phase4-workflow.css');

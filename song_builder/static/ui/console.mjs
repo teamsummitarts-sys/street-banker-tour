@@ -36,6 +36,10 @@ export function bindConsole(document){
   toolsToggle.addEventListener('click',()=>{const open=toolsToggle.getAttribute('aria-expanded')!=='true';toolsToggle.setAttribute('aria-expanded',String(open));projectTools.classList.toggle('is-open',open);});
   projectTools.addEventListener('keydown',event=>{if(event.key==='Escape'){closeTools();toolsToggle.focus();}});
   projectBar.append(toolsToggle,projectTools);
+  const team=$('session-team'),teamButton=$('open-session-team');
+  teamButton.addEventListener('click',()=>{team.open=!team.open;});
+  team.addEventListener('toggle',()=>teamButton.setAttribute('aria-expanded',String(team.open)));
+  main.insertBefore($('producer-note'),team);
   const deck=document.querySelector('.section-deck');main.insertBefore(deck,document.querySelector('.workspace'));
   document.querySelector('.audio-actions').append(document.querySelector('.snap-control'),$('loop-section'),$('play-section'));
   document.querySelector('.workspace').append($('sound-rack'));
