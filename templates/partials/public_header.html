@@ -10,7 +10,7 @@
    Takes `nav` if a page passes one, otherwise reads landing_config
    through the public_nav() global. #}
 {% set nav = nav or public_nav() %}
-<link rel="stylesheet" href="/static/css/product-navigation.css?v=2">
+<link rel="stylesheet" href="/static/css/product-navigation.css?v=3">
 <a class="sbh-skip" href="#main">Skip to content</a>
 
 <header class="sbh" id="sb-header" data-scrolled="false">
@@ -27,12 +27,12 @@
         {% if link.label == "Platform" %}
         <div class="sbh-app-menu">
           <a class="sbh-link" href="{{ link.href }}">{{ link.label }}</a>
-          <div class="sbh-app-menu-panel" aria-label="Applications">
+          <nav class="sbh-applications" aria-label="Applications">
             <a class="sbh-app-menu-link" href="{{ link.href }}">Platform overview</a>
             {% for application in nav.applications %}
             <a class="sbh-app-menu-link" data-application="true" href="{{ application.href }}">{{ application.label }}</a>
             {% endfor %}
-          </div>
+          </nav>
         </div>
         {% else %}
         <a class="sbh-link" href="{{ link.href }}"
