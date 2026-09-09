@@ -24,6 +24,8 @@ jobs:
         with:
           node-version: "22"
       - run: pip install -r requirements.txt
+      - name: Install Room browser test dependency
+        run: npm install --no-save jsdom@latest
       - name: Song backend boundaries
         run: pytest -q tests/test_song_builder_backend.py
       - name: Portable host integration
