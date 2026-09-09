@@ -8,22 +8,29 @@
   <meta name="theme-color" content="#080a0b">
   <title>The Room · Pro Workflow</title>
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/workflow.css?v=1">
+  <link rel="stylesheet" href="{{ builder_assets_url }}ui/room-navigation.css?v=2">
   <script type="module" src="{{ builder_assets_url }}ui/workflow.mjs?v=1"></script>
 </head>
 <body>
-  <header class="topbar">
+  <header class="topbar room-app-header">
     <div>
-      <a class="workflow-brand" href="{{ builder_base_url }}/"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></a>
-      <h1>Pro Workflow</h1>
-    </div>
-    <nav aria-label="The Room tools" style="display:flex;align-items:center;justify-content:flex-end;gap:.45rem;flex-wrap:wrap">
-      <a class="back-link" href="{{ builder_base_url }}/">Studio</a>
-      <a class="back-link" href="{{ builder_base_url }}/analyze#sound-dna">Sound DNA</a>
-      <a class="back-link" href="{{ builder_base_url }}/analyze#improve-track">Improve My Track</a>
-      <a class="back-link" href="{{ builder_base_url }}/analyze#reports-heading">Tempo &amp; Key Lab</a>
-      <a class="back-link" href="{{ builder_base_url }}/workflow">Pro Workflow</a>
-      <a class="back-link" href="{{ builder_base_url }}/#session-team">Collaborate + Listen</a>
-    </nav>
+          <a class="workflow-brand" href="{{ builder_base_url }}/"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></a>
+          <h1>Pro Workflow</h1>
+        </div>
+    <details class="room-nav-drawer">
+      <summary aria-label="Open The Room navigation"><span>Menu</span></summary>
+      <nav aria-label="The Room navigation">
+        <a href="{{ builder_base_url }}/">Studio</a>
+        <a href="{{ builder_base_url }}/analyze#sound-dna">Sound DNA</a>
+        <a href="{{ builder_base_url }}/analyze#improve-track">Improve My Track</a>
+        <a href="{{ builder_base_url }}/analyze#reports-heading">Tempo &amp; Key Lab</a>
+        <a href="{{ builder_base_url }}/workflow">Pro Workflow</a>
+        <a href="{{ builder_base_url }}/#session-team">Collaborate + Listen</a>
+        <div class="room-nav-divider"></div>
+        <a href="/noise-lab/">Noise Lab</a>
+        <a href="/reach/">Reach</a>
+      </nav>
+    </details>
   </header>
   <main>
     <section class="project-select surface">

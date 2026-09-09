@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/analysis.css">
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/unified-console.css?v=1">
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/collaboration.css">
+  <link rel="stylesheet" href="{{ builder_assets_url }}ui/room-navigation.css?v=2">
   <script type="module" src="{{ builder_assets_url }}ui/analysis.mjs"></script>
 </head>
 <body class="room-analysis">
@@ -20,17 +21,23 @@
   <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 17v4h16v-4"/></symbol>
 </defs></svg>
 <a class="skip" href="#upload-heading">Skip to upload</a>
-<header class="site-bar">
+<header class="site-bar room-app-header">
   <a href="{{ builder_base_url }}/" class="wordmark"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker" width="1536" height="1024"></span></a>
   <span class="header-title">Analyze &amp; Improve</span>
-  <nav aria-label="The Room tools" style="display:flex;align-items:center;justify-content:flex-end;gap:.45rem;flex:1;flex-wrap:wrap">
-    <a href="{{ builder_base_url }}/" class="editor-link">Studio</a>
-    <a href="{{ builder_base_url }}/analyze#sound-dna" class="editor-link">Sound DNA</a>
-    <a href="{{ builder_base_url }}/analyze#improve-track" class="editor-link">Improve My Track</a>
-    <a href="{{ builder_base_url }}/analyze#reports-heading" class="editor-link">Tempo &amp; Key Lab</a>
-    <a href="{{ builder_base_url }}/workflow" class="editor-link">Pro Workflow</a>
-    <a href="{{ builder_base_url }}/#session-team" class="editor-link">Collaborate + Listen</a>
-  </nav>
+  <details class="room-nav-drawer">
+    <summary aria-label="Open The Room navigation"><span>Menu</span></summary>
+    <nav aria-label="The Room navigation">
+      <a href="{{ builder_base_url }}/">Studio</a>
+      <a href="{{ builder_base_url }}/analyze#sound-dna">Sound DNA</a>
+      <a href="{{ builder_base_url }}/analyze#improve-track">Improve My Track</a>
+      <a href="{{ builder_base_url }}/analyze#reports-heading">Tempo &amp; Key Lab</a>
+      <a href="{{ builder_base_url }}/workflow">Pro Workflow</a>
+      <a href="{{ builder_base_url }}/#session-team">Collaborate + Listen</a>
+      <div class="room-nav-divider"></div>
+      <a href="/noise-lab/">Noise Lab</a>
+      <a href="/reach/">Reach</a>
+    </nav>
+  </details>
 </header>
 <main>
   <div class="intro"><div><h1>Analyze &amp; Improve</h1><p>Your references. Your direction.</p></div>
