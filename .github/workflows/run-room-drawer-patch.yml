@@ -1,0 +1,21 @@
+name: Run Room Drawer Patch
+"on":
+  push:
+    paths:
+      - .github/workflows/run-room-drawer-patch.yml
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: python scripts/room_drawer_patch.py
+      - run: |
+          git config user.name "street-banker-nav-lock"
+          git config user.email "actions@users.noreply.github.com"
+          git add song_builder/templates/song_builder/index.html song_builder/templates/song_builder/analyze.html song_builder/templates/song_builder/workflow.html song_builder/static/ui/room-navigation.css
+          git commit -m "Fix Room header with complete drawer navigation [room-drawer]"
+          git push origin HEAD:main
