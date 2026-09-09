@@ -140,7 +140,8 @@ test('Room navigation keeps song, instrument, rack and take tools reachable with
  assert.equal(d.querySelector('.room-navigation'),null);
  let scrolled=null;d.defaultView.HTMLElement.prototype.scrollIntoView=function(){scrolled=this;};
  studio.focusInstrument();assert.equal(scrolled,null,'track selection never jumps away from the timeline');
- [...d.querySelectorAll('button')].find(b=>b.textContent==='Open controls').click();assert.equal(scrolled,d.querySelector('.inspector'));
+ [...d.querySelectorAll('button')].find(b=>b.textContent==='Open controls').click();assert.equal(scrolled,d.querySelector('.channel-strip'));
+ assert.ok(scrolled.contains(d.getElementById('selected-mixer')),'shortcut reaches the live mixer');
  for(const id of ['panel-sound','panel-trim','panel-takes','sound-rack'])assert.equal(d.getElementById(id).hidden,false,id+' stays available');
  d.querySelector('.console-section-tools button:last-child').click();assert.equal(d.getElementById('section-settings').open,true);
  for(const id of ['song-title','song-tempo','song-key','lock-section','record-audio','play-section','loop-section','generate-take','sound-rack'])assert.equal(d.querySelectorAll('#'+id).length,1,id);
@@ -159,3 +160,4 @@ test('Project drawer retains action handlers and closes with keyboard focus rest
  for(const id of ['song-tempo','song-key','project-list','export-mix'])assert.ok(drawer.contains(d.getElementById(id)));
  dom.window.close();
 });
+

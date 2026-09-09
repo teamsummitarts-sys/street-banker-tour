@@ -50,7 +50,7 @@ export function bindConsole(document){
   const jump=element=>element?.scrollIntoView?.({behavior:'auto',block:'start'});
   const sectionTools=document.createElement('div');sectionTools.className='console-section-tools';
   const settingsButton=document.createElement('button');settingsButton.type='button';settingsButton.textContent='Section settings';settingsButton.addEventListener('click',()=>{$('section-settings').open=!$('section-settings').open;if($('section-settings').open)jump($('section-settings'));});
-  const controlsButton=document.createElement('button');controlsButton.type='button';controlsButton.textContent='Open controls';controlsButton.addEventListener('click',()=>jump(document.querySelector('.inspector')));
+  const controlsButton=document.createElement('button');controlsButton.type='button';controlsButton.textContent='Open controls';controlsButton.addEventListener('click',()=>jump(channel));
   sectionTools.append(controlsButton,$('lock-section'),settingsButton);document.querySelector('.track-desk>.section-heading').append(sectionTools);
   document.querySelector('.inspector-tabs').remove();
   for(const [key,label] of [['sound','01 / Instrument sound'],['trim','02 / Clip editing'],['takes','03 / Takes & creation']]){
