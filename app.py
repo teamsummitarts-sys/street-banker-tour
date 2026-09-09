@@ -3225,6 +3225,11 @@ def create_app():
     def plan_gate():
         user = current_user()
         if user is None:
+            # Room invitations grant scoped project access, never a host login.
+            if request.blueprint == 'song_builder':
+                from song_builder.collaboration import allow_guest_gate
+                if allow_guest_gate(app):
+                    return None
             if _is_public_path(request.path) or _valid_backup_token():
                 return None
             return redirect(url_for("login", next=request.path))

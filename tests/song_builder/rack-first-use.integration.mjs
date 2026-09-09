@@ -1,3 +1,5 @@
+import {bindCollaboration} from '../../song_builder/static/ui/collaboration.mjs';
+import {openProducerRecommendation} from '../../song_builder/static/ui/producer-handoff.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
@@ -25,7 +27,7 @@ async function fixture(){
   globalThis.document=w.document;
   w.HTMLElement.prototype.scrollIntoView=()=>{};
   w.HTMLCanvasElement.prototype.getContext=()=>({beginPath(){},moveTo(){},lineTo(){},stroke(){}});
-  const sandbox={document:w.document,window:w,navigator:w.navigator,location:w.location,history:w.history,sessionStorage:w.sessionStorage,localStorage:w.localStorage,URLSearchParams,URL,FormData,Blob,Option:w.Option,console,AudioEngine,P,RACK_DEFAULT,PendingRequests,bindFadeHandle,effectiveFades,renderRackPanel,sameRack,bindConsole,setTimeout:()=>0,clearTimeout:()=>{},setInterval:()=>0,clearInterval:()=>{},requestAnimationFrame:()=>{}};
+  const sandbox={document:w.document,window:w,navigator:w.navigator,location:w.location,history:w.history,sessionStorage:w.sessionStorage,localStorage:w.localStorage,URLSearchParams,URL,FormData,Blob,Option:w.Option,console,AudioEngine,P,RACK_DEFAULT,PendingRequests,bindFadeHandle,effectiveFades,renderRackPanel,sameRack,bindConsole,bindCollaboration,openProducerRecommendation,setTimeout:()=>0,clearTimeout:()=>{},setInterval:()=>0,clearInterval:()=>{},requestAnimationFrame:()=>{}};
   const source=readFileSync(new URL('../../song_builder/static/ui/controller.mjs',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/boot\(\);\s*$/,'');
   const h=new Function(...Object.keys(sandbox),source+'\nreturn {state,render,renderDisabled,engine,play,stop,restoreEdit};')(...Object.values(sandbox));
   let p=P.addTrack(P.newProject(),'Bass');p={...p,sections:[{...p.sections[0],duration:3}]};
@@ -93,3 +95,4 @@ test('first-use rack respects explicit bypass, protection, busy state and empty 
     assert.equal(d.getElementById('notice').hidden,true,'no handler error');
   }finally{h.close();}
 });
+

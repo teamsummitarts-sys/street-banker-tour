@@ -6,6 +6,7 @@
   <title>Analyze &amp; Improve · The Room</title>
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/analysis.css">
   <link rel="stylesheet" href="{{ builder_assets_url }}ui/unified-console.css?v=1">
+  <link rel="stylesheet" href="{{ builder_assets_url }}ui/collaboration.css">
   <script type="module" src="{{ builder_assets_url }}ui/analysis.mjs"></script>
 </head>
 <body class="room-analysis">
@@ -58,6 +59,7 @@
   <section class="direction-desk" aria-labelledby="assignment-heading"><div class="section-title"><svg class="icon" aria-hidden="true"><use href="#icon-layers"/></svg><h2 id="assignment-heading">Analysis direction</h2></div>
     <fieldset class="listening-modes"><legend>What are we listening for?</legend><label class="check"><input type="radio" name="mode" value="dna" checked><svg class="icon mode-symbol" aria-hidden="true"><use href="#icon-layers"/></svg><span><strong>Sound DNA</strong><small>Find the thread between your references.</small></span></label><label class="check"><input type="radio" name="mode" value="improve"><svg class="icon mode-symbol" aria-hidden="true"><use href="#icon-wave"/></svg><span><strong>Improve My Track</strong><small>One track. Conservative changes.</small></span></label></fieldset>
     <div class="two-col"><label>Analysis destination<select id="destination"><option value="">Choose after upload</option></select></label><div id="destination-detail" class="disclosure">Nothing is assigned yet.</div></div>
+    <p id="analysis-setup" class="disclosure" role="status"></p>
     <label id="consent-label" class="check" hidden><input type="checkbox" id="consent">I approve sending the active audio and directions to this destination under the terms shown above.</label>
     <label>Your intention<textarea id="goal" maxlength="1000" rows="2" placeholder="Keep the rough vocal. Make the chorus land a little harder."></textarea></label>
     <label id="sections-label" hidden>Optional section map · Name | start seconds | end seconds<textarea id="sections" rows="4" placeholder="Intro | 0 | 12&#10;Verse 1 | 12 | 40&#10;Chorus 1 | 40 | 64"></textarea><span class="hint">Use times from this upload. Without a map, suggestions use time ranges.</span></label>

@@ -28,6 +28,12 @@ def destinations(app):
         rows.append(dict(id=key, label=str(adapter.get('label',key))[:100], model=str(adapter.get('model',''))[:100],
                          available=adapter.get('available') is True, external=adapter.get('external') is not False,
                          detail=str(adapter['detail'])[:1500]))
+    if not ready:
+        missing=[]
+        if not setting(app,'ROOM_ANALYSIS_GEMINI_KEY'): missing.append('Gemini API key missing')
+        if not re.fullmatch(r'[a-zA-Z0-9.-]{1,80}',model): missing.append('model identifier missing')
+        if str(setting(app,'ROOM_ANALYSIS_GEMINI_PAID_CONFIRMED')).lower()!='true': missing.append('billing-enabled project confirmation required')
+        rows[1]['missingRequirements']=missing
     for row in rows:
         row['consentToken'] = hashlib.sha256(json.dumps(row, sort_keys=True).encode()).hexdigest()
     return rows
