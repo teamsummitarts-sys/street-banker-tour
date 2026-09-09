@@ -22,7 +22,7 @@ export function bindConsole(document){
   for(const side of ['left','right']){const meter=$(`meter-${side}`),housing=document.createElement('span');housing.className='led-meter';meter.before(housing);housing.append(meter);}
   // One console: project header, full-width song map, arrangement/channel strip, rack.
   const main=document.querySelector('main'),header=document.querySelector('.site-bar'),projectBar=document.querySelector('.project-bar');
-  header.append(projectBar);document.querySelector('footer').prepend(document.querySelector('.back-link'));
+  header.append(projectBar);document.querySelector('footer').prepend([...document.querySelectorAll('.back-link')].find(link=>!link.href.includes('/analyze')));
   projectBar.append(document.querySelector('.session-status'));
   const setup=document.createElement('details');setup.className='session-menu';
   const setupTitle=document.createElement('summary');setupTitle.textContent='Session';setup.append(setupTitle);
@@ -41,6 +41,12 @@ export function bindConsole(document){
   document.querySelector('.workspace').append($('sound-rack'));
   // A continuous console. Shortcuts scroll; they never change visibility.
   document.body.classList.add('room-scroll');
+  // Desktop channel strip beside the arrangement; the same controls scroll on phones.
+  const channel=document.createElement('section');
+  channel.className='channel-strip';channel.setAttribute('aria-label','Selected instrument channel');
+  channel.append(document.querySelector('.instrument-caption'),$('panel-sound'),document.querySelector('.master-meter'));
+  document.querySelector('.workspace').append(channel);
+
   const jump=element=>element?.scrollIntoView?.({behavior:'auto',block:'start'});
   const sectionTools=document.createElement('div');sectionTools.className='console-section-tools';
   const settingsButton=document.createElement('button');settingsButton.type='button';settingsButton.textContent='Section settings';settingsButton.addEventListener('click',()=>{$('section-settings').open=!$('section-settings').open;if($('section-settings').open)jump($('section-settings'));});
@@ -126,3 +132,4 @@ export function bindKnob(surface,input,defaultValue){
   surface.addEventListener('lostpointercapture',()=>finish(true));
   input.addEventListener('keydown',e=>{if(e.key==='Escape'&&gesture){e.preventDefault();finish(true);}});
 }
+
