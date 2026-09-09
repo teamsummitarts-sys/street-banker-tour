@@ -1,14 +1,15 @@
 /* Keep the approved hardware finish while making music the first task. */
 .room-console.room-scroll .studio-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 12px;align-items:center}
 .room-console.room-scroll .studio-actions button,.room-console.room-scroll .studio-actions a{min-height:44px;padding:11px 14px;font-size:12px;border-radius:6px}
+.room-console.room-scroll .studio-actions a{color:#edcf94;background:linear-gradient(#333b3b,#171e20);border:1px solid #697371;box-shadow:inset 0 1px #fff3,0 3px 7px #0009}
 .room-console.room-scroll .session-team{margin:0 0 12px;border:1px solid #515956;border-radius:8px;background:linear-gradient(135deg,#252b2b,#101516);box-shadow:inset 0 1px #ffffff25,0 5px 12px #0007}
 .room-console.room-scroll .session-team:not([open]){display:none}
 .room-console.room-scroll .session-team>summary{padding:14px;color:#e6cc99}
 .room-console.room-scroll .session-team>.live-room,.room-console.room-scroll .session-team>.collaboration-desk{margin:8px 12px;padding:12px}
 .room-console.room-scroll .transport{grid-template-columns:58px 80px minmax(150px,1fr) 80px 80px}
-.room-console.room-scroll #play-song{grid-column:1;grid-row:1}
-.room-console.room-scroll #stop-playback{grid-column:2;grid-row:1}
-.room-console.room-scroll #play-time{grid-column:3;grid-row:1}
+.room-console.room-scroll #play-song{grid-column:1;grid-row:1;min-width:58px;max-width:58px}
+.room-console.room-scroll #stop-playback{grid-column:2;grid-row:1;min-width:0;width:80px}
+.room-console.room-scroll #play-time{grid-column:3;grid-row:1;justify-self:center;margin:0}
 .room-console.room-scroll #undo-edit{grid-column:4;grid-row:1}
 .room-console.room-scroll #redo-edit{grid-column:5;grid-row:1}
 .room-console.room-scroll #session-archive,.room-console.room-scroll #submissions-desk{margin-top:16px;scroll-margin-top:18px}
@@ -23,6 +24,9 @@
  .room-console.room-scroll .studio-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
  .room-console.room-scroll .studio-actions button,.room-console.room-scroll .studio-actions a{font-size:12px;text-align:center;line-height:1.35}
  .room-console.room-scroll .transport{grid-template-columns:48px 48px minmax(72px,1fr) 44px 44px;gap:5px;min-height:66px}
+ .room-console.room-scroll #play-song{min-width:48px;max-width:48px}
+ .room-console.room-scroll #stop-playback{width:48px;font-size:0;padding:0}
+ .room-console.room-scroll #stop-playback::before{margin:0}
  .room-console.room-scroll #play-time{font-size:12px;padding:8px 2px}
  .room-console.room-scroll #undo-edit,.room-console.room-scroll #redo-edit{display:flex;min-width:44px;min-height:44px;padding:8px;font-size:0;align-items:center;justify-content:center}
  .room-console.room-scroll #redo-edit::after{content:'↷';font-size:22px}
