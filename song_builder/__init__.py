@@ -241,7 +241,9 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
     @bp.put('/api/projects/<project_id>')
     def save_project(project_id):
         v.identifier(project_id)
-        payload = body('project expectedRevision')
+        payload = body(None)
+        v.exact(payload, 'project expectedRevision liveSession' if isinstance(payload,dict) and 'liveSession' in payload else 'project expectedRevision')
+        if 'liveSession' in payload: v.identifier(payload['liveSession'])
         value, expected = v.project(payload['project']), v.revision(payload['expectedRevision'])
         if value['id'] != project_id:
             v.invalid('The project ID must match this song.')
@@ -249,7 +251,7 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
         if member:
             from .collaboration import allowed_assets
             allowed_assets(service,member,[c['assetId'] for c in value['clips']])
-        return jsonify(project_json(service.store.save_project(g.song_builder_account, value, expected, access=member)))
+        return jsonify(project_json(service.store.save_project(g.song_builder_account, value, expected, access=member, live_session=payload.get('liveSession'))))
 
     @bp.delete('/api/projects/<project_id>')
     def delete_project(project_id):
@@ -329,6 +331,8 @@ def init(app, current_user, data_dir=None, url_prefix='/song-builder', return_ur
         from .advanced import register as register_advanced
         from .workflow_ui import register as register_workflow_ui
         workflow = register_advanced(bp, service, body)
+        from .live import register as register_live
+        register_live(bp, service, body)
         register_workflow_ui(bp, app, workflow, csrf)
 
     from .analysis import register as register_analysis

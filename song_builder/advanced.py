@@ -208,16 +208,8 @@ def enforce_clip_protections(metadata, old_project, new_project):
 def register(bp, service, body):
     """Register workflow endpoints and enforce protections on normal project saves."""
     workflow = WorkflowStore(service)
-    original_save = service.store.save_project
-
-    def protected_save(owner, value, expected=None, access=None):
-        if expected is not None:
-            old = service.store.get_project(owner, value['id'])['project']
-            metadata = workflow.get(owner, value['id'])['metadata']
-            enforce_clip_protections(metadata, old, value)
-        return original_save(owner, value, expected, access=access)
-
-    service.store.save_project = protected_save
+    # Enforce inside the project save transaction, including merged live edits.
+    service.store.workflow_protections = True
 
     @bp.get('/api/workflow')
     def get_workflow():

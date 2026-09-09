@@ -1,3 +1,4 @@
+import {bindLive,mergePending} from './live.mjs';
 import {openProducerRecommendation} from './producer-handoff.mjs';
 import {bindCollaboration} from './collaboration.mjs';
 import {bindConsole} from './console.mjs';
@@ -22,7 +23,7 @@ const state = { project:null, revision:0, sectionId:null, trackId:null, clipId:n
   recorder:null, recordingStream:null, recordTimer:null, recordProject:null,
   preparedUrl:null, polling:null, saveTimer:null, history:[], future:[], rejectedJobs:new Set(), audition:null, auditionRacks:new Map() };
 
-class ApiError extends Error { constructor(message,status) { super(message); this.status=status; } }
+class ApiError extends Error { constructor(message,status,code) { super(message); this.status=status; this.code=code; } }
 async function api(path, {method='GET',body,signal}={}) {
   const headers = {Accept:'application/json'};
   if(method!=='GET') headers['X-Song-Builder-CSRF']=csrf;
@@ -31,7 +32,7 @@ async function api(path, {method='GET',body,signal}={}) {
   if(response.redirected || !(response.headers.get('Content-Type')||'').includes('application/json'))
     throw new ApiError('Your session expired. Keep this page open and sign in again in another tab, then save.',401);
   const value=await response.json();
-  if(!response.ok) throw new ApiError(value.message || value.error || 'That action could not finish. Your current song is still here.',response.status);
+  if(!response.ok) throw new ApiError(value.message || value.error || 'That action could not finish. Your current song is still here.',response.status,value.error);
   return value;
 }
 function notify(message,error=false) { const n=$('notice'); n.textContent=message; n.hidden=false; n.setAttribute('role',error?'alert':'status'); }
@@ -46,6 +47,7 @@ function stop(except=null) { for(const audio of $('jobs').querySelectorAll('audi
 function markDirty() { state.dirty=true;state.sequence++;$('save-state').textContent='Unsaved changes';clearTimeout(state.saveTimer);state.saveTimer=setTimeout(()=>save().catch(failure),800); }
 function commit(project,{redraw=true,history=true,resume=false,rackTrackId=null}={}) {
   if(state.access?.role==='viewer'){notify('Viewer access: listening and exports only.',true);return;}
+  if(typeof live!=='undefined'&&!live.canEdit(state.project,project))return;
   const wasPlaying=(resume||rackTrackId)&&state.playing,from=engine.position(),sectionOnly=state.sectionOnly;
   const next=P.validateProject(project);
   const track=rackTrackId&&next.tracks.find(t=>t.id===rackTrackId);
@@ -69,17 +71,26 @@ function showConflict(){state.conflict=true;$('recovery').hidden=false;$('recove
 async function performSave() {
   if(!state.project||!state.dirty)return;
   if(state.conflict)throw new Error('Resolve the saved-project conflict before saving this version.');
+  const liveId=typeof live!=='undefined'?live.sessionId():null;
   const snapshot=P.validateProject(state.project),sequence=state.sequence,revision=state.revision;
   $('save-state').textContent='Saving…';
   try {
-    const r=revision ? await api(`/api/projects/${snapshot.id}`,{method:'PUT',body:{project:snapshot,expectedRevision:revision}}) : await api('/api/projects',{method:'POST',body:{project:snapshot}});
+    const r=revision ? await api(`/api/projects/${snapshot.id}`,{method:'PUT',body:{project:snapshot,expectedRevision:revision,...(liveId?{liveSession:liveId}:{})}}) : await api('/api/projects',{method:'POST',body:{project:snapshot}});
     if(state.project.id!==snapshot.id)return;
+    if(liveId){
+      try{state.project=P.validateProject(mergePending(snapshot,state.project,r.project));}
+      catch(error){showConflict();throw error;}
+      for(const asset of r.assets)state.assets.set(asset.id,asset);
+      state.history=[];state.future=[];
+    }
     state.revision=r.revision;
     if(state.sequence===sequence)state.dirty=false;
+    if(liveId){render();for(const asset of r.assets)await ensureAudio(asset);}
+
     $('save-state').textContent=state.dirty?'Unsaved changes':'Saved';
     history.replaceState(null,'',`${location.pathname}?project=${snapshot.id}`);
     await listProjects().catch(()=>notify('Song saved. The project list could not refresh; your changes are stored.',true));
-  } catch(e) { $('save-state').textContent='Not saved';if(e.status===409)showConflict();throw e; }
+  } catch(e) { $('save-state').textContent='Not saved';if(e.status===409&&!['part_busy','live_expired'].includes(e.code))showConflict();throw e; }
 }
 function save(){clearTimeout(state.saveTimer);const task=state.saveChain.catch(()=>{}).then(performSave);state.saveChain=task;return task;}
 async function audioBytes(asset){
@@ -232,13 +243,21 @@ function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boole
   const i=state.project?.sections.findIndex(s=>s.id===state.sectionId);$('move-earlier').disabled=busy||recording||i===0;$('move-later').disabled=busy||recording||i===state.project?.sections.length-1;
   if(state.project?.sections.length===1)$('remove-section').disabled=true;
   $('undo-edit').disabled=busy||recording||!state.history.length;$('redo-edit').disabled=busy||recording||!state.future.length;
+  const liveScope=typeof live!=='undefined'?live.editingScope():undefined;
+  if(liveScope!==undefined&&liveScope!=='arrangement'){
+    for(const id of ['song-title','song-tempo','song-key','lock-section','move-earlier','move-later','add-section','add-track','section-name','section-duration','section-direction','section-lyrics','duplicate-section','remove-section','clear-solos','prepare-section-test'])$(id).disabled=true;
+    if(liveScope!=='track:'+state.trackId){
+      for(const control of document.querySelectorAll('#sound-rack button,#sound-rack input,#selected-mixer button,#selected-mixer input,#clip-inspector button,#clip-inspector input'))control.disabled=true;
+      for(const id of ['upload-audio','record-audio'])if(!recording)$(id).disabled=true;
+    }
+  }
   const guest=state.access&&state.access.role!=='owner';
   if(guest){
     for(const id of ['new-project','save-version','import-project','load-demo','start-ai','prepare-section-test','recover-copy','lock-section','create-invite'])if($(id))$(id).disabled=true;
     for(const a of document.querySelectorAll('a[href]'))if(/\/(analyze|workflow)(\?|$)/.test(a.getAttribute('href')))a.hidden=true;
     if(state.access.role==='viewer'){
       const keep=new Set(['play-song','stop-playback','play-section','loop-section','seek','project-list','export-project','export-mix','export-section','export-track','export-30','export-15','dismiss-download','reload-saved']);
-      for(const control of document.querySelectorAll('button,input,select,textarea'))if(!keep.has(control.id)&&!control.matches('.section-button,.track-name,.clip,.room-project-toggle')&&!control.closest('#collaboration'))control.disabled=true;
+      for(const control of document.querySelectorAll('button,input,select,textarea'))if(!keep.has(control.id)&&!control.matches('.section-button,.track-name,.clip,.room-project-toggle')&&!control.closest('#collaboration')&&!control.closest('#live-room'))control.disabled=true;
     }
   }
 }
@@ -404,7 +423,8 @@ async function boot(){state.busy++;try{
   const list=await api('/api/projects');const requested=entryParams.get('project');const first=list.projects.find(p=>p.id===requested)||list.projects[0];
   if(first)await loadProject(first.id,{skipSave:true});else await startNew();await listProjects();
   if(entryParams.get('report')&&state.access.role==='owner'){try{await openProducerRecommendation({document,params:entryParams,api,state,base,loadProject,save,play,notify,run,render,newId:P.newId});}catch(e){notify(e.message,true);}}
-  state.polling=setInterval(()=>{if(!document.hidden&&!state.busy)pollJobs();},5000);clock();
+  state.polling=setInterval(()=>{if(!document.hidden&&!state.busy){pollJobs();live.tick();}},3000);clock();
  }catch(e){failure(e);$('save-state').textContent='Workspace unavailable';}finally{state.busy--;renderDisabled();}}
+const live=bindLive({document,state,api,save,loadProject,render,notify,newId:P.newId});
 const collaborators=bindCollaboration({document,api,state,save,loadProject,notify,run});
 boot();
