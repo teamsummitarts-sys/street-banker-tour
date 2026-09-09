@@ -10,7 +10,7 @@
    Takes `nav` if a page passes one, otherwise reads landing_config
    through the public_nav() global. #}
 {% set nav = nav or public_nav() %}
-<link rel="stylesheet" href="/static/css/product-navigation.css?v=1">
+<link rel="stylesheet" href="/static/css/product-navigation.css?v=2">
 <a class="sbh-skip" href="#main">Skip to content</a>
 
 <header class="sbh" id="sb-header" data-scrolled="false">
@@ -24,8 +24,20 @@
 
     <nav class="sbh-nav" aria-label="Product">
       {% for link in nav.links %}
-      <a class="sbh-link" href="{{ link.href }}"
-         {% if link.href.startswith('#') %}data-section="{{ link.href[1:] }}"{% endif %}>{{ link.label }}</a>
+        {% if link.label == "Platform" %}
+        <div class="sbh-app-menu">
+          <a class="sbh-link" href="{{ link.href }}">{{ link.label }}</a>
+          <div class="sbh-app-menu-panel" aria-label="Applications">
+            <a class="sbh-app-menu-link" href="{{ link.href }}">Platform overview</a>
+            {% for application in nav.applications %}
+            <a class="sbh-app-menu-link" data-application="true" href="{{ application.href }}">{{ application.label }}</a>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <a class="sbh-link" href="{{ link.href }}"
+           {% if link.href.startswith('#') %}data-section="{{ link.href[1:] }}"{% endif %}>{{ link.label }}</a>
+        {% endif %}
       {% endfor %}
     </nav>
 
@@ -45,13 +57,6 @@
       </button>
     </div>
   </div>
-  <nav class="sbh-applications" aria-label="Applications">
-    <div class="sbh-applications-inner">
-      {% for link in nav.applications %}
-      <a class="sbh-application" href="{{ link.href }}">{{ link.label }}</a>
-      {% endfor %}
-    </div>
-  </nav>
 </header>
 
 {# The drawer lives outside the sticky bar so its backdrop can cover the
@@ -69,8 +74,8 @@
         </svg>
       </button>
     </div>
-    {% for link in nav.applications %}
-    <a class="sbh-drawer-link sbh-drawer-application" href="{{ link.href }}">{{ link.label }}</a>
+    {% for application in nav.applications %}
+    <a class="sbh-drawer-link" data-application="true" href="{{ application.href }}">{{ application.label }}</a>
     {% endfor %}
     {% for link in nav.drawer_links %}
     <a class="sbh-drawer-link" href="{{ link.href }}">{{ link.label }}</a>
