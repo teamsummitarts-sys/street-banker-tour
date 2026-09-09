@@ -1,0 +1,35 @@
+name: The Room verification
+
+on:
+  pull_request:
+    paths:
+      - "song_builder/**"
+      - "tests/test_song_builder*.py"
+      - "tests/test_room_workflow.py"
+      - "tests/song_builder/**"
+      - ".github/workflows/song-builder-check.yml"
+
+jobs:
+  room:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: pip install -r requirements.txt
+      - run: >-
+          pytest -q
+          tests/test_song_builder_backend.py
+          tests/test_song_builder_host.py
+          tests/test_song_builder_v2.py
+          tests/test_song_builder_demo.py
+          tests/test_room_workflow.py
+      - run: node --test tests/song_builder/*.test.mjs
+      - run: node --check song_builder/static/ui/controller.mjs
+      - run: node --check song_builder/static/ui/workflow.mjs
