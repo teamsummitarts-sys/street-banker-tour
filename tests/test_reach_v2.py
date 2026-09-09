@@ -12,6 +12,14 @@ def _client(monkeypatch):
     return app_module.create_app().test_client()
 
 
+def test_healthz_is_public(monkeypatch):
+    client = _client(monkeypatch)
+
+    response = client.get("/healthz")
+    assert response.status_code == 200
+    assert response.get_json() == {"ok": True, "service": "street-banker-v2"}
+
+
 def test_reach_public_landing_and_assets_mount_inside_v2(monkeypatch):
     client = _client(monkeypatch)
 
