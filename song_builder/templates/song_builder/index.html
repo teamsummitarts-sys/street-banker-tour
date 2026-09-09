@@ -25,8 +25,15 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <a class="skip-link" href="#song-title">Skip to song editor</a>
   <header class="site-bar">
     <a class="brand" href="{{ builder_base_url }}/" aria-label="The Room projects"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker"></span></a>
-    <a class="back-link" href="{{ builder_base_url }}/analyze" target="_blank" rel="noopener">Analyze &amp; Improve ↗</a>
-    <a class="back-link" href="{{ return_url }}">Back to Noise Lab</a>
+    <nav aria-label="The Room tools" style="display:flex;align-items:center;justify-content:flex-end;gap:.45rem;flex:1;flex-wrap:wrap">
+      <a class="back-link" href="{{ builder_base_url }}/">Studio</a>
+      <a class="back-link" href="{{ builder_base_url }}/analyze#sound-dna">Sound DNA</a>
+      <a class="back-link" href="{{ builder_base_url }}/analyze#improve-track">Improve My Track</a>
+      <a class="back-link" href="{{ builder_base_url }}/analyze#reports-heading">Tempo &amp; Key Lab</a>
+      <a class="back-link" href="{{ builder_base_url }}/workflow">Pro Workflow</a>
+      <a class="back-link" href="#session-team">Collaborate + Listen</a>
+    </nav>
+    <a class="back-link" href="{{ return_url }}">Noise Lab</a>
   </header>
   <main>
     <div class="page-heading">
@@ -147,5 +154,11 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     <input id="audio-file" type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden>
     <input id="project-file" type="file" accept=".sbsong,application/json" hidden>
   </main>
+  <script>
+    if (window.location.hash === '#session-team') {
+      const panel = document.getElementById('session-team');
+      if (panel) panel.open = true;
+    }
+  </script>
 </body>
 </html>

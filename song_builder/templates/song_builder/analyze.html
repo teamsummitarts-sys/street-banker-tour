@@ -23,7 +23,14 @@
 <header class="site-bar">
   <a href="{{ builder_base_url }}/" class="wordmark"><span class="room-brand-crop"><img src="{{ builder_assets_url }}ui/images/the-room-approved.png" alt="The Room by Street Banker" width="1536" height="1024"></span></a>
   <span class="header-title">Analyze &amp; Improve</span>
-  <a href="{{ builder_base_url }}/" class="editor-link">Song editor <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
+  <nav aria-label="The Room tools" style="display:flex;align-items:center;justify-content:flex-end;gap:.45rem;flex:1;flex-wrap:wrap">
+    <a href="{{ builder_base_url }}/" class="editor-link">Studio</a>
+    <a href="{{ builder_base_url }}/analyze#sound-dna" class="editor-link">Sound DNA</a>
+    <a href="{{ builder_base_url }}/analyze#improve-track" class="editor-link">Improve My Track</a>
+    <a href="{{ builder_base_url }}/analyze#reports-heading" class="editor-link">Tempo &amp; Key Lab</a>
+    <a href="{{ builder_base_url }}/workflow" class="editor-link">Pro Workflow</a>
+    <a href="{{ builder_base_url }}/#session-team" class="editor-link">Collaborate + Listen</a>
+  </nav>
 </header>
 <main>
   <div class="intro"><div><h1>Analyze &amp; Improve</h1><p>Your references. Your direction.</p></div>
@@ -58,7 +65,7 @@
     <details class="retention"><summary>File requirements &amp; privacy</summary><p class="hint">Use authorized mono or stereo 16-bit PCM WAV. A shorter excerpt may be needed for large files. Local previews stay in this page until cleared or closed. Uploading sends files to your private Room inbox, never directly to an outside provider.</p><p class="hint">Analysis copies expire after 24 hours and are removed by the next cleanup. Assigned copies are removed when analysis finishes, including on failure. Reports expire after 30 days. Saved song audio is separate.</p></details>
   </section>
   <section class="direction-desk" aria-labelledby="assignment-heading"><div class="section-title"><svg class="icon" aria-hidden="true"><use href="#icon-layers"/></svg><h2 id="assignment-heading">Analysis direction</h2></div>
-    <fieldset class="listening-modes"><legend>What are we listening for?</legend><label class="check"><input type="radio" name="mode" value="dna" checked><svg class="icon mode-symbol" aria-hidden="true"><use href="#icon-layers"/></svg><span><strong>Sound DNA</strong><small>Find the thread between your references.</small></span></label><label class="check"><input type="radio" name="mode" value="improve"><svg class="icon mode-symbol" aria-hidden="true"><use href="#icon-wave"/></svg><span><strong>Improve My Track</strong><small>One track. Conservative changes.</small></span></label></fieldset>
+    <fieldset class="listening-modes"><legend>What are we listening for?</legend><label id="sound-dna" class="check"><input type="radio" name="mode" value="dna" checked><svg class="icon mode-symbol" aria-hidden="true"><use href="#icon-layers"/></svg><span><strong>Sound DNA</strong><small>Find the thread between your references.</small></span></label><label id="improve-track" class="check"><input type="radio" name="mode" value="improve"><svg class="icon mode-symbol" aria-hidden="true"><use href="#icon-wave"/></svg><span><strong>Improve My Track</strong><small>One track. Conservative changes.</small></span></label></fieldset>
     <div class="two-col"><label>Analysis destination<select id="destination"><option value="">Choose after upload</option></select></label><div id="destination-detail" class="disclosure">Nothing is assigned yet.</div></div>
     <p id="analysis-setup" class="disclosure" role="status"></p>
     <label id="consent-label" class="check" hidden><input type="checkbox" id="consent">I approve sending the active audio and directions to this destination under the terms shown above.</label>
@@ -74,4 +81,15 @@
   </section>
   <footer>Street Banker does not train models on these uploads. External processing follows the selected destination’s disclosed policy; temporary provider retention may apply. No audio goes to Suno when you export a blueprint.</footer>
 </main>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const mode = window.location.hash === '#improve-track' ? 'improve' : window.location.hash === '#sound-dna' ? 'dna' : null;
+    if (!mode) return;
+    const input = document.querySelector(`[name="mode"][value="${mode}"]`);
+    if (input) {
+      input.checked = true;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
+</script>
 </body></html>
