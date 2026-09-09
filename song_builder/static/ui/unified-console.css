@@ -1,11 +1,11 @@
 /* Shared Room finish. Native controls and audio state remain authoritative. */
 :is(.room-console.room-scroll,.room-analysis){--text:#eeeade;--muted:#b6bcb9;--gold:#e1bd7d;--plate:linear-gradient(125deg,#343839,#202527 60%,#171c1e);--bevel:inset 0 1px #e2e5de45,inset 0 -2px #050708,0 4px 8px #0008;background:radial-gradient(ellipse at 35% 0,#303537 0,#14191c 48%,#0a0e10 100%);color:var(--text)}
 :is(.room-console.room-scroll,.room-analysis) :is(button,.editor-link,details>summary){transition:transform 140ms ease,box-shadow 140ms ease,filter 140ms ease}
-:is(.room-console.room-scroll,.room-analysis) button:not(.track-name):not(.section-button):not(.quiet){background:linear-gradient(165deg,#e3e1d8,#b8bab6 42%,#777e7e);color:#151b1d;border:1px solid #101617;border-top-color:#f5f2e6;box-shadow:inset 0 1px #fff9,inset 0 -2px #3c4145,0 3px 0 #060b0e,0 5px 8px #0009;border-radius:6px}
-:is(.room-console.room-scroll,.room-analysis) button.primary,.room-console.room-scroll #generate-take,.room-console.room-scroll button[aria-pressed=true],.room-console.room-scroll #save-project{background:linear-gradient(145deg,#f4e2b9,#c9a86c 60%,#9c7943);color:#211a11;border-top-color:#fff2d7}
+:is(.room-console.room-scroll,.room-analysis) button:not(.track-name):not(.section-button):not(.quiet):not(.clip){background:linear-gradient(165deg,#e3e1d8,#b8bab6 42%,#777e7e);color:#151b1d;border:1px solid #101617;border-top-color:#f5f2e6;box-shadow:inset 0 1px #fff9,inset 0 -2px #3c4145,0 3px 0 #060b0e,0 5px 8px #0009;border-radius:6px}
+:is(.room-console.room-scroll,.room-analysis) button.primary,.room-console.room-scroll #generate-take,.room-console.room-scroll button[aria-pressed=true]:not(.clip):not(.track-name),.room-console.room-scroll #save-project{background:linear-gradient(145deg,#f4e2b9,#c9a86c 60%,#9c7943);color:#211a11;border-top-color:#fff2d7}
 :is(.room-console.room-scroll,.room-analysis) button:disabled{filter:saturate(.3);opacity:.5;cursor:not-allowed}
-@media(hover:hover){:is(.room-console.room-scroll,.room-analysis) button:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.08)}}
-:is(.room-console.room-scroll,.room-analysis) button:active:not(:disabled){transform:translateY(2px) scale(.975);box-shadow:inset 0 1px #ffffff40,0 1px 2px #0008}
+@media(hover:hover){:is(.room-console.room-scroll,.room-analysis) button:hover:not(:disabled):not(.clip){transform:translateY(-1px);filter:brightness(1.08)}}
+:is(.room-console.room-scroll,.room-analysis) button:active:not(:disabled):not(.clip){transform:translateY(2px) scale(.975);box-shadow:inset 0 1px #ffffff40,0 1px 2px #0008}
 :is(.room-console.room-scroll,.room-analysis) :is(button,a,input,select,textarea,summary):focus-visible{outline:3px solid #f0d09a;outline-offset:3px}
 .room-console.room-scroll{padding:12px 18px 24px}
 .room-console.room-scroll .site-bar{height:auto;min-height:84px;margin-bottom:12px;padding:12px 18px;background:var(--plate);border:1px solid #5c6465;box-shadow:var(--bevel)}
@@ -84,3 +84,8 @@
  .room-analysis .file-wave{height:130px}.room-analysis .intro{gap:14px;padding:16px 0}
 }
 @media(prefers-reduced-motion:reduce){:is(.room-console.room-scroll,.room-analysis) *, :is(.room-console.room-scroll,.room-analysis) *::before,:is(.room-console.room-scroll,.room-analysis) *::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+.room-console.room-scroll .site-bar>.back-link{font-size:12px;line-height:1.4;min-height:44px;display:flex;align-items:center;padding:8px 12px;border:1px solid #636e6b;border-radius:6px;text-decoration:none;background:linear-gradient(#3b4547,#202b2e);box-shadow:inset 0 1px #b6c2af44,0 3px 5px #0007;color:#ede9dc;max-width:140px;flex-shrink:0}
+.room-console.room-scroll button.clip{transform:none;filter:none}
+.room-console.room-scroll .clip canvas{opacity:1}
+@media(min-width:801px){.room-console.room-scroll .track,.room-console.room-scroll .lane-content,.room-console.room-scroll .track .clip{min-height:76px;height:76px}.room-console.room-scroll .clip canvas{height:62px}.room-console.room-scroll .track-desk{padding:12px}.room-console.room-scroll .track-desk>.section-heading{margin-bottom:10px}.room-console.room-scroll .rack-controls{padding-top:6px}.room-console.room-scroll .rack-dial{width:100px;height:100px}.room-console.room-scroll .sound-rack{padding:14px 20px}.room-console.room-scroll .section-deck{padding:9px 14px 5px}.room-console.room-scroll .site-bar{min-height:76px;padding:8px 14px}}
