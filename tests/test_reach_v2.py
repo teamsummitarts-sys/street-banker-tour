@@ -72,6 +72,10 @@ def test_reach_today_and_campaign_hub_present_clear_workflow(monkeypatch):
     assert b"Sender Setup" in today.data
     assert b"Connections" in today.data
     assert b"Settings &amp; Safety" in today.data
+    assert b"Create Campaign" in today.data
+    assert b"Add or manage music" in today.data
+    assert b'aria-label="Create campaign"' in today.data
+    assert today.data.count(b"Create Campaign") >= 2
 
     hub = client.get("/reach/campaigns")
     assert hub.status_code == 200
