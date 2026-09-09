@@ -126,7 +126,8 @@ async function saveVersion(){
   const result=await api(`/api/projects/${state.project.id}/fork`,{method:'POST',body:{expectedRevision:state.revision,title:name.trim().slice(0,120)}});await loadProject(result.projectId,{skipSave:true});await listProjects();notify('Saved a separate version with its takes, scenes, protections and listening notes.');
 }
 
-function renderMeta(){if(!state.project)return;const q=new URLSearchParams({project:state.project.id,section:state.sectionId||'',track:state.trackId||'',clip:state.clipId||''});$('open-workflow').href=`${base}/workflow?${q}`;$('duration-label').textContent=`${seconds(P.projectDuration(state.project))} arranged`;$('seek').max=P.projectDuration(state.project);}
+function updateWorkflowLink(){if(!state.project)return;const q=new URLSearchParams({project:state.project.id,section:state.sectionId||'',track:state.trackId||'',clip:state.clipId||''});$('open-workflow').href=`${base}/workflow?${q}`;}
+function renderMeta(){if(!state.project)return;updateWorkflowLink();$('duration-label').textContent=`${seconds(P.projectDuration(state.project))} arranged`;$('seek').max=P.projectDuration(state.project);}
 function render(){if(!state.project)return;renderMeta();$('song-title').value=state.project.title;$('song-tempo').value=state.project.tempo;$('song-key').value=state.project.key;renderSections();renderTracks();renderInspector();renderJobs();renderDisabled();}
 function renderSections(){
   const list=$('sections');list.replaceChildren();state.project.sections.forEach((s,i)=>{
@@ -231,7 +232,7 @@ function renderInspector(){const s=selectedSection();if(!s)return;$('section-hea
   $('section-test-status').textContent=protectedCount===state.project.sections.length-1&&!s.locked?`${s.name} is editable. All ${protectedCount} other section${protectedCount===1?' is':'s are'} protected.`:'The selected section stays editable. Every other section is protected.';
   const clip=selectedClip();$('clip-inspector').hidden=!clip;if(clip){$('clip-offset').value=clip.offset;$('clip-source').value=clip.sourceOffset;$('clip-duration').value=clip.duration;$('clip-loop').checked=clip.loop;$('clip-fade-in').value=clip.fadeIn||0;$('clip-fade-out').value=clip.fadeOut||0;}
 }
-function renderDisabled(){const s=selectedSection(),busy=state.busy>0,lock=Boolean(s?.locked),hasAudio=Boolean(state.project?.clips.length),recording=Boolean(state.recorder);
+function renderDisabled(){updateWorkflowLink();const s=selectedSection(),busy=state.busy>0,lock=Boolean(s?.locked),hasAudio=Boolean(state.project?.clips.length),recording=Boolean(state.recorder);
   const rackTrack=state.audition?.project.tracks[0]||state.project?.tracks.find(t=>t.id===state.trackId),rackBlocked=!rackTrack||busy||recording||state.externalPreview||(!state.audition&&rackProtectedSections(state.trackId).length>0);
   for(const input of $('sound-rack').querySelectorAll('button,input'))input.disabled=Boolean(rackBlocked||(input.hasAttribute('data-rack-assigned')&&rackTrack?.rack?.enabled===false));
   $('loop-section').disabled=busy||recording||!hasAudio;$('clear-solos').disabled=busy||recording;
