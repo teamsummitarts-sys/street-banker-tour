@@ -154,22 +154,38 @@ export function createPatchLibrary({getRecipe, getRevision, applyRecipe, prepare
       if (!active()) return;
       const acknowledged = checkedPatch(data.patch);
       const savedVersion = acknowledged.headVersion;
+      let patch = acknowledged;
+      let verified = false;
 
-      // Do not trust only the write response. Read the patch back through the
-      // owner-scoped API before reporting a durable save to the musician.
+      // A successful write is authoritative. Follow it with a no-cache owner-scoped
+      // read so the UI can distinguish durable read-back from an acknowledged save.
+      // If the read-back is temporarily unavailable or stale, keep the acknowledged
+      // save and tell the musician verification is pending rather than falsely
+      // reporting that the write failed.
       status('Save received. Verifying it in private storage…');
-      const verifiedData = await request(`/${acknowledged.id}`, 'GET', null, signal);
-      if (!active()) return;
-      const patch = checkedPatch(verifiedData.patch);
-      const accepted = patch.versions.find(v => v.version === savedVersion);
-      if (!accepted || accepted.name !== name || JSON.stringify(validateRecipe(accepted.recipe)) !== JSON.stringify(recipe)) {
-        throw Error('The saved version could not be verified in private storage. Refresh the library before retrying; your working settings are retained.');
+      try {
+        const verifiedData = await request(`/${acknowledged.id}`, 'GET', null, signal);
+        if (!active()) return;
+        if (verifiedData?.patch) {
+          const candidate = checkedPatch(verifiedData.patch);
+          const accepted = candidate.versions.find(v => v.version === savedVersion);
+          if (accepted && accepted.name === name
+            && JSON.stringify(validateRecipe(accepted.recipe)) === JSON.stringify(recipe)) {
+            patch = candidate;
+            verified = true;
+          }
+        }
+      } catch (error) {
+        if (error?.name === 'AbortError') throw error;
+        // Preserve the successful write acknowledgment. Refresh/reopen remains the
+        // final test if the follow-up read cannot be completed.
       }
 
       // Mark the submitted snapshot, never newer edits made during the request.
       select(patch, savedVersion);
       saved = {name, recipe: copy(recipe), version: savedVersion};
-      status(`Saved and verified “${name}” as version ${savedVersion}. ${revision !== getRevision() || nameRevision !== edit ? 'Your newer edits are not saved yet.' : 'Audio stays on this device; keep your source separately.'}`);
+      const edits = revision !== getRevision() || nameRevision !== edit;
+      status(`${verified ? 'Saved and verified' : 'Saved; storage verification pending'} “${name}” as version ${savedVersion}. ${edits ? 'Your newer edits are not saved yet.' : 'Audio stays on this device; keep your source separately.'}`);
     });
   }
   $('save-patch').addEventListener('click', () => save(false));
