@@ -410,22 +410,109 @@
       ('reach.all_opportunities', 'Radar', 'M12 3l2.4 6.1L21 12l-6.6 2.9L12 21l-2.4-6.1L3 12l6.6-2.9z'),
       ('reach.campaigns_list', 'Campaigns', 'M3 11l14-5v12L3 13v-2zm14 1h4M7 14v5h3v-4'),
       ('reach.all_responses', 'Inbox', 'M4 6h16v12H4zM4 7l8 6 8-6'),
-      ('reach.advanced', 'More', 'M5 12h.01M12 12h.01M19 12h.01'),
     ] %}
     {% for endpoint, label, icon in mobile_nav %}
     {% set here = ep == endpoint or (endpoint == 'reach.campaigns_list' and campaign_id) %}
     <a href="{{ url_for(endpoint) }}" {% if here %}aria-current="page"{% endif %}
-       class="flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold {{ 'text-amber-400' if here else 'text-gray-400' }}">
+       class="flex min-h-14 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold {{ 'text-amber-400' if here else 'text-gray-400' }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="{{ icon }}"/></svg>
       {{ label }}
     </a>
     {% endfor %}
+    {% set more_here = ep in ('reach.catalog_view', 'reach.contacts_view', 'reach.needs_you', 'reach.outreach_setup', 'reach.providers_view', 'reach.settings_view', 'reach.advanced') %}
+    <button type="button" id="reach-mobile-modules-trigger" aria-expanded="false" aria-controls="reach-mobile-modules"
+            class="flex min-h-14 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold {{ 'text-amber-400' if more_here else 'text-gray-400' }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg>
+      More
+    </button>
   </div>
 </nav>
+
+<div id="reach-mobile-modules" class="fixed inset-0 z-50 hidden md:hidden" role="dialog" aria-modal="true" aria-labelledby="reach-mobile-modules-title" aria-hidden="true">
+  <button type="button" data-reach-drawer-close class="absolute inset-0 bg-black/75 backdrop-blur-sm" aria-label="Close all REACH modules"></button>
+  <section class="absolute inset-x-0 bottom-0 max-h-[88dvh] overflow-y-auto rounded-t-2xl border-t border-white/10 bg-[#111113] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-24px_70px_rgba(0,0,0,.65)]">
+    <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-white/15" aria-hidden="true"></div>
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <div class="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">The full platform</div>
+        <h2 id="reach-mobile-modules-title" class="mt-1 text-xl font-bold tracking-tight text-white">Open any REACH workspace</h2>
+      </div>
+      <button type="button" data-reach-drawer-close class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5 text-gray-300" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="h-5 w-5" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+
+    <nav class="mt-5 space-y-5" aria-label="All REACH modules">
+      <div>
+        <div class="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">Workspace</div>
+        <div class="grid grid-cols-2 gap-2">
+          <a href="{{ url_for('reach.index') }}" class="rounded-xl border border-white/[0.08] bg-[#171719] p-3"><span class="block text-sm font-bold text-white">Today</span><span class="mt-1 block text-[11px] leading-4 text-gray-400">Your next verified move</span></a>
+          <a href="{{ url_for('reach.all_opportunities') }}" class="rounded-xl border border-white/[0.08] bg-[#171719] p-3"><span class="block text-sm font-bold text-white">Opportunity Radar</span><span class="mt-1 block text-[11px] leading-4 text-gray-400">Qualified outlets and evidence</span></a>
+          <a href="{{ url_for('reach.campaigns_list') }}" class="rounded-xl border border-white/[0.08] bg-[#171719] p-3"><span class="block text-sm font-bold text-white">Campaign Hub</span><span class="mt-1 block text-[11px] leading-4 text-gray-400">Every release campaign</span></a>
+          <a href="{{ url_for('reach.all_responses') }}" class="rounded-xl border border-white/[0.08] bg-[#171719] p-3"><span class="block text-sm font-bold text-white">Inbox</span><span class="mt-1 block text-[11px] leading-4 text-gray-400">Replies and follow-ups</span></a>
+        </div>
+      </div>
+
+      <div>
+        <div class="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">Library &amp; people</div>
+        <div class="overflow-hidden rounded-xl border border-white/[0.08] bg-[#171719]">
+          <a href="{{ url_for('reach.catalog_view') }}" class="flex items-center justify-between border-b border-white/[0.07] px-4 py-3.5"><span><span class="block text-sm font-semibold text-white">My Music</span><span class="block text-[11px] text-gray-400">Tracks, rights and release readiness</span></span><span class="text-amber-400" aria-hidden="true">→</span></a>
+          <a href="{{ url_for('reach.contacts_view') }}" class="flex items-center justify-between px-4 py-3.5"><span><span class="block text-sm font-semibold text-white">Contacts</span><span class="block text-[11px] text-gray-400">Outlets, people and relationship history</span></span><span class="text-amber-400" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+
+      <div>
+        <div class="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">Operations</div>
+        <div class="overflow-hidden rounded-xl border border-white/[0.08] bg-[#171719]">
+          <a href="{{ url_for('reach.needs_you') }}" class="flex items-center justify-between border-b border-white/[0.07] px-4 py-3.5"><span><span class="block text-sm font-semibold text-white">Needs You</span><span class="block text-[11px] text-gray-400">Human approvals, forms and logins</span></span>{% if needs_you_count %}<span class="rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold text-black">{{ needs_you_count }}</span>{% else %}<span class="text-amber-400" aria-hidden="true">→</span>{% endif %}</a>
+          <a href="{{ url_for('reach.outreach_setup') }}" class="flex items-center justify-between border-b border-white/[0.07] px-4 py-3.5"><span><span class="block text-sm font-semibold text-white">Sender Setup</span><span class="block text-[11px] text-gray-400">Identity and delivery readiness</span></span><span class="text-amber-400" aria-hidden="true">→</span></a>
+          <a href="{{ url_for('reach.providers_view') }}" class="flex items-center justify-between px-4 py-3.5"><span><span class="block text-sm font-semibold text-white">Connections</span><span class="block text-[11px] text-gray-400">Providers, quotas and kill switches</span></span><span class="text-amber-400" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+
+      <div>
+        <div class="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">System</div>
+        <div class="grid grid-cols-2 gap-2">
+          <a href="{{ url_for('reach.settings_view') }}" class="rounded-xl border border-white/[0.08] bg-[#171719] p-3"><span class="block text-sm font-bold text-white">Settings &amp; Safety</span><span class="mt-1 block text-[11px] leading-4 text-gray-400">Controls and audit log</span></a>
+          <a href="{{ url_for('reach.advanced') }}" class="rounded-xl border border-white/[0.08] bg-[#171719] p-3"><span class="block text-sm font-bold text-white">Advanced &amp; System</span><span class="mt-1 block text-[11px] leading-4 text-gray-400">Full operating status</span></a>
+        </div>
+      </div>
+    </nav>
+  </section>
+</div>
 
 <div id="reach-toast" class="pointer-events-none fixed bottom-20 left-1/2 z-50 hidden -translate-x-1/2 rounded-lg border border-white/10 bg-[#171719] px-4 py-2.5 text-sm shadow-xl md:bottom-6"></div>
 
 <script>
+  const reachModules = document.getElementById('reach-mobile-modules');
+  const reachModulesTrigger = document.getElementById('reach-mobile-modules-trigger');
+  let reachModulesReturnFocus = null;
+
+  function openReachModules() {
+    if (!reachModules) return;
+    reachModulesReturnFocus = document.activeElement;
+    reachModules.classList.remove('hidden');
+    reachModules.setAttribute('aria-hidden', 'false');
+    reachModulesTrigger?.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    reachModules.querySelector('[data-reach-drawer-close]')?.focus();
+  }
+
+  function closeReachModules() {
+    if (!reachModules) return;
+    reachModules.classList.add('hidden');
+    reachModules.setAttribute('aria-hidden', 'true');
+    reachModulesTrigger?.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+    reachModulesReturnFocus?.focus();
+  }
+
+  reachModulesTrigger?.addEventListener('click', openReachModules);
+  document.querySelectorAll('[data-reach-drawer-close]').forEach((button) => button.addEventListener('click', closeReachModules));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && reachModules && !reachModules.classList.contains('hidden')) closeReachModules();
+  });
+
   function reachToast(message, ok) {
     const el = document.getElementById('reach-toast');
     el.textContent = message;

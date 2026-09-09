@@ -78,6 +78,40 @@
   </div>
 </section>
 
+<section aria-labelledby="reach-platform-heading">
+  <div class="flex items-end justify-between gap-4">
+    <div>
+      <div class="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">{{ 'Demo workspace' if fixture_mode else 'Your workspace' }}</div>
+      <h2 id="reach-platform-heading" class="mt-1 text-xl font-bold tracking-tight text-white">Open the platform</h2>
+      <p class="mt-1 text-xs leading-5 text-gray-400">Every REACH workspace stays available, even before your first campaign.</p>
+    </div>
+    <a href="{{ url_for('reach.advanced') }}" class="hidden shrink-0 text-xs font-semibold text-gray-400 hover:text-amber-400 sm:block">All modules →</a>
+  </div>
+
+  <nav class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6" aria-label="REACH workspace modules">
+    {% set workspace_modules = [
+      ('reach.all_opportunities', 'Radar', 'Find and qualify', 'M12 3l2.4 6.1L21 12l-6.6 2.9L12 21l-2.4-6.1L3 12l6.6-2.9z'),
+      ('reach.campaigns_list', 'Campaign Hub', 'Run every release', 'M3 11l14-5v12L3 13v-2zm14 1h4M7 14v5h3v-4'),
+      ('reach.catalog_view', 'My Music', 'Tracks and rights', 'M5 4h14v16H5zM8 8h8M8 12h8M8 16h5'),
+      ('reach.contacts_view', 'Contacts', 'Relationship history', 'M8 11a4 4 0 108 0 4 4 0 00-8 0M4 21a8 8 0 0116 0'),
+      ('reach.needs_you', 'Needs You', 'Approvals and tasks', 'M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0'),
+      ('reach.all_responses', 'Inbox', 'Replies and follow-up', 'M4 6h16v12H4zM4 7l8 6 8-6'),
+    ] %}
+    {% for endpoint, label, description, icon in workspace_modules %}
+    <a href="{{ url_for(endpoint) }}" class="reach-action-row group relative min-h-28 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111113] p-3.5 hover:border-amber-500/35">
+      <div class="flex items-start justify-between gap-2">
+        <span class="grid h-9 w-9 place-items-center rounded-lg border border-white/[0.08] bg-[#171719] text-gray-400 group-hover:border-amber-500/30 group-hover:text-amber-400">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="h-4.5 w-4.5" aria-hidden="true"><path d="{{ icon }}"/></svg>
+        </span>
+        {% if endpoint == 'reach.needs_you' and needs_you_count %}<span class="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold tabular-nums text-black">{{ needs_you_count }}</span>{% else %}<span class="text-gray-400 group-hover:text-amber-400" aria-hidden="true">↗</span>{% endif %}
+      </div>
+      <span class="mt-3 block text-sm font-bold text-white">{{ label }}</span>
+      <span class="mt-0.5 block text-[11px] leading-4 text-gray-400">{{ description }}</span>
+    </a>
+    {% endfor %}
+  </nav>
+</section>
+
 {% if onboarding and onboarding.show %}
 <details class="group rounded-xl border border-white/[0.08] bg-[#111113]">
   <summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">

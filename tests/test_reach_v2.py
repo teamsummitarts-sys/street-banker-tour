@@ -61,6 +61,17 @@ def test_reach_today_and_campaign_hub_present_clear_workflow(monkeypatch):
     assert b"Evidence stays attached" in today.data
     assert b"Human approval required" in today.data
     assert b"reach-wordmark.svg" in today.data
+    assert b"Open the platform" in today.data
+    assert b"Every REACH workspace stays available" in today.data
+    assert b"Campaign Hub" in today.data
+    assert b"My Music" in today.data
+    assert b"Contacts" in today.data
+    assert b"Needs You" in today.data
+    assert b'id="reach-mobile-modules-trigger"' in today.data
+    assert b'id="reach-mobile-modules"' in today.data
+    assert b"Sender Setup" in today.data
+    assert b"Connections" in today.data
+    assert b"Settings &amp; Safety" in today.data
 
     hub = client.get("/reach/campaigns")
     assert hub.status_code == 200
