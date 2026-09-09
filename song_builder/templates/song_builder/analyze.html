@@ -23,31 +23,38 @@
   <a href="{{ builder_base_url }}/" class="editor-link">Song editor <svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></a>
 </header>
 <main>
-  <div class="intro"><div><h1>Hear what’s there.<br><span>Find what’s next.</span></h1><p>Bring your references. Keep your identity.</p></div>
+  <div class="intro"><div><h1>Analyze &amp; Improve</h1><p>Your references. Your direction.</p></div>
     <ol class="signal-path" aria-label="Analysis workflow"><li id="flow-upload" data-state="current"><i class="status-lamp" aria-hidden="true"></i><span>Upload<strong id="flow-upload-label">Add your audio</strong></span></li><li id="flow-direct"><i class="status-lamp" aria-hidden="true"></i><span>Direct<strong id="flow-direct-label">Choose a destination</strong></span></li><li id="flow-review"><i class="status-lamp" aria-hidden="true"></i><span>Review<strong id="flow-review-label">Awaiting analysis</strong></span></li></ol>
   </div>
   <p id="status" role="status" aria-live="polite">Opening your private analysis inbox…</p>
   <section class="inbox-desk" aria-labelledby="upload-heading">
-    <div class="section-title"><svg class="icon" aria-hidden="true"><use href="#icon-upload"/></svg><h2 id="upload-heading">Bring in your audio</h2><span id="inbox-count" class="section-count">0 / 12 in inbox</span></div>
+    <div class="section-title"><svg class="icon" aria-hidden="true"><use href="#icon-upload"/></svg><h2 id="upload-heading">Audio desk</h2><span id="inbox-count" class="section-count">0 / 12 in inbox</span></div>
     <div class="upload-station">
-      <figure class="upload-art"><img src="{{ builder_assets_url }}ui/images/analysis-editor.jpg" alt="The Room song map and actual instrument waveforms" width="1284" height="548"><figcaption>The Room · song editor</figcaption></figure>
-      <div id="upload-drop" class="upload-drop">
-        <div class="upload-caption"><svg class="icon upload-symbol" aria-hidden="true"><use href="#icon-wave"/></svg><h3>Drop the track.<br>Keep the spark.</h3><p>Drag WAV files here or choose them below.</p></div>
-        <input id="upload" class="file-input" type="file" accept="audio/wav,.wav" multiple aria-label="Select authorized WAV files" tabindex="-1">
-        <button id="choose-files" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-upload"/></svg> Choose audio files</button>
-        <p class="hint format-note">16-bit WAV · 14 MiB / 10 min per file</p>
+      <div class="source-bay">
+        <div id="upload-drop" class="upload-drop">
+          <svg class="icon upload-symbol" aria-hidden="true"><use href="#icon-upload"/></svg>
+          <h3>Drop your audio here</h3>
+          <p class="hint">Up to 12 authorized references</p>
+          <input id="upload" class="file-input" type="file" accept="audio/wav,.wav" multiple aria-label="Select authorized WAV files" tabindex="-1">
+          <button id="choose-files" type="button">Choose audio files</button>
+          <p class="hint format-note">16-bit WAV · 14 MiB / 10 min per file</p>
+        </div>
+        <figure class="upload-art"><img src="{{ builder_assets_url }}ui/images/analysis-editor.jpg" alt="The Room song map and actual instrument waveforms" width="1284" height="548"><figcaption>The Room · song editor</figcaption></figure>
+      </div>
+      <div class="preview-bay">
+        <div class="transfer-console"><i id="transfer-lamp" class="status-lamp" data-state="idle" aria-hidden="true"></i><div class="transfer-readout"><span class="transfer-heading">Transfer status</span><progress id="transfer-progress" max="1" value="0" aria-label="Upload progress"></progress><span id="transfer-label" role="status" aria-live="polite">No files selected</span></div><button id="upload-button" class="primary" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-upload"/></svg> Upload to inbox</button></div>
         <label class="check authorization"><input id="authorized" type="checkbox">I own this audio or have permission to analyze it.</label>
-        <div class="transfer-console"><div class="transfer-title"><i id="transfer-lamp" class="status-lamp" data-state="idle" aria-hidden="true"></i><span id="transfer-label" role="status" aria-live="polite">No files selected</span></div><progress id="transfer-progress" max="1" value="0" aria-label="Upload progress"></progress><button id="upload-button" class="primary" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-upload"/></svg> Upload to inbox</button></div>
-        <p class="hint">Upload privately. Choose where analysis runs afterward.</p>
+        <div class="preview-heading"><h3>Audio preview</h3><button id="clear-queue" class="quiet" type="button" hidden>Clear local previews</button></div>
+        <div id="preview-empty" class="preview-empty"><svg class="icon" aria-hidden="true"><use href="#icon-wave"/></svg><strong>Your waveform starts here</strong><span>Select a file to preview it before upload.</span><small>No analysis has started.</small></div>
+        <div id="upload-queue" aria-label="Selected audio and upload progress"></div>
+        <p class="hint preview-footnote">Upload privately. Choose where analysis runs afterward.</p>
       </div>
     </div>
-    <div id="upload-queue" aria-label="Selected audio and upload progress"></div>
-    <button id="clear-queue" class="quiet" type="button" hidden>Clear local previews</button>
     <div class="inbox-heading"><h3>Your references</h3><span class="hint">Set influence. Keep what matters.</span></div>
     <div id="inbox"></div>
     <details class="retention"><summary>File requirements &amp; privacy</summary><p class="hint">Use authorized mono or stereo 16-bit PCM WAV. A shorter excerpt may be needed for large files. Local previews stay in this page until cleared or closed. Uploading sends files to your private Room inbox, never directly to an outside provider.</p><p class="hint">Analysis copies expire after 24 hours and are removed by the next cleanup. Assigned copies are removed when analysis finishes, including on failure. Reports expire after 30 days. Saved song audio is separate.</p></details>
   </section>
-  <section class="direction-desk" aria-labelledby="assignment-heading"><div class="section-title"><svg class="icon" aria-hidden="true"><use href="#icon-layers"/></svg><h2 id="assignment-heading">Set the direction</h2></div>
+  <section class="direction-desk" aria-labelledby="assignment-heading"><div class="section-title"><svg class="icon" aria-hidden="true"><use href="#icon-layers"/></svg><h2 id="assignment-heading">Analysis direction</h2></div>
     <fieldset class="listening-modes"><legend>What are we listening for?</legend><label class="check"><input type="radio" name="mode" value="dna" checked><svg class="icon mode-symbol" aria-hidden="true"><use href="#icon-layers"/></svg><span><strong>Sound DNA</strong><small>Find the thread between your references.</small></span></label><label class="check"><input type="radio" name="mode" value="improve"><svg class="icon mode-symbol" aria-hidden="true"><use href="#icon-wave"/></svg><span><strong>Improve My Track</strong><small>One track. Conservative changes.</small></span></label></fieldset>
     <div class="two-col"><label>Analysis destination<select id="destination"><option value="">Choose after upload</option></select></label><div id="destination-detail" class="disclosure">Nothing is assigned yet.</div></div>
     <label id="consent-label" class="check" hidden><input type="checkbox" id="consent">I approve sending the active audio and directions to this destination under the terms shown above.</label>

@@ -97,7 +97,7 @@ export function createUploadDesk({base, csrf, message, inboxCount, onStored, ref
     if (entry.objectURL) URL.revokeObjectURL(entry.objectURL);
   }
   function reset() {
-    generation++; entries.forEach(release); entries = []; input.value = ''; list.replaceChildren(); clear.hidden = true;
+    generation++; entries.forEach(release); entries = []; input.value = ''; list.replaceChildren(); clear.hidden = true; document.getElementById('preview-empty').hidden=false;
     state('No files selected');
   }
   async function choose(files) {
@@ -105,6 +105,7 @@ export function createUploadDesk({base, csrf, message, inboxCount, onStored, ref
     reset();
     if (!files.length) return;
     if (files.length + inboxCount() > 12) {message('Your inbox holds 12 files. Choose fewer files or remove unused uploads.', true);return;}
+    document.getElementById('preview-empty').hidden=true;
     preparing = true;picker.disabled = true;const version = generation;
     state('Preparing local previews', 'active', null);
     try {
@@ -116,6 +117,7 @@ export function createUploadDesk({base, csrf, message, inboxCount, onStored, ref
         try {
           const preview = await previewWav(file);
           if (version !== generation) return;
+          card.querySelector('.hint').textContent += ' · '+Math.floor(preview.duration/60)+':'+String(Math.floor(preview.duration%60)).padStart(2,'0');
           card.append(waveThumbnail(preview.peaks));
           const player = document.createElement('audio');player.controls=true;player.preload='none';player.setAttribute('aria-label','Preview '+file.name);
           entry.objectURL=URL.createObjectURL(file);player.src=entry.objectURL;entry.audio=player;
