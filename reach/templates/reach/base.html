@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}REACH{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('reach.static', filename='reach-mark.svg') }}" type="image/svg+xml">
+  {# Tailwind is built ahead of time into static/tailwind.css and served from here.
+     cdn.tailwindcss.com is a development tool by its own documentation, and loading
+     it would make every page render depend on a third party being up. Regenerate
+     with tools/build-css.sh after changing a template. #}
+  <link rel="stylesheet" href="{{ url_for('reach.static', filename='tailwind.css') }}?v={{ reach_version }}">
+</head>
+<body class="min-h-screen bg-[#090909] text-gray-100 antialiased">
+  {% block content %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,119 @@
+{% extends "reach/base.html" %}
+{% block title %}REACH — Music opportunities, automatically{% endblock %}
+
+{% block content %}
+<style>
+  :root{--reach-gold:#c9a24a;--reach-gold-bright:#e8b950;--reach-ink:#0b0a08;--reach-panel:#131110;--reach-line:#2a241c;--reach-copy:#a99b84;--reach-cream:#f4f1ea}
+  .reach-landing{font-family:Arial,Helvetica,sans-serif;background:#0b0a08;color:var(--reach-cream)}
+  .reach-shell{max-width:1180px;margin:0 auto;padding:0 24px}
+  .reach-nav{position:sticky;top:0;z-index:50;background:rgba(11,10,8,.94);backdrop-filter:blur(18px);border-bottom:1px solid var(--reach-line)}
+  .reach-nav-inner{height:72px;display:flex;align-items:center;gap:24px}
+  .reach-nav-logo{width:154px;height:auto;display:block}
+  .reach-nav-links{margin-left:auto;display:flex;align-items:center;gap:26px}
+  .reach-nav a{color:#b9ad98;text-decoration:none;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+  .reach-nav a:hover{color:#fff}
+  .reach-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;border-radius:6px;background:var(--reach-gold);color:#14100a!important;font-size:12px!important;font-weight:800;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--reach-gold);text-decoration:none}
+  .reach-button:hover{background:var(--reach-gold-bright)}
+  .reach-button-secondary{background:transparent;color:var(--reach-cream)!important;border-color:#4a4031}
+  .reach-hero{background:#fbfaf7;color:#15120f;border-bottom:1px solid #ddd7cc}
+  .reach-hero-inner{min-height:740px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);align-items:center;gap:54px;padding-top:48px;padding-bottom:56px}
+  .reach-lockup{width:100%;height:auto;display:block}
+  .reach-eyebrow{font-size:11px;letter-spacing:.28em;text-transform:uppercase;font-weight:800;color:#8a6e30;margin-bottom:18px}
+  .reach-hero h1{font-size:58px;line-height:.98;letter-spacing:-.045em;margin:0 0 22px;max-width:620px;font-weight:900}
+  .reach-hero h1 span{color:#9a742c}
+  .reach-hero-copy{font-size:18px;line-height:1.65;color:#574f45;max-width:570px;margin:0 0 28px}
+  .reach-actions{display:flex;flex-wrap:wrap;gap:12px}
+  .reach-categories{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .reach-chip{padding:7px 10px;border:1px solid #d9d1c4;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#5f5548;background:#fff}
+  .reach-section{padding:86px 0;border-bottom:1px solid var(--reach-line)}
+  .reach-section-head{display:grid;grid-template-columns:.8fr 1.2fr;gap:60px;align-items:end;margin-bottom:40px}
+  .reach-kicker{font-size:11px;text-transform:uppercase;letter-spacing:.25em;color:var(--reach-gold);font-weight:800}
+  .reach-section h2{font-size:42px;line-height:1.02;letter-spacing:-.035em;margin:8px 0 0}
+  .reach-section-intro{color:var(--reach-copy);font-size:16px;line-height:1.65;margin:0}
+  .reach-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .reach-card{background:var(--reach-panel);border:1px solid var(--reach-line);border-radius:10px;padding:24px;min-height:205px}
+  .reach-card-number{font-size:12px;color:var(--reach-gold);letter-spacing:.16em;font-weight:800}
+  .reach-card h3{font-size:20px;margin:28px 0 10px;letter-spacing:-.02em}
+  .reach-card p{font-size:13px;line-height:1.6;color:var(--reach-copy);margin:0}
+  .reach-surface{background:#100f0d}
+  .reach-workspace{display:grid;grid-template-columns:260px 1fr;min-height:520px;border:1px solid var(--reach-line);border-radius:12px;overflow:hidden;background:#0d0c0a;box-shadow:0 30px 80px rgba(0,0,0,.24)}
+  .reach-sidebar{border-right:1px solid var(--reach-line);padding:22px;background:#0a0908}
+  .reach-sidebar-logo{width:150px;margin-bottom:32px}
+  .reach-side-item{padding:11px 12px;border-radius:6px;color:#887c69;font-size:12px;margin-bottom:4px}.reach-side-item.active{background:#1f1a12;color:#e6c674;border-left:2px solid var(--reach-gold)}
+  .reach-main{padding:28px}
+  .reach-main-top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:24px}
+  .reach-main h3{font-size:30px;margin:0 0 6px}.reach-muted{color:#837765;font-size:13px}
+  .reach-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:22px 0}.reach-stat{border:1px solid var(--reach-line);background:#14120f;padding:16px;border-radius:8px}.reach-stat strong{display:block;font-size:25px;margin-bottom:3px}.reach-stat span{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:#867965}
+  .reach-table{border:1px solid var(--reach-line);border-radius:8px;overflow:hidden}.reach-row{display:grid;grid-template-columns:1.4fr .8fr .6fr .7fr;gap:12px;padding:14px 16px;border-top:1px solid var(--reach-line);align-items:center;font-size:12px}.reach-row:first-child{border-top:0}.reach-row.head{color:#827763;text-transform:uppercase;letter-spacing:.12em;font-size:9px;background:#0b0a08}.reach-score{color:#82b37a;font-weight:800}.reach-status{display:inline-flex;width:max-content;padding:5px 8px;border-radius:999px;background:rgba(121,180,115,.12);color:#79b473}
+  .reach-modes{display:grid;grid-template-columns:1fr 1fr;gap:16px}.reach-mode{position:relative;min-height:320px;border:1px solid var(--reach-line);border-radius:10px;padding:30px;overflow:hidden;background:linear-gradient(145deg,#15120e,#0d0c0a)}.reach-mode:after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;right:-80px;bottom:-100px;background:radial-gradient(circle,rgba(201,162,74,.15),transparent 65%)}.reach-mode h3{font-size:30px;margin:10px 0}.reach-mode ul{list-style:none;padding:0;margin:24px 0 0}.reach-mode li{padding:9px 0;border-top:1px solid #28231c;color:#a99b84;font-size:13px}.reach-mode li:before{content:"—";color:var(--reach-gold);margin-right:8px}
+  .reach-proof{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.reach-proof-card{border-top:1px solid #4c402e;padding-top:20px}.reach-proof-card strong{display:block;font-size:18px;margin-bottom:8px}.reach-proof-card p{color:var(--reach-copy);font-size:13px;line-height:1.6}
+  .reach-cta{text-align:center;padding:95px 20px 110px;background:radial-gradient(circle at 50% 0%,rgba(201,162,74,.12),transparent 48%)}.reach-cta h2{font-size:50px;line-height:1;margin:0 auto 18px;max-width:760px}.reach-cta p{color:var(--reach-copy);max-width:610px;margin:0 auto 28px;line-height:1.6}.reach-footer{padding:24px 0;border-top:1px solid var(--reach-line);color:#706553;font-size:11px;letter-spacing:.12em;text-transform:uppercase}.reach-footer-inner{display:flex;justify-content:space-between;gap:20px;align-items:center}.reach-footer img{width:118px}
+  @media(max-width:900px){.reach-nav-links a:not(.reach-button){display:none}.reach-hero-inner,.reach-section-head{grid-template-columns:1fr}.reach-hero-inner{min-height:auto;padding-top:36px;padding-bottom:52px}.reach-hero h1{font-size:44px}.reach-lockup{max-width:720px}.reach-grid4{grid-template-columns:1fr 1fr}.reach-workspace{grid-template-columns:1fr}.reach-sidebar{display:none}.reach-modes,.reach-proof{grid-template-columns:1fr}.reach-section{padding:64px 0}.reach-section-head{gap:16px}.reach-stats{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.reach-shell{padding:0 16px}.reach-nav-inner{height:62px}.reach-nav-logo{width:128px}.reach-button{min-height:40px;padding:0 14px}.reach-hero-inner{gap:16px}.reach-hero h1{font-size:38px}.reach-hero-copy{font-size:16px}.reach-grid4{grid-template-columns:1fr}.reach-main{padding:18px}.reach-main-top{display:block}.reach-stats{grid-template-columns:1fr 1fr}.reach-row{grid-template-columns:1.3fr .7fr .6fr}.reach-row>*:nth-child(2){display:none}.reach-section h2,.reach-cta h2{font-size:36px}.reach-footer-inner{flex-direction:column;align-items:flex-start}}
+</style>
+
+<div class="reach-landing">
+<header class="reach-nav">
+  <div class="reach-shell reach-nav-inner">
+    <a href="/reach/about" aria-label="REACH home"><img class="reach-nav-logo" src="{{ url_for('reach.static', filename='reach-wordmark.svg') }}" alt="REACH"></a>
+    <nav class="reach-nav-links" aria-label="Landing navigation">
+      <a href="#how">How it works</a><a href="#workspace">Workspace</a><a href="#teams">Solo + teams</a>
+      <a class="reach-button" href="/reach">Open REACH</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="reach-hero">
+    <div class="reach-shell reach-hero-inner">
+      <div><img class="reach-lockup" src="{{ url_for('reach.static', filename='reach-lockup.svg') }}" alt="REACH — Music opportunities. Automatically. By Street Banker"></div>
+      <div>
+        <div class="reach-eyebrow">Music opportunity intelligence</div>
+        <h1>Your release should go <span>further.</span></h1>
+        <p class="reach-hero-copy">REACH researches open music opportunities, qualifies the fit, prepares the next move, and keeps the evidence behind every recommendation. Built for independent artists, managers, and teams.</p>
+        <div class="reach-actions"><a class="reach-button" href="/reach">Open REACH</a><a class="reach-button reach-button-secondary" style="color:#241f18!important;border-color:#bcae99" href="#how">See the workflow</a></div>
+        <div class="reach-categories"><span class="reach-chip">Playlists</span><span class="reach-chip">Magazines</span><span class="reach-chip">Vlogs</span><span class="reach-chip">Blogs</span><span class="reach-chip">Radio</span><span class="reach-chip">More</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="reach-section">
+    <div class="reach-shell">
+      <div class="reach-section-head"><div><div class="reach-kicker">The workflow</div><h2>Find. Qualify. Approve. Track.</h2></div><p class="reach-section-intro">The point is not to generate another contact list. REACH turns a release into an evidence-backed campaign: what is open, why it fits, what should happen next, and what actually happened.</p></div>
+      <div class="reach-grid4">
+        <article class="reach-card"><div class="reach-card-number">01 / DISCOVER</div><h3>Find live opportunities</h3><p>Search the open web for playlists, press, radio, blogs, creators, curators, and other routes relevant to the track.</p></article>
+        <article class="reach-card"><div class="reach-card-number">02 / QUALIFY</div><h3>Know why it fits</h3><p>Match the release against genre, context, territory, freshness, credibility, submission status, and source evidence.</p></article>
+        <article class="reach-card"><div class="reach-card-number">03 / EXECUTE</div><h3>Move with control</h3><p>Prepare pitches and submission tasks, keep human approval in the loop, and route login-required or manual forms to the right person.</p></article>
+        <article class="reach-card"><div class="reach-card-number">04 / LEARN</div><h3>Track the outcome</h3><p>Record submissions, replies, placements, follow-ups, relationship history, and evidence so each release improves the next one.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="workspace" class="reach-section reach-surface">
+    <div class="reach-shell">
+      <div class="reach-section-head"><div><div class="reach-kicker">Campaign workspace</div><h2>Built to run the release, not decorate it.</h2></div><p class="reach-section-intro">One place for campaign movement, opportunities, outreach, responses, and the human tasks that cannot or should not be automated.</p></div>
+      <div class="reach-workspace" aria-label="Illustrative REACH workspace">
+        <aside class="reach-sidebar"><img class="reach-sidebar-logo" src="{{ url_for('reach.static', filename='reach-wordmark.svg') }}" alt="REACH"><div class="reach-side-item active">Campaigns</div><div class="reach-side-item">Opportunities</div><div class="reach-side-item">Radar</div><div class="reach-side-item">Outreach</div><div class="reach-side-item">Responses</div><div class="reach-side-item">Contacts</div><div class="reach-side-item">Settings</div></aside>
+        <div class="reach-main"><div class="reach-main-top"><div><div class="reach-kicker">Release campaign</div><h3>One campaign. Every next move.</h3><div class="reach-muted">Illustrative interface — your account uses your own records.</div></div><a class="reach-button" href="/reach">New campaign</a></div>
+          <div class="reach-stats"><div class="reach-stat"><strong>DISCOVER</strong><span>research stage</span></div><div class="reach-stat"><strong>QUALIFY</strong><span>fit + evidence</span></div><div class="reach-stat"><strong>APPROVE</strong><span>human control</span></div><div class="reach-stat"><strong>RESULTS</strong><span>responses + proof</span></div></div>
+          <div class="reach-table"><div class="reach-row head"><span>Opportunity</span><span>Type</span><span>Fit</span><span>Status</span></div><div class="reach-row"><strong>Outlet / curator</strong><span>Publication</span><span class="reach-score">Strong</span><span class="reach-status">Qualified</span></div><div class="reach-row"><strong>Submission route</strong><span>Playlist</span><span class="reach-score">Strong</span><span class="reach-status">Ready</span></div><div class="reach-row"><strong>Radio contact</strong><span>Radio</span><span>Review</span><span>Needs approval</span></div><div class="reach-row"><strong>Manual form</strong><span>Portal</span><span>Matched</span><span>Needs you</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="teams" class="reach-section">
+    <div class="reach-shell">
+      <div class="reach-section-head"><div><div class="reach-kicker">One product, two ways to work</div><h2>Solo when you are solo. Operational when you have a team.</h2></div><p class="reach-section-intro">The core campaign stays the same. The experience changes around who is responsible for the next decision.</p></div>
+      <div class="reach-modes"><article class="reach-mode"><div class="reach-kicker">Solo artist</div><h3>Keep it simple.</h3><p class="reach-section-intro">Your release, your priorities, your approvals. Technical controls stay out of the way until you need them.</p><ul><li>Guided campaign setup</li><li>Best opportunities first</li><li>Approval-focused workflow</li><li>Clear follow-ups and results</li></ul></article><article class="reach-mode"><div class="reach-kicker">Team / roster</div><h3>Run the operation.</h3><p class="reach-section-intro">Coordinate artists, campaign owners, managers, reviewers, and operational handoffs from one system.</p><ul><li>Role-aware campaign workflow</li><li>Roster-level visibility</li><li>Assignments and approvals</li><li>Relationship history across releases</li></ul></article></div>
+    </div>
+  </section>
+
+  <section class="reach-section reach-surface"><div class="reach-shell"><div class="reach-section-head"><div><div class="reach-kicker">Built differently</div><h2>Automation with receipts.</h2></div><p class="reach-section-intro">REACH is designed to keep uncertainty visible and consequential actions controlled.</p></div><div class="reach-proof"><div class="reach-proof-card"><strong>Evidence before claims</strong><p>Recommendations can show what source supported the fit instead of asking you to trust a black box.</p></div><div class="reach-proof-card"><strong>UNKNOWN stays unknown</strong><p>Missing information is not silently converted into confidence, zeros, or fabricated certainty.</p></div><div class="reach-proof-card"><strong>Human approval where it matters</strong><p>Outreach, spending, manual submissions, and sensitive decisions stay accountable to a person.</p></div></div></div></section>
+
+  <section class="reach-cta"><div class="reach-shell"><div class="reach-kicker">REACH by Street Banker</div><h2>Submit smarter. Go further.</h2><p>Turn a release into a structured opportunity campaign with research, evidence, approvals, and results in one place.</p><a class="reach-button" href="/reach">Open REACH</a></div></section>
+</main>
+
+<footer class="reach-footer"><div class="reach-shell reach-footer-inner"><img src="{{ url_for('reach.static', filename='reach-wordmark.svg') }}" alt="REACH"><span>Music opportunities. Automatically. · By Street Banker</span></div></footer>
+</div>
+{% endblock %}

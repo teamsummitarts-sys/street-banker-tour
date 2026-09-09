@@ -43,6 +43,7 @@ import shopify_buy
 import since_engine
 import tutor
 import valuation_engine
+from reach.web import bp as reach_bp
 
 # The address this product answers to in anything that outlives the
 # request that made it - emails, and the user-agent we identify as to
@@ -631,6 +632,7 @@ def build_song_detail(song_id):
 
 def create_app():
     app = Flask(__name__)
+    app.register_blueprint(reach_bp)
     # V2 may use a disposable local key during development, but a deployed
     # environment must fail closed instead of silently accepting a known
     # fallback session secret.
@@ -3080,7 +3082,7 @@ def create_app():
                 "plan_names": plans.PLAN_NAMES,
                 "unread_ntf": store.unread_notifications(user["id"]) if user else 0}
 
-    _PUBLIC_PREFIXES = ("/static/", "/uploads/", "/media/", "/l/", "/s/", "/epk/",
+    _PUBLIC_PREFIXES = ("/static/", "/reach/", "/uploads/", "/media/", "/l/", "/s/", "/epk/",
                         "/stem-src/",
                         # Company OS API routes return their own JSON 401/403
                         # responses; letting the generic plan wall redirect
@@ -3123,7 +3125,7 @@ def create_app():
                         # The Team-Up Board's one-click renew link from the
                         # expiry email; single-use token, renews one listing.
                         "/board-renew/")
-    _PUBLIC_EXACT = {"/", "/login", "/signup", "/logout", "/submit", "/forgot",
+    _PUBLIC_EXACT = {"/", "/reach", "/login", "/signup", "/logout", "/submit", "/forgot",
                      "/catalog-sweep", "/demo-open", "/plan",
                      "/terms", "/privacy", "/sw.js", "/demo-access",
                      "/api/artist-signal-profile",

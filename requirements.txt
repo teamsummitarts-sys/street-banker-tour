@@ -3,6 +3,7 @@ gunicorn
 pytest
 segno
 cryptography
+dnspython
 tzdata
 
 # Audio Intelligence. Pinned, unlike everything above it, on purpose: this is
