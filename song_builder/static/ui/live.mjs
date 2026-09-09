@@ -18,7 +18,7 @@ export function mergePending(base,local,remote){
  result.clips=[...result.clips.filter(c=>!ids.has(c.trackId)),...structuredClone(local.clips.filter(c=>ids.has(c.trackId)))];return result;
 }
 export function bindLive({document,state,api,save,loadProject,render,notify,newId}){
- const root=document.getElementById('live-room');if(!root)return {tick:async()=>{},canEdit:()=>true,editingScope:()=>undefined,sessionId:()=>null};
+ const root=document.getElementById('live-room');if(!root)return {tick:async()=>{},canEdit:()=>true,editingScope:()=>undefined,sessionId:()=>null,listenOnly:async()=>{}};
  const status=document.getElementById('live-status'),people=document.getElementById('live-people'),connect=document.getElementById('live-connect'),target=document.getElementById('live-target');
  let connected=false,projectId=null,sessionId=null,working=false,wanted=null,locks=[],expires=0,pointerBusy=false;
  document.addEventListener('pointerdown',()=>{pointerBusy=true;},true);
@@ -62,5 +62,5 @@ export function bindLive({document,state,api,save,loadProject,render,notify,newI
   }catch(e){show('Connection interrupted · current edits retained. '+e.message);}
   finally{working=false;}
  }
- return {tick,canEdit,sessionId:()=>active()?sessionId:null,editingScope:()=>active()?(expires*1000>Date.now()?wanted:null):undefined};
+ return {tick,canEdit,listenOnly:async()=>{if(!active())throw Error('Join the live session first.');const response=await request(null);wanted=null;target.value='';expires=response.expires;render();},sessionId:()=>active()?sessionId:null,editingScope:()=>active()?(expires*1000>Date.now()?wanted:null):undefined};
 }

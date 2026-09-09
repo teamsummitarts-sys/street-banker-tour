@@ -242,6 +242,10 @@ export class AudioEngine {
     return this._meters.map(({analyser,samples})=>{analyser.getFloatTimeDomainData(samples);let peak=0;for(const value of samples)peak=Math.max(peak,Math.abs(value));return peak?20*Math.log10(peak):-Infinity;});
   }
   isPlaying(){return Boolean(this._active);}
+  async unlock() {
+    const context=this._audioContext();await context.resume();
+    if(context.state!=='running')throw new Error('Tap Follow or Play again to enable audio on this device.');
+  }
   async play(project,{from=0,to,loop=false,onEnded}={}) {
     this._assert(); if(this._decoding||this._rendering) throw new Error('Wait for the current audio operation to finish.');
     if(onEnded!==undefined&&typeof onEnded!=='function') throw new TypeError('Playback completion callback must be a function.');
