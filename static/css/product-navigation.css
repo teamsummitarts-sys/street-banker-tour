@@ -1,64 +1,62 @@
-/* Product entry points stay visible, including below the menu breakpoint.
-   A separate row preserves the existing public navigation and CTA widths. */
-:root {
-  --sbh-height: 134px;
-  --sbh-height-mobile: 118px;
-}
-.sbh .sbh-inner { height: 70px; }
-@media (min-width: 1024px) {
-  .sbh .sbh-inner { height: 86px; }
-}
-@media (min-width: 1280px) and (max-width: 1439px) {
-  .sbh .sbh-rule, .sbh .sbh-descriptor { display: none; }
-}
-@media (max-width: 480px) {
-  /* The full sweep action remains in the drawer; keep the menu in reach. */
-  .sbh .sbh-cta { display: none; }
-}
+/* Application access lives inside the existing V2 public navigation.
+   This file must not change header height, page spacing, CTA visibility,
+   brand sizing, or any non-navigation layout. */
 
-.sbh-applications {
-  height: 48px;
-  border-top: 1px solid rgb(242 238 230 / 0.10);
-  background: linear-gradient(180deg, #211e18, #141310);
-  box-shadow: inset 0 1px rgb(255 255 255 / 0.025);
-}
-.sbh-applications-inner {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: stretch;
-  height: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 0 12px;
-}
-.sbh-application {
+.sbh-app-menu {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 12px;
-  color: var(--sbh-ivory, #eee8dc);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+}
+
+.sbh-app-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: -18px;
+  min-width: 190px;
+  padding: 8px;
+  border: 1px solid rgb(242 238 230 / 0.12);
+  border-radius: var(--sb-r-control);
+  background: rgb(var(--sbh-surface) / 0.99);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.28);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease;
+  z-index: 75;
+}
+
+.sbh-app-menu:hover .sbh-app-menu-panel,
+.sbh-app-menu:focus-within .sbh-app-menu-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.sbh-app-menu-link {
+  display: block;
+  padding: 10px 12px;
+  border-radius: var(--sb-r-control);
+  color: var(--sbh-ivory-muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
   text-decoration: none;
   white-space: nowrap;
-  border-bottom: 2px solid transparent;
-  transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease;
+  transition: color 140ms ease, background-color 140ms ease;
 }
-.sbh-application:hover,
-.sbh-application:focus-visible {
-  color: var(--sbh-brass-lit, #e8b950);
-  background: rgb(201 162 74 / 0.08);
-  border-bottom-color: var(--sbh-brass, #c9a24a);
-}
-.sbh-drawer-application { color: var(--sbh-brass-lit, #e8b950); }
 
-/* Keep section anchors clear of the now two-row sticky header. */
-html { scroll-padding-top: 128px; }
-@media (min-width: 1024px) {
-  html { scroll-padding-top: 144px; }
+.sbh-app-menu-link:hover,
+.sbh-app-menu-link:focus-visible {
+  color: var(--sbh-ivory);
+  background: rgb(242 238 230 / 0.06);
 }
+
+@media (max-width: 1023px) {
+  .sbh-app-menu-panel { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .sbh-application { transition: none; }
+  .sbh-app-menu-panel,
+  .sbh-app-menu-link { transition: none; }
 }
