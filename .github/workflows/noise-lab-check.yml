@@ -1,0 +1,28 @@
+name: Noise Lab verification
+
+on:
+  pull_request:
+    paths:
+      - "noise_lab/**"
+      - "tests/noise_lab/**"
+      - ".github/workflows/noise-lab-check.yml"
+
+jobs:
+  noise-lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Noise Lab engine, controller, mobile, and sound-effects tests
+        run: node --test tests/noise_lab/*.test.mjs
+      - name: Engine module syntax
+        run: |
+          node --check noise_lab/static/engine/audio.mjs
+          node --check noise_lab/static/engine/dsp.mjs
+          node --check noise_lab/static/engine/index.mjs
+          node --check noise_lab/static/engine/meter.mjs
+          node --check noise_lab/static/engine/processor.mjs
+          node --check noise_lab/static/engine/recipes.mjs
