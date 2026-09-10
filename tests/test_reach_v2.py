@@ -73,7 +73,7 @@ def test_reach_today_and_campaign_hub_present_clear_public_workflow(monkeypatch)
     # like primary modules in the public artist menu.
     assert b"Advanced &amp; system" not in today.data
     assert b"REACH 1.0.0-phase-one" not in today.data
-    assert b"Demo data âDemo data \xe2Demo data \xe2\x80Demo data \xe2\x80\x94 fixture corpus" not in today.data
+    assert b"fixture corpus" not in today.data.lower()
     assert b"owner@streetbanker.local" not in today.data
 
     hub = client.get("/reach/campaigns")
