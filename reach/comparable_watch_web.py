@@ -3,7 +3,7 @@
 from flask import current_app, jsonify, redirect, request, url_for
 
 from . import (artist_profile, campaigns, comparable_watch,
-               comparable_watch_scheduler, rbac)
+               comparable_watch_scheduler, rbac, signal_stack)
 from .errors import ValidationError
 from .web import bp, bootstrap
 
@@ -23,7 +23,7 @@ def _ensure_comparable_watch_scheduler():
 
 @bp.app_context_processor
 def _comparable_watch_template_context():
-    """Inject Radar-only watch state without coupling the main web module to it."""
+    """Inject Radar-only watch and Signal Stack state."""
     if request.endpoint != "reach.all_opportunities":
         return {}
     bootstrap()
@@ -44,6 +44,7 @@ def _comparable_watch_template_context():
         "comparable_watch_artists": artists,
         "comparable_watch_artist_id": artist_id,
         "comparable_watch_campaigns": campaigns.list_campaigns(principal.tenant_id, limit=25),
+        "comparable_signal_stack": signal_stack.radar_stack(artist_id) if artist_id else [],
     }
 
 
