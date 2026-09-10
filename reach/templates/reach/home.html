@@ -4,39 +4,219 @@
 {% block title %}REACH — Today{% endblock %}
 
 {% block reach_content %}
-<section class="reach-command-surface overflow-hidden rounded-xl border border-white/[0.08] p-5 sm:p-7">
-  <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-    <div class="max-w-2xl">
-      <div class="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">
-        <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-        Today / Operations
+<style>
+  body:has(.reach-approved-home) > header { display:none; }
+  body:has(.reach-approved-home) > nav[aria-label="Primary"] { display:none; }
+  body:has(.reach-approved-home) #main { max-width:none; margin:0; padding:0; }
+  .reach-approved-home { min-height:100vh; background:#090c0e; color:#f5f2ea; }
+  .reach-dashboard-grid { display:grid; grid-template-columns:220px minmax(0,1fr); min-height:100vh; }
+  .reach-side { position:sticky; top:0; height:100vh; border-right:1px solid rgba(255,255,255,.07); background:linear-gradient(180deg,#0b0f11 0%,#080a0c 100%); padding:28px 18px 24px; display:flex; flex-direction:column; }
+  .reach-side-logo img { width:146px; height:auto; }
+  .reach-side-nav { margin-top:34px; display:grid; gap:6px; }
+  .reach-side-link { display:flex; align-items:center; gap:12px; min-height:44px; padding:0 13px; border-radius:10px; color:#a8adb4; font-size:13px; font-weight:650; text-decoration:none; }
+  .reach-side-link:hover { background:rgba(255,255,255,.04); color:white; }
+  .reach-side-link.active { color:white; background:linear-gradient(90deg,rgba(242,185,82,.16),rgba(255,255,255,.025)); border:1px solid rgba(242,185,82,.15); box-shadow:inset 3px 0 0 #f0b84f; }
+  .reach-side-link svg { width:19px; height:19px; flex:none; }
+  .reach-side-divider { height:1px; background:rgba(255,255,255,.07); margin:18px 8px; }
+  .reach-side-foot { margin-top:auto; padding:0 8px; }
+  .reach-side-quote { font-size:11px; line-height:1.8; letter-spacing:.1em; text-transform:uppercase; color:#9d8b68; }
+  .reach-side-powered { margin-top:20px; display:flex; align-items:center; gap:8px; color:#858b91; font-size:10px; letter-spacing:.15em; text-transform:uppercase; }
+  .reach-work { min-width:0; }
+  .reach-topbar { height:70px; display:flex; align-items:center; gap:18px; padding:0 28px; border-bottom:1px solid rgba(255,255,255,.07); background:rgba(9,12,14,.9); backdrop-filter:blur(18px); position:sticky; top:0; z-index:20; }
+  .reach-command { flex:1; max-width:690px; height:40px; display:flex; align-items:center; gap:10px; padding:0 14px; border:1px solid rgba(255,255,255,.1); background:#11171a; border-radius:9px; color:#747b82; font-size:13px; text-decoration:none; }
+  .reach-command:hover { border-color:rgba(242,185,82,.28); color:#aeb4b9; }
+  .reach-command svg { width:18px; height:18px; }
+  .reach-top-actions { margin-left:auto; display:flex; align-items:center; gap:10px; }
+  .reach-icon-button { width:40px; height:40px; border-radius:10px; display:grid; place-items:center; border:1px solid rgba(255,255,255,.08); color:#c3c7ca; background:#0f1416; text-decoration:none; }
+  .reach-profile-chip { min-height:42px; display:flex; align-items:center; gap:10px; padding:5px 10px 5px 6px; border-radius:12px; border:1px solid rgba(255,255,255,.08); color:white; text-decoration:none; }
+  .reach-avatar { width:32px; height:32px; border-radius:50%; display:grid; place-items:center; background:linear-gradient(135deg,#2f3235,#161819); color:#efb94f; font-weight:800; border:1px solid rgba(255,255,255,.1); }
+  .reach-content-wrap { padding:24px 26px 42px; max-width:1240px; margin:0 auto; }
+  .reach-hero { position:relative; min-height:245px; overflow:hidden; border:1px solid rgba(255,255,255,.07); border-radius:16px; background:radial-gradient(circle at 80% 35%,rgba(225,154,59,.2),transparent 30%),linear-gradient(120deg,#11191c 0%,#0c1114 47%,#17130d 100%); }
+  .reach-hero:after { content:""; position:absolute; inset:0; background:linear-gradient(90deg,rgba(8,12,14,.98) 0%,rgba(8,12,14,.8) 47%,rgba(8,12,14,.08) 100%); pointer-events:none; }
+  .reach-hero-glow { position:absolute; right:5%; top:12%; width:38%; height:90%; border-radius:50%; background:radial-gradient(circle,rgba(240,184,79,.18),rgba(240,184,79,0) 68%); filter:blur(18px); }
+  .reach-hero-copy { position:relative; z-index:2; padding:35px 34px; max-width:660px; }
+  .reach-eyebrow { color:#efbd5b; text-transform:uppercase; letter-spacing:.26em; font-size:10px; font-weight:800; }
+  .reach-hero h1 { margin:10px 0 8px; font-size:46px; line-height:.98; letter-spacing:-.035em; font-weight:800; color:#fff; }
+  .reach-hero h1 span { color:#f4c46b; }
+  .reach-hero p { max-width:560px; color:#a7adb1; font-size:15px; line-height:1.6; }
+  .reach-card { background:linear-gradient(180deg,#11181b 0%,#0e1417 100%); border:1px solid rgba(255,255,255,.075); border-radius:14px; box-shadow:0 18px 50px rgba(0,0,0,.12); }
+  .reach-card-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; padding:17px 18px 13px; border-bottom:1px solid rgba(255,255,255,.06); }
+  .reach-card-title { font-size:18px; font-weight:760; letter-spacing:-.02em; color:#fff; }
+  .reach-card-sub { margin-top:3px; font-size:11px; color:#747c82; }
+  .reach-link { color:#d7b36b; font-size:11px; font-weight:700; text-decoration:none; }
+  .reach-brief { margin-top:18px; border-left:3px solid #f1ba52; }
+  .reach-brief-row { display:grid; grid-template-columns:36px minmax(0,1fr) auto; gap:12px; align-items:center; padding:14px 18px; border-top:1px solid rgba(255,255,255,.06); }
+  .reach-brief-row:first-of-type { border-top:0; }
+  .reach-num { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; background:#f3c56e; color:#111; font-size:12px; font-weight:900; }
+  .reach-action-title { color:#eef0ef; font-size:13px; font-weight:700; }
+  .reach-action-sub { margin-top:2px; color:#757d83; font-size:11px; }
+  .reach-cta { min-width:120px; display:inline-flex; justify-content:center; align-items:center; gap:8px; padding:9px 14px; border-radius:9px; background:linear-gradient(180deg,#f4cc7d,#e8ad49); color:#121212; font-size:11px; font-weight:850; text-decoration:none; border:1px solid rgba(255,223,153,.6); box-shadow:0 5px 18px rgba(226,159,47,.12); }
+  .reach-cta.secondary { background:transparent; color:#ddd; border-color:rgba(240,184,79,.38); box-shadow:none; }
+  .reach-three { display:grid; grid-template-columns:1fr 1.08fr 1fr; gap:14px; margin-top:14px; }
+  .reach-radar-row,.reach-rel-row { display:flex; gap:12px; align-items:center; padding:11px 14px; border-top:1px solid rgba(255,255,255,.055); color:inherit; text-decoration:none; }
+  .reach-radar-row:first-child,.reach-rel-row:first-child { border-top:0; }
+  .reach-outlet-mark { width:36px; height:36px; flex:none; border-radius:8px; display:grid; place-items:center; background:#080b0c; border:1px solid rgba(255,255,255,.08); color:#f0b64a; font-size:11px; font-weight:900; }
+  .reach-row-main { min-width:0; flex:1; }
+  .reach-row-name { color:#eef0ef; font-size:12px; font-weight:750; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .reach-row-meta { margin-top:2px; color:#747c82; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .reach-score { width:34px; height:34px; flex:none; display:grid; place-items:center; border-radius:50%; border:2px solid #47c897; color:#75e5b8; font-size:12px; font-weight:900; }
+  .reach-lane { padding:12px 14px; border-top:1px solid rgba(255,255,255,.055); }
+  .reach-lane:first-child { border-top:0; }
+  .reach-lane-top { display:flex; align-items:center; gap:10px; }
+  .reach-lane-art { width:38px; height:38px; border-radius:8px; background:radial-gradient(circle at 30% 30%,rgba(117,88,255,.65),rgba(15,20,24,.95) 65%); border:1px solid rgba(255,255,255,.08); }
+  .reach-lane-stage { margin-top:9px; display:flex; align-items:center; gap:5px; }
+  .reach-stage-dot { width:8px; height:8px; border-radius:50%; background:#263036; border:1px solid #465158; }
+  .reach-stage-dot.done { background:#53d59e; border-color:#53d59e; box-shadow:0 0 8px rgba(83,213,158,.28); }
+  .reach-stage-line { height:1px; flex:1; background:#283136; }
+  .reach-stage-line.done { background:#53d59e; }
+  .reach-two { display:grid; grid-template-columns:1.05fr 1fr; gap:14px; margin-top:14px; }
+  .reach-passport { padding:17px 18px; border-left:3px solid #e9b04d; }
+  .reach-passport-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 18px; margin-top:13px; }
+  .reach-check { display:flex; align-items:center; gap:8px; color:#a5abb0; font-size:11px; }
+  .reach-check i { width:15px; height:15px; border-radius:4px; display:grid; place-items:center; font-style:normal; font-size:9px; border:1px solid rgba(255,255,255,.14); color:#758087; }
+  .reach-check.done i { background:#5adca5; color:#07110d; border-color:#5adca5; }
+  .reach-passport-score { color:#56dc9f; font-size:31px; font-weight:800; letter-spacing:-.04em; }
+  .reach-activity-row { display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid rgba(255,255,255,.055); }
+  .reach-activity-row:first-child { border-top:0; }
+  .reach-status-dot { width:24px; height:24px; border-radius:50%; display:grid; place-items:center; background:rgba(80,205,150,.1); color:#61d9a3; font-size:10px; }
+  .reach-inspiration { display:none; }
+  .reach-mobile-head,.reach-mobile-nav { display:none; }
+  @media (min-width:1180px) {
+    .reach-content-grid { display:grid; grid-template-columns:minmax(0,1fr) 205px; gap:16px; }
+    .reach-inspiration { display:block; padding:28px 22px; background:linear-gradient(180deg,rgba(44,35,22,.8),rgba(18,18,17,.9)); border:1px solid rgba(234,182,82,.18); border-radius:14px; align-self:start; margin-top:18px; }
+    .reach-inspiration small { color:#d2a951; letter-spacing:.25em; text-transform:uppercase; font-size:9px; font-weight:800; }
+    .reach-inspiration strong { display:block; margin-top:20px; font-size:31px; line-height:.98; letter-spacing:-.035em; color:#f4f0e7; }
+    .reach-inspiration p { margin-top:18px; font-size:10px; line-height:1.6; letter-spacing:.16em; text-transform:uppercase; color:#998668; }
+  }
+  @media (max-width:900px) {
+    .reach-dashboard-grid { display:block; }
+    .reach-side,.reach-topbar { display:none; }
+    .reach-mobile-head { display:flex; align-items:center; gap:12px; height:66px; padding:0 16px; border-bottom:1px solid rgba(255,255,255,.07); background:#090d0f; position:sticky; top:0; z-index:30; }
+    .reach-mobile-head img { width:122px; }
+    .reach-mobile-spacer { flex:1; }
+    .reach-mobile-action { width:38px; height:38px; display:grid; place-items:center; border-radius:10px; border:1px solid rgba(255,255,255,.08); color:#f2bb55; text-decoration:none; }
+    .reach-content-wrap { padding:14px 14px 92px; }
+    .reach-hero { min-height:230px; }
+    .reach-hero-copy { padding:28px 22px; }
+    .reach-hero h1 { font-size:40px; max-width:360px; }
+    .reach-brief-row { grid-template-columns:32px minmax(0,1fr); padding:13px 14px; }
+    .reach-brief-row .reach-cta { grid-column:2; justify-self:start; margin-top:4px; }
+    .reach-three,.reach-two { grid-template-columns:1fr; }
+    .reach-passport-grid { grid-template-columns:1fr; }
+    .reach-mobile-nav { position:fixed; left:0; right:0; bottom:0; z-index:40; display:grid; grid-template-columns:repeat(5,1fr); background:rgba(8,12,14,.97); border-top:1px solid rgba(255,255,255,.08); padding-bottom:env(safe-area-inset-bottom); backdrop-filter:blur(18px); }
+    .reach-mobile-nav a,.reach-mobile-nav button { min-height:62px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:4px; color:#858c91; font-size:9px; font-weight:700; text-decoration:none; border:0; background:none; }
+    .reach-mobile-nav .active { color:#f1bd59; }
+    .reach-mobile-nav svg { width:19px; height:19px; }
+  }
+</style>
+
+<div class="reach-approved-home">
+  <div class="reach-dashboard-grid">
+    <aside class="reach-side">
+      <a class="reach-side-logo" href="{{ url_for('reach.index') }}" aria-label="Reach Today"><img src="{{ url_for('reach.static', filename='reach-lockup.svg') }}" alt="REACH by Street Banker"></a>
+      <nav class="reach-side-nav" aria-label="Reach sections">
+        <a class="reach-side-link active" href="{{ url_for('reach.index') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11.5L12 4l9 7.5V21H6V11.5"/></svg>Today</a>
+        <a class="reach-side-link" href="{{ url_for('reach.all_opportunities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>Radar</a>
+        <a class="reach-side-link" href="{{ url_for('reach.campaigns_list') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l8-4 8 4v10l-8 3-8-3z"/></svg>Campaigns</a>
+        <a class="reach-side-link" href="{{ url_for('reach.all_responses') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg>Inbox{% if recent_responses %}<span style="margin-left:auto;background:#f2b84e;color:#111;border-radius:99px;padding:1px 7px;font-size:10px">{{ recent_responses|length }}</span>{% endif %}</a>
+        <a class="reach-side-link" href="{{ url_for('reach.catalog_view') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l10-2v13M9 9l10-2"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>Music</a>
+        <a class="reach-side-link" href="{{ url_for('reach.contacts_view') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.3-7-10a4 4 0 017-2.7A4 4 0 0119 10c0 5.7-7 10-7 10z"/></svg>Relationships</a>
+      </nav>
+      <div class="reach-side-divider"></div>
+      <nav style="display:grid;gap:6px">
+        <a class="reach-side-link" href="{{ url_for('reach.artist_profile_page') }}">Artist Profile</a>
+        <a class="reach-side-link" href="{{ url_for('reach.needs_you') }}">Tasks{% if needs_you_count %}<span style="margin-left:auto;color:#f2bb55">{{ needs_you_count }}</span>{% endif %}</a>
+        <a class="reach-side-link" href="{{ url_for('reach.settings_view') }}">Settings</a>
+      </nav>
+      <div class="reach-side-foot">
+        <div class="reach-side-quote">Artists to<br>opportunities.<br>For a bigger tomorrow.</div>
+        <div class="reach-side-powered"><img src="{{ url_for('reach.static', filename='reach-mark.svg') }}" alt="" style="width:18px">Street Banker</div>
       </div>
-      <h1 class="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">Your next move.<br class="hidden sm:block"> Not another dashboard.</h1>
-      <p class="mt-3 max-w-xl text-sm leading-6 text-gray-400">REACH reads the state of your campaigns and surfaces the one action that moves the release forward.</p>
+    </aside>
+
+    <div class="reach-work">
+      <div class="reach-mobile-head">
+        <img src="{{ url_for('reach.static', filename='reach-lockup.svg') }}" alt="REACH by Street Banker">
+        <div class="reach-mobile-spacer"></div>
+        <a class="reach-mobile-action" href="{{ url_for('reach.new_campaign') }}" aria-label="Create campaign">+</a>
+        <a class="reach-mobile-action" href="{{ url_for('reach.artist_profile_page') }}" aria-label="Artist profile">{{ (principal_name or 'A')[:1]|upper }}</a>
+      </div>
+
+      <div class="reach-topbar">
+        <a class="reach-command" href="{{ url_for('reach.all_opportunities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg><span>Search Reach — opportunities, relationships, releases…</span></a>
+        <div class="reach-top-actions">
+          <a class="reach-icon-button" href="{{ url_for('reach.needs_you') }}" aria-label="Tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:19px"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg></a>
+          <a class="reach-profile-chip" href="{{ url_for('reach.artist_profile_page') }}"><span class="reach-avatar">{{ (principal_name or 'A')[:1]|upper }}</span><span><span style="display:block;font-size:12px;font-weight:750">{{ principal_name if principal_name != 'there' else 'Artist Profile' }}</span><span style="display:block;margin-top:1px;font-size:9px;color:#717980">{{ reach_billing.plan.name if reach_billing else 'REACH' }}</span></span></a>
+        </div>
+      </div>
+
+      <div class="reach-content-wrap">
+        <section class="reach-hero">
+          <div class="reach-hero-glow"></div>
+          <div class="reach-hero-copy">
+            <div class="reach-eyebrow">Today</div>
+            <h1>Momentum creates<br><span>opportunity.</span></h1>
+            <p>Focus today. Build what’s next. Reach surfaces the work that can actually move your release forward.</p>
+          </div>
+        </section>
+
+        <div class="reach-content-grid">
+          <div>
+            <section class="reach-card reach-brief">
+              <div class="reach-card-head"><div><div class="reach-eyebrow" style="font-size:9px">Today</div><div class="reach-card-title">Operating Brief</div><div class="reach-card-sub">Your highest-leverage moves right now.</div></div><a class="reach-link" href="{{ url_for('reach.needs_you') }}">View tasks →</a></div>
+              {% if actions %}
+                {% for action in actions[:3] %}
+                <div class="reach-brief-row"><span class="reach-num">{{ loop.index }}</span><div class="reach-row-main"><div class="reach-action-title">{{ action.title }}</div>{% if action.context %}<div class="reach-action-sub">{{ action.context }}</div>{% endif %}</div><a class="reach-cta {{ 'secondary' if loop.index > 1 else '' }}" href="{{ action.url }}">{{ 'Take action' if loop.index == 1 else 'Open' }} →</a></div>
+                {% endfor %}
+              {% else %}
+                <div style="padding:24px 18px"><div class="reach-action-title">Nothing urgent is waiting.</div><div class="reach-action-sub">Run discovery or review Radar when you’re ready to create the next move.</div><a class="reach-cta secondary" style="margin-top:12px" href="{{ url_for('reach.all_opportunities') }}">Open Radar →</a></div>
+              {% endif %}
+            </section>
+
+            <div class="reach-three">
+              <section class="reach-card">
+                <div class="reach-card-head"><div><div class="reach-card-title">Opportunity Radar</div><div class="reach-card-sub">Best verified matches for your music.</div></div><a class="reach-link" href="{{ url_for('reach.all_opportunities') }}">View all →</a></div>
+                {% if best %}{% for t in best[:4] %}<a class="reach-radar-row" href="{{ url_for('reach.target_detail', campaign_id=t.campaign_id, target_id=t.id) }}"><span class="reach-outlet-mark">{{ (t.outlet_name or t.outlet_domain or 'R')[:2]|upper }}</span><span class="reach-row-main"><span class="reach-row-name">{{ t.outlet_name or t.outlet_domain }}</span><span class="reach-row-meta">{{ (t.outlet_kind or 'Opportunity').replace('_',' ') }} · {{ t.campaign_name }}</span></span>{% if t.reach_score is not none %}<span class="reach-score">{{ t.reach_score }}</span>{% endif %}</a>{% endfor %}{% else %}<div style="padding:22px 16px;color:#747c82;font-size:11px;line-height:1.7">No qualified opportunities yet. Start a campaign and run discovery; only real matches will appear here.</div>{% endif %}
+              </section>
+
+              <section class="reach-card">
+                <div class="reach-card-head"><div><div class="reach-card-title">Campaign Lanes</div><div class="reach-card-sub">{{ campaign_count }} active and historical campaign{{ '' if campaign_count == 1 else 's' }}.</div></div><a class="reach-link" href="{{ url_for('reach.campaigns_list') }}">View all →</a></div>
+                {% set lane_items = ([featured] if featured else []) + (more_campaigns or []) %}
+                {% if lane_items %}{% for item in lane_items %}<a class="reach-lane" href="{{ url_for('reach.overview', campaign_id=item.campaign.id) }}" style="display:block;text-decoration:none;color:inherit"><div class="reach-lane-top"><span class="reach-lane-art"></span><span class="reach-row-main"><span class="reach-row-name">{{ item.campaign.recording_title or item.campaign.name }}</span><span class="reach-row-meta">{{ item.stage }} · {{ item.campaign.status }}</span></span><span style="font-size:11px;color:#59d7a1;font-weight:800">{{ item.stage }}</span></div><div class="reach-lane-stage">{% set reached = item.stages.index(item.stage) if item.stage in item.stages else 0 %}{% for stage in item.stages %}<span class="reach-stage-dot {{ 'done' if loop.index0 <= reached else '' }}"></span>{% if not loop.last %}<span class="reach-stage-line {{ 'done' if loop.index0 < reached else '' }}"></span>{% endif %}{% endfor %}</div></a>{% endfor %}{% else %}<div style="padding:22px 16px;color:#747c82;font-size:11px;line-height:1.7">No campaign yet. Add a release and Reach will show the campaign journey here.</div>{% endif %}
+              </section>
+
+              <section class="reach-card">
+                <div class="reach-card-head"><div><div class="reach-card-title">Relationship Memory</div><div class="reach-card-sub">People and outlets that remember your music.</div></div><a class="reach-link" href="{{ url_for('reach.contacts_view') }}">View all →</a></div>
+                {% if recent_responses %}{% for response in recent_responses[:4] %}<a class="reach-rel-row" href="{{ url_for('reach.all_responses') }}"><span class="reach-avatar">{{ (response.outlet_name or 'R')[:1]|upper }}</span><span class="reach-row-main"><span class="reach-row-name">{{ response.outlet_name or 'Response received' }}</span><span class="reach-row-meta">{{ (response.kind or 'Response').replace('_',' ') }}{% if response.received_at %} · {{ response.received_at[:10] }}{% endif %}</span></span><span style="color:#6f777c">›</span></a>{% endfor %}{% else %}<div style="padding:22px 16px;color:#747c82;font-size:11px;line-height:1.7">Relationship history will build automatically as outreach gets replies and placements.</div>{% endif %}
+              </section>
+            </div>
+
+            <div class="reach-two">
+              <section class="reach-card reach-passport">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:18px"><div><div class="reach-card-title">Release Passport</div><div class="reach-card-sub">Get the release into shape for what’s next.</div></div>{% if onboarding.total %}<div style="text-align:right"><div class="reach-passport-score">{{ ((onboarding.done_count * 100) / onboarding.total)|round|int }}%</div><div style="font-size:10px;color:#5bdba3">Ready</div></div>{% endif %}</div>
+                <div class="reach-passport-grid">{% for step in onboarding.steps[:6] %}<div class="reach-check {{ 'done' if step.state == 'DONE' else '' }}"><i>{{ '✓' if step.state == 'DONE' else '•' }}</i><span>{{ step.label }}</span></div>{% endfor %}</div>
+                {% if onboarding.outstanding %}<a class="reach-cta secondary" style="margin-top:16px" href="{{ url_for(onboarding.outstanding[0].href) }}">Complete setup →</a>{% endif %}
+              </section>
+
+              <section class="reach-card">
+                <div class="reach-card-head"><div><div class="reach-card-title">Recent Activity</div><div class="reach-card-sub">Verified updates from your campaigns.</div></div><a class="reach-link" href="{{ url_for('reach.all_responses') }}">View all →</a></div>
+                {% if recent_responses %}{% for response in recent_responses[:4] %}<div class="reach-activity-row"><span class="reach-status-dot">↗</span><span class="reach-row-main"><span class="reach-row-name">{{ (response.kind or 'Response').replace('_',' ')|title }}</span><span class="reach-row-meta">{{ response.outlet_name or 'Campaign response' }}{% if response.received_at %} · {{ response.received_at[:10] }}{% endif %}</span></span></div>{% endfor %}{% elif follow_ups %}{% for follow in follow_ups[:4] %}<div class="reach-activity-row"><span class="reach-status-dot">•</span><span class="reach-row-main"><span class="reach-row-name">Follow-up due</span><span class="reach-row-meta">{{ follow.outlet_name or 'Campaign follow-up' }}</span></span></div>{% endfor %}{% else %}<div style="padding:22px 16px;color:#747c82;font-size:11px;line-height:1.7">Activity will appear here as campaigns discover, contact and hear back from outlets.</div>{% endif %}
+              </section>
+            </div>
+          </div>
+
+          <aside class="reach-inspiration"><small>Keep going</small><strong>More<br>music.<br>Stronger<br>relationships.<br>A bigger<br>tomorrow.</strong><p>Same work.<br>Bigger possibilities.</p></aside>
+        </div>
+      </div>
     </div>
-    {% if actions %}
-    {% set lead = actions[0] %}
-    <a href="{{ lead.url }}" class="group flex min-w-0 items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500 px-4 py-3 text-black lg:w-[360px]">
-      <span class="min-w-0 flex-1"><span class="block text-[10px] font-bold uppercase tracking-[0.18em] opacity-70">Do this next</span><span class="mt-0.5 block truncate text-sm font-bold">{{ lead.title }}</span></span>
-    </a>
-    {% endif %}
-  </div>
-</section>
-
-<section class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-5">
-  <div class="rounded-xl border border-white/[0.08] bg-[#111113] p-5 lg:col-span-3">
-    <div class="flex items-end justify-between gap-3"><div>{{ ui.section('Priority queue', 'Only actions supported by the current campaign state.') }}</div><a href="{{ url_for('reach.needs_you') }}" class="text-xs font-semibold text-amber-400">Human tasks</a></div>
-    {% if actions %}
-    <ol class="mt-4 space-y-2">{% for action in actions %}<li><a href="{{ action.url }}" class="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-[#171719] px-3 py-3"><span class="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-gray-400">{{ '%02d'|format(loop.index) }}</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold text-gray-100">{{ action.title }}</span>{% if action.context %}<span class="mt-0.5 block truncate text-xs text-gray-400">{{ action.context }}</span>{% endif %}</span><span class="text-gray-400">→</span></a></li>{% endfor %}</ol>
-    {% else %}<div class="mt-4">{{ ui.empty('No action is waiting. REACH will surface the next verified move here.') }}</div>{% endif %}
   </div>
 
-  <div class="rounded-xl border border-white/[0.08] bg-[#111113] p-5 lg:col-span-2">
-    {% if featured %}<div class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">Live campaign</div><a href="{{ url_for('reach.overview', campaign_id=featured.campaign.id) }}" class="mt-2 block text-xl font-bold tracking-tight text-white">{{ featured.campaign.recording_title }}</a><div class="mt-5">{{ ui.stage_bar(featured.stages, featured.stage) }}</div><a href="{{ featured.next_url }}" class="mt-5 flex w-full items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-black">Continue at {{ featured.stage }} →</a>{% else %}{{ ui.empty('No live campaign yet.', url_for('reach.new_campaign'), 'Start a campaign') }}{% endif %}
-  </div>
-</section>
-
-{% if best %}
-<section class="mt-4"><div class="flex items-end justify-between gap-3"><div>{{ ui.section('Opportunity radar', 'Ranked from persisted evidence.') }}</div><a href="{{ url_for('reach.all_opportunities') }}" class="text-xs font-semibold text-amber-400">Open radar →</a></div><div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">{% for t in best %}<a href="{{ url_for('reach.target_detail', campaign_id=t.campaign_id, target_id=t.id) }}" class="rounded-xl border border-white/[0.08] bg-[#111113] p-4"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><div class="truncate text-sm font-bold text-gray-100">{{ t.outlet_name or t.outlet_domain }}</div><div class="mt-1 text-[10px] uppercase tracking-[0.16em] text-gray-400">{{ (t.outlet_kind or 'UNKNOWN').replace('_',' ') }} · {{ t.campaign_name }}</div></div>{{ ui.match_pill(t.reach_score) }}</div></a>{% endfor %}</div></section>
-{% endif %}
+  <nav class="reach-mobile-nav" aria-label="Reach mobile navigation">
+    <a class="active" href="{{ url_for('reach.index') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11.5L12 4l9 7.5V21H6V11.5"/></svg>Today</a>
+    <a href="{{ url_for('reach.all_opportunities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>Radar</a>
+    <a href="{{ url_for('reach.campaigns_list') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l8-4 8 4v10l-8 3-8-3z"/></svg>Campaigns</a>
+    <a href="{{ url_for('reach.all_responses') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg>Inbox</a>
+    <button type="button" onclick="openReachModules()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg>More</button>
+  </nav>
+</div>
 {% endblock %}
