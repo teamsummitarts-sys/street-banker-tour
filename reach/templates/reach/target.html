@@ -1,89 +1,19 @@
 {% extends "reach/_layout.html" %}
 {% import "reach/_layout.html" as ui with context %}
+{% from "reach/pitch_memory.html" import pitch_memory_panel with context %}
 
 {% block title %}REACH — {{ target.outlet_name }}{% endblock %}
 
 {% block reach_content %}
+{% set memory = pitch_memory_summary(target.id, draft) %}
 <style>
-  .reach-opportunity { max-width: 980px; margin: 0 auto; color:#eef1ef; }
-  .reach-op-back { display:inline-flex; align-items:center; gap:7px; margin-bottom:14px; color:#8c959b; font-size:12px; font-weight:700; text-decoration:none; }
-  .reach-op-back:hover { color:#f1bd59; }
-  .reach-op-card { border:1px solid rgba(255,255,255,.08); background:linear-gradient(180deg,#11181b 0%,#0e1417 100%); border-radius:15px; overflow:hidden; }
-  .reach-op-hero { padding:20px; }
-  .reach-op-head { display:flex; align-items:flex-start; gap:14px; }
-  .reach-op-mark { width:64px; height:64px; flex:none; display:grid; place-items:center; border-radius:13px; background:#070a0b; border:1px solid rgba(255,255,255,.08); color:#efb64c; font-weight:900; font-size:18px; letter-spacing:-.02em; }
-  .reach-op-main { min-width:0; flex:1; }
-  .reach-op-name { font-size:25px; font-weight:820; line-height:1; letter-spacing:-.035em; color:white; }
-  .reach-op-meta { margin-top:7px; color:#939ca2; font-size:12px; line-height:1.5; }
-  .reach-op-desc { margin-top:4px; color:#6f787e; font-size:11px; line-height:1.55; }
-  .reach-op-score { width:62px; height:62px; flex:none; display:grid; place-items:center; border-radius:50%; border:3px solid #46ca95; color:#6ce0ad; font-size:22px; font-weight:900; box-shadow:0 0 22px rgba(70,202,149,.08); }
-  .reach-op-score.unknown { border-color:#343b3f; color:#737c81; font-size:11px; }
-  .reach-op-tags { display:flex; flex-wrap:wrap; gap:7px; margin-top:15px; }
-  .reach-op-tag { border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.025); color:#9ca4aa; border-radius:99px; padding:5px 9px; font-size:10px; font-weight:700; }
-  .reach-op-window { display:flex; align-items:center; gap:12px; margin-top:16px; padding-top:15px; border-top:1px solid rgba(255,255,255,.07); }
-  .reach-op-window-icon { width:34px; height:34px; flex:none; display:grid; place-items:center; border-radius:50%; border:1px solid rgba(242,184,78,.3); color:#efb74c; }
-  .reach-op-window-copy { min-width:0; flex:1; }
-  .reach-op-window-title { color:#e9c16e; font-size:12px; font-weight:800; }
-  .reach-op-window-sub { margin-top:2px; color:#737d83; font-size:10px; }
-  .reach-op-primary { min-height:43px; display:inline-flex; align-items:center; justify-content:center; gap:9px; border-radius:10px; padding:0 17px; border:1px solid rgba(255,222,151,.6); background:linear-gradient(180deg,#f6ce7b,#eab04b); color:#141414; font-size:12px; font-weight:900; text-decoration:none; box-shadow:0 8px 26px rgba(235,170,61,.12); }
-  button.reach-op-primary { cursor:pointer; }
-  .reach-op-section { margin-top:12px; }
-  .reach-op-section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px 10px; }
-  .reach-op-title { color:white; font-size:17px; font-weight:780; letter-spacing:-.02em; }
-  .reach-op-subtitle { margin-top:3px; color:#717a80; font-size:10px; }
-  .reach-fit-list { padding:0 18px 16px; display:grid; gap:9px; }
-  .reach-fit-row { display:flex; align-items:flex-start; gap:9px; color:#b9c0c4; font-size:12px; line-height:1.45; }
-  .reach-fit-check { width:17px; height:17px; margin-top:1px; flex:none; display:grid; place-items:center; border-radius:4px; background:#5bdca4; color:#08120d; font-size:10px; font-weight:900; }
-  .reach-evidence-row { display:flex; align-items:flex-start; gap:11px; padding:12px 16px; border-top:1px solid rgba(255,255,255,.055); }
-  .reach-evidence-row:first-child { border-top:0; }
-  .reach-evidence-icon { width:34px; height:34px; flex:none; display:grid; place-items:center; border-radius:9px; border:1px solid rgba(255,255,255,.08); background:#141b1e; color:#d6ae61; font-size:11px; }
-  .reach-evidence-main { min-width:0; flex:1; }
-  .reach-evidence-title { color:#e5e9e7; font-size:12px; font-weight:720; }
-  .reach-evidence-meta { margin-top:3px; color:#707980; font-size:10px; line-height:1.5; }
-  .reach-evidence-link { color:#d2ab63; font-size:10px; font-weight:700; text-decoration:none; }
-  .reach-relationship { padding:16px 18px; }
-  .reach-relationship-top { display:flex; align-items:center; gap:11px; }
-  .reach-rel-avatar { width:42px; height:42px; flex:none; display:grid; place-items:center; border-radius:50%; background:linear-gradient(135deg,#353a3d,#171b1d); color:#efb84e; border:1px solid rgba(255,255,255,.09); font-size:14px; font-weight:850; }
-  .reach-rel-name { font-size:13px; font-weight:800; color:#fff; }
-  .reach-rel-meta { margin-top:2px; color:#747d83; font-size:10px; }
-  .reach-rel-counts { margin-left:auto; text-align:right; color:#788188; font-size:9px; line-height:1.6; }
-  .reach-rel-quote { margin-top:13px; padding:12px 13px; border:1px solid rgba(255,255,255,.07); background:#151d20; border-radius:10px; color:#aab1b5; font-size:11px; line-height:1.6; }
-  .reach-op-actionbar { margin-top:12px; padding:14px; border:1px solid rgba(239,181,73,.22); background:linear-gradient(135deg,rgba(239,181,73,.15),rgba(239,181,73,.055)); border-radius:15px; }
-  .reach-op-actionbar .reach-op-primary { width:100%; min-height:52px; font-size:13px; }
-  .reach-op-secondary { display:flex; gap:8px; margin-top:8px; }
-  .reach-op-secondary select,.reach-op-secondary button { min-height:38px; border-radius:9px; border:1px solid rgba(255,255,255,.09); background:#0c1113; color:#8e979d; font-size:10px; padding:0 10px; }
-  .reach-op-secondary select { flex:1; min-width:0; }
-  .reach-op-secondary button { cursor:pointer; font-weight:750; }
-  .reach-op-details { margin-top:12px; }
-  .reach-op-details summary { cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; color:#a5adb2; font-size:11px; font-weight:800; }
-  .reach-op-details summary::-webkit-details-marker { display:none; }
-  .reach-op-detail-body { padding:0 16px 16px; border-top:1px solid rgba(255,255,255,.055); }
-  .reach-op-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:13px; }
-  .reach-op-fact { border:1px solid rgba(255,255,255,.065); background:#0d1214; border-radius:9px; padding:10px; }
-  .reach-op-fact-label { color:#626b71; font-size:9px; text-transform:uppercase; letter-spacing:.12em; }
-  .reach-op-fact-value { margin-top:4px; color:#bdc3c7; font-size:11px; overflow-wrap:anywhere; }
-  @media (min-width:820px) {
-    .reach-opportunity { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr); gap:14px; align-items:start; }
-    .reach-op-back { grid-column:1 / -1; }
-    .reach-op-left,.reach-op-right { min-width:0; }
-    .reach-op-right { position:sticky; top:92px; }
-  }
-  @media (max-width:640px) {
-    .reach-opportunity { margin:-4px -2px 0; }
-    .reach-op-hero { padding:16px; }
-    .reach-op-mark { width:54px; height:54px; border-radius:11px; font-size:15px; }
-    .reach-op-name { font-size:22px; }
-    .reach-op-score { width:54px; height:54px; font-size:19px; }
-    .reach-op-window { flex-wrap:wrap; }
-    .reach-op-window .reach-op-primary { width:100%; margin-left:46px; }
-    .reach-op-details { margin-top:10px; }
-  }
+  .reach-opportunity{max-width:980px;margin:0 auto;color:#eef1ef}.reach-op-back{display:inline-flex;align-items:center;gap:7px;margin-bottom:14px;color:#8c959b;font-size:12px;font-weight:700;text-decoration:none}.reach-op-back:hover{color:#f1bd59}.reach-op-card{border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,#11181b 0%,#0e1417 100%);border-radius:15px;overflow:hidden}.reach-op-hero{padding:20px}.reach-op-head{display:flex;align-items:flex-start;gap:14px}.reach-op-mark{width:64px;height:64px;flex:none;display:grid;place-items:center;border-radius:13px;background:#070a0b;border:1px solid rgba(255,255,255,.08);color:#efb64c;font-weight:900;font-size:18px}.reach-op-main{min-width:0;flex:1}.reach-op-name{font-size:25px;font-weight:820;line-height:1;letter-spacing:-.035em;color:#fff}.reach-op-meta{margin-top:7px;color:#939ca2;font-size:12px;line-height:1.5}.reach-op-desc{margin-top:4px;color:#6f787e;font-size:11px;line-height:1.55}.reach-op-score{width:62px;height:62px;flex:none;display:grid;place-items:center;border-radius:50%;border:3px solid #46ca95;color:#6ce0ad;font-size:22px;font-weight:900}.reach-op-score.unknown{border-color:#343b3f;color:#737c81;font-size:11px}.reach-op-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:15px}.reach-op-tag{border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.025);color:#9ca4aa;border-radius:99px;padding:5px 9px;font-size:10px;font-weight:700}.reach-op-window{display:flex;align-items:center;gap:12px;margin-top:16px;padding-top:15px;border-top:1px solid rgba(255,255,255,.07)}.reach-op-window-icon{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(242,184,78,.3);color:#efb74c}.reach-op-window-copy{min-width:0;flex:1}.reach-op-window-title{color:#e9c16e;font-size:12px;font-weight:800}.reach-op-window-sub{margin-top:2px;color:#737d83;font-size:10px}.reach-op-primary{min-height:43px;display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:10px;padding:0 17px;border:1px solid rgba(255,222,151,.6);background:linear-gradient(180deg,#f6ce7b,#eab04b);color:#141414;font-size:12px;font-weight:900;text-decoration:none;box-shadow:0 8px 26px rgba(235,170,61,.12)}button.reach-op-primary{cursor:pointer}.reach-op-section{margin-top:12px}.reach-op-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 10px}.reach-op-title{color:#fff;font-size:17px;font-weight:780;letter-spacing:-.02em}.reach-op-subtitle{margin-top:3px;color:#717a80;font-size:10px}.reach-fit-list{padding:0 18px 16px;display:grid;gap:9px}.reach-fit-row{display:flex;align-items:flex-start;gap:9px;color:#b9c0c4;font-size:12px;line-height:1.45}.reach-fit-check{width:17px;height:17px;margin-top:1px;flex:none;display:grid;place-items:center;border-radius:4px;background:#5bdca4;color:#08120d;font-size:10px;font-weight:900}.reach-evidence-row{display:flex;align-items:flex-start;gap:11px;padding:12px 16px;border-top:1px solid rgba(255,255,255,.055)}.reach-evidence-row:first-child{border-top:0}.reach-evidence-icon{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:9px;border:1px solid rgba(255,255,255,.08);background:#141b1e;color:#d6ae61;font-size:11px}.reach-evidence-main{min-width:0;flex:1}.reach-evidence-title{color:#e5e9e7;font-size:12px;font-weight:720}.reach-evidence-meta{margin-top:3px;color:#707980;font-size:10px;line-height:1.5}.reach-evidence-link{color:#d2ab63;font-size:10px;font-weight:700;text-decoration:none}.reach-relationship{padding:16px 18px}.reach-relationship-top{display:flex;align-items:center;gap:11px}.reach-rel-avatar{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:50%;background:linear-gradient(135deg,#353a3d,#171b1d);color:#efb84e;border:1px solid rgba(255,255,255,.09);font-size:14px;font-weight:850}.reach-rel-name{font-size:13px;font-weight:800;color:#fff}.reach-rel-meta{margin-top:2px;color:#747d83;font-size:10px}.reach-rel-counts{margin-left:auto;text-align:right;color:#788188;font-size:9px;line-height:1.6}.reach-rel-quote{margin-top:13px;padding:12px 13px;border:1px solid rgba(255,255,255,.07);background:#151d20;border-radius:10px;color:#aab1b5;font-size:11px;line-height:1.6}.reach-op-actionbar{margin-top:12px;padding:14px;border:1px solid rgba(239,181,73,.22);background:linear-gradient(135deg,rgba(239,181,73,.15),rgba(239,181,73,.055));border-radius:15px}.reach-op-actionbar .reach-op-primary{width:100%;min-height:52px;font-size:13px}.reach-op-secondary{display:flex;gap:8px;margin-top:8px}.reach-op-secondary select,.reach-op-secondary button{min-height:38px;border-radius:9px;border:1px solid rgba(255,255,255,.09);background:#0c1113;color:#8e979d;font-size:10px;padding:0 10px}.reach-op-secondary select{flex:1;min-width:0}.reach-op-secondary button{cursor:pointer;font-weight:750}.reach-op-details{margin-top:12px}.reach-op-details summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;color:#a5adb2;font-size:11px;font-weight:800}.reach-op-details summary::-webkit-details-marker{display:none}.reach-op-detail-body{padding:0 16px 16px;border-top:1px solid rgba(255,255,255,.055)}.reach-op-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:13px}.reach-op-fact{border:1px solid rgba(255,255,255,.065);background:#0d1214;border-radius:9px;padding:10px}.reach-op-fact-label{color:#626b71;font-size:9px;text-transform:uppercase;letter-spacing:.12em}.reach-op-fact-value{margin-top:4px;color:#bdc3c7;font-size:11px;overflow-wrap:anywhere}.reach-memory-link{display:inline-flex;align-items:center;gap:5px;color:#d2ab63;font-size:10px;font-weight:750;text-decoration:none}
+  @media(min-width:820px){.reach-opportunity{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:14px;align-items:start}.reach-op-back{grid-column:1/-1}.reach-op-left,.reach-op-right{min-width:0}.reach-op-right{position:sticky;top:92px}}
+  @media(max-width:640px){.reach-opportunity{margin:-4px -2px 0}.reach-op-hero{padding:16px}.reach-op-mark{width:54px;height:54px;border-radius:11px;font-size:15px}.reach-op-name{font-size:22px}.reach-op-score{width:54px;height:54px;font-size:19px}.reach-op-window{flex-wrap:wrap}.reach-op-window .reach-op-primary{width:100%;margin-left:46px}.reach-op-details{margin-top:10px}}
 </style>
 
 <div class="reach-opportunity">
-  <a href="{{ url_for('reach.opportunities', campaign_id=campaign.id) }}" class="reach-op-back">
-    <span aria-hidden="true">←</span> Opportunity Radar
-  </a>
+  <a href="{{ url_for('reach.opportunities', campaign_id=campaign.id) }}" class="reach-op-back"><span aria-hidden="true">←</span> Opportunity Radar</a>
 
   <div class="reach-op-left">
     <section class="reach-op-card reach-op-hero">
@@ -96,145 +26,61 @@
         </div>
         {% if score %}<div class="reach-op-score" aria-label="Match score {{ score.score }}">{{ score.score }}</div>{% else %}<div class="reach-op-score unknown">UNKNOWN</div>{% endif %}
       </div>
-
       <div class="reach-op-tags">
         <span class="reach-op-tag">{{ (target.outlet_kind or 'Opportunity').replace('_',' ')|title }}</span>
         {% if target.submissions_open and target.submissions_open != 'UNKNOWN' %}<span class="reach-op-tag">Submissions {{ target.submissions_open.replace('_',' ')|lower }}</span>{% endif %}
         {% if route %}<span class="reach-op-tag">{{ route.method.replace('_',' ')|title }}</span>{% endif %}
         {% if risk and risk.band %}<span class="reach-op-tag">{{ risk.band|title }}</span>{% endif %}
       </div>
-
       <div class="reach-op-window">
         <span class="reach-op-window-icon" aria-hidden="true">◷</span>
         <div class="reach-op-window-copy">
-          {% if target.submissions_open and target.submissions_open != 'UNKNOWN' %}
-          <div class="reach-op-window-title">Submission status: {{ target.submissions_open.replace('_',' ')|title }}</div>
-          <div class="reach-op-window-sub">Based on the latest evidence Reach has recorded for this outlet.</div>
-          {% else %}
-          <div class="reach-op-window-title">Submission timing is not confirmed</div>
-          <div class="reach-op-window-sub">Reach will not invent a deadline or open window without evidence.</div>
-          {% endif %}
+          {% if target.submissions_open and target.submissions_open != 'UNKNOWN' %}<div class="reach-op-window-title">Submission status: {{ target.submissions_open.replace('_',' ')|title }}</div><div class="reach-op-window-sub">Based on the latest evidence Reach has recorded for this outlet.</div>{% else %}<div class="reach-op-window-title">Submission timing is not confirmed</div><div class="reach-op-window-sub">Reach will not invent a deadline or open window without evidence.</div>{% endif %}
         </div>
-        {% if draft %}
-        <a class="reach-op-primary" href="{{ url_for('reach.review', campaign_id=campaign.id, target_id=target.id) }}">Take action →</a>
-        {% else %}
-        <button class="reach-op-primary" type="button" data-post="{{ url_for('reach.generate_draft', target_id=target.id) }}" data-success="Pitch drafted — opening the review" data-next="{{ url_for('reach.review', campaign_id=campaign.id, target_id=target.id) }}">Take action →</button>
-        {% endif %}
+        {% if draft %}<a class="reach-op-primary" href="{{ url_for('reach.review', campaign_id=campaign.id, target_id=target.id) }}">Take action →</a>{% else %}<button class="reach-op-primary" type="button" data-post="{{ url_for('reach.generate_draft', target_id=target.id) }}" data-success="Pitch drafted — opening the review" data-next="{{ url_for('reach.review', campaign_id=campaign.id, target_id=target.id) }}">Take action →</button>{% endif %}
       </div>
     </section>
 
     <section class="reach-op-card reach-op-section">
       <div class="reach-op-section-head"><div><div class="reach-op-title">Why this is a strong fit</div><div class="reach-op-subtitle">The reasons behind this match, not generic sales copy.</div></div>{% if score %}<span style="color:#60d9a5;font-size:11px;font-weight:850">{{ score.score }} match</span>{% endif %}</div>
-      <div class="reach-fit-list">
-        {% set fit = namespace(count=0) %}
-        {% for reason in score_reasons %}
-          {% if reason.sign == '+' and fit.count < 5 %}
-            {% set fit.count = fit.count + 1 %}
-            <div class="reach-fit-row"><span class="reach-fit-check">✓</span><span>{{ reason.text }}</span></div>
-          {% endif %}
-        {% endfor %}
-        {% if fit.count == 0 %}<div class="reach-fit-row"><span class="reach-fit-check" style="background:#263136;color:#7c858b">•</span><span>No positive fit reasons have been verified yet. Review the evidence before acting.</span></div>{% endif %}
-      </div>
+      <div class="reach-fit-list">{% set fit = namespace(count=0) %}{% for reason in score_reasons %}{% if reason.sign == '+' and fit.count < 5 %}{% set fit.count = fit.count + 1 %}<div class="reach-fit-row"><span class="reach-fit-check">✓</span><span>{{ reason.text }}</span></div>{% endif %}{% endfor %}{% if fit.count == 0 %}<div class="reach-fit-row"><span class="reach-fit-check" style="background:#263136;color:#7c858b">•</span><span>No positive fit reasons have been verified yet. Review the evidence before acting.</span></div>{% endif %}</div>
     </section>
 
     <section class="reach-op-card reach-op-section">
       <div class="reach-op-section-head"><div><div class="reach-op-title">Recent activity &amp; evidence</div><div class="reach-op-subtitle">What Reach actually found, with the source attached.</div></div></div>
-      {% if outlet_evidence %}
-        {% for item in outlet_evidence[:5] %}
-        <div class="reach-evidence-row">
-          <span class="reach-evidence-icon" aria-hidden="true">{{ loop.index }}</span>
-          <div class="reach-evidence-main">
-            <div class="reach-evidence-title">{{ item.field.replace('_',' ')|title }}{% if item.value %}: {{ item.value }}{% endif %}</div>
-            <div class="reach-evidence-meta">{% if item.excerpt %}{{ item.excerpt[:180] }}{% else %}Evidence recorded for this opportunity.{% endif %}{% if item.retrieved_at %} · {{ item.retrieved_at[:10] }}{% endif %}</div>
-          </div>
-          {% if item.source_url %}<a class="reach-evidence-link" href="{{ item.source_url }}" target="_blank" rel="noopener noreferrer">Source ↗</a>{% endif %}
-        </div>
-        {% endfor %}
-      {% else %}
-        <div style="padding:18px;color:#727b81;font-size:11px;line-height:1.6">No evidence packet has been recorded yet. Reach will not present unsupported activity as fact.</div>
-      {% endif %}
+      {% if outlet_evidence %}{% for item in outlet_evidence[:5] %}<div class="reach-evidence-row"><span class="reach-evidence-icon" aria-hidden="true">{{ loop.index }}</span><div class="reach-evidence-main"><div class="reach-evidence-title">{{ item.field.replace('_',' ')|title }}{% if item.value %}: {{ item.value }}{% endif %}</div><div class="reach-evidence-meta">{% if item.excerpt %}{{ item.excerpt[:180] }}{% else %}Evidence recorded for this opportunity.{% endif %}{% if item.retrieved_at %} · {{ item.retrieved_at[:10] }}{% endif %}</div></div>{% if item.source_url %}<a class="reach-evidence-link" href="{{ item.source_url }}" target="_blank" rel="noopener noreferrer">Source ↗</a>{% endif %}</div>{% endfor %}{% else %}<div style="padding:18px;color:#727b81;font-size:11px;line-height:1.6">No evidence packet has been recorded yet. Reach will not present unsupported activity as fact.</div>{% endif %}
     </section>
 
     <section class="reach-op-card reach-op-section">
       <div class="reach-op-section-head"><div><div class="reach-op-title">Relationship memory</div><div class="reach-op-subtitle">Your actual history with this outlet.</div></div></div>
       <div class="reach-relationship">
-        <div class="reach-relationship-top">
-          <span class="reach-rel-avatar">{{ (target.outlet_name or 'R')[:1]|upper }}</span>
-          <div><div class="reach-rel-name">{{ target.outlet_name or outlet.name }}</div><div class="reach-rel-meta">{{ (target.outlet_kind or outlet.kind or 'Outlet').replace('_',' ')|title }}</div></div>
-          <div class="reach-rel-counts">{{ relationship_history.submissions|length }} submission{{ '' if relationship_history.submissions|length == 1 else 's' }}<br>{{ relationship_history.responses|length }} response{{ '' if relationship_history.responses|length == 1 else 's' }} · {{ relationship_history.placements|length }} placement{{ '' if relationship_history.placements|length == 1 else 's' }}</div>
-        </div>
-        {% if relationship_history.responses %}
-          {% set latest_response = relationship_history.responses[0] %}
-          <div class="reach-rel-quote">{% if latest_response.body_excerpt %}“{{ latest_response.body_excerpt[:260] }}”{% else %}Latest response: {{ latest_response.kind.replace('_',' ')|title }}{% endif %}{% if latest_response.received_at %}<div style="margin-top:6px;color:#687278;font-size:9px">Received {{ latest_response.received_at[:10] }}</div>{% endif %}</div>
-        {% else %}
-          <div class="reach-rel-quote" style="color:#727b81">No prior reply is recorded yet. When this outlet responds, Reach will keep the context here for the next conversation.</div>
-        {% endif %}
+        <div class="reach-relationship-top"><span class="reach-rel-avatar">{{ (target.outlet_name or 'R')[:1]|upper }}</span><div><div class="reach-rel-name">{{ target.outlet_name or outlet.name }}</div><div class="reach-rel-meta">{{ (target.outlet_kind or outlet.kind or 'Outlet').replace('_',' ')|title }}</div></div><div class="reach-rel-counts">{{ relationship_history.submissions|length }} submission{{ '' if relationship_history.submissions|length == 1 else 's' }}<br>{{ relationship_history.responses|length }} response{{ '' if relationship_history.responses|length == 1 else 's' }} · {{ relationship_history.placements|length }} placement{{ '' if relationship_history.placements|length == 1 else 's' }}</div></div>
+        {% if relationship_history.responses %}{% set latest_response = relationship_history.responses[0] %}<div class="reach-rel-quote">{% if latest_response.body_excerpt %}“{{ latest_response.body_excerpt[:260] }}”{% else %}Latest response: {{ latest_response.kind.replace('_',' ')|title }}{% endif %}{% if latest_response.received_at %}<div style="margin-top:6px;color:#687278;font-size:9px">Received {{ latest_response.received_at[:10] }}</div>{% endif %}</div>{% else %}<div class="reach-rel-quote" style="color:#727b81">No prior reply is recorded yet. When this outlet responds, Reach will keep the context here for the next conversation.</div>{% endif %}
       </div>
     </section>
+
+    {{ pitch_memory_panel(memory) }}
   </div>
 
   <aside class="reach-op-right">
     <div class="reach-op-actionbar">
-      {% if draft %}
-      <a class="reach-op-primary" href="{{ url_for('reach.review', campaign_id=campaign.id, target_id=target.id) }}">Review personalized pitch →</a>
-      {% else %}
-      <button class="reach-op-primary" type="button" data-post="{{ url_for('reach.generate_draft', target_id=target.id) }}" data-success="Pitch drafted — opening the review" data-next="{{ url_for('reach.review', campaign_id=campaign.id, target_id=target.id) }}">Write a personalized pitch →</button>
-      {% endif %}
-      <div class="reach-op-secondary">
-        <select id="reject-reason" aria-label="Reason for passing on this opportunity">{% for reason in rejection_reasons %}<option value="{{ reason }}">{{ reason }}</option>{% endfor %}</select>
-        <button type="button" id="disqualify">Pass</button>
-      </div>
+      {% if memory.warning %}<div style="margin-bottom:9px;color:{{ '#fca5a5' if memory.warning.level == 'HIGH' else '#eac16f' }};font-size:10px;font-weight:800">Pitch Memory: {{ memory.warning.text }}</div>{% endif %}
+      {% if draft %}<a class="reach-op-primary" href="{{ url_for('reach.review', campaign_id=campaign.id, target_id=target.id) }}">Review personalized pitch →</a>{% else %}<button class="reach-op-primary" type="button" data-post="{{ url_for('reach.generate_draft', target_id=target.id) }}" data-success="Pitch drafted — opening the review" data-next="{{ url_for('reach.review', campaign_id=campaign.id, target_id=target.id) }}">Write a personalized pitch →</button>{% endif %}
+      <div style="margin-top:7px;text-align:center"><a class="reach-memory-link" href="{{ url_for('reach.pitch_memory_page', campaign_id=campaign.id, target_id=target.id) }}">Open full Pitch Memory →</a></div>
+      <div class="reach-op-secondary"><select id="reject-reason" aria-label="Reason for passing on this opportunity">{% for reason in rejection_reasons %}<option value="{{ reason }}">{{ reason }}</option>{% endfor %}</select><button type="button" id="disqualify">Pass</button></div>
     </div>
 
-    <details class="reach-op-card reach-op-details">
-      <summary><span>Submission route &amp; contact</span><span aria-hidden="true">＋</span></summary>
-      <div class="reach-op-detail-body">
-        <div class="reach-op-detail-grid">
-          <div class="reach-op-fact"><div class="reach-op-fact-label">Route</div><div class="reach-op-fact-value">{{ route.method.replace('_',' ')|title if route else 'Not resolved' }}</div></div>
-          <div class="reach-op-fact"><div class="reach-op-fact-label">Contact</div><div class="reach-op-fact-value">{{ contact_method.value_preview if contact_method else 'Not resolved' }}</div></div>
-          <div class="reach-op-fact"><div class="reach-op-fact-label">Sendability</div><div class="reach-op-fact-value">{% if sendability %}{{ 'Eligible' if sendability.sendable else 'Needs review' }}{% else %}Not resolved{% endif %}</div></div>
-          <div class="reach-op-fact"><div class="reach-op-fact-label">Cost model</div><div class="reach-op-fact-value">{{ route.cost_model.replace('_',' ')|title if route else 'Unknown' }}</div></div>
-        </div>
-        {% if route and route.instructions %}<div style="margin-top:11px;color:#7d868c;font-size:10px;line-height:1.55">{{ route.instructions }}</div>{% endif %}
-      </div>
-    </details>
+    <details class="reach-op-card reach-op-details"><summary><span>Submission route &amp; contact</span><span aria-hidden="true">＋</span></summary><div class="reach-op-detail-body"><div class="reach-op-detail-grid"><div class="reach-op-fact"><div class="reach-op-fact-label">Route</div><div class="reach-op-fact-value">{{ route.method.replace('_',' ')|title if route else 'Not resolved' }}</div></div><div class="reach-op-fact"><div class="reach-op-fact-label">Contact</div><div class="reach-op-fact-value">{{ contact_method.value_preview if contact_method else 'Not resolved' }}</div></div><div class="reach-op-fact"><div class="reach-op-fact-label">Sendability</div><div class="reach-op-fact-value">{% if sendability %}{{ 'Eligible' if sendability.sendable else 'Needs review' }}{% else %}Not resolved{% endif %}</div></div><div class="reach-op-fact"><div class="reach-op-fact-label">Cost model</div><div class="reach-op-fact-value">{{ route.cost_model.replace('_',' ')|title if route else 'Unknown' }}</div></div></div>{% if route and route.instructions %}<div style="margin-top:11px;color:#7d868c;font-size:10px;line-height:1.55">{{ route.instructions }}</div>{% endif %}</div></details>
 
-    <details class="reach-op-card reach-op-details">
-      <summary><span>Evidence &amp; score details</span><span aria-hidden="true">＋</span></summary>
-      <div class="reach-op-detail-body">
-        {% if score_components %}<div style="display:grid;gap:8px;margin-top:13px">{% for key, value in score_components.items() %}<div style="display:flex;align-items:center;gap:8px;font-size:10px"><span style="width:125px;color:#7b848a">{{ component_labels.get(key,key.replace('_',' ')) }}</span><span style="height:4px;flex:1;background:#20282c;border-radius:99px;overflow:hidden">{% if value is not none %}<span style="display:block;height:100%;width:{{ (value*100)|round|int }}%;background:#d7a64d"></span>{% endif %}</span><span style="width:30px;text-align:right;color:#969ea3">{{ (value*100)|round|int if value is not none else '—' }}</span></div>{% endfor %}</div>{% else %}<div style="margin-top:13px;color:#717a80;font-size:10px">No score-component record yet.</div>{% endif %}
-      </div>
-    </details>
+    <details class="reach-op-card reach-op-details"><summary><span>Evidence &amp; score details</span><span aria-hidden="true">＋</span></summary><div class="reach-op-detail-body">{% if score_components %}<div style="display:grid;gap:8px;margin-top:13px">{% for key,value in score_components.items() %}<div style="display:flex;align-items:center;gap:8px;font-size:10px"><span style="width:125px;color:#7b848a">{{ component_labels.get(key,key.replace('_',' ')) }}</span><span style="height:4px;flex:1;background:#20282c;border-radius:99px;overflow:hidden">{% if value is not none %}<span style="display:block;height:100%;width:{{ (value*100)|round|int }}%;background:#d7a64d"></span>{% endif %}</span><span style="width:30px;text-align:right;color:#969ea3">{{ (value*100)|round|int if value is not none else '—' }}</span></div>{% endfor %}</div>{% else %}<div style="margin-top:13px;color:#717a80;font-size:10px">No score-component record yet.</div>{% endif %}</div></details>
 
-    <details class="reach-op-card reach-op-details">
-      <summary><span>Safety &amp; outreach decision</span><span aria-hidden="true">＋</span></summary>
-      <div class="reach-op-detail-body">
-        <div class="reach-op-detail-grid">
-          <div class="reach-op-fact"><div class="reach-op-fact-label">Risk</div><div class="reach-op-fact-value">{{ risk.band if risk and risk.band else 'Unknown' }}</div></div>
-          <div class="reach-op-fact"><div class="reach-op-fact-label">Decision</div><div class="reach-op-fact-value">{{ compliance_decision.replace('_',' ')|title if compliance_decision else 'Not recorded' }}</div></div>
-        </div>
-        {% if risk_signals %}<div style="margin-top:11px;color:#d3985a;font-size:10px;line-height:1.55">{% for signal in risk_signals %}{{ signal.label }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
-        {% if compliance_record and compliance_record.reasons %}<div style="margin-top:10px;color:#757e84;font-size:10px;line-height:1.55">{{ compliance_record.reasons|join(' · ') }}</div>{% endif %}
-      </div>
-    </details>
+    <details class="reach-op-card reach-op-details"><summary><span>Safety &amp; outreach decision</span><span aria-hidden="true">＋</span></summary><div class="reach-op-detail-body"><div class="reach-op-detail-grid"><div class="reach-op-fact"><div class="reach-op-fact-label">Risk</div><div class="reach-op-fact-value">{{ risk.band if risk and risk.band else 'Unknown' }}</div></div><div class="reach-op-fact"><div class="reach-op-fact-label">Decision</div><div class="reach-op-fact-value">{{ compliance_decision.replace('_',' ')|title if compliance_decision else 'Not recorded' }}</div></div></div>{% if risk_signals %}<div style="margin-top:11px;color:#d3985a;font-size:10px;line-height:1.55">{% for signal in risk_signals %}{{ signal.label }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}{% if compliance_record and compliance_record.reasons %}<div style="margin-top:10px;color:#757e84;font-size:10px;line-height:1.55">{{ compliance_record.reasons|join(' · ') }}</div>{% endif %}</div></details>
 
-    {% if draft %}
-    <details class="reach-op-card reach-op-details">
-      <summary><span>Prepared pitch</span><span aria-hidden="true">＋</span></summary>
-      <div class="reach-op-detail-body"><div style="margin-top:13px;color:#dfe3e1;font-size:11px;font-weight:800">{{ draft.subject }}</div><div style="margin-top:8px;white-space:pre-wrap;color:#838c91;font-size:10px;line-height:1.6">{{ draft.body }}</div></div>
-    </details>
-    {% endif %}
+    {% if draft %}<details class="reach-op-card reach-op-details"><summary><span>Prepared pitch</span><span aria-hidden="true">＋</span></summary><div class="reach-op-detail-body"><div style="margin-top:13px;color:#dfe3e1;font-size:11px;font-weight:800">{{ draft.subject }}</div><div style="margin-top:8px;white-space:pre-wrap;color:#838c91;font-size:10px;line-height:1.6">{{ draft.body }}</div></div></details>{% endif %}
   </aside>
 </div>
 
 <script>
-  document.getElementById('disqualify')?.addEventListener('click', async () => {
-    const data = await reachPost('{{ url_for("reach.set_target_status", target_id=target.id) }}', {
-      status: 'DISQUALIFIED',
-      rejection_reason: document.getElementById('reject-reason').value,
-      reason: 'Passed by reviewer',
-    });
-    if (data.ok) { reachToast('Opportunity passed', true); setTimeout(() => window.location.reload(), 600); }
-  });
+  document.getElementById('disqualify')?.addEventListener('click',async()=>{const data=await reachPost('{{ url_for("reach.set_target_status", target_id=target.id) }}',{status:'DISQUALIFIED',rejection_reason:document.getElementById('reject-reason').value,reason:'Passed by reviewer'});if(data.ok){reachToast('Opportunity passed',true);setTimeout(()=>window.location.reload(),600);}});
 </script>
 {% endblock %}
