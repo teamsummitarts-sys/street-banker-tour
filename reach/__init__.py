@@ -17,3 +17,4 @@ REACH_VERSION = "1.0.0-phase-one"
 from . import artist_profile_web as _artist_profile_web  # noqa: E402,F401
 from . import comparable_watch_web as _comparable_watch_web  # noqa: E402,F401
 from . import intake_monitor_web as _intake_monitor_web  # noqa: E402,F401
+from . import flight_plan_web as _flight_plan_web  # noqa: E402,F401

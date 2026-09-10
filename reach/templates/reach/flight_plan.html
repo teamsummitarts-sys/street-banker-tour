@@ -1,0 +1,56 @@
+{% macro campaign_flight_plan(plan, campaign) %}
+{% if plan %}
+<section class="rounded-xl border border-amber-500/20 bg-[#101315] p-5" aria-labelledby="flight-plan-heading">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <div class="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-400">Forward plan</div>
+      <h2 id="flight-plan-heading" class="mt-1 text-xl font-semibold tracking-tight text-white">Campaign Flight Plan</h2>
+      <p class="mt-1 max-w-2xl text-xs leading-relaxed text-gray-400">What matters now, what is coming next, and what is blocking momentum. Dates appear only when Reach has them on file.</p>
+    </div>
+    <div class="shrink-0 text-right"><div class="text-[10px] uppercase tracking-[0.16em] text-gray-500">Current lane</div><div class="mt-1 text-sm font-bold text-amber-300">{{ plan.stage }}</div></div>
+  </div>
+
+  <div class="mt-4 flex items-center gap-2" aria-label="Campaign lane">
+    {% for stage_name in plan.stages %}
+      <div class="flex min-w-0 flex-1 items-center gap-2">
+        <span class="grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[9px] font-bold {{ 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300' if loop.index0 < plan.stage_index else 'border-amber-500/50 bg-amber-500/10 text-amber-300' if loop.index0 == plan.stage_index else 'border-white/10 text-gray-600' }}">{{ loop.index }}</span>
+        <span class="hidden truncate text-[10px] font-semibold sm:block {{ 'text-gray-300' if loop.index0 <= plan.stage_index else 'text-gray-600' }}">{{ stage_name }}</span>
+        {% if not loop.last %}<span class="h-px flex-1 {{ 'bg-emerald-500/40' if loop.index0 < plan.stage_index else 'bg-white/[0.08]' }}"></span>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="mt-5 grid gap-3 lg:grid-cols-[1.15fr_.85fr]">
+    <div class="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
+      <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Now</div>
+      <div class="mt-2 divide-y divide-white/[0.06]">
+        {% for action in plan.now %}
+        <div class="flex items-center gap-3 py-3 first:pt-1 last:pb-1">
+          <div class="grid h-8 w-8 shrink-0 place-items-center rounded-full {{ 'bg-red-500/10 text-red-300' if action.priority >= 100 else 'bg-amber-500/10 text-amber-300' }} text-xs font-bold">{{ loop.index }}</div>
+          <div class="min-w-0 flex-1"><div class="text-sm font-semibold text-gray-100">{{ action.title }}</div><div class="mt-0.5 text-[11px] text-gray-500">{{ action.detail }}</div></div>
+          {% if action.kind == 'intake_event' and action.target_id %}<a href="{{ url_for('reach.target_detail', campaign_id=campaign.id, target_id=action.target_id) }}" class="shrink-0 rounded-lg bg-amber-400 px-2.5 py-1.5 text-[10px] font-bold text-black">Review →</a>
+          {% elif action.kind == 'review' %}<a href="{{ url_for('reach.review', campaign_id=campaign.id) }}" class="shrink-0 rounded-lg border border-amber-500/30 px-2.5 py-1.5 text-[10px] font-semibold text-amber-300">Review →</a>
+          {% elif action.kind == 'needs_you' %}<a href="{{ url_for('reach.needs_you', campaign_id=campaign.id) }}" class="shrink-0 rounded-lg border border-amber-500/30 px-2.5 py-1.5 text-[10px] font-semibold text-amber-300">Open →</a>
+          {% elif action.kind == 'responses' %}<a href="{{ url_for('reach.responses', campaign_id=campaign.id) }}" class="shrink-0 rounded-lg border border-amber-500/30 px-2.5 py-1.5 text-[10px] font-semibold text-amber-300">Follow up →</a>
+          {% elif action.kind == 'opportunities' %}<a href="{{ url_for('reach.opportunities', campaign_id=campaign.id) }}" class="shrink-0 rounded-lg border border-amber-500/30 px-2.5 py-1.5 text-[10px] font-semibold text-amber-300">Open →</a>
+          {% elif action.kind == 'discover' %}<a href="{{ url_for('reach.discover', campaign_id=campaign.id) }}" class="shrink-0 rounded-lg border border-amber-500/30 px-2.5 py-1.5 text-[10px] font-semibold text-amber-300">Discover →</a>
+          {% else %}<a href="{{ url_for('reach.overview', campaign_id=campaign.id) }}" class="shrink-0 rounded-lg border border-white/10 px-2.5 py-1.5 text-[10px] font-semibold text-gray-300">Review →</a>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
+      <div class="flex items-center justify-between gap-2"><div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Next 7 days</div><div class="text-[10px] text-gray-600">{{ plan.upcoming|length }} dated item{{ '' if plan.upcoming|length == 1 else 's' }}</div></div>
+      {% if plan.upcoming %}<div class="mt-2 space-y-2">{% for item in plan.upcoming %}<div class="rounded-lg border {{ 'border-red-500/20 bg-red-500/[0.04]' if item.severity == 'URGENT' else 'border-white/[0.06] bg-black/10' }} p-2.5"><div class="flex items-start justify-between gap-2"><div class="text-xs font-semibold text-gray-200">{{ item.title }}</div><span class="shrink-0 text-[10px] font-semibold {{ 'text-red-300' if item.severity == 'URGENT' else 'text-amber-300' }}">{{ 'Today' if item.days == 0 else item.days ~ 'd' }}</span></div><div class="mt-1 text-[10px] text-gray-500">{{ item.date }}{% if item.detail %} · {{ item.detail }}{% endif %}</div>{% if item.target_id %}<a href="{{ url_for('reach.target_detail', campaign_id=campaign.id, target_id=item.target_id) }}" class="mt-1.5 inline-block text-[10px] font-semibold text-amber-300">View opportunity →</a>{% endif %}</div>{% endfor %}</div>
+      {% else %}<div class="mt-3 text-xs leading-relaxed text-gray-500">No known campaign, release or submission deadlines fall in the next seven days.</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="mt-3 grid gap-3 md:grid-cols-2">
+    <div class="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4"><div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Timing</div>{% if plan.timing %}<div class="mt-2 space-y-2">{% for item in plan.timing %}<div class="flex items-baseline justify-between gap-3"><div><div class="text-xs font-semibold text-gray-200">{{ item.label }}</div><div class="text-[10px] text-gray-500">{{ item.detail }}</div></div><div class="text-[11px] tabular-nums text-gray-300">{{ item.date }}</div></div>{% endfor %}</div>{% else %}<div class="mt-2 text-xs text-gray-500">No release or campaign dates are on file. Reach will not invent them.</div>{% endif %}</div>
+    <div class="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4"><div class="flex items-center justify-between gap-2"><div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Blockers</div><span class="text-[10px] text-gray-600">{{ plan.blockers|length }}</span></div>{% if plan.blockers %}<div class="mt-2 space-y-2">{% for blocker in plan.blockers %}<div class="flex items-start gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full {{ 'bg-red-400' if blocker.severity == 'BLOCK' else 'bg-amber-400' }}"></span><span class="text-xs leading-relaxed text-gray-300">{{ blocker.text }}</span></div>{% endfor %}</div>{% else %}<div class="mt-2 text-xs text-emerald-300">No known blockers are preventing the next campaign move.</div>{% endif %}</div>
+  </div>
+</section>
+{% endif %}
+{% endmacro %}

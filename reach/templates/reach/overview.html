@@ -1,5 +1,6 @@
 {% extends "reach/_layout.html" %}
 {% import "reach/_layout.html" as ui with context %}
+{% from "reach/flight_plan.html" import campaign_flight_plan with context %}
 
 {% block title %}REACH — {{ campaign.name }}{% endblock %}
 
@@ -16,7 +17,6 @@
     {{ ui.status_badge(campaign.status) }}
   </div>
 
-  {# Where this campaign is and what happens next — stages, never percentages. #}
   <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
     {{ ui.stage_track(stages, stage) }}
     <a href="{{ stage_next_url }}"
@@ -50,6 +50,8 @@
     </div>
   </div>
 </section>
+
+{{ campaign_flight_plan(flight_plan, campaign) }}
 
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
   <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5 lg:col-span-2">
