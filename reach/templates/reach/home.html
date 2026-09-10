@@ -4,146 +4,39 @@
 {% block title %}REACH — Today{% endblock %}
 
 {% block reach_content %}
-<style>
-  :root{--r-gold:#d8ad62;--r-gold2:#f2cf89;--r-ink:#07090a;--r-panel:#0d1113;--r-panel2:#11171a;--r-line:rgba(255,255,255,.09);--r-muted:#8e989d;--r-green:#62e6a5}
-  #main{max-width:1440px!important;padding-top:18px!important}
-  .r-shell{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.012em}
-  .r-hero{position:relative;overflow:hidden;border:1px solid var(--r-line);border-radius:24px;min-height:290px;background:radial-gradient(circle at 77% 35%,rgba(216,173,98,.17),transparent 34%),linear-gradient(120deg,#0d1113 0%,#090c0e 55%,#11100e 100%);box-shadow:0 30px 80px rgba(0,0,0,.26)}
-  .r-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.16),transparent 55%,rgba(0,0,0,.1));pointer-events:none}
-  .r-gridline{position:absolute;inset:0;opacity:.2;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:40px 40px}
-  .r-kicker{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--r-gold2);font-weight:800}
-  .r-display{font-size:clamp(40px,6vw,76px);line-height:.91;font-weight:780;letter-spacing:-.055em;color:#f4f1ea;max-width:820px}
-  .r-display em{font-style:normal;color:var(--r-gold2)}
-  .r-search{height:50px;border:1px solid rgba(255,255,255,.12);background:rgba(7,9,10,.74);border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 15px;color:#aab2b6;backdrop-filter:blur(16px)}
-  .r-panel{border:1px solid var(--r-line);background:linear-gradient(180deg,rgba(17,23,26,.98),rgba(10,14,16,.98));border-radius:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
-  .r-panel-title{font-size:21px;font-weight:750;letter-spacing:-.035em;color:#f4f1ea}
-  .r-panel-sub{font-size:12px;color:var(--r-muted);margin-top:2px}
-  .r-brief{overflow:hidden}
-  .r-brief-head{padding:18px 20px;border-left:4px solid var(--r-gold);display:flex;align-items:center;justify-content:space-between;gap:14px}
-  .r-move{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;padding:15px 18px;border-top:1px solid rgba(255,255,255,.07);transition:.18s ease}
-  .r-move:hover{background:rgba(255,255,255,.025)}
-  .r-num{width:32px;height:32px;display:grid;place-items:center;border-radius:999px;background:var(--r-gold2);color:#17120b;font-weight:850;font-size:13px}
-  .r-move-title{font-size:14px;color:#f2f2ee;font-weight:690;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .r-move-meta{font-size:11px;color:var(--r-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .r-button{display:inline-flex;min-height:38px;align-items:center;justify-content:center;gap:8px;border-radius:10px;padding:0 14px;font-size:12px;font-weight:800;border:1px solid rgba(216,173,98,.55);color:#efd69e;background:rgba(216,173,98,.07)}
-  .r-button.primary{background:linear-gradient(180deg,#f1d391,#d7aa5e);color:#18130b;border:none;box-shadow:0 8px 24px rgba(216,173,98,.14)}
-  .r-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-  .r-card{padding:17px;min-height:220px}
-  .r-row{display:flex;align-items:center;gap:11px;padding:10px 0;border-top:1px solid rgba(255,255,255,.065)}
-  .r-row:first-of-type{border-top:0}
-  .r-score{margin-left:auto;width:38px;height:38px;border-radius:999px;border:2px solid rgba(98,230,165,.7);display:grid;place-items:center;color:var(--r-green);font-weight:800;font-size:12px}
-  .r-name{font-size:12px;font-weight:700;color:#f2f2ef}.r-meta{font-size:10px;color:var(--r-muted);margin-top:2px}
-  .r-stage{height:5px;border-radius:999px;background:rgba(255,255,255,.09);overflow:hidden;margin-top:7px}.r-stage>span{display:block;height:100%;background:linear-gradient(90deg,var(--r-gold),var(--r-green));border-radius:999px}
-  .r-passport{display:grid;grid-template-columns:1.25fr .75fr;gap:12px}.r-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;margin-top:14px}.r-check{font-size:11px;color:#d6dcde;display:flex;gap:8px;align-items:center}.r-check i{width:17px;height:17px;border-radius:4px;background:rgba(98,230,165,.18);border:1px solid rgba(98,230,165,.45);display:grid;place-items:center;color:var(--r-green);font-style:normal;font-size:10px}
-  .r-activity{padding:17px}.r-activity-line{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:9px;padding:10px 0;border-top:1px solid rgba(255,255,255,.065)}
-  .r-dot{width:26px;height:26px;border-radius:9px;background:rgba(216,173,98,.11);display:grid;place-items:center;color:var(--r-gold2);font-size:11px}
-  .r-footerline{margin-top:16px;padding:13px 2px 2px;border-top:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;gap:20px;color:#707b80;font-size:10px;letter-spacing:.16em;text-transform:uppercase}
-  @media(max-width:900px){.r-cards{grid-template-columns:1fr}.r-passport{grid-template-columns:1fr}.r-hero{min-height:245px}.r-move{grid-template-columns:38px minmax(0,1fr)}.r-move .r-button{grid-column:2;width:100%;margin-top:3px}.r-display{font-size:48px}.r-brief-head{align-items:flex-start}.r-search{margin-top:18px}.r-card{min-height:0}}
-  @media(max-width:560px){#main{padding-left:14px!important;padding-right:14px!important}.r-hero{border-radius:18px}.r-display{font-size:43px}.r-hero-content{padding:25px 20px!important}.r-cards{gap:10px}.r-panel{border-radius:15px}.r-checks{grid-template-columns:1fr}.r-footerline{flex-direction:column;gap:6px}.r-move-title{white-space:normal}.r-move-meta{white-space:normal}}
-</style>
-
-<div class="r-shell space-y-3">
-  <section class="r-hero">
-    <div class="r-gridline"></div>
-    <div class="r-hero-content relative z-10 p-7 sm:p-9 lg:p-10">
-      <div class="r-kicker">REACH / TODAY</div>
-      <h1 class="r-display mt-5">Momentum creates <em>opportunity.</em></h1>
-      <p class="mt-5 max-w-xl text-sm leading-6 text-gray-300">Focus today. Build what’s next. REACH turns live opportunity data, campaign state and relationship history into the next move worth making.</p>
-      <a href="{{ url_for('reach.all_opportunities') }}" class="r-search mt-6 max-w-2xl" aria-label="Ask Reach or open opportunity radar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" class="h-5 w-5"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-        <span class="min-w-0 flex-1 truncate text-sm">Ask Reach anything — opportunities, relationships, releases…</span>
-        <span class="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-gray-400">RADAR</span>
-      </a>
-    </div>
-  </section>
-
-  <section class="r-panel r-brief">
-    <div class="r-brief-head">
-      <div><div class="r-kicker">Today</div><h2 class="r-panel-title mt-1">Operating Brief</h2><p class="r-panel-sub">Your highest-leverage moves for today.</p></div>
-      <a href="{{ url_for('reach.needs_you') }}" class="text-xs font-semibold text-gray-400 hover:text-amber-300">Needs You{% if needs_you_count %} · {{ needs_you_count }}{% endif %}</a>
+<section class="reach-command-surface overflow-hidden rounded-xl border border-white/[0.08] p-5 sm:p-7">
+  <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div class="max-w-2xl">
+      <div class="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">
+        <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+        Today / Operations
+      </div>
+      <h1 class="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">Your next move.<br class="hidden sm:block"> Not another dashboard.</h1>
+      <p class="mt-3 max-w-xl text-sm leading-6 text-gray-400">REACH reads the state of your campaigns and surfaces the one action that moves the release forward.</p>
     </div>
     {% if actions %}
-      {% for action in actions[:3] %}
-      <div class="r-move">
-        <span class="r-num">{{ loop.index }}</span>
-        <div class="min-w-0"><div class="r-move-title">{{ action.title }}</div><div class="r-move-meta">{{ action.context or 'Verified from current campaign state' }}</div></div>
-        <a href="{{ action.url }}" class="r-button {{ 'primary' if loop.first else '' }}">{{ 'Take action' if loop.first else 'Open' }} <span>→</span></a>
-      </div>
-      {% endfor %}
-    {% else %}
-      <div class="px-5 py-8 text-sm text-gray-400">Nothing is waiting on you. REACH will surface the next verified move here.</div>
+    {% set lead = actions[0] %}
+    <a href="{{ lead.url }}" class="group flex min-w-0 items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500 px-4 py-3 text-black lg:w-[360px]">
+      <span class="min-w-0 flex-1"><span class="block text-[10px] font-bold uppercase tracking-[0.18em] opacity-70">Do this next</span><span class="mt-0.5 block truncate text-sm font-bold">{{ lead.title }}</span></span>
+    </a>
     {% endif %}
-  </section>
+  </div>
+</section>
 
-  <section class="r-cards">
-    <div class="r-panel r-card">
-      <div class="flex items-start justify-between gap-4"><div><h2 class="r-panel-title">Opportunity Radar</h2><p class="r-panel-sub">Curated from evidence, not guesses.</p></div><a href="{{ url_for('reach.all_opportunities') }}" class="text-[11px] text-gray-400 hover:text-amber-300">View all →</a></div>
-      <div class="mt-3">
-      {% for t in best[:4] %}
-        <a href="{{ url_for('reach.target_detail', campaign_id=t.campaign_id, target_id=t.id) }}" class="r-row group">
-          <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.035] text-[10px] font-extrabold text-amber-300">{{ (t.outlet_name or t.outlet_domain or 'OP')[:2]|upper }}</span>
-          <span class="min-w-0"><span class="r-name block truncate">{{ t.outlet_name or t.outlet_domain }}</span><span class="r-meta block truncate">{{ (t.outlet_kind or 'Opportunity').replace('_',' ') }} · {{ t.campaign_name }}</span></span>
-          {% if t.reach_score is not none %}<span class="r-score">{{ t.reach_score }}</span>{% else %}<span class="ml-auto text-[10px] text-gray-500">UNKNOWN</span>{% endif %}
-        </a>
-      {% else %}
-        <div class="py-5 text-xs text-gray-500">No qualified opportunities yet.</div>
-      {% endfor %}
-      </div>
-    </div>
+<section class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-5">
+  <div class="rounded-xl border border-white/[0.08] bg-[#111113] p-5 lg:col-span-3">
+    <div class="flex items-end justify-between gap-3"><div>{{ ui.section('Priority queue', 'Only actions supported by the current campaign state.') }}</div><a href="{{ url_for('reach.needs_you') }}" class="text-xs font-semibold text-amber-400">Human tasks</a></div>
+    {% if actions %}
+    <ol class="mt-4 space-y-2">{% for action in actions %}<li><a href="{{ action.url }}" class="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-[#171719] px-3 py-3"><span class="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-gray-400">{{ '%02d'|format(loop.index) }}</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold text-gray-100">{{ action.title }}</span>{% if action.context %}<span class="mt-0.5 block truncate text-xs text-gray-400">{{ action.context }}</span>{% endif %}</span><span class="text-gray-400">→</span></a></li>{% endfor %}</ol>
+    {% else %}<div class="mt-4">{{ ui.empty('No action is waiting. REACH will surface the next verified move here.') }}</div>{% endif %}
+  </div>
 
-    <div class="r-panel r-card">
-      <div class="flex items-start justify-between gap-4"><div><h2 class="r-panel-title">Campaign Lanes</h2><p class="r-panel-sub">One view of what is moving.</p></div><a href="{{ url_for('reach.campaigns_list') }}" class="text-[11px] text-gray-400 hover:text-amber-300">View all →</a></div>
-      <div class="mt-3">
-        {% if featured %}
-        <a href="{{ url_for('reach.overview', campaign_id=featured.campaign.id) }}" class="r-row block">
-          <div class="flex items-center gap-10"><div class="min-w-0 flex-1"><div class="r-name truncate">{{ featured.campaign.recording_title }}</div><div class="r-meta">{{ featured.stage }} · {{ featured.campaign.artist_name }}</div><div class="r-stage"><span style="width:{{ ((featured.stages.index(featured.stage)+1) / (featured.stages|length) * 100)|round|int }}%"></span></div></div><span class="text-xs font-bold text-emerald-400">{{ featured.stage }}</span></div>
-        </a>
-        {% endif %}
-        {% for c in more_campaigns %}
-        <a href="{{ url_for('reach.overview', campaign_id=c.campaign.id) }}" class="r-row block">
-          <div class="flex items-center gap-10"><div class="min-w-0 flex-1"><div class="r-name truncate">{{ c.campaign.recording_title }}</div><div class="r-meta">{{ c.stage }} · {{ c.campaign.artist_name }}</div><div class="r-stage"><span style="width:{{ ((c.stages.index(c.stage)+1) / (c.stages|length) * 100)|round|int }}%"></span></div></div><span class="text-xs font-bold text-gray-300">{{ c.stage }}</span></div>
-        </a>
-        {% else %}{% if not featured %}<div class="py-5 text-xs text-gray-500">No active campaigns yet.</div>{% endif %}{% endfor %}
-      </div>
-      <a href="{{ url_for('reach.new_campaign') }}" class="r-button mt-3 w-full">+ Create campaign</a>
-    </div>
+  <div class="rounded-xl border border-white/[0.08] bg-[#111113] p-5 lg:col-span-2">
+    {% if featured %}<div class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">Live campaign</div><a href="{{ url_for('reach.overview', campaign_id=featured.campaign.id) }}" class="mt-2 block text-xl font-bold tracking-tight text-white">{{ featured.campaign.recording_title }}</a><div class="mt-5">{{ ui.stage_bar(featured.stages, featured.stage) }}</div><a href="{{ featured.next_url }}" class="mt-5 flex w-full items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-black">Continue at {{ featured.stage }} →</a>{% else %}{{ ui.empty('No live campaign yet.', url_for('reach.new_campaign'), 'Start a campaign') }}{% endif %}
+  </div>
+</section>
 
-    <div class="r-panel r-card">
-      <div class="flex items-start justify-between gap-4"><div><h2 class="r-panel-title">Relationship Memory</h2><p class="r-panel-sub">People and outlets worth remembering.</p></div><a href="{{ url_for('reach.contacts_view') }}" class="text-[11px] text-gray-400 hover:text-amber-300">Open →</a></div>
-      <div class="mt-3">
-      {% for response in recent_responses[:4] %}
-        <a href="{{ url_for('reach.all_responses') }}" class="r-row">
-          <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-amber-500/10 text-[10px] font-extrabold text-amber-300">{{ (response.outlet_name or 'R')[:2]|upper }}</span>
-          <span class="min-w-0 flex-1"><span class="r-name block truncate">{{ response.outlet_name or 'Response' }}</span><span class="r-meta block truncate">{{ response.kind.replace('_',' ') if response.kind else 'Relationship activity' }}</span></span><span class="text-gray-500">→</span>
-        </a>
-      {% else %}
-        <div class="py-5 text-xs text-gray-500">Relationship history will build as replies arrive.</div>
-      {% endfor %}
-      </div>
-    </div>
-  </section>
-
-  <section class="r-passport">
-    <div class="r-panel p-5">
-      <div class="flex items-start justify-between gap-4"><div><h2 class="r-panel-title">Release Passport</h2><p class="r-panel-sub">Get the release ready before an opportunity asks.</p></div>{% if onboarding %}<div class="text-right"><div class="text-3xl font-extrabold text-emerald-400">{{ ((onboarding.done_count / onboarding.total * 100) if onboarding.total else 0)|round|int }}%</div><div class="text-[10px] uppercase tracking-widest text-gray-500">Ready</div></div>{% endif %}</div>
-      {% if onboarding and onboarding.steps %}
-      <div class="r-checks">
-        {% for step in onboarding.steps[:6] %}<a href="{{ url_for(step.href) }}" class="r-check"><i>{{ '✓' if step.state == 'DONE' else '+' }}</i><span class="truncate">{{ step.label }}</span></a>{% endfor %}
-      </div>
-      {% else %}<div class="mt-4 text-xs text-gray-500">Release readiness appears here as your profile is completed.</div>{% endif %}
-      <a href="{{ url_for('reach.catalog_view') }}" class="r-button mt-5">Complete setup →</a>
-    </div>
-
-    <div class="r-panel r-activity">
-      <div class="flex items-start justify-between gap-4"><div><h2 class="r-panel-title">Recent Activity</h2><p class="r-panel-sub">Verified movement across your opportunities.</p></div><a href="{{ url_for('reach.all_responses') }}" class="text-[11px] text-gray-400 hover:text-amber-300">View all →</a></div>
-      {% for response in recent_responses[:3] %}
-      <div class="r-activity-line"><span class="r-dot">↗</span><span class="min-w-0"><span class="r-name block truncate">{{ response.kind.replace('_',' ')|title if response.kind else 'Response received' }}</span><span class="r-meta block truncate">{{ response.outlet_name }}</span></span><span class="text-[10px] text-gray-500">OPEN</span></div>
-      {% else %}
-      <div class="r-activity-line"><span class="r-dot">●</span><span><span class="r-name block">REACH is watching the campaign state</span><span class="r-meta">New verified activity will appear here.</span></span><span></span></div>
-      {% endfor %}
-    </div>
-  </section>
-
-  <div class="r-footerline"><span>Real opportunities · real relationships · measurable progress</span><span>REACH · BY STREET BANKER</span></div>
-</div>
+{% if best %}
+<section class="mt-4"><div class="flex items-end justify-between gap-3"><div>{{ ui.section('Opportunity radar', 'Ranked from persisted evidence.') }}</div><a href="{{ url_for('reach.all_opportunities') }}" class="text-xs font-semibold text-amber-400">Open radar →</a></div><div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">{% for t in best %}<a href="{{ url_for('reach.target_detail', campaign_id=t.campaign_id, target_id=t.id) }}" class="rounded-xl border border-white/[0.08] bg-[#111113] p-4"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><div class="truncate text-sm font-bold text-gray-100">{{ t.outlet_name or t.outlet_domain }}</div><div class="mt-1 text-[10px] uppercase tracking-[0.16em] text-gray-400">{{ (t.outlet_kind or 'UNKNOWN').replace('_',' ') }} · {{ t.campaign_name }}</div></div>{{ ui.match_pill(t.reach_score) }}</div></a>{% endfor %}</div></section>
+{% endif %}
 {% endblock %}
