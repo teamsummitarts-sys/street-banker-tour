@@ -1,26 +1,34 @@
 {% extends "reach/_layout.html" %}
 {% import "reach/_layout.html" as ui with context %}
+{% from "reach/comparable_watch.html" import comparable_watch_panel with context %}
 
-{% block title %}REACH — Opportunities{% endblock %}
+{% block title %}REACH — Radar{% endblock %}
 
 {% block reach_content %}
 
 <section>
-  <h1 class="text-2xl font-semibold tracking-tight">Opportunities</h1>
-  <p class="mt-1 text-sm text-gray-400">Every outlet REACH found for you, across all campaigns, best match first.</p>
+  <h1 class="text-2xl font-semibold tracking-tight">Radar</h1>
+  <p class="mt-1 text-sm text-gray-400">New signals, verified opportunities and movement around artists your audience overlaps with.</p>
 </section>
 
-<nav aria-label="Filter" class="flex flex-wrap gap-1.5">
-  {% for key, label in [('actionable','Actionable'), ('qualified','Qualified'), ('review','In review'), ('blocked','Blocked'), ('all','Everything')] %}
-  <a href="{{ url_for('reach.all_opportunities', view=key) }}" {% if view == key %}aria-current="page"{% endif %}
-     class="rounded-full border px-3 py-1 text-xs font-semibold transition-colors {{ 'border-amber-500/40 bg-amber-500/10 text-amber-400' if view == key else 'border-white/10 text-gray-400 hover:border-white/20 hover:text-gray-200' }}">
-    {{ label }}
-  </a>
-  {% endfor %}
-</nav>
+{{ comparable_watch_panel(comparable_watch_state, comparable_watch_artists, comparable_watch_artist_id, comparable_watch_campaigns) }}
+
+<section class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+  <div>
+    <h2 class="text-lg font-semibold tracking-tight text-gray-100">Opportunity Radar</h2>
+    <p class="mt-0.5 text-xs text-gray-500">Verified campaign opportunities, best match first.</p>
+  </div>
+  <nav aria-label="Filter" class="flex flex-wrap gap-1.5">
+    {% for key, label in [('actionable','Actionable'), ('qualified','Qualified'), ('review','In review'), ('blocked','Blocked'), ('all','Everything')] %}
+    <a href="{{ url_for('reach.all_opportunities', view=key, artist_id=comparable_watch_artist_id) }}" {% if view == key %}aria-current="page"{% endif %}
+       class="rounded-full border px-3 py-1 text-xs font-semibold transition-colors {{ 'border-amber-500/40 bg-amber-500/10 text-amber-400' if view == key else 'border-white/10 text-gray-400 hover:border-white/20 hover:text-gray-200' }}">
+      {{ label }}
+    </a>
+    {% endfor %}
+  </nav>
+</section>
 
 {% if targets %}
-{# Desktop: a scannable table. Phone: cards, because six columns never fit. #}
 <section class="hidden overflow-hidden rounded-xl border border-white/[0.08] bg-[#111113] md:block">
   <div class="overflow-x-auto">
     <table class="w-full min-w-[720px] text-left text-sm">
@@ -71,13 +79,13 @@
   {% endfor %}
 </section>
 
-<p class="text-xs text-faint">{{ targets|length }} shown{% if view != 'all' %} · <a href="{{ url_for('reach.all_opportunities', view='all') }}" class="text-gray-400 hover:text-gray-200">show everything ({{ total }})</a>{% endif %}</p>
+<p class="text-xs text-faint">{{ targets|length }} shown{% if view != 'all' %} · <a href="{{ url_for('reach.all_opportunities', view='all', artist_id=comparable_watch_artist_id) }}" class="text-gray-400 hover:text-gray-200">show everything ({{ total }})</a>{% endif %}</p>
 
 {% else %}
 {% if total %}
-{{ ui.empty('Nothing matches this filter.', url_for('reach.all_opportunities', view='all'), 'Show everything') }}
+{{ ui.empty('Nothing matches this filter.', url_for('reach.all_opportunities', view='all', artist_id=comparable_watch_artist_id), 'Show everything') }}
 {% else %}
-{{ ui.empty('No opportunities yet. Run discovery in a campaign and results land here.', url_for('reach.campaigns_list'), 'Go to campaigns') }}
+{{ ui.empty('No verified opportunities yet. Start a campaign or use a Comparable Artist Watch signal as a discovery lead.', url_for('reach.campaigns_list'), 'Go to campaigns') }}
 {% endif %}
 {% endif %}
 
