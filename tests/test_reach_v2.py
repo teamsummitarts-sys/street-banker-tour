@@ -110,6 +110,28 @@ def test_reach_artist_profile_is_a_real_standalone_workspace(monkeypatch):
     assert b"Create artist profile" in blank_second.data
 
 
+def test_reach_music_library_hides_fixture_tracks_and_shows_real_releases(monkeypatch):
+    client = _client(monkeypatch)
+    client.post("/reach/unlock", data={"key": "test-reach-key"})
+
+    fixture_only = client.get("/reach/catalog")
+    assert fixture_only.status_code == 200
+    assert b"Add your first release." in fixture_only.data
+    assert b"Synthwave Surfer" not in fixture_only.data
+    assert b"Digital Paradise" not in fixture_only.data
+
+    from reach import catalog
+    with client.application.app_context():
+        catalog.add_track({"title": "Real Song", "artist_name": "Real Artist"})
+
+    real_library = client.get("/reach/catalog")
+    assert real_library.status_code == 200
+    assert b"Real Song" in real_library.data
+    assert b"Real Artist" in real_library.data
+    assert b"Synthwave Surfer" not in real_library.data
+    assert b"Digital Paradise" not in real_library.data
+
+
 def test_reach_database_is_separate_from_v2_database(monkeypatch):
     client = _client(monkeypatch)
     client.post("/reach/unlock", data={"key": "test-reach-key"})
