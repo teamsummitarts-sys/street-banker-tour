@@ -32,9 +32,24 @@
         <input type="hidden" name="artist_id" value="{{ watch_artist_id }}">
         <button type="submit" class="rounded-lg bg-amber-400 px-3.5 py-2 text-xs font-bold text-black hover:bg-amber-300">{{ 'Run weekly check' if watch.due else 'Refresh watch' }}</button>
       </form>
+      <span class="text-[10px] text-gray-500">Automatic weekly refresh is enabled on the deployed V2 service.</span>
       {% else %}<span class="rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2 text-xs text-amber-300">Live search connection required</span>{% endif %}
       <a href="{{ url_for('reach.artist_profile_page', artist_id=watch_artist_id) }}" class="rounded-lg border border-white/10 px-3.5 py-2 text-xs font-semibold text-gray-300">Edit comparable artists</a>
     </div>
+
+    {% if comparable_signal_stack %}
+    <div class="mt-5">
+      <div class="flex items-end justify-between gap-3"><div><div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-400">Signal Stack</div><div class="mt-1 text-sm font-semibold text-white">Outlets repeating across your comparable set</div></div><div class="text-[10px] text-gray-500">Context only · score unchanged</div></div>
+      <div class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {% for stack in comparable_signal_stack %}
+        <a href="{{ stack.latest_url }}" target="_blank" rel="noopener noreferrer" class="rounded-xl border border-white/[0.08] bg-[#101719] p-3 hover:border-amber-500/25">
+          <div class="flex items-start justify-between gap-3"><div class="min-w-0"><div class="truncate text-xs font-semibold text-gray-100">{{ stack.domain }}</div><div class="mt-1 text-[10px] text-gray-500">{{ stack.artist_count }} comparable artist{{ '' if stack.artist_count == 1 else 's' }} · {{ stack.sources }} source signal{{ '' if stack.sources == 1 else 's' }}</div></div><span class="grid h-7 w-7 shrink-0 place-items-center rounded-full border {{ 'border-emerald-500/40 text-emerald-300' if stack.artist_count > 1 else 'border-amber-500/30 text-amber-300' }} text-[10px] font-bold">{{ stack.artist_count }}</span></div>
+          <div class="mt-2 truncate text-[10px] text-gray-400">{{ stack.artists|join(', ') }}</div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
 
     {% if request.args.get('watch') == 'complete' %}<div class="mt-3 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2 text-xs text-emerald-300">Comparable Artist Watch updated.</div>{% endif %}
     {% if request.args.get('watch_error') %}<div class="mt-3 rounded-lg border border-red-500/20 bg-red-500/[0.06] px-3 py-2 text-xs text-red-300">{{ request.args.get('watch_error') }}</div>{% endif %}
