@@ -1,8 +1,9 @@
 """Artist-facing Comparable Artist Watch routes and template context."""
 
-from flask import jsonify, redirect, request, url_for
+from flask import current_app, jsonify, redirect, request, url_for
 
-from . import artist_profile, campaigns, comparable_watch, rbac
+from . import (artist_profile, campaigns, comparable_watch,
+               comparable_watch_scheduler, rbac)
 from .errors import ValidationError
 from .web import bp, bootstrap
 
@@ -12,6 +13,12 @@ def _selected_artist_id(artists):
     if requested and any(row["id"] == requested for row in artists):
         return requested
     return artists[0]["id"] if artists else ""
+
+
+@bp.before_app_request
+def _ensure_comparable_watch_scheduler():
+    """Start the weekly scheduler once in the deployed single-worker V2 app."""
+    comparable_watch_scheduler.start(current_app._get_current_object())
 
 
 @bp.app_context_processor
