@@ -10,6 +10,19 @@
      it would make every page render depend on a third party being up. Regenerate
      with tools/build-css.sh after changing a template. #}
   <link rel="stylesheet" href="{{ url_for('reach.static', filename='tailwind.css') }}?v={{ reach_version }}">
+  <style>
+    /* On phones, the REACH primary nav belongs at the end of the page rather
+       than floating over the workspace. The desktop shell is unchanged. */
+    @media (max-width: 767px) {
+      body > nav[aria-label="Primary"].fixed {
+        position: static;
+      }
+
+      main#main {
+        padding-bottom: 3rem;
+      }
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-[#090909] text-gray-100 antialiased">
   {% block content %}{% endblock %}
