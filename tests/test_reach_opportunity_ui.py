@@ -54,4 +54,5 @@ def test_opportunity_detail_uses_public_product_hierarchy(monkeypatch):
     assert b"Write a personalized pitch" in page.data
     assert b"Submission route &amp; contact" in page.data
     assert b"Safety &amp; outreach decision" in page.data
-    assert b"deadline" not in page.data.lower()
+    assert b"Deadline in" not in page.data
+    assert b"Submission timing is not confirmed" in page.data
