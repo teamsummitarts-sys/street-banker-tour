@@ -85,11 +85,18 @@ def comparables(artist_id):
 
 
 def latest_run(artist_id):
+    """Latest run, with rowid as a deterministic tie-breaker.
+
+    The Reach clock intentionally stores second-level timestamps. A manual refresh
+    can therefore start in the same second as the prior run; ordering only by
+    created_at could return the older run and make unchanged sources look new.
+    """
     _ensure_schema()
     tenant_id = rbac.current_principal().tenant_id
     return db.query_one(
-        "SELECT * FROM comparable_watch_run WHERE tenant_id = ? AND artist_id = ? "
-        "ORDER BY created_at DESC LIMIT 1",
+        "SELECT *, rowid AS _rowid FROM comparable_watch_run "
+        "WHERE tenant_id = ? AND artist_id = ? "
+        "ORDER BY created_at DESC, rowid DESC LIMIT 1",
         (tenant_id, artist_id),
     )
 
@@ -115,7 +122,7 @@ def signals(artist_id, only_new_since=None, include_dismissed=False, limit=60):
     if only_new_since:
         sql += " AND first_seen_at >= ?"
         params.append(only_new_since)
-    sql += " ORDER BY first_seen_at DESC, source_domain, comparable_artist LIMIT ?"
+    sql += " ORDER BY first_seen_at DESC, rowid DESC, source_domain, comparable_artist LIMIT ?"
     params.append(limit)
     return db.query(sql, tuple(params))
 
@@ -125,11 +132,23 @@ def summary(artist_id):
     previous = None
     if latest:
         previous = db.query_one(
-            "SELECT * FROM comparable_watch_run WHERE tenant_id = ? AND artist_id = ? "
-            "AND created_at < ? ORDER BY created_at DESC LIMIT 1",
-            (rbac.current_principal().tenant_id, artist_id, latest["created_at"]),
+            "SELECT *, rowid AS _rowid FROM comparable_watch_run "
+            "WHERE tenant_id = ? AND artist_id = ? AND rowid < ? "
+            "ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (rbac.current_principal().tenant_id, artist_id, latest["_rowid"]),
         )
-    new_rows = signals(artist_id, only_new_since=latest["created_at"] if latest else None)
+    # Newness belongs to the run that first discovered the source. Using the
+    # latest run's timestamp alone is ambiguous when two runs share one second,
+    # so filter by last_run_id when the latest run actually discovered rows.
+    if latest and latest["new_signals"]:
+        new_rows = db.query(
+            "SELECT * FROM comparable_watch_signal WHERE tenant_id = ? AND artist_id = ? "
+            "AND last_run_id = ? AND first_seen_at = last_seen_at AND state != ? "
+            "ORDER BY first_seen_at DESC, rowid DESC LIMIT 60",
+            (rbac.current_principal().tenant_id, artist_id, latest["id"], DISMISSED),
+        )
+    else:
+        new_rows = []
     return {
         "latest": latest,
         "previous": previous,
