@@ -55,9 +55,14 @@ def test_reach_today_and_campaign_hub_present_clear_public_workflow(monkeypatch)
 
     today = client.get("/reach")
     assert today.status_code == 200
-    assert b"Today / Operations" in today.data
-    assert b"Your next move" in today.data
-    assert b"reach-wordmark.svg" in today.data
+    assert b"Momentum creates" in today.data
+    assert b"Operating Brief" in today.data
+    assert b"Opportunity Radar" in today.data
+    assert b"Campaign Lanes" in today.data
+    assert b"Relationship Memory" in today.data
+    assert b"Release Passport" in today.data
+    assert b"Recent Activity" in today.data
+    assert b"reach-lockup.svg" in today.data
     assert b'id="reach-mobile-modules-trigger"' in today.data
     assert b'id="reach-mobile-modules"' in today.data
     assert b"Artist Profile" in today.data
