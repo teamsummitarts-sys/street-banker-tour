@@ -46,12 +46,14 @@ PROFILE_TEXT_FIELDS = [
     "management_email",
 ]
 
-_schema_ready = False
+_schema_ready_path = None
 
 
 def _ensure_schema():
-    global _schema_ready
-    if _schema_ready:
+    """Create the profile table once per configured REACH database."""
+    global _schema_ready_path
+    current_path = db.current_path()
+    if _schema_ready_path == current_path:
         return
     db.execute(
         "CREATE TABLE IF NOT EXISTS artist_profile_data ("
@@ -63,7 +65,7 @@ def _ensure_schema():
         "created_at TEXT NOT NULL, "
         "updated_at TEXT NOT NULL)"
     )
-    _schema_ready = True
+    _schema_ready_path = current_path
 
 
 def _loads(raw, fallback):
