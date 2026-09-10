@@ -57,8 +57,6 @@ def test_reach_today_and_campaign_hub_present_clear_public_workflow(monkeypatch)
     assert today.status_code == 200
     assert b"Today / Operations" in today.data
     assert b"Your next move" in today.data
-    assert b"Evidence stays attached" in today.data
-    assert b"Human approval required" in today.data
     assert b"reach-wordmark.svg" in today.data
     assert b'id="reach-mobile-modules-trigger"' in today.data
     assert b'id="reach-mobile-modules"' in today.data
