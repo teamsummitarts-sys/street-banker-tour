@@ -1,0 +1,40 @@
+{% macro pitch_memory_panel(memory) %}
+<section class="reach-op-card reach-op-section" aria-labelledby="pitch-memory-title">
+  <div class="reach-op-section-head">
+    <div>
+      <div id="pitch-memory-title" class="reach-op-title">Pitch Memory</div>
+      <div class="reach-op-subtitle">What you have already sent this outlet, across campaigns.</div>
+    </div>
+    {% if memory.prior_pitch_count %}<span class="reach-op-tag">{{ memory.prior_pitch_count }} prior pitch{{ '' if memory.prior_pitch_count == 1 else 'es' }}</span>{% endif %}
+  </div>
+
+  {% if memory.warning %}
+  <div style="margin:0 16px 10px;padding:10px 11px;border:1px solid {{ 'rgba(239,68,68,.28)' if memory.warning.level == 'HIGH' else 'rgba(239,181,73,.28)' }};background:{{ 'rgba(239,68,68,.055)' if memory.warning.level == 'HIGH' else 'rgba(239,181,73,.055)' }};border-radius:9px">
+    <div style="font-size:10px;font-weight:850;color:{{ '#fca5a5' if memory.warning.level == 'HIGH' else '#eac16f' }}">{{ memory.warning.text }}</div>
+    <div style="margin-top:3px;color:#747d83;font-size:9px">Closest prior pitch: {{ (memory.warning.score * 100)|round|int }}% lexical overlap{% if memory.warning.prior.sent_at %} · sent {{ memory.warning.prior.sent_at[:10] }}{% endif %}</div>
+  </div>
+  {% endif %}
+
+  {% if memory.history %}
+    {% for item in memory.history[:4] %}
+    <div class="reach-evidence-row">
+      <span class="reach-evidence-icon" aria-hidden="true">{{ loop.index }}</span>
+      <div class="reach-evidence-main">
+        <div class="reach-evidence-title">{{ item.subject }}</div>
+        <div class="reach-evidence-meta">{{ item.artist_name }} · {{ item.recording_title }}{% if item.sent_at %} · sent {{ item.sent_at[:10] }}{% endif %}{% if item.response_kind %} · {{ item.response_kind.replace('_',' ')|title }}{% endif %}{% if item.placement_count %} · placement verified{% endif %}</div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="padding:0 18px 18px;color:#727b81;font-size:11px;line-height:1.6">No prior sent pitch is recorded for this outlet. Reach will start building memory after the first verified send.</div>
+  {% endif %}
+
+  {% if memory.latest %}
+  <div style="margin:0 16px 16px;padding-top:10px;border-top:1px solid rgba(255,255,255,.055);display:flex;flex-wrap:wrap;gap:8px;color:#747d83;font-size:9px">
+    {% if memory.days_since_latest is not none %}<span>Last pitched {{ memory.days_since_latest }} day{{ '' if memory.days_since_latest == 1 else 's' }} ago</span>{% endif %}
+    {% if memory.positive_count %}<span style="color:#64d7a5">{{ memory.positive_count }} positive outcome{{ '' if memory.positive_count == 1 else 's' }}</span>{% endif %}
+    {% if memory.declined_count %}<span>{{ memory.declined_count }} decline{{ '' if memory.declined_count == 1 else 's' }}</span>{% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endmacro %}
