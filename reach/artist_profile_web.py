@@ -8,7 +8,7 @@ lives at /reach/artist-profile without creating a second application surface.
 from flask import jsonify, redirect, render_template, request, url_for
 
 from . import artist_profile, rbac
-from .errors import ReachError, ValidationError
+from .errors import ValidationError
 from .web import bp, bootstrap, _shell
 
 
@@ -48,10 +48,11 @@ def artist_profile_page():
         return redirect(url_for("reach.artist_profile_page", artist_id=artist_id, saved="1"))
 
     artists = artist_profile.list_artists(principal.tenant_id)
-    selected_id = (request.args.get("artist_id") or "").strip()
+    create_new = request.args.get("new") == "1"
+    selected_id = "" if create_new else (request.args.get("artist_id") or "").strip()
     if selected_id and not any(row["id"] == selected_id for row in artists):
         selected_id = ""
-    if not selected_id and artists:
+    if not selected_id and artists and not create_new:
         selected_id = artists[0]["id"]
 
     selected = artist_profile.display(selected_id, principal.tenant_id) if selected_id else None
@@ -59,6 +60,7 @@ def artist_profile_page():
         "reach/artist_profile.html",
         artists=artists,
         artist_profile=selected,
+        creating_new=create_new,
         saved=request.args.get("saved") == "1",
         **_shell(active="artist_profile"),
     )
