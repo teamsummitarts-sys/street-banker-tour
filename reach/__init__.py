@@ -11,7 +11,8 @@ Phase One documents.
 
 REACH_VERSION = "1.0.0-phase-one"
 
-# Artist-profile routes attach to the existing REACH blueprint before Flask
-# registers it. Keeping this import after REACH_VERSION avoids a second
-# blueprint while keeping the profile workspace in its own small module.
+# Artist-facing extension routes attach to the existing REACH blueprint before
+# Flask registers it. Keeping these imports after REACH_VERSION avoids creating
+# additional blueprint/application surfaces.
 from . import artist_profile_web as _artist_profile_web  # noqa: E402,F401
+from . import comparable_watch_web as _comparable_watch_web  # noqa: E402,F401
