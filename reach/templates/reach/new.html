@@ -13,6 +13,10 @@
   <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-400">Enter the artist and release information REACH should actually use. Artist-level information becomes reusable profile defaults; release-level information stays with this song. Nothing is guessed.</p>
 </section>
 
+<div class="mt-6">
+  {% include "reach/_street_banker_shortcuts.html" %}
+</div>
+
 <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
   <div class="space-y-6 lg:col-span-2">
     <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
@@ -218,7 +222,12 @@
   <p class="mt-1 max-w-2xl text-xs leading-5 text-gray-500">Artist profile defaults are pre-filled below. Every box remains editable for this release.</p>
   {% if recording.is_sample %}<div class="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300">This is a demo/sample recording. Go back and choose or enter a real release before creating a live campaign.</div>{% endif %}
 </section>
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+<div class="mt-6">
+  {% include "reach/_street_banker_shortcuts.html" %}
+</div>
+
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
   <div class="space-y-6 lg:col-span-2">
     <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
       {{ ui.section('Artist + release intelligence', 'Inherited artist defaults and this song’s release data feed discovery and scoring. Unknown values stay UNKNOWN.') }}
