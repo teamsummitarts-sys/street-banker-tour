@@ -22,6 +22,7 @@ SOURCE_REACH_CATALOG = "reach_catalog"
 SOURCE_USER = "user_input"
 SOURCE_MUSICBRAINZ = "musicbrainz"
 SOURCE_UNKNOWN = "UNKNOWN"
+SOURCE_ARTIST_PROFILE = "artist_profile"
 
 TEXT = "text"
 LIST = "list"
@@ -110,6 +111,11 @@ def get_or_create(recording_id):
         "updated_at": now,
     })
     _seed_derived_fields(profile_id, recording_id)
+    # Reuse only prior user-confirmed artist-level values for the same artist.
+    # This runs after first-party derivation and only fills fields that remain
+    # unknown, so release-specific facts are never overwritten or guessed.
+    from . import artist_profile
+    artist_profile.apply_to_profile(profile_id, recording_id)
     audit.record("profile.created", entity_type="track_profile", entity_id=profile_id,
                  payload={"recording_id": recording_id})
     return profile_id
