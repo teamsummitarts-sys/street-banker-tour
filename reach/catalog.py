@@ -54,11 +54,41 @@ def _slugify(title):
     return slug.strip("-") or "untitled"
 
 
-def add_track(values, tenant_id=None, artist_name=None, is_sample=False, slug=None):
-    """Add a recording to REACH's catalog from artist-supplied values.
+def _optional_text(values, key):
+    value = values.get(key)
+    if value is None:
+        return None
+    value = str(value).strip()
+    return value or None
 
-    Only ``title`` is required. Everything else may be left out and reads back
-    as UNKNOWN — REACH would rather show a gap than fill one in.
+
+def _optional_bool(values, key):
+    value = values.get(key)
+    if value in (None, "", "UNKNOWN"):
+        return None
+    if isinstance(value, bool):
+        return 1 if value else 0
+    return 1 if str(value).strip().lower() in ("1", "true", "yes", "on", "explicit") else 0
+
+
+def _asset_items(raw):
+    if not raw:
+        return []
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except (TypeError, ValueError):
+            return []
+    return raw if isinstance(raw, list) else []
+
+
+def add_track(values, tenant_id=None, artist_name=None, is_sample=False, slug=None):
+    """Add a recording and persist the artist/release context supplied with it.
+
+    The create-campaign wizard may send both reusable artist profile defaults
+    and release-specific values. Artist defaults are saved once and inherited
+    by later releases; release-specific fields stay attached to this recording.
+    Unknown values remain unknown.
     """
     tenant_id = tenant_id or rbac.current_principal().tenant_id
     columns = tracks.columns(values)
@@ -77,39 +107,77 @@ def add_track(values, tenant_id=None, artist_name=None, is_sample=False, slug=No
     if existing:
         raise ValidationError(f"A track with the identifier {slug!r} is already in the catalog")
 
+    artist_id = _artist_id(tenant_id, artist_name)
     recording_id = db.new_id("rec")
     row = {
         "id": recording_id,
         "tenant_id": tenant_id,
-        "artist_id": _artist_id(tenant_id, artist_name),
+        "artist_id": artist_id,
         "release_id": None,
         "slug": slug,
         "musicbrainz_recording_id": None,
         "version_type": ORIGINAL,
         "mix_name": None,
         "edit_name": None,
-        "explicit": None,
+        "explicit": _optional_bool(values, "explicit"),
         "duration_seconds": None,
         "master_version": 1,
-        "release_territory": None,
-        "release_date": None,
+        "release_territory": _optional_text(values, "release_territory"),
+        "release_date": _optional_text(values, "release_date"),
         "is_sample": 1 if is_sample else 0,
         "created_at": clock.now_iso(),
     }
     row.update(columns)
+    # tracks.columns does not own these release identity columns. Preserve the
+    # values supplied by the wizard after its generic mapping is applied.
+    row["explicit"] = _optional_bool(values, "explicit")
+    row["release_territory"] = _optional_text(values, "release_territory")
+    row["release_date"] = _optional_text(values, "release_date")
     db.insert("recording", row)
+
     if not is_sample:
+        from . import artist_profile, profile as track_profile
+
+        # Save reusable artist defaults before building the recording profile,
+        # so this release immediately sees those values in its editable fields.
+        artist_profile.save(artist_id, values)
+        profile_id = track_profile.get_or_create(recording_id)
+        for field in track_profile.FIELDS_BY_NAME:
+            if field not in values or values.get(field) in (None, "", []):
+                continue
+            track_profile.set_field(profile_id, field, values.get(field))
+
+        # Files themselves already live in V2 Vault/blob storage. REACH stores
+        # only associations, so one upload can be reused without duplicating bytes.
+        for item in _asset_items(values.get("release_assets")):
+            if isinstance(item, str):
+                path, kind, label = item.strip(), "file", None
+            elif isinstance(item, dict):
+                path = str(item.get("path") or "").strip()
+                kind = str(item.get("kind") or "file").strip()
+                label = str(item.get("label") or "").strip() or None
+            else:
+                continue
+            if path:
+                add_platform_asset(recording_id, f"reach_upload:{kind}", external_id=label, url=path)
+
+        for provider, key in (
+            ("spotify", "release_spotify_url"),
+            ("apple_music", "release_apple_url"),
+            ("youtube", "release_youtube_url"),
+            ("soundcloud", "release_soundcloud_url"),
+        ):
+            url = _optional_text(values, key)
+            if url:
+                add_platform_asset(recording_id, provider, url=url)
+
         audit.record("catalog.track_added", entity_type="recording", entity_id=recording_id,
                      payload={"title": columns["title"], "artist": artist_name})
     return recording_id
 
 
 def delete_track(recording_id):
-    """Remove a recording that no campaign depends on.
-
-    A recording with campaign history stays: deleting it would orphan evidence
-    and placements, and Phase One requires metrics to keep matching real records.
-    """
+    """Remove a recording that no campaign depends on."""
     row = get_recording(recording_id)
     if row is None:
         raise ValidationError("Unknown recording")
@@ -125,16 +193,13 @@ def delete_track(recording_id):
 
 
 def seed_sample_tracks(tenant_id=None):
-    """Seed the sample catalog, once, only into an empty catalog.
-
-    Every row is flagged ``is_sample`` so the interface can say so. Set
-    ``REACH_SEED_SAMPLE_TRACKS=0`` to start with nothing instead.
-    """
+    """Seed the sample catalog, once, only into an empty catalog."""
     tenant_id = tenant_id or rbac.current_principal().tenant_id
     if os.environ.get(SEED_SAMPLE_ENV, "1") == "0":
         return []
     existing = db.query_one(
-        "SELECT id FROM recording WHERE tenant_id = ? LIMIT 1", (tenant_id,))
+        "SELECT id FROM recording WHERE tenant_id = ? LIMIT 1", (tenant_id,)
+    )
     if existing:
         return []
     created = []
@@ -261,8 +326,7 @@ def platform_assets(recording_id):
 
 
 def identifiers(recording_id):
-    """Everything REACH knows that identifies this recording. UNKNOWN stays
-    UNKNOWN — no value is inferred to fill a gap."""
+    """Everything REACH knows that identifies this recording."""
     row = get_recording(recording_id)
     if row is None:
         return {}
@@ -338,9 +402,7 @@ def has_rights_attestation(recording_id):
 # --------------------------------------------------------------------------
 
 def release_readiness(recording_id):
-    """Checks that gate what a campaign can actually do. Each item states the
-    consequence, because a missing ISRC blocks different routes than missing
-    artwork does."""
+    """Checks that gate what a campaign can actually do."""
     row = get_recording(recording_id)
     facts = track(row)
     checks = []
