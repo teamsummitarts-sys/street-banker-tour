@@ -9,59 +9,135 @@
 {% if not explicit_recording_id %}
 <section>
   <div class="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">Campaign setup / Step 1</div>
-  <h1 class="mt-2 text-3xl font-bold tracking-tight text-white">Start with the real release.</h1>
-  <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-400">REACH will not choose a demo track or guess an artist. Enter the artist name and song title you are actually campaigning, or explicitly choose an existing track from your catalog.</p>
+  <h1 class="mt-2 text-3xl font-bold tracking-tight text-white">Build the release once.</h1>
+  <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-400">Enter the artist and release information REACH should actually use. Artist-level information becomes reusable profile defaults; release-level information stays with this song. Nothing is guessed.</p>
 </section>
 
 <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-  <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5 lg:col-span-2">
-    {{ ui.section('Release identity', 'These two fields become the campaign’s source of truth.') }}
-    <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <label class="block">
-        <span class="text-xs font-semibold text-gray-300">Artist name <span class="text-amber-400">*</span></span>
-        <input id="artist_name" autocomplete="off" placeholder="Enter artist name"
-               class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-3 text-base text-gray-100 placeholder:text-gray-600 focus:border-amber-500/50 focus:outline-none">
-      </label>
-      <label class="block">
-        <span class="text-xs font-semibold text-gray-300">Song title <span class="text-amber-400">*</span></span>
-        <input id="track_title" autocomplete="off" placeholder="Enter song title"
-               class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-3 text-base text-gray-100 placeholder:text-gray-600 focus:border-amber-500/50 focus:outline-none">
-      </label>
-    </div>
-    <button type="button" id="continue-release"
-            class="mt-5 w-full rounded-lg bg-amber-500 px-4 py-3 text-sm font-bold text-black hover:bg-amber-400 sm:w-auto">
-      Continue with this release →
-    </button>
-    <p id="release-error" class="mt-3 hidden text-xs text-red-400"></p>
-  </section>
+  <div class="space-y-6 lg:col-span-2">
+    <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
+      {{ ui.section('Artist profile', 'Saved for this artist and reused as editable defaults on future campaigns.') }}
+      <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label class="block sm:col-span-2"><span class="text-xs font-semibold text-gray-300">Artist name <span class="text-amber-400">*</span></span><input id="artist_name" autocomplete="off" placeholder="Enter artist name" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-3 text-base text-gray-100 placeholder:text-gray-600 focus:border-amber-500/50 focus:outline-none"></label>
+        <label class="block sm:col-span-2"><span class="text-xs font-semibold text-gray-300">Bio</span><textarea id="bio" rows="4" placeholder="Short artist biography / positioning" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm text-gray-100 placeholder:text-gray-600 focus:border-amber-500/50 focus:outline-none"></textarea></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Primary genre</span><input id="primary_genre" placeholder="Alternative, R&B, electronic…" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Secondary genres</span><input id="secondary_genres" placeholder="Comma separated" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Microgenres</span><input id="microgenres" placeholder="Comma separated" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Comparable artists</span><input id="comparable_artists" placeholder="Comma separated" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Hometown / scene</span><input id="hometown" placeholder="Charlotte, NC" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Language</span><input id="language" placeholder="English" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Target audiences</span><input id="target_audiences" placeholder="Comma separated" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Geographic affinity</span><input id="geographic_affinity" placeholder="US Southeast, UK, Germany…" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block sm:col-span-2"><span class="text-xs font-semibold text-gray-300">Visual identity</span><input id="visual_identity" placeholder="Dark editorial, cinematic, DIY punk…" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Website</span><input id="website" type="url" placeholder="https://" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Spotify artist URL</span><input id="spotify_url" type="url" placeholder="https://" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Instagram</span><input id="instagram_url" type="url" placeholder="https://" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">TikTok</span><input id="tiktok_url" type="url" placeholder="https://" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">YouTube</span><input id="youtube_url" type="url" placeholder="https://" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Management / contact name</span><input id="management_name" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Management / contact email</span><input id="management_email" type="email" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+      </div>
 
-  <aside class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
-    {{ ui.section('Existing music', 'Choose deliberately. Samples are never selected automatically.') }}
+      <div class="mt-5 rounded-lg border border-dashed border-white/15 bg-white/[0.025] p-4">
+        <div class="text-sm font-semibold text-gray-200">Reusable artist assets</div>
+        <p class="mt-1 text-xs leading-5 text-gray-500">Press photos, artist logo and EPK files. These are stored in the existing V2 Vault and attached to the artist profile for reuse.</p>
+        <input id="artist_files" type="file" multiple accept="image/*,.pdf" class="mt-3 block w-full text-xs text-gray-400 file:mr-3 file:rounded-md file:border-0 file:bg-amber-500/15 file:px-3 file:py-2 file:font-semibold file:text-amber-300">
+      </div>
+    </section>
+
+    <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
+      {{ ui.section('Release profile', 'This information belongs to this song and remains editable before the campaign launches.') }}
+      <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label class="block sm:col-span-2"><span class="text-xs font-semibold text-gray-300">Song title <span class="text-amber-400">*</span></span><input id="track_title" autocomplete="off" placeholder="Enter song title" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-3 text-base text-gray-100 placeholder:text-gray-600 focus:border-amber-500/50 focus:outline-none"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Release date</span><input id="release_date" type="date" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Release territory</span><input id="release_territory" placeholder="US / Worldwide" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">ISRC</span><input id="isrc" placeholder="US..." class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">UPC</span><input id="upc" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">BPM</span><input id="bpm" type="number" min="1" max="300" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Key</span><input id="musical_key" placeholder="C minor" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Mood</span><input id="mood" placeholder="Moody, euphoric, aggressive…" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Energy</span><select id="energy" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"><option value="">UNKNOWN</option><option>Low</option><option>Medium</option><option>High</option></select></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Explicit / clean</span><select id="explicit" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"><option value="UNKNOWN">UNKNOWN</option><option value="false">Clean</option><option value="true">Explicit</option></select></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Distributed</span><select id="distributed" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"><option value="UNKNOWN">UNKNOWN</option><option value="true">Yes</option><option value="false">No</option></select></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Splits confirmed</span><select id="splits_confirmed" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"><option value="UNKNOWN">UNKNOWN</option><option value="true">Yes</option><option value="false">No</option></select></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Writers / collaborators</span><input id="writers" placeholder="Comma separated" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Producers</span><input id="producers" placeholder="Comma separated" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Publisher</span><input id="publisher" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block sm:col-span-2"><span class="text-xs font-semibold text-gray-300">Release story</span><textarea id="release_narrative" rows="3" placeholder="What is the story behind this release?" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></textarea></label>
+        <label class="block sm:col-span-2"><span class="text-xs font-semibold text-gray-300">Pitch / marketing angle</span><textarea id="marketing_angle" rows="2" placeholder="Why this song, why now, and what should the outlet understand quickly?" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></textarea></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Spotify song URL</span><input id="release_spotify_url" type="url" placeholder="https://" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Apple Music URL</span><input id="release_apple_url" type="url" placeholder="https://" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">YouTube song/video URL</span><input id="release_youtube_url" type="url" placeholder="https://" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">SoundCloud URL</span><input id="release_soundcloud_url" type="url" placeholder="https://" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2 text-sm"></label>
+      </div>
+
+      <div class="mt-5 rounded-lg border border-dashed border-white/15 bg-white/[0.025] p-4">
+        <div class="text-sm font-semibold text-gray-200">Release attachments</div>
+        <p class="mt-1 text-xs leading-5 text-gray-500">Artwork, WAV/MP3, one-sheet, press release, lyrics, video or other campaign materials.</p>
+        <input id="release_files" type="file" multiple accept="image/*,audio/*,video/*,.pdf,.zip,.txt,.doc,.docx" class="mt-3 block w-full text-xs text-gray-400 file:mr-3 file:rounded-md file:border-0 file:bg-amber-500/15 file:px-3 file:py-2 file:font-semibold file:text-amber-300">
+      </div>
+
+      <button type="button" id="continue-release" class="mt-5 w-full rounded-lg bg-amber-500 px-4 py-3 text-sm font-bold text-black hover:bg-amber-400 sm:w-auto">Save profile + continue →</button>
+      <p id="upload-status" class="mt-3 hidden text-xs text-gray-400"></p>
+      <p id="release-error" class="mt-3 hidden text-xs text-red-400"></p>
+    </section>
+  </div>
+
+  <aside class="rounded-xl border border-white/[0.08] bg-[#111113] p-5 self-start">
+    {{ ui.section('Existing music', 'Choose a real saved release. Sample tracks are never selected automatically.') }}
     <div class="mt-4 space-y-2">
       {% set ns = namespace(real_count=0) %}
       {% for item in recordings %}
         {% if not item.is_sample %}
           {% set ns.real_count = ns.real_count + 1 %}
-          <a href="{{ url_for('reach.new_campaign', recording_id=item.id) }}"
-             class="block rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-3 hover:border-amber-500/35 hover:bg-amber-500/[0.05]">
+          <a href="{{ url_for('reach.new_campaign', recording_id=item.id) }}" class="block rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-3 hover:border-amber-500/35 hover:bg-amber-500/[0.05]">
             <span class="block text-sm font-semibold text-gray-100">{{ item.title }}</span>
             <span class="mt-0.5 block text-xs text-gray-400">{{ item.artist_name }}</span>
           </a>
         {% endif %}
       {% endfor %}
-      {% if ns.real_count == 0 %}
-        <p class="text-xs leading-5 text-gray-500">No real tracks have been added yet. Enter the artist and title to create the first one.</p>
-      {% endif %}
+      {% if ns.real_count == 0 %}<p class="text-xs leading-5 text-gray-500">No real tracks have been added yet. Build the artist and release profile here to create the first one.</p>{% endif %}
     </div>
   </aside>
 </div>
 
 <script>
+  const fieldValue = (id) => (document.getElementById(id)?.value || '').trim();
+  const listValue = (id) => fieldValue(id).split(',').map(v => v.trim()).filter(Boolean);
+
+  function assetKind(file, artistLevel) {
+    const type = (file.type || '').toLowerCase();
+    const name = (file.name || '').toLowerCase();
+    if (type.startsWith('image/')) return artistLevel ? 'press_photo' : 'cover_art';
+    if (type.startsWith('audio/')) return 'master';
+    if (type.startsWith('video/')) return 'video';
+    if (name.endsWith('.pdf')) return artistLevel ? 'file' : 'file';
+    return 'file';
+  }
+
+  async function uploadFiles(inputId, artistLevel) {
+    const input = document.getElementById(inputId);
+    const files = Array.from(input?.files || []);
+    const uploaded = [];
+    for (const file of files) {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('kind', assetKind(file, artistLevel));
+      form.append('label', file.name.replace(/\.[^.]+$/, ''));
+      const response = await fetch('/vault/upload', { method: 'POST', body: form });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || `Could not upload ${file.name}`);
+      uploaded.push({ path: data.path, kind: assetKind(file, artistLevel), label: file.name });
+    }
+    return uploaded;
+  }
+
   document.getElementById('continue-release').addEventListener('click', async (event) => {
     const button = event.currentTarget;
-    const artist = document.getElementById('artist_name').value.trim();
-    const title = document.getElementById('track_title').value.trim();
+    const artist = fieldValue('artist_name');
+    const title = fieldValue('track_title');
     const error = document.getElementById('release-error');
+    const status = document.getElementById('upload-status');
     error.classList.add('hidden');
 
     if (!artist || !title) {
@@ -71,13 +147,65 @@
     }
 
     button.disabled = true;
-    const data = await reachPost('/reach/catalog', { artist_name: artist, title: title });
-    button.disabled = false;
-    if (data.ok) {
-      window.location = `/reach/new?recording_id=${encodeURIComponent(data.recording_id)}`;
-    } else {
-      error.textContent = data.error || 'Could not create this release.';
+    status.textContent = 'Saving profile and uploading selected assets…';
+    status.classList.remove('hidden');
+    try {
+      const artistAssets = await uploadFiles('artist_files', true);
+      const releaseAssets = await uploadFiles('release_files', false);
+      const payload = {
+        artist_name: artist,
+        title: title,
+        bio: fieldValue('bio'),
+        hometown: fieldValue('hometown'),
+        website: fieldValue('website'),
+        instagram_url: fieldValue('instagram_url'),
+        tiktok_url: fieldValue('tiktok_url'),
+        youtube_url: fieldValue('youtube_url'),
+        spotify_url: fieldValue('spotify_url'),
+        management_name: fieldValue('management_name'),
+        management_email: fieldValue('management_email'),
+        primary_genre: fieldValue('primary_genre'),
+        secondary_genres: listValue('secondary_genres'),
+        microgenres: listValue('microgenres'),
+        comparable_artists: listValue('comparable_artists'),
+        language: fieldValue('language'),
+        target_audiences: listValue('target_audiences'),
+        geographic_affinity: listValue('geographic_affinity'),
+        visual_identity: fieldValue('visual_identity'),
+        release_date: fieldValue('release_date'),
+        release_territory: fieldValue('release_territory'),
+        isrc: fieldValue('isrc'),
+        upc: fieldValue('upc'),
+        bpm: fieldValue('bpm'),
+        musical_key: fieldValue('musical_key'),
+        mood: listValue('mood'),
+        energy: fieldValue('energy'),
+        explicit: fieldValue('explicit'),
+        distributed: fieldValue('distributed'),
+        splits_confirmed: fieldValue('splits_confirmed'),
+        writers: listValue('writers'),
+        producers: listValue('producers'),
+        publisher: fieldValue('publisher'),
+        release_narrative: fieldValue('release_narrative'),
+        marketing_angle: fieldValue('marketing_angle'),
+        release_spotify_url: fieldValue('release_spotify_url'),
+        release_apple_url: fieldValue('release_apple_url'),
+        release_youtube_url: fieldValue('release_youtube_url'),
+        release_soundcloud_url: fieldValue('release_soundcloud_url'),
+        artist_assets: artistAssets,
+        release_assets: releaseAssets,
+      };
+      const data = await reachPost('/reach/catalog', payload);
+      if (data.ok) {
+        window.location = `/reach/new?recording_id=${encodeURIComponent(data.recording_id)}`;
+        return;
+      }
+      throw new Error(data.error || 'Could not create this release.');
+    } catch (err) {
+      error.textContent = err.message || 'Could not save this release.';
       error.classList.remove('hidden');
+      status.classList.add('hidden');
+      button.disabled = false;
     }
   });
 </script>
@@ -85,36 +213,23 @@
 {% else %}
 <section>
   <div class="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">Campaign setup / Step 2</div>
-  <h1 class="mt-2 text-2xl font-semibold tracking-tight">New campaign</h1>
+  <h1 class="mt-2 text-2xl font-semibold tracking-tight">Review the campaign profile.</h1>
   <p class="mt-1 text-sm text-gray-400">{{ recording.artist_name }} · {{ recording.title }}</p>
-  {% if recording.is_sample %}
-  <div class="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300">This is a demo/sample recording. Go back and choose or enter a real release before creating a live campaign.</div>
-  {% endif %}
+  <p class="mt-1 max-w-2xl text-xs leading-5 text-gray-500">Artist profile defaults are pre-filled below. Every box remains editable for this release.</p>
+  {% if recording.is_sample %}<div class="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300">This is a demo/sample recording. Go back and choose or enter a real release before creating a live campaign.</div>{% endif %}
 </section>
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-
   <div class="space-y-6 lg:col-span-2">
     <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
-      {{ ui.section('Track intelligence profile', 'Fields REACH cannot derive stay UNKNOWN. Discovery queries are built only from values you supply — nothing is guessed.') }}
-
-      <div class="mt-3 flex items-center gap-3">
-        <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5">
-          <div class="h-full rounded-full bg-amber-500 transition-all" id="profile-bar" style="width: {{ completeness.score }}%"></div>
-        </div>
-        <span class="shrink-0 text-xs tabular-nums text-gray-400"><span id="profile-pct">{{ completeness.score }}</span>% complete</span>
-      </div>
+      {{ ui.section('Artist + release intelligence', 'Inherited artist defaults and this song’s release data feed discovery and scoring. Unknown values stay UNKNOWN.') }}
+      <div class="mt-3 flex items-center gap-3"><div class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5"><div class="h-full rounded-full bg-amber-500 transition-all" id="profile-bar" style="width: {{ completeness.score }}%"></div></div><span class="shrink-0 text-xs tabular-nums text-gray-400"><span id="profile-pct">{{ completeness.score }}</span>% complete</span></div>
       <p class="mt-2 text-xs text-faint">Local audio analysis: {{ audio_state.state.replace('_', ' ') }} — {{ audio_state.detail }}</p>
-
       <div class="mt-4 space-y-2">
         {% for field in profile_fields %}
         <div class="grid grid-cols-1 gap-2 rounded-lg border border-white/[0.08] bg-white/5 px-3 py-2 sm:grid-cols-[200px_1fr_auto] sm:items-center">
-          <label class="text-xs font-semibold text-gray-300" for="pf-{{ field.field }}">
-            {{ field.label }}{% if field.required %}<span class="ml-1 text-amber-400">*</span>{% endif %}
-            {% if field.help %}<span class="mt-0.5 block font-normal text-[11px] text-faint">{{ field.help }}</span>{% endif %}
-          </label>
-          <input id="pf-{{ field.field }}" data-field="{{ field.field }}" value="{{ field.display if field.known else '' }}" placeholder="UNKNOWN"
-                 class="profile-input w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm text-gray-100 placeholder:text-faint focus:border-amber-500/50 focus:outline-none">
-          <span class="text-[10px] uppercase tracking-wide text-faint">{% if field.known %}{{ field.source }} · {{ (field.confidence * 100) | round | int }}%{% else %}UNKNOWN{% endif %}</span>
+          <label class="text-xs font-semibold text-gray-300" for="pf-{{ field.field }}">{{ field.label }}{% if field.required %}<span class="ml-1 text-amber-400">*</span>{% endif %}{% if field.help %}<span class="mt-0.5 block font-normal text-[11px] text-faint">{{ field.help }}</span>{% endif %}</label>
+          <input id="pf-{{ field.field }}" data-field="{{ field.field }}" value="{{ field.display if field.known else '' }}" placeholder="UNKNOWN" class="profile-input w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm text-gray-100 placeholder:text-faint focus:border-amber-500/50 focus:outline-none">
+          <span class="text-[10px] uppercase tracking-wide text-faint">{% if field.known %}{{ field.source.replace('_',' ') }} · {{ (field.confidence * 100) | round | int }}%{% else %}UNKNOWN{% endif %}</span>
         </div>
         {% endfor %}
       </div>
@@ -123,68 +238,29 @@
     <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
       {{ ui.section('Campaign settings') }}
       <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <label class="block">
-          <span class="text-xs font-semibold text-gray-300">Mode</span>
-          <select id="mode" class="mt-1 w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm">
-            {% for mode in modes %}<option value="{{ mode }}">{{ mode }}</option>{% endfor %}
-          </select>
-          <span class="mt-1 block text-[11px] text-faint">Scout researches only. Copilot adds drafts and approved sends. Autopilot is disabled in Phase One.</span>
-        </label>
-        <label class="block">
-          <span class="text-xs font-semibold text-gray-300">Territories</span>
-          <input id="territories" value="DE,GB,US" class="mt-1 w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm">
-          <span class="mt-1 block text-[11px] text-faint">Two-letter codes. Drives local-language query families.</span>
-        </label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Mode</span><select id="mode" class="mt-1 w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm">{% for mode in modes %}<option value="{{ mode }}">{{ mode }}</option>{% endfor %}</select><span class="mt-1 block text-[11px] text-faint">Scout researches only. Copilot adds drafts and approved sends.</span></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Territories</span><input id="territories" value="DE,GB,US" class="mt-1 w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm"><span class="mt-1 block text-[11px] text-faint">Two-letter codes. Drives local-language query families.</span></label>
         <label class="block"><span class="text-xs font-semibold text-gray-300">Search budget</span><input id="search_budget" type="number" value="24" class="mt-1 w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm"></label>
         <label class="block"><span class="text-xs font-semibold text-gray-300">Per-domain crawl budget</span><input id="domain_budget" type="number" value="8" class="mt-1 w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm"></label>
       </div>
-      <div class="mt-4">
-        <span class="text-xs font-semibold text-gray-300">Channels</span>
-        <div class="mt-2 flex flex-wrap gap-1.5">
-          {% for channel in channels %}
-          <label class="cursor-pointer rounded-md border border-white/10 px-2.5 py-1 text-[11px] font-semibold text-gray-400 has-[:checked]:border-amber-500/40 has-[:checked]:bg-amber-500/15 has-[:checked]:text-amber-400">
-            <input type="checkbox" class="channel-box sr-only" value="{{ channel }}" checked>{{ channel.replace('_',' ') }}
-          </label>
-          {% endfor %}
-        </div>
-      </div>
+      <div class="mt-4"><span class="text-xs font-semibold text-gray-300">Channels</span><div class="mt-2 flex flex-wrap gap-1.5">{% for channel in channels %}<label class="cursor-pointer rounded-md border border-white/10 px-2.5 py-1 text-[11px] font-semibold text-gray-400 has-[:checked]:border-amber-500/40 has-[:checked]:bg-amber-500/15 has-[:checked]:text-amber-400"><input type="checkbox" class="channel-box sr-only" value="{{ channel }}" checked>{{ channel.replace('_',' ') }}</label>{% endfor %}</div></div>
     </section>
   </div>
 
   <div class="space-y-6">
     <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
       {{ ui.section('Release identity') }}
-      <div class="mt-3 rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
-        <div class="text-sm font-semibold text-gray-100">{{ recording.title }}</div>
-        <div class="mt-0.5 text-xs text-gray-400">{{ recording.artist_name }}</div>
-      </div>
+      <div class="mt-3 rounded-lg border border-white/[0.08] bg-white/[0.03] p-3"><div class="text-sm font-semibold text-gray-100">{{ recording.title }}</div><div class="mt-0.5 text-xs text-gray-400">{{ recording.artist_name }}</div></div>
       <a href="{{ url_for('reach.new_campaign') }}" class="mt-3 inline-flex text-xs font-semibold text-amber-400 hover:underline">Change release</a>
-      <dl class="mt-4 space-y-1.5 text-xs">
-        {% for key, value in identifiers.items() if key != 'platform_assets' %}
-        <div class="flex justify-between gap-3"><dt class="text-gray-400">{{ key.replace('_',' ') }}</dt><dd class="truncate text-right {{ 'text-faint' if value is none else 'text-gray-200' }}">{% if value is not none %}{{ value }}{% else %}{{ ui.unknown() }}{% endif %}</dd></div>
-        {% endfor %}
-      </dl>
+      <dl class="mt-4 space-y-1.5 text-xs">{% for key, value in identifiers.items() if key != 'platform_assets' %}<div class="flex justify-between gap-3"><dt class="text-gray-400">{{ key.replace('_',' ') }}</dt><dd class="truncate text-right {{ 'text-faint' if value is none else 'text-gray-200' }}">{% if value is not none %}{{ value }}{% else %}{{ ui.unknown() }}{% endif %}</dd></div>{% endfor %}</dl>
+      {% if identifiers.platform_assets %}<div class="mt-4 border-t border-white/[0.08] pt-3"><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Saved assets + links</div><div class="mt-2 space-y-1">{% for asset in identifiers.platform_assets %}<div class="truncate text-xs text-gray-400">{{ asset.provider.replace('reach_upload:','').replace('_',' ') }} · {{ asset.external_id or asset.url }}</div>{% endfor %}</div></div>{% endif %}
     </section>
 
-    <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
-      {{ ui.section('Release readiness', 'Each item states what it gates.') }}
-      <div class="mt-3 space-y-2">
-        {% for check in readiness.checks %}
-        <div class="flex items-start gap-2"><span class="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border text-[9px] font-bold {{ 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' if check.ok else 'border-amber-500/40 bg-amber-500/10 text-amber-400' }}">{{ '✓' if check.ok else '!' }}</span><span class="min-w-0"><span class="block text-xs font-semibold {{ 'text-gray-300' if check.ok else 'text-amber-300' }}">{{ check.label }}</span>{% if not check.ok %}<span class="block text-[11px] text-faint">{{ check.consequence }}</span>{% endif %}</span></div>
-        {% endfor %}
-      </div>
-    </section>
+    <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">{{ ui.section('Release readiness', 'Each item states what it gates.') }}<div class="mt-3 space-y-2">{% for check in readiness.checks %}<div class="flex items-start gap-2"><span class="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border text-[9px] font-bold {{ 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' if check.ok else 'border-amber-500/40 bg-amber-500/10 text-amber-400' }}">{{ '✓' if check.ok else '!' }}</span><span class="min-w-0"><span class="block text-xs font-semibold {{ 'text-gray-300' if check.ok else 'text-amber-300' }}">{{ check.label }}</span>{% if not check.ok %}<span class="block text-[11px] text-faint">{{ check.consequence }}</span>{% endif %}</span></div>{% endfor %}</div></section>
 
-    <section class="rounded-xl border {{ 'border-emerald-500/20' if attestation else 'border-amber-500/25' }} bg-[#111113] p-5">
-      {{ ui.section('Rights attestation') }}
-      {% if attestation %}<p class="mt-2 text-xs text-emerald-400">Recorded {{ attestation.attested_at[:10] }} by {{ attestation.attested_by }}.</p>{% else %}
-      <p class="mt-2 text-[11px] leading-relaxed text-gray-400">{{ attestation_statement }}</p>
-      <button type="button" data-post="{{ url_for('reach.attest', recording_id=recording.id) }}" data-success="Rights attestation recorded" class="mt-3 w-full rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-400 transition-colors hover:bg-amber-500/20">I confirm these rights</button>
-      {% endif %}
-    </section>
+    <section class="rounded-xl border {{ 'border-emerald-500/20' if attestation else 'border-amber-500/25' }} bg-[#111113] p-5">{{ ui.section('Rights attestation') }}{% if attestation %}<p class="mt-2 text-xs text-emerald-400">Recorded {{ attestation.attested_at[:10] }} by {{ attestation.attested_by }}.</p>{% else %}<p class="mt-2 text-[11px] leading-relaxed text-gray-400">{{ attestation_statement }}</p><button type="button" data-post="{{ url_for('reach.attest', recording_id=recording.id) }}" data-success="Rights attestation recorded" class="mt-3 w-full rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-400 transition-colors hover:bg-amber-500/20">I confirm these rights</button>{% endif %}</section>
 
-    <button type="button" id="create-campaign" {% if recording.is_sample %}disabled{% endif %}
-            class="w-full rounded-md border border-amber-500/40 bg-amber-500/15 px-3 py-2.5 text-sm font-semibold text-amber-300 transition-colors hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-40">Create REACH campaign</button>
+    <button type="button" id="create-campaign" {% if recording.is_sample %}disabled{% endif %} class="w-full rounded-md border border-amber-500/40 bg-amber-500/15 px-3 py-2.5 text-sm font-semibold text-amber-300 transition-colors hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-40">Create REACH campaign</button>
     <p id="create-error" class="hidden text-xs text-red-400"></p>
   </div>
 </div>
@@ -192,7 +268,6 @@
 <script>
   const profileId = {{ profile_id | tojson }};
   const recordingId = {{ recording.id | tojson }};
-
   document.querySelectorAll('.profile-input').forEach((input) => {
     input.addEventListener('change', async () => {
       const data = await reachPost(`/reach/profile/${profileId}/field`, { field: input.dataset.field, value: input.value });
@@ -202,27 +277,15 @@
       }
     });
   });
-
   const createButton = document.getElementById('create-campaign');
   if (createButton) createButton.addEventListener('click', async (event) => {
     const button = event.currentTarget;
     button.disabled = true;
     const channels = Array.from(document.querySelectorAll('.channel-box:checked')).map((box) => box.value);
-    const data = await reachPost('/reach/campaigns', {
-      recording_id: recordingId,
-      mode: document.getElementById('mode').value,
-      territories: document.getElementById('territories').value,
-      channels: channels,
-      search_budget: document.getElementById('search_budget').value,
-      domain_budget: document.getElementById('domain_budget').value,
-    });
+    const data = await reachPost('/reach/campaigns', { recording_id: recordingId, mode: document.getElementById('mode').value, territories: document.getElementById('territories').value, channels: channels, search_budget: document.getElementById('search_budget').value, domain_budget: document.getElementById('domain_budget').value });
     button.disabled = false;
     if (data.ok) { window.location = data.url; }
-    else {
-      const error = document.getElementById('create-error');
-      error.textContent = data.error;
-      error.classList.remove('hidden');
-    }
+    else { const error = document.getElementById('create-error'); error.textContent = data.error; error.classList.remove('hidden'); }
   });
 </script>
 {% endif %}
