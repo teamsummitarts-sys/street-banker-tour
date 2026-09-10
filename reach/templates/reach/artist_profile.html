@@ -73,7 +73,8 @@
       <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label class="block sm:col-span-2">
           <span class="text-xs font-semibold text-gray-300">Artist name</span>
-          <input value="{{ artist_profile.artist_name }}" disabled class="mt-1.5 w-full rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 py-2.5 text-sm text-gray-400">
+          <input id="artist_name" value="{{ artist_profile.artist_name }}" required autocomplete="off" class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm text-gray-100 focus:border-amber-500/50 focus:outline-none">
+          <span class="mt-1.5 block text-[11px] leading-5 text-gray-500">Editable at any time. Renaming changes this primary artist across their REACH releases; featured-artist credits stay attached only to the releases where you added them.</span>
         </label>
         <label class="block sm:col-span-2">
           <span class="text-xs font-semibold text-gray-300">Bio</span>
@@ -164,7 +165,7 @@
     </section>
 
     <div class="flex flex-col gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/[0.045] p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div><div class="text-sm font-semibold text-white">Save changes to {{ artist_profile.artist_name }}</div><div class="mt-0.5 text-xs text-gray-400">These become the defaults Reach offers on future campaigns.</div></div>
+      <div><div class="text-sm font-semibold text-white">Save artist changes</div><div class="mt-0.5 text-xs text-gray-400">Name changes and profile defaults take effect after you save.</div></div>
       <button type="button" id="save-profile" class="shrink-0 rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-black hover:bg-amber-400">Save artist profile</button>
     </div>
     <p id="profile-error" class="hidden text-sm text-red-400"></p>
@@ -199,7 +200,9 @@
         {% for release in artist_profile.releases[:6] %}
         <a href="{{ url_for('reach.new_campaign', recording_id=release.id) }}" class="block rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-3 hover:border-amber-500/25">
           <div class="truncate text-sm font-semibold text-gray-200">{{ release.title }}</div>
+          <div class="mt-1 text-[11px] text-gray-500">{{ artist_profile.artist_name }}{% if release.featured_artists %} feat. {{ release.featured_artists | join(', ') }}{% endif %}</div>
           <div class="mt-1 text-[11px] text-gray-500">{{ release.release_date or 'Release date not set' }}{% if release.isrc %} · {{ release.isrc }}{% endif %}</div>
+          <div class="mt-2 text-[11px] font-semibold text-amber-400">Edit release / campaign →</div>
         </a>
         {% endfor %}
       </div>
@@ -240,10 +243,16 @@
     const button = event.currentTarget;
     const error = document.getElementById('profile-error');
     error.classList.add('hidden');
+    const artistName = valueOf('artist_name');
+    if (!artistName) {
+      error.textContent = 'Artist name is required.';
+      error.classList.remove('hidden');
+      return;
+    }
     button.disabled = true;
     button.textContent = 'Saving…';
     try {
-      const payload = { artist_id: profileArtistId };
+      const payload = { artist_id: profileArtistId, artist_name: artistName };
       textFields.forEach(id => { payload[id] = valueOf(id); });
       scalarDefaults.forEach(id => { payload[id] = valueOf(id); });
       listDefaults.forEach(id => { payload[id] = listOf(id); });
