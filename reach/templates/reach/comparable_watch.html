@@ -1,0 +1,77 @@
+{% macro comparable_watch_panel(watch, watch_artists, watch_artist_id, campaigns_for_watch) %}
+<section class="mb-4 rounded-2xl border border-white/[0.08] bg-[#0d1417] p-4 sm:p-5" aria-labelledby="comparable-watch-title">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <div class="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-400">Radar signal</div>
+      <h2 id="comparable-watch-title" class="mt-1 text-xl font-semibold tracking-tight text-white">Comparable Artist Watch</h2>
+      <p class="mt-1 max-w-2xl text-sm text-gray-400">See newly surfaced outlets around artists your audience already overlaps with. Search results are signals until REACH verifies the outlet.</p>
+    </div>
+    {% if watch_artists %}
+    <form method="get" class="shrink-0">
+      <label class="sr-only" for="watch-artist">Artist profile</label>
+      <select id="watch-artist" name="artist_id" onchange="this.form.submit()" class="rounded-lg border border-white/10 bg-[#11191d] px-3 py-2 text-xs text-gray-200">
+        {% for artist in watch_artists %}<option value="{{ artist.id }}" {% if artist.id == watch_artist_id %}selected{% endif %}>{{ artist.name }}</option>{% endfor %}
+      </select>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if not watch_artists %}
+    <div class="mt-4 rounded-xl border border-dashed border-white/10 p-5 text-sm text-gray-400">Create an Artist Profile, then add a few comparable artists. <a href="{{ url_for('reach.artist_profile_page') }}" class="font-semibold text-amber-400">Open Artist Profile →</a></div>
+  {% elif not watch.comparables %}
+    <div class="mt-4 rounded-xl border border-dashed border-white/10 p-5 text-sm text-gray-400">Add 3–5 comparable artists to this Artist Profile to start the watch. <a href="{{ url_for('reach.artist_profile_page', artist_id=watch_artist_id) }}" class="font-semibold text-amber-400">Add comparable artists →</a></div>
+  {% else %}
+    <div class="mt-4 flex flex-wrap items-center gap-2">
+      {% for name in watch.comparables %}<span class="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] font-semibold text-gray-300">{{ name }}</span>{% endfor %}
+      <span class="ml-auto text-[11px] text-gray-500">{% if watch.latest %}Last checked {{ watch.latest.finished_at[:10] if watch.latest.finished_at else watch.latest.created_at[:10] }}{% else %}Not checked yet{% endif %}</span>
+    </div>
+
+    <div class="mt-4 flex flex-wrap items-center gap-2">
+      {% if watch.provider_live %}
+      <form method="post" action="{{ url_for('reach.comparable_watch_run') }}">
+        <input type="hidden" name="artist_id" value="{{ watch_artist_id }}">
+        <button type="submit" class="rounded-lg bg-amber-400 px-3.5 py-2 text-xs font-bold text-black hover:bg-amber-300">{{ 'Run weekly check' if watch.due else 'Refresh watch' }}</button>
+      </form>
+      {% else %}<span class="rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-3 py-2 text-xs text-amber-300">Live search connection required</span>{% endif %}
+      <a href="{{ url_for('reach.artist_profile_page', artist_id=watch_artist_id) }}" class="rounded-lg border border-white/10 px-3.5 py-2 text-xs font-semibold text-gray-300">Edit comparable artists</a>
+    </div>
+
+    {% if request.args.get('watch') == 'complete' %}<div class="mt-3 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2 text-xs text-emerald-300">Comparable Artist Watch updated.</div>{% endif %}
+    {% if request.args.get('watch_error') %}<div class="mt-3 rounded-lg border border-red-500/20 bg-red-500/[0.06] px-3 py-2 text-xs text-red-300">{{ request.args.get('watch_error') }}</div>{% endif %}
+
+    {% if watch.new %}
+      <div class="mt-5 flex items-center justify-between gap-3"><div><div class="text-sm font-semibold text-white">New since the latest check</div><div class="text-xs text-gray-500">{{ watch.new|length }} source signal{{ '' if watch.new|length == 1 else 's' }}</div></div><span class="rounded-full border border-amber-500/25 bg-amber-500/[0.08] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-300">New</span></div>
+      <div class="mt-2 divide-y divide-white/[0.06] overflow-hidden rounded-xl border border-white/[0.08]">
+      {% for signal in watch.new[:12] %}
+        <article class="bg-[#101719] p-3.5">
+          <div class="flex items-start gap-3">
+            <div class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/10 bg-[#090d0f] text-[10px] font-black text-amber-400">{{ (signal.source_domain or 'R')[:2]|upper }}</div>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2"><a href="{{ signal.source_url }}" target="_blank" rel="noopener noreferrer" class="truncate text-sm font-semibold text-gray-100 hover:text-white">{{ signal.title or signal.source_domain }}</a><span class="rounded-full border border-white/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gray-400">{{ 'Pickup signal' if signal.signal_kind == 'PICKUP_SIGNAL' else 'Coverage signal' }}</span></div>
+              <div class="mt-1 text-[11px] text-gray-500">Triggered by <span class="text-gray-300">{{ signal.comparable_artist }}</span>{% if signal.source_domain %} · {{ signal.source_domain }}{% endif %}</div>
+              {% if signal.snippet %}<p class="mt-1.5 line-clamp-2 text-xs leading-relaxed text-gray-400">{{ signal.snippet }}</p>{% endif %}
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <a href="{{ signal.source_url }}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] font-semibold text-gray-300">Research source</a>
+                {% if campaigns_for_watch %}
+                <form method="post" action="{{ url_for('reach.comparable_watch_promote', signal_id=signal.id) }}" class="flex items-center gap-1.5">
+                  <select name="campaign_id" class="max-w-[170px] rounded-lg border border-white/10 bg-[#0a1012] px-2 py-1.5 text-[11px] text-gray-300">{% for c in campaigns_for_watch %}<option value="{{ c.id }}">{{ c.recording_title or c.name }}</option>{% endfor %}</select>
+                  <button type="submit" class="rounded-lg border border-amber-500/35 bg-amber-500/[0.08] px-2.5 py-1.5 text-[11px] font-semibold text-amber-300">Add to campaign</button>
+                </form>
+                {% else %}<a href="{{ url_for('reach.new_campaign') }}" class="rounded-lg border border-amber-500/35 bg-amber-500/[0.08] px-2.5 py-1.5 text-[11px] font-semibold text-amber-300">Start campaign</a>{% endif %}
+                <form method="post" action="{{ url_for('reach.comparable_watch_dismiss', signal_id=signal.id) }}"><button type="submit" class="px-2 py-1.5 text-[11px] font-semibold text-gray-500">Pass</button></form>
+              </div>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+      </div>
+    {% elif watch.latest %}
+      <div class="mt-5 rounded-xl border border-white/[0.08] bg-[#101719] p-4"><div class="text-sm font-semibold text-gray-100">No new outlet signals in the latest check.</div><p class="mt-1 text-xs text-gray-500">Older sources remain below so you can revisit them without Reach pretending they are new.</p></div>
+    {% endif %}
+
+    {% if watch.all %}
+    <details class="mt-4"><summary class="cursor-pointer text-xs font-semibold text-gray-400">Previous signals ({{ watch.all|length }})</summary><div class="mt-2 grid gap-2 sm:grid-cols-2">{% for signal in watch.all[:20] %}<a href="{{ signal.source_url }}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><div class="truncate text-xs font-semibold text-gray-200">{{ signal.title or signal.source_domain }}</div><div class="mt-1 text-[10px] text-gray-500">{{ signal.comparable_artist }} · first seen {{ signal.first_seen_at[:10] }}</div></a>{% endfor %}</div></details>
+    {% endif %}
+  {% endif %}
+</section>
+{% endmacro %}
