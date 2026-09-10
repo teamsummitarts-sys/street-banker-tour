@@ -1,0 +1,264 @@
+{% extends "reach/_layout.html" %}
+{% import "reach/_layout.html" as ui with context %}
+
+{% block title %}REACH — Artist Profile{% endblock %}
+
+{% block reach_content %}
+<section class="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#101012] p-5 sm:p-7">
+  <div class="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-amber-500/[0.06] blur-3xl"></div>
+  <div class="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+      <div class="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-400">Artist profile</div>
+      <h1 class="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+        {% if artist_profile %}{{ artist_profile.artist_name }}{% else %}Build your artist once.{% endif %}
+      </h1>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-400">
+        Your reusable source of truth for every REACH campaign. Save the artist information once; each release can still override anything it needs.
+      </p>
+    </div>
+    {% if artist_profile %}
+    <div class="flex flex-wrap gap-2">
+      <a href="{{ url_for('reach.new_campaign') }}" class="inline-flex items-center rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-bold text-black hover:bg-amber-400">Create campaign</a>
+      <a href="{{ url_for('reach.catalog_view') }}" class="inline-flex items-center rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-gray-200 hover:bg-white/[0.06]">Music</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% if saved %}
+<div class="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.08] px-4 py-3 text-sm text-emerald-300">Artist profile saved. Future releases for this artist can use these defaults automatically.</div>
+{% endif %}
+
+{% if not artist_profile %}
+<section class="mx-auto max-w-2xl rounded-2xl border border-white/[0.08] bg-[#111113] p-6 sm:p-8">
+  <div class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">First profile</div>
+  <h2 class="mt-2 text-2xl font-bold tracking-tight text-white">Add your artist.</h2>
+  <p class="mt-2 text-sm leading-6 text-gray-400">You do not need an EPK, a release, or another Street Banker tool to start. An artist name is enough; everything else can be completed later.</p>
+  <form method="post" class="mt-6">
+    <label class="block">
+      <span class="text-xs font-semibold text-gray-300">Artist name</span>
+      <input name="artist_name" required autocomplete="off" placeholder="Enter artist name" class="mt-2 w-full rounded-xl border border-white/10 bg-[#090909] px-4 py-3.5 text-base text-white placeholder:text-gray-600 focus:border-amber-500/50 focus:outline-none">
+    </label>
+    <button class="mt-4 w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-black hover:bg-amber-400 sm:w-auto">Create artist profile</button>
+  </form>
+  <div class="mt-8 border-t border-white/[0.08] pt-6">
+    <div class="text-xs font-semibold text-gray-300">Already have release information?</div>
+    <a href="{{ url_for('reach.new_campaign') }}" class="mt-2 inline-flex text-sm font-semibold text-amber-400 hover:text-amber-300">Build the artist while creating a campaign →</a>
+  </div>
+</section>
+{% else %}
+
+{% if artists|length > 1 %}
+<section class="flex items-center gap-3 overflow-x-auto rounded-xl border border-white/[0.08] bg-[#111113] p-2">
+  {% for item in artists %}
+  <a href="{{ url_for('reach.artist_profile_page', artist_id=item.id) }}" class="shrink-0 rounded-lg px-3 py-2 text-sm font-semibold {{ 'bg-white/[0.07] text-white' if item.id == artist_profile.artist_id else 'text-gray-400 hover:bg-white/[0.04] hover:text-gray-200' }}">{{ item.name }}</a>
+  {% endfor %}
+  <a href="{{ url_for('reach.artist_profile_page', new='1') }}" class="ml-auto shrink-0 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-gray-400">+ Artist</a>
+</section>
+{% endif %}
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+  <div class="space-y-6">
+    <section class="rounded-2xl border border-white/[0.08] bg-[#111113] p-5 sm:p-6">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          {{ ui.section('Identity & positioning', 'These values can auto-fill every future release for this artist.') }}
+        </div>
+        <div class="hidden shrink-0 text-right sm:block">
+          <div class="text-xl font-bold tabular-nums text-white">{{ artist_profile.known_fields }}</div>
+          <div class="text-[10px] uppercase tracking-[0.16em] text-gray-500">saved fields</div>
+        </div>
+      </div>
+
+      <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label class="block sm:col-span-2">
+          <span class="text-xs font-semibold text-gray-300">Artist name</span>
+          <input value="{{ artist_profile.artist_name }}" disabled class="mt-1.5 w-full rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 py-2.5 text-sm text-gray-400">
+        </label>
+        <label class="block sm:col-span-2">
+          <span class="text-xs font-semibold text-gray-300">Bio</span>
+          <textarea id="bio" rows="5" placeholder="Short artist biography, positioning and story" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm leading-6 text-gray-100 placeholder:text-gray-600 focus:border-amber-500/50 focus:outline-none">{{ artist_profile.profile.get('bio','') }}</textarea>
+        </label>
+        <label class="block">
+          <span class="text-xs font-semibold text-gray-300">Primary genre</span>
+          <input id="primary_genre" value="{{ artist_profile.defaults.get('primary_genre','') }}" placeholder="Alternative, R&B, electronic…" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm">
+        </label>
+        <label class="block">
+          <span class="text-xs font-semibold text-gray-300">Secondary genres</span>
+          <input id="secondary_genres" value="{{ (artist_profile.defaults.get('secondary_genres') or []) | join(', ') }}" placeholder="Comma separated" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm">
+        </label>
+        <label class="block">
+          <span class="text-xs font-semibold text-gray-300">Microgenres</span>
+          <input id="microgenres" value="{{ (artist_profile.defaults.get('microgenres') or []) | join(', ') }}" placeholder="Comma separated" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm">
+        </label>
+        <label class="block">
+          <span class="text-xs font-semibold text-gray-300">Comparable artists</span>
+          <input id="comparable_artists" value="{{ (artist_profile.defaults.get('comparable_artists') or []) | join(', ') }}" placeholder="Comma separated" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm">
+        </label>
+        <label class="block">
+          <span class="text-xs font-semibold text-gray-300">Hometown / scene</span>
+          <input id="hometown" value="{{ artist_profile.profile.get('hometown','') }}" placeholder="Charlotte, NC" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm">
+        </label>
+        <label class="block">
+          <span class="text-xs font-semibold text-gray-300">Language</span>
+          <input id="language" value="{{ artist_profile.defaults.get('language','') }}" placeholder="English" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm">
+        </label>
+        <label class="block sm:col-span-2">
+          <span class="text-xs font-semibold text-gray-300">Visual identity</span>
+          <input id="visual_identity" value="{{ artist_profile.defaults.get('visual_identity','') }}" placeholder="Dark editorial, cinematic, DIY punk…" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm">
+        </label>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-white/[0.08] bg-[#111113] p-5 sm:p-6">
+      {{ ui.section('Audience & market', 'Used as starting context for matching. A release can override these values at any time.') }}
+      <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label class="block sm:col-span-2">
+          <span class="text-xs font-semibold text-gray-300">Target audiences</span>
+          <input id="target_audiences" value="{{ (artist_profile.defaults.get('target_audiences') or []) | join(', ') }}" placeholder="College radio listeners, alt-pop fans…" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm">
+        </label>
+        <label class="block sm:col-span-2">
+          <span class="text-xs font-semibold text-gray-300">Geographic affinity</span>
+          <input id="geographic_affinity" value="{{ (artist_profile.defaults.get('geographic_affinity') or []) | join(', ') }}" placeholder="US Southeast, UK, Germany…" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm">
+        </label>
+        <label class="block">
+          <span class="text-xs font-semibold text-gray-300">Cultural scene</span>
+          <input id="cultural_scene" value="{{ artist_profile.defaults.get('cultural_scene','') }}" placeholder="DIY, club, indie, regional scene…" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm">
+        </label>
+        <label class="block">
+          <span class="text-xs font-semibold text-gray-300">Live relevance</span>
+          <input id="live_relevance" value="{{ artist_profile.defaults.get('live_relevance','') }}" placeholder="Touring, festivals, club set…" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm">
+        </label>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-white/[0.08] bg-[#111113] p-5 sm:p-6">
+      {{ ui.section('Links & contacts', 'Saved once. Reach can pull these into campaign materials when relevant.') }}
+      <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Website</span><input id="website" type="url" value="{{ artist_profile.profile.get('website','') }}" placeholder="https://" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Spotify artist</span><input id="spotify_url" type="url" value="{{ artist_profile.profile.get('spotify_url','') }}" placeholder="https://" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Instagram</span><input id="instagram_url" type="url" value="{{ artist_profile.profile.get('instagram_url','') }}" placeholder="https://" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">TikTok</span><input id="tiktok_url" type="url" value="{{ artist_profile.profile.get('tiktok_url','') }}" placeholder="https://" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">YouTube</span><input id="youtube_url" type="url" value="{{ artist_profile.profile.get('youtube_url','') }}" placeholder="https://" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Management / contact name</span><input id="management_name" value="{{ artist_profile.profile.get('management_name','') }}" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm"></label>
+        <label class="block sm:col-span-2"><span class="text-xs font-semibold text-gray-300">Management / contact email</span><input id="management_email" type="email" value="{{ artist_profile.profile.get('management_email','') }}" class="profile-field mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm"></label>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-white/[0.08] bg-[#111113] p-5 sm:p-6">
+      {{ ui.section('Media library', 'Reusable press photos, logos and EPK files. Upload here or use the Street Banker Vault if you prefer.') }}
+      {% if artist_profile.assets %}
+      <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {% for asset in artist_profile.assets %}
+        <div class="flex min-w-0 items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-3">
+          <div class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/[0.05] text-[10px] font-bold uppercase text-amber-400">{{ (asset.kind or 'file')[:3] }}</div>
+          <div class="min-w-0"><div class="truncate text-sm font-semibold text-gray-200">{{ asset.label or 'Artist asset' }}</div><div class="text-[11px] text-gray-500">{{ (asset.kind or 'file').replace('_',' ') }}</div></div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="mt-4 rounded-xl border border-dashed border-white/15 bg-[#0d0d0f] p-4">
+        <input id="artist_files" type="file" multiple accept="image/*,.pdf" class="block w-full text-xs text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-500/15 file:px-3 file:py-2 file:font-semibold file:text-amber-300">
+        <p class="mt-2 text-[11px] leading-5 text-gray-500">Images and PDFs are optional. You can create campaigns without uploading any media.</p>
+      </div>
+    </section>
+
+    <div class="flex flex-col gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/[0.045] p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div><div class="text-sm font-semibold text-white">Save changes to {{ artist_profile.artist_name }}</div><div class="mt-0.5 text-xs text-gray-400">These become the defaults Reach offers on future campaigns.</div></div>
+      <button type="button" id="save-profile" class="shrink-0 rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-black hover:bg-amber-400">Save artist profile</button>
+    </div>
+    <p id="profile-error" class="hidden text-sm text-red-400"></p>
+  </div>
+
+  <aside class="space-y-6">
+    <section class="rounded-2xl border border-white/[0.08] bg-[#111113] p-5">
+      <div class="flex items-center gap-4">
+        <div class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-amber-500/20 bg-amber-500/[0.08] text-xl font-bold text-amber-400">{{ artist_profile.artist_name[:1]|upper }}</div>
+        <div class="min-w-0"><div class="truncate text-lg font-bold text-white">{{ artist_profile.artist_name }}</div><div class="mt-0.5 text-xs text-gray-400">{{ artist_profile.releases|length }} release{{ '' if artist_profile.releases|length == 1 else 's' }} in Reach</div></div>
+      </div>
+      <div class="mt-5 border-t border-white/[0.08] pt-4">
+        <div class="flex items-baseline justify-between"><span class="text-xs font-semibold text-gray-300">Profile information</span><span class="text-xs tabular-nums text-gray-400">{{ artist_profile.known_fields }} saved</span></div>
+        <p class="mt-2 text-[11px] leading-5 text-gray-500">There is no required completion score. Add only what helps Reach match and pitch this artist accurately.</p>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-white/[0.08] bg-[#111113] p-5">
+      {{ ui.section('Optional Street Banker tools', 'Use them when useful. Reach does not require them.') }}
+      <div class="mt-4 space-y-2">
+        <a href="/epk" target="_blank" rel="noopener" class="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-3 text-sm font-semibold text-gray-200 hover:border-amber-500/25"><span>Build an EPK</span><span class="text-amber-400">↗</span></a>
+        <a href="/artwork" target="_blank" rel="noopener" class="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-3 text-sm font-semibold text-gray-200 hover:border-amber-500/25"><span>Create artwork</span><span class="text-amber-400">↗</span></a>
+        <a href="/vault" target="_blank" rel="noopener" class="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-3 text-sm font-semibold text-gray-200 hover:border-amber-500/25"><span>Open Vault</span><span class="text-amber-400">↗</span></a>
+        <a href="/metadata" target="_blank" rel="noopener" class="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-3 text-sm font-semibold text-gray-200 hover:border-amber-500/25"><span>Metadata Passport</span><span class="text-amber-400">↗</span></a>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-white/[0.08] bg-[#111113] p-5">
+      {{ ui.section('Releases') }}
+      {% if artist_profile.releases %}
+      <div class="mt-3 space-y-2">
+        {% for release in artist_profile.releases[:6] %}
+        <a href="{{ url_for('reach.new_campaign', recording_id=release.id) }}" class="block rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-3 hover:border-amber-500/25">
+          <div class="truncate text-sm font-semibold text-gray-200">{{ release.title }}</div>
+          <div class="mt-1 text-[11px] text-gray-500">{{ release.release_date or 'Release date not set' }}{% if release.isrc %} · {{ release.isrc }}{% endif %}</div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="mt-3 text-xs leading-5 text-gray-500">No release yet. The artist profile can exist before the first campaign.</p>
+      <a href="{{ url_for('reach.new_campaign') }}" class="mt-3 inline-flex text-xs font-semibold text-amber-400">Add first release →</a>
+      {% endif %}
+    </section>
+  </aside>
+</div>
+
+<script>
+  const profileArtistId = {{ artist_profile.artist_id | tojson }};
+  const textFields = ['bio','hometown','website','instagram_url','tiktok_url','youtube_url','spotify_url','management_name','management_email'];
+  const scalarDefaults = ['primary_genre','language','visual_identity','cultural_scene','live_relevance'];
+  const listDefaults = ['secondary_genres','microgenres','comparable_artists','target_audiences','geographic_affinity'];
+  const valueOf = (id) => (document.getElementById(id)?.value || '').trim();
+  const listOf = (id) => valueOf(id).split(',').map(v => v.trim()).filter(Boolean);
+
+  async function uploadArtistFiles() {
+    const files = Array.from(document.getElementById('artist_files')?.files || []);
+    const uploaded = [];
+    for (const file of files) {
+      const form = new FormData();
+      const kind = (file.type || '').startsWith('image/') ? 'press_photo' : 'file';
+      form.append('file', file);
+      form.append('kind', kind);
+      form.append('label', file.name.replace(/\.[^.]+$/, ''));
+      const response = await fetch('/vault/upload', { method: 'POST', body: form });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || `Could not upload ${file.name}`);
+      uploaded.push({ path: data.path, kind: kind, label: file.name });
+    }
+    return uploaded;
+  }
+
+  document.getElementById('save-profile')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const error = document.getElementById('profile-error');
+    error.classList.add('hidden');
+    button.disabled = true;
+    button.textContent = 'Saving…';
+    try {
+      const payload = { artist_id: profileArtistId };
+      textFields.forEach(id => { payload[id] = valueOf(id); });
+      scalarDefaults.forEach(id => { payload[id] = valueOf(id); });
+      listDefaults.forEach(id => { payload[id] = listOf(id); });
+      payload.artist_assets = await uploadArtistFiles();
+      const data = await reachPost('{{ url_for('reach.artist_profile_page') }}', payload);
+      if (!data.ok) throw new Error(data.error || 'Could not save artist profile.');
+      reachToast('Artist profile saved', true);
+      setTimeout(() => window.location = '{{ url_for('reach.artist_profile_page', artist_id=artist_profile.artist_id, saved='1') }}', 450);
+    } catch (err) {
+      error.textContent = err.message || 'Could not save artist profile.';
+      error.classList.remove('hidden');
+      button.disabled = false;
+      button.textContent = 'Save artist profile';
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}
