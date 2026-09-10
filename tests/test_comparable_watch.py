@@ -135,5 +135,8 @@ def test_watch_signal_promotes_only_as_discovered(monkeypatch):
         signal = comparable_watch.signals(artist_id)[0]
         target_id = comparable_watch.promote(signal["id"], campaign_id)
         target = db.query_one("SELECT * FROM campaign_target WHERE id = ?", (target_id,))
+        promoted = db.query_one("SELECT * FROM comparable_watch_signal WHERE id = ?", (signal["id"],))
         assert target["status"] == campaigns.DISCOVERED
         assert "Comparable artist signal" in (target["status_reason"] or "")
+        assert promoted["state"] == comparable_watch.PROMOTED
+        assert promoted["target_id"] == target_id
