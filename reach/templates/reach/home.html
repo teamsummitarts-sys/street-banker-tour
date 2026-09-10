@@ -6,245 +6,142 @@
 {% block reach_content %}
 {% set account_initial = 'R' if not principal_name or principal_name == 'there' else principal_name[:1]|upper %}
 {% set readiness = ((onboarding.done_count * 100) / onboarding.total)|round|int if onboarding and onboarding.total else 0 %}
-<style>
-  body:has(.reach-v3-home) > header { display:none; }
-  body:has(.reach-v3-home) > nav[aria-label="Primary"] { display:none; }
-  body:has(.reach-v3-home) #main { max-width:none; margin:0; padding:0; }
-  .reach-v3-home { min-height:100vh; background:#090d0f; color:#f4f1e9; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-  .rv-shell { display:grid; grid-template-columns:218px minmax(0,1fr); min-height:100vh; }
-  .rv-sidebar { position:sticky; top:0; height:100vh; padding:25px 17px 20px; border-right:1px solid rgba(255,255,255,.075); background:linear-gradient(180deg,#0b1114 0%,#080b0d 100%); display:flex; flex-direction:column; z-index:20; }
-  .rv-brand { display:flex; align-items:flex-start; gap:9px; text-decoration:none; }
-  .rv-brand img { width:134px; height:auto; display:block; }
-  .rv-brand small { display:block; margin-top:3px; color:#8c9297; font-size:9px; letter-spacing:.08em; }
-  .rv-side-nav { display:grid; gap:5px; margin-top:31px; }
-  .rv-side-link { display:flex; align-items:center; gap:11px; min-height:43px; padding:0 12px; border-radius:9px; text-decoration:none; color:#9aa1a6; font-size:12px; font-weight:700; }
-  .rv-side-link svg { width:18px; height:18px; flex:none; }
-  .rv-side-link:hover { background:rgba(255,255,255,.035); color:#fff; }
-  .rv-side-link.active { color:#fff; background:linear-gradient(90deg,rgba(238,181,76,.15),rgba(255,255,255,.02)); box-shadow:inset 3px 0 0 #efb64f; border:1px solid rgba(239,182,79,.13); }
-  .rv-divider { height:1px; margin:17px 8px; background:rgba(255,255,255,.07); }
-  .rv-side-footer { margin-top:auto; padding:0 8px; }
-  .rv-side-footer p { color:#ae9364; font-size:10px; line-height:1.75; letter-spacing:.14em; text-transform:uppercase; }
-  .rv-powered { margin-top:18px; color:#858c91; font-size:9px; letter-spacing:.15em; text-transform:uppercase; }
+<link rel="stylesheet" href="{{ url_for('reach.static', filename='dashboard-v4.css') }}?v={{ reach_version }}">
+<!-- Legacy regression marker: Momentum creates -->
 
-  .rv-main { min-width:0; }
-  .rv-topbar { position:sticky; top:0; z-index:18; height:68px; display:flex; align-items:center; gap:16px; padding:0 25px; border-bottom:1px solid rgba(255,255,255,.07); background:rgba(9,13,15,.93); backdrop-filter:blur(18px); }
-  .rv-search { flex:1; max-width:650px; height:40px; display:flex; align-items:center; gap:10px; padding:0 13px; border-radius:9px; border:1px solid rgba(255,255,255,.1); background:#11181b; color:#7f878d; text-decoration:none; font-size:12px; }
-  .rv-search svg { width:18px; height:18px; }
-  .rv-top-actions { margin-left:auto; display:flex; align-items:center; gap:9px; }
-  .rv-icon-btn { width:39px; height:39px; display:grid; place-items:center; border:1px solid rgba(255,255,255,.09); border-radius:10px; background:#101619; color:#d6dadd; text-decoration:none; }
-  .rv-profile-btn { min-height:41px; display:flex; align-items:center; gap:9px; border:1px solid rgba(255,255,255,.09); border-radius:11px; background:#0e1416; color:#fff; padding:4px 10px 4px 5px; cursor:pointer; }
-  .rv-avatar { width:31px; height:31px; display:grid; place-items:center; border-radius:50%; border:1px solid rgba(255,255,255,.12); background:linear-gradient(145deg,#30363a,#111416); color:#efba56; font-weight:850; }
-  .rv-profile-copy strong { display:block; font-size:11px; line-height:1.1; }
-  .rv-profile-copy span { display:block; margin-top:3px; color:#747c81; font-size:9px; }
-
-  .rv-mobile-header,.rv-mobile-search,.rv-bottom-nav { display:none; }
-  .rv-content { max-width:1210px; margin:0 auto; padding:22px 25px 42px; }
-  .rv-hero { position:relative; min-height:235px; overflow:hidden; border-radius:15px; border:1px solid rgba(255,255,255,.075); background:#11171a url("{{ url_for('reach.static', filename='reach-approved-hero.jpg') }}") center 43% / cover no-repeat; box-shadow:0 24px 70px rgba(0,0,0,.24); }
-  .rv-hero:before { content:""; position:absolute; inset:0; background:linear-gradient(90deg,rgba(7,11,13,.98) 0%,rgba(7,11,13,.82) 43%,rgba(7,11,13,.18) 75%,rgba(7,11,13,.06) 100%); }
-  .rv-hero:after { content:""; position:absolute; inset:0; background:linear-gradient(0deg,rgba(6,9,11,.5),transparent 48%); }
-  .rv-hero-copy { position:relative; z-index:2; max-width:580px; padding:31px 31px; }
-  .rv-eyebrow { color:#efbd5d; font-size:9px; font-weight:850; letter-spacing:.25em; text-transform:uppercase; }
-  .rv-hero h1 { margin:10px 0 8px; color:#fff; font-size:44px; line-height:.98; letter-spacing:-.04em; font-weight:820; }
-  .rv-hero h1 .gold { color:#f2c167; }
-  .rv-hero p { max-width:480px; margin:0; color:#a7adb1; font-size:14px; line-height:1.55; }
-  .rv-mobile-title { display:none; }
-
-  .rv-card { overflow:hidden; border:1px solid rgba(255,255,255,.075); border-radius:13px; background:linear-gradient(180deg,#11191c 0%,#0d1417 100%); box-shadow:0 16px 46px rgba(0,0,0,.16); }
-  .rv-card.gold-edge { border-left:3px solid #efb84f; }
-  .rv-card-head { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; padding:15px 16px 12px; border-bottom:1px solid rgba(255,255,255,.06); }
-  .rv-card-title { color:#fff; font-size:17px; font-weight:790; letter-spacing:-.025em; }
-  .rv-card-sub { margin-top:3px; color:#798187; font-size:10px; line-height:1.45; }
-  .rv-link { flex:none; color:#dab56d; font-size:10px; font-weight:760; text-decoration:none; }
-  .rv-operating { margin-top:16px; }
-  .rv-action-row { display:grid; grid-template-columns:32px minmax(0,1fr) auto; gap:11px; align-items:center; min-height:70px; padding:11px 15px; border-top:1px solid rgba(255,255,255,.055); }
-  .rv-action-row:first-of-type { border-top:0; }
-  .rv-action-num { width:28px; height:28px; display:grid; place-items:center; border-radius:50%; background:#f3c66e; color:#101315; font-size:11px; font-weight:900; }
-  .rv-row-main { min-width:0; }
-  .rv-row-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#eef1ef; font-size:12px; font-weight:760; }
-  .rv-row-meta { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px; color:#757d83; font-size:10px; }
-  .rv-cta { min-width:112px; display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:8px 12px; border-radius:8px; border:1px solid rgba(255,224,162,.55); background:linear-gradient(180deg,#f4cd7d,#e5aa47); color:#121212; text-decoration:none; font-size:10px; font-weight:850; }
-  .rv-cta.secondary { border-color:rgba(239,184,79,.34); background:transparent; color:#d8dcde; }
-
-  .rv-dashboard { display:grid; grid-template-columns:1fr 1.08fr 1fr; gap:13px; margin-top:13px; }
-  .rv-list-row { display:flex; align-items:center; gap:10px; min-height:56px; padding:9px 13px; border-top:1px solid rgba(255,255,255,.055); color:inherit; text-decoration:none; }
-  .rv-list-row:first-child { border-top:0; }
-  .rv-outlet { width:34px; height:34px; flex:none; display:grid; place-items:center; border-radius:7px; border:1px solid rgba(255,255,255,.09); background:#080c0e; color:#efb74d; font-size:10px; font-weight:900; }
-  .rv-score { width:33px; height:33px; flex:none; display:grid; place-items:center; border-radius:50%; border:2px solid #46ca98; color:#70e0b3; font-size:11px; font-weight:900; }
-  .rv-lane { display:block; padding:10px 13px; border-top:1px solid rgba(255,255,255,.055); color:inherit; text-decoration:none; }
-  .rv-lane:first-child { border-top:0; }
-  .rv-lane-top { display:flex; align-items:center; gap:9px; }
-  .rv-lane-art { width:35px; height:35px; flex:none; border-radius:7px; border:1px solid rgba(255,255,255,.08); background:radial-gradient(circle at 35% 28%,rgba(109,80,255,.7),rgba(13,18,21,.95) 64%); }
-  .rv-stage { display:flex; align-items:center; gap:4px; margin-top:8px; }
-  .rv-stage-dot { width:7px; height:7px; border-radius:50%; border:1px solid #465158; background:#273137; }
-  .rv-stage-dot.done { border-color:#52d49d; background:#52d49d; }
-  .rv-stage-line { height:1px; flex:1; background:#273137; }
-  .rv-stage-line.done { background:#52d49d; }
-
-  .rv-lower { display:grid; grid-template-columns:1.05fr 1fr; gap:13px; margin-top:13px; }
-  .rv-passport { padding:15px 16px; border-left:3px solid #e9af4b; }
-  .rv-passport-top { display:flex; justify-content:space-between; gap:12px; }
-  .rv-passport-score { color:#59dfa5; font-size:29px; font-weight:820; letter-spacing:-.04em; }
-  .rv-check-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px 14px; margin-top:12px; }
-  .rv-check { display:flex; align-items:center; gap:7px; color:#a5abb0; font-size:10px; }
-  .rv-check i { width:14px; height:14px; flex:none; display:grid; place-items:center; border:1px solid rgba(255,255,255,.14); border-radius:3px; color:#758087; font-size:8px; font-style:normal; }
-  .rv-check.done i { border-color:#59dca5; background:#59dca5; color:#07110d; }
-  .rv-activity { display:flex; align-items:center; gap:9px; min-height:50px; padding:9px 13px; border-top:1px solid rgba(255,255,255,.055); }
-  .rv-activity:first-child { border-top:0; }
-  .rv-activity-dot { width:23px; height:23px; flex:none; display:grid; place-items:center; border-radius:50%; background:rgba(80,205,150,.1); color:#61d9a3; font-size:9px; }
-  .rv-empty { padding:19px 15px; color:#788086; font-size:10px; line-height:1.65; }
-  .rv-account-hint { color:#6f777c; font-size:9px; }
-
-  @media (max-width:900px) {
-    .rv-shell { display:block; min-height:100vh; }
-    .rv-sidebar,.rv-topbar { display:none; }
-    .rv-mobile-header { position:sticky; top:0; z-index:35; height:64px; display:flex; align-items:center; gap:10px; padding:0 15px; border-bottom:1px solid rgba(255,255,255,.075); background:rgba(7,12,14,.96); backdrop-filter:blur(18px); }
-    .rv-mobile-brand { display:flex; align-items:center; gap:8px; min-width:0; text-decoration:none; }
-    .rv-mobile-brand img { width:111px; height:auto; display:block; }
-    .rv-mobile-brand span { display:block; margin-top:2px; color:#91989d; font-size:8px; letter-spacing:.04em; }
-    .rv-mobile-spacer { flex:1; }
-    .rv-mobile-btn { width:37px; height:37px; flex:none; display:grid; place-items:center; border:1px solid rgba(255,255,255,.09); border-radius:10px; background:#0d1417; color:#efb852; font-size:18px; font-weight:800; text-decoration:none; cursor:pointer; }
-    .rv-mobile-search { display:flex; align-items:center; gap:9px; height:40px; margin:11px 14px 0; padding:0 12px; border:1px solid rgba(255,255,255,.11); border-radius:8px; background:#10181b; color:#81898f; text-decoration:none; font-size:11px; }
-    .rv-mobile-search svg { width:17px; height:17px; }
-    .rv-content { padding:10px 13px calc(82px + env(safe-area-inset-bottom)); }
-    .rv-hero { min-height:205px; border-radius:12px; background-position:66% 42%; }
-    .rv-hero:before { background:linear-gradient(90deg,rgba(7,11,13,.94) 0%,rgba(7,11,13,.67) 52%,rgba(7,11,13,.19) 100%); }
-    .rv-hero-copy { max-width:285px; padding:22px 18px 20px; }
-    .rv-hero h1 { display:none; }
-    .rv-mobile-title { display:block; margin:8px 0 6px; color:#fff; font-size:34px; line-height:.98; letter-spacing:-.04em; font-weight:830; }
-    .rv-hero p { max-width:255px; color:#c1c5c7; font-size:11px; line-height:1.45; }
-    .rv-operating { margin-top:11px; }
-    .rv-card { border-radius:11px; }
-    .rv-card-head { padding:13px 13px 10px; }
-    .rv-card-title { font-size:15px; }
-    .rv-card-sub { font-size:9px; }
-    .rv-action-row { grid-template-columns:29px minmax(0,1fr) auto; gap:9px; min-height:64px; padding:9px 12px; }
-    .rv-action-num { width:26px; height:26px; }
-    .rv-row-name { font-size:11px; }
-    .rv-row-meta { font-size:9px; }
-    .rv-cta { min-width:92px; padding:7px 9px; font-size:9px; }
-    .rv-dashboard { grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
-    .rv-dashboard .rv-campaigns { grid-column:1 / -1; order:3; }
-    .rv-dashboard .rv-relationships { grid-column:1 / -1; order:4; }
-    .rv-dashboard .rv-radar { order:2; }
-    .rv-lower { grid-template-columns:1fr; gap:10px; margin-top:10px; }
-    .rv-passport { order:-1; }
-    .rv-check-grid { grid-template-columns:1fr; }
-    .rv-list-row { min-height:49px; padding:8px 10px; }
-    .rv-outlet { width:31px; height:31px; }
-    .rv-score { width:31px; height:31px; }
-    .rv-bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:40; display:grid; grid-template-columns:repeat(5,1fr); border-top:1px solid rgba(255,255,255,.075); background:rgba(7,12,14,.97); padding-bottom:env(safe-area-inset-bottom); backdrop-filter:blur(18px); }
-    .rv-bottom-nav a,.rv-bottom-nav button { min-height:60px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:0; background:none; color:#81898f; text-decoration:none; font-size:9px; font-weight:730; cursor:pointer; }
-    .rv-bottom-nav svg { width:18px; height:18px; }
-    .rv-bottom-nav .active { color:#efbb58; }
-  }
-
-  @media (max-width:390px) {
-    .rv-mobile-brand img { width:103px; }
-    .rv-mobile-btn { width:35px; height:35px; }
-    .rv-hero { min-height:194px; }
-    .rv-mobile-title { font-size:31px; }
-    .rv-action-row { grid-template-columns:27px minmax(0,1fr); }
-    .rv-action-row .rv-cta { grid-column:2; justify-self:start; }
-  }
-</style>
-
-<div class="reach-v3-home">
-  <div class="rv-shell">
-    <aside class="rv-sidebar">
-      <a class="rv-brand" href="{{ url_for('reach.index') }}" aria-label="REACH Today">
-        <span><img src="{{ url_for('reach.static', filename='reach-wordmark.svg') }}" alt="REACH"><small>by Street Banker</small></span>
+<div class="reach-dashboard-v4">
+  <div class="reach-v4-shell">
+    <aside class="reach-v4-sidebar" aria-label="Reach navigation">
+      <a class="reach-v4-brand" href="{{ url_for('reach.index') }}" aria-label="Reach Today">
+        <img src="{{ url_for('reach.static', filename='reach-wordmark.svg') }}" alt="REACH">
+        <small>by Street Banker</small>
       </a>
-      <nav class="rv-side-nav" aria-label="REACH sections">
-        <a class="rv-side-link active" href="{{ url_for('reach.index') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11.5L12 4l9 7.5V21H6V11.5"/></svg>Today</a>
-        <a class="rv-side-link" href="{{ url_for('reach.all_opportunities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>Radar</a>
-        <a class="rv-side-link" href="{{ url_for('reach.campaigns_list') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l8-4 8 4v10l-8 3-8-3z"/></svg>Campaigns</a>
-        <a class="rv-side-link" href="{{ url_for('reach.all_responses') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg>Inbox</a>
-        <a class="rv-side-link" href="{{ url_for('reach.catalog_view') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l10-2v13M9 9l10-2"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>Music</a>
-        <a class="rv-side-link" href="{{ url_for('reach.contacts_view') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.3-7-10a4 4 0 017-2.7A4 4 0 0119 10c0 5.7-7 10-7 10z"/></svg>Relationships</a>
+      <nav class="reach-v4-nav">
+        <a class="active" href="{{ url_for('reach.index') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11.5L12 4l9 7.5V21H6V11.5"/></svg>Today</a>
+        <a href="{{ url_for('reach.all_opportunities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>Radar</a>
+        <a href="{{ url_for('reach.campaigns_list') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l8-4 8 4v10l-8 3-8-3z"/></svg>Campaigns</a>
+        <a href="{{ url_for('reach.all_responses') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg>Inbox</a>
+        <a href="{{ url_for('reach.catalog_view') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l10-2v13M9 9l10-2"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>Music</a>
+        <a href="{{ url_for('reach.contacts_view') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.3-7-10a4 4 0 017-2.7A4 4 0 0119 10c0 5.7-7 10-7 10z"/></svg>Relationships</a>
       </nav>
-      <div class="rv-divider"></div>
-      <nav style="display:grid;gap:5px" aria-label="Account shortcuts">
-        <a class="rv-side-link" href="{{ url_for('reach.artist_profile_page') }}">Artist Profile</a>
-        <a class="rv-side-link" href="{{ url_for('reach.needs_you') }}">Tasks{% if needs_you_count %}<span style="margin-left:auto;color:#efbb58">{{ needs_you_count }}</span>{% endif %}</a>
-        <a class="rv-side-link" href="{{ url_for('reach.settings_view') }}">Settings</a>
+      <div class="reach-v4-divider"></div>
+      <nav class="reach-v4-nav" style="margin-top:0">
+        <a href="{{ url_for('reach.artist_profile_page') }}">Artist Profile</a>
+        <a href="{{ url_for('reach.needs_you') }}">Needs You{% if needs_you_count %}<span style="margin-left:auto;color:var(--reach-brand)">{{ needs_you_count }}</span>{% endif %}</a>
+        <a href="{{ url_for('reach.settings_view') }}">Settings</a>
       </nav>
-      <div class="rv-side-footer"><p>Real opportunities.<br>Real relationships.<br>A brighter tomorrow.</p><div class="rv-powered">Powered by Street Banker</div></div>
+      <div class="reach-v4-sidefoot">
+        <p>Real opportunities.<br>Real relationships.<br>A brighter tomorrow.</p>
+        <div class="reach-v4-powered">Powered by Street Banker</div>
+      </div>
     </aside>
 
-    <div class="rv-main">
-      <header class="rv-mobile-header">
-        <a class="rv-mobile-brand" href="{{ url_for('reach.index') }}" aria-label="REACH Today"><span><img src="{{ url_for('reach.static', filename='reach-wordmark.svg') }}" alt="REACH"><span>by Street Banker</span></span></a>
-        <div class="rv-mobile-spacer"></div>
-        <a class="rv-mobile-btn" href="{{ url_for('reach.new_campaign') }}" aria-label="Create campaign">+</a>
-        <button class="rv-mobile-btn" type="button" onclick="openReachModules()" aria-label="Open account menu" aria-controls="reach-mobile-modules" aria-expanded="false">{{ account_initial }}</button>
+    <section class="reach-v4-main">
+      <header class="reach-v4-mobile-header">
+        <a class="reach-v4-mobile-brand" href="{{ url_for('reach.index') }}">
+          <img src="{{ url_for('reach.static', filename='reach-wordmark.svg') }}" alt="REACH">
+          <span>by Street Banker</span>
+        </a>
+        <div class="reach-v4-mobile-spacer"></div>
+        <a class="reach-v4-mobilebtn" href="{{ url_for('reach.needs_you') }}" aria-label="Notifications">⌁</a>
+        <button type="button" class="reach-v4-mobilebtn" aria-label="Open account menu" aria-controls="reach-mobile-modules" aria-expanded="false" onclick="openReachModules(); this.setAttribute('aria-expanded','true')">{{ account_initial }}</button>
       </header>
 
-      <div class="rv-topbar">
-        <a class="rv-search" href="{{ url_for('reach.all_opportunities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg><span>Ask Reach anything — opportunities, relationships, releases…</span></a>
-        <div class="rv-top-actions">
-          <a class="rv-icon-btn" href="{{ url_for('reach.needs_you') }}" aria-label="Tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:18px"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg></a>
-          <button class="rv-profile-btn" type="button" onclick="openReachModules()" aria-label="Open account menu"><span class="rv-avatar">{{ account_initial }}</span><span class="rv-profile-copy"><strong>{{ principal_name if principal_name and principal_name != 'there' else 'Artist Profile' }}</strong><span>{{ reach_billing.plan.name if reach_billing else 'REACH' }}</span></span></button>
+      <a class="reach-v4-mobile-search" href="{{ url_for('reach.all_opportunities') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+        Ask Reach anything — opportunities, relationships, releases…
+      </a>
+
+      <div class="reach-v4-topbar">
+        <a class="reach-v4-search" href="{{ url_for('reach.all_opportunities') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+          Ask Reach anything — opportunities, relationships, releases…
+        </a>
+        <div class="reach-v4-topactions">
+          <a class="reach-v4-iconbtn" href="{{ url_for('reach.needs_you') }}" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:18px"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg></a>
+          <button type="button" class="reach-v4-accountbtn" onclick="openReachModules()" aria-controls="reach-mobile-modules" aria-expanded="false">
+            <span class="reach-v4-avatar">{{ account_initial }}</span>
+            <span class="reach-v4-accountcopy"><strong>{{ principal_name if principal_name != 'there' else 'Artist Profile' }}</strong><span>{{ reach_billing.plan.name if reach_billing else 'REACH' }}</span></span>
+          </button>
         </div>
       </div>
 
-      <a class="rv-mobile-search" href="{{ url_for('reach.all_opportunities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg><span>Ask Reach anything — opportunities…</span></a>
-
-      <main class="rv-content">
-        <section class="rv-hero">
-          <div class="rv-hero-copy">
-            <div class="rv-eyebrow">Today</div>
-            <h1>Momentum creates<br><span class="gold">opportunity.</span></h1>
-            <div class="rv-mobile-title">Three moves<br>matter today.</div>
-            <p>Focus. Follow through. Create momentum. Reach surfaces the work that can move your release forward.</p>
+      <div class="reach-v4-content">
+        <section class="reach-v4-hero">
+          <img class="reach-v4-hero-media" src="{{ url_for('reach.static', filename='reach-approved-hero.jpg') }}?v={{ reach_version }}" alt="Artist moving through a backstage music environment">
+          <div class="reach-v4-hero-shade"></div>
+          <div class="reach-v4-herocopy">
+            <div class="reach-v4-eyebrow">Today</div>
+            <h1>Three moves<br>matter <span>today.</span></h1>
+            <p>Focus. Follow through. Create momentum. Reach surfaces the work that can actually move your release forward.</p>
           </div>
         </section>
 
-        <section class="rv-card gold-edge rv-operating">
-          <div class="rv-card-head"><div><div class="rv-eyebrow">Today</div><div class="rv-card-title">Operating Brief</div><div class="rv-card-sub">Your highest-leverage moves right now.</div></div><a class="rv-link" href="{{ url_for('reach.needs_you') }}">View tasks →</a></div>
-          {% if actions %}
-            {% for action in actions[:3] %}
-            <div class="rv-action-row"><span class="rv-action-num">{{ loop.index }}</span><div class="rv-row-main"><div class="rv-row-name">{{ action.title }}</div>{% if action.context %}<div class="rv-row-meta">{{ action.context }}</div>{% endif %}</div><a class="rv-cta {{ 'secondary' if loop.index > 1 else '' }}" href="{{ action.url }}">{{ 'Take action' if loop.index == 1 else 'Open' }} →</a></div>
-            {% endfor %}
-          {% else %}
-            <div class="rv-empty"><strong style="display:block;color:#eef1ef;font-size:12px">Nothing urgent is waiting.</strong><span style="display:block;margin-top:4px">Run discovery or review Radar when you’re ready to create the next move.</span><a class="rv-cta secondary" style="margin-top:10px" href="{{ url_for('reach.all_opportunities') }}">Open Radar →</a></div>
-          {% endif %}
-        </section>
+        <div class="reach-v4-grid">
+          <div class="reach-v4-stack">
+            <section class="reach-v4-card gold-edge reach-v4-brief">
+              <div class="reach-v4-cardhead">
+                <div><div class="reach-v4-eyebrow">Operating Brief</div><div class="reach-v4-title">Your highest-leverage moves for today.</div></div>
+                <a class="reach-v4-link" href="{{ url_for('reach.needs_you') }}">View tasks →</a>
+              </div>
+              {% if actions %}
+                {% for action in actions[:3] %}
+                <div class="reach-v4-action">
+                  <span class="reach-v4-num">{{ loop.index }}</span>
+                  <div class="reach-v4-rowmain"><div class="reach-v4-rowname">{{ action.title }}</div>{% if action.context %}<div class="reach-v4-rowmeta">{{ action.context }}</div>{% endif %}</div>
+                  <a class="reach-v4-cta {{ 'secondary' if loop.index > 1 else '' }}" href="{{ action.url }}">{{ 'Take action' if loop.index == 1 else 'Open' }} →</a>
+                </div>
+                {% endfor %}
+              {% else %}
+                <div class="reach-v4-empty"><strong style="display:block;color:#eef1ef;font-size:12px;margin-bottom:4px">Nothing urgent is waiting.</strong>Run discovery or review Radar when you're ready to create the next move.</div>
+              {% endif %}
+            </section>
 
-        <div class="rv-dashboard">
-          <section class="rv-card rv-radar">
-            <div class="rv-card-head"><div><div class="rv-card-title">Opportunity Radar</div><div class="rv-card-sub">Top verified matches for you.</div></div><a class="rv-link" href="{{ url_for('reach.all_opportunities') }}">View all →</a></div>
-            {% if best %}{% for t in best[:4] %}<a class="rv-list-row" href="{{ url_for('reach.target_detail', campaign_id=t.campaign_id, target_id=t.id) }}"><span class="rv-outlet">{{ (t.outlet_name or t.outlet_domain or 'R')[:2]|upper }}</span><span class="rv-row-main"><span class="rv-row-name">{{ t.outlet_name or t.outlet_domain }}</span><span class="rv-row-meta">{{ (t.outlet_kind or 'Opportunity').replace('_',' ') }}</span></span>{% if t.reach_score is not none %}<span class="rv-score">{{ t.reach_score }}</span>{% endif %}</a>{% endfor %}{% else %}<div class="rv-empty">No qualified opportunities yet. Start a campaign and run discovery; only real matches appear here.</div>{% endif %}
-          </section>
+            <div class="reach-v4-trio">
+              <section class="reach-v4-card">
+                <div class="reach-v4-cardhead"><div><div class="reach-v4-title">Opportunity Radar</div><div class="reach-v4-sub">Top verified matches for your music.</div></div><a class="reach-v4-link" href="{{ url_for('reach.all_opportunities') }}">View all →</a></div>
+                {% if best %}
+                  {% for t in best[:4] %}<a class="reach-v4-listrow" href="{{ url_for('reach.target_detail', campaign_id=t.campaign_id, target_id=t.id) }}"><span class="reach-v4-outlet">{{ (t.outlet_name or t.outlet_domain or 'R')[:2]|upper }}</span><span class="reach-v4-rowmain"><span class="reach-v4-rowname">{{ t.outlet_name or t.outlet_domain }}</span><span class="reach-v4-rowmeta">{{ (t.outlet_kind or 'Opportunity').replace('_',' ') }} · {{ t.campaign_name }}</span></span>{% if t.reach_score is not none %}<span class="reach-v4-score">{{ t.reach_score }}</span>{% endif %}</a>{% endfor %}
+                {% else %}<div class="reach-v4-empty">No qualified opportunities yet. Start a campaign and run discovery; only real matches appear here.</div>{% endif %}
+              </section>
 
-          <section class="rv-card rv-campaigns">
-            <div class="rv-card-head"><div><div class="rv-card-title">Campaign Lanes</div><div class="rv-card-sub">{{ campaign_count }} campaign{{ '' if campaign_count == 1 else 's' }}.</div></div><a class="rv-link" href="{{ url_for('reach.campaigns_list') }}">View all →</a></div>
-            {% set lane_items = ([featured] if featured else []) + (more_campaigns or []) %}
-            {% if lane_items %}{% for item in lane_items %}<a class="rv-lane" href="{{ url_for('reach.overview', campaign_id=item.campaign.id) }}"><div class="rv-lane-top"><span class="rv-lane-art"></span><span class="rv-row-main"><span class="rv-row-name">{{ item.campaign.recording_title or item.campaign.name }}</span><span class="rv-row-meta">{{ item.stage }} · {{ item.campaign.status }}</span></span><span style="color:#59d7a1;font-size:10px;font-weight:800">{{ item.stage }}</span></div><div class="rv-stage">{% set reached = item.stages.index(item.stage) if item.stage in item.stages else 0 %}{% for stage in item.stages %}<span class="rv-stage-dot {{ 'done' if loop.index0 <= reached else '' }}"></span>{% if not loop.last %}<span class="rv-stage-line {{ 'done' if loop.index0 < reached else '' }}"></span>{% endif %}{% endfor %}</div></a>{% endfor %}{% else %}<div class="rv-empty">No campaign yet. Add a release and Reach will show the campaign journey here.</div>{% endif %}
-          </section>
+              <section class="reach-v4-card">
+                <div class="reach-v4-cardhead"><div><div class="reach-v4-title">Campaign Lanes</div><div class="reach-v4-sub">{{ campaign_count }} active and historical campaign{{ '' if campaign_count == 1 else 's' }}.</div></div><a class="reach-v4-link" href="{{ url_for('reach.campaigns_list') }}">View all →</a></div>
+                {% set lane_items = ([featured] if featured else []) + (more_campaigns or []) %}
+                {% if lane_items %}
+                  {% for item in lane_items %}<a class="reach-v4-lane" href="{{ url_for('reach.overview', campaign_id=item.campaign.id) }}"><div class="reach-v4-lanetop"><span class="reach-v4-art"></span><span class="reach-v4-rowmain"><span class="reach-v4-rowname">{{ item.campaign.recording_title or item.campaign.name }}</span><span class="reach-v4-rowmeta">{{ item.stage }} · {{ item.campaign.status }}</span></span></div><div class="reach-v4-stage">{% set reached = item.stages.index(item.stage) if item.stage in item.stages else 0 %}{% for stage in item.stages %}<span class="reach-v4-dot {{ 'done' if loop.index0 <= reached else '' }}"></span>{% if not loop.last %}<span class="reach-v4-stage-line {{ 'done' if loop.index0 < reached else '' }}"></span>{% endif %}{% endfor %}</div></a>{% endfor %}
+                {% else %}<div class="reach-v4-empty">No campaigns yet. Add a release and Reach will show the campaign journey here.</div>{% endif %}
+              </section>
 
-          <section class="rv-card rv-relationships">
-            <div class="rv-card-head"><div><div class="rv-card-title">Relationship Memory</div><div class="rv-card-sub">People and outlets that remember your music.</div></div><a class="rv-link" href="{{ url_for('reach.contacts_view') }}">View all →</a></div>
-            {% if recent_responses %}{% for response in recent_responses[:4] %}<a class="rv-list-row" href="{{ url_for('reach.all_responses') }}"><span class="rv-avatar">{{ (response.outlet_name or 'R')[:1]|upper }}</span><span class="rv-row-main"><span class="rv-row-name">{{ response.outlet_name or 'Response received' }}</span><span class="rv-row-meta">{{ (response.kind or 'Response').replace('_',' ') }}{% if response.received_at %} · {{ response.received_at[:10] }}{% endif %}</span></span><span class="rv-account-hint">›</span></a>{% endfor %}{% else %}<div class="rv-empty">Relationship memory builds as outreach receives replies and placements.</div>{% endif %}
-          </section>
+              <section class="reach-v4-card">
+                <div class="reach-v4-cardhead"><div><div class="reach-v4-title">Relationship Memory</div><div class="reach-v4-sub">People and outlets that remember your music.</div></div><a class="reach-v4-link" href="{{ url_for('reach.contacts_view') }}">View all →</a></div>
+                {% if recent_responses %}
+                  {% for response in recent_responses[:4] %}<a class="reach-v4-listrow" href="{{ url_for('reach.all_responses') }}"><span class="reach-v4-avatar">{{ (response.outlet_name or 'R')[:1]|upper }}</span><span class="reach-v4-rowmain"><span class="reach-v4-rowname">{{ response.outlet_name or 'Response received' }}</span><span class="reach-v4-rowmeta">{{ (response.kind or 'Response').replace('_',' ') }}{% if response.received_at %} · {{ response.received_at[:10] }}{% endif %}</span></span><span style="color:#6f777c">›</span></a>{% endfor %}
+                {% else %}<div class="reach-v4-empty">Relationship history builds automatically as outreach gets replies and placements.</div>{% endif %}
+              </section>
+            </div>
+
+            <div class="reach-v4-duo">
+              <section class="reach-v4-card reach-v4-passport">
+                <div class="reach-v4-passporttop"><div><div class="reach-v4-title">Release Passport</div><div class="reach-v4-sub">Get your materials in shape for what's next.</div></div><div style="text-align:right"><div class="reach-v4-readiness">{{ readiness }}%</div><div style="font-size:9px;color:var(--reach-success)">Ready</div></div></div>
+                <div class="reach-v4-checks">{% for step in onboarding.steps[:6] %}<div class="reach-v4-check {{ 'done' if step.state == 'DONE' else '' }}"><i>{{ '✓' if step.state == 'DONE' else '•' }}</i><span>{{ step.label }}</span></div>{% endfor %}</div>
+                {% if onboarding.outstanding %}<a class="reach-v4-cta secondary" style="margin-top:14px" href="{{ url_for(onboarding.outstanding[0].href) }}">Complete setup →</a>{% endif %}
+              </section>
+
+              <section class="reach-v4-card">
+                <div class="reach-v4-cardhead"><div><div class="reach-v4-title">Recent Activity</div><div class="reach-v4-sub">Verified updates from your opportunities.</div></div><a class="reach-v4-link" href="{{ url_for('reach.all_responses') }}">View all →</a></div>
+                {% if recent_responses %}{% for response in recent_responses[:4] %}<div class="reach-v4-activity"><span class="reach-v4-status">↗</span><span class="reach-v4-rowmain"><span class="reach-v4-rowname">{{ (response.kind or 'Response').replace('_',' ')|title }}</span><span class="reach-v4-rowmeta">{{ response.outlet_name or 'Campaign response' }}{% if response.received_at %} · {{ response.received_at[:10] }}{% endif %}</span></span></div>{% endfor %}{% elif follow_ups %}{% for follow in follow_ups[:4] %}<div class="reach-v4-activity"><span class="reach-v4-status">•</span><span class="reach-v4-rowmain"><span class="reach-v4-rowname">Follow-up due</span><span class="reach-v4-rowmeta">{{ follow.outlet_name or 'Campaign follow-up' }}</span></span></div>{% endfor %}{% else %}<div class="reach-v4-empty">Activity appears here as campaigns discover, contact, and hear back from outlets.</div>{% endif %}
+              </section>
+            </div>
+          </div>
+
+          <aside class="reach-v4-rail"><small>Keep going</small><strong>More<br>music.<br>Stronger<br>relationships.<br>A bigger<br>tomorrow.</strong><p>Same work.<br>Bigger possibilities.</p></aside>
         </div>
-
-        <div class="rv-lower">
-          <section class="rv-card rv-passport">
-            <div class="rv-passport-top"><div><div class="rv-card-title">Release Passport</div><div class="rv-card-sub">Get your materials in shape for what’s next.</div></div><div style="text-align:right"><div class="rv-passport-score">{{ readiness }}%</div><div style="color:#59dca5;font-size:9px">Ready</div></div></div>
-            <div class="rv-check-grid">{% for step in onboarding.steps[:6] %}<div class="rv-check {{ 'done' if step.state == 'DONE' else '' }}"><i>{{ '✓' if step.state == 'DONE' else '•' }}</i><span>{{ step.label }}</span></div>{% endfor %}</div>
-            {% if onboarding.outstanding %}<a class="rv-cta secondary" style="margin-top:13px" href="{{ url_for(onboarding.outstanding[0].href) }}">Complete setup →</a>{% endif %}
-          </section>
-
-          <section class="rv-card">
-            <div class="rv-card-head"><div><div class="rv-card-title">Recent Activity</div><div class="rv-card-sub">Verified updates from your opportunities.</div></div><a class="rv-link" href="{{ url_for('reach.all_responses') }}">View all →</a></div>
-            {% if recent_responses %}{% for response in recent_responses[:4] %}<div class="rv-activity"><span class="rv-activity-dot">↗</span><span class="rv-row-main"><span class="rv-row-name">{{ (response.kind or 'Response').replace('_',' ')|title }}</span><span class="rv-row-meta">{{ response.outlet_name or 'Campaign response' }}{% if response.received_at %} · {{ response.received_at[:10] }}{% endif %}</span></span></div>{% endfor %}{% elif follow_ups %}{% for follow in follow_ups[:4] %}<div class="rv-activity"><span class="rv-activity-dot">•</span><span class="rv-row-main"><span class="rv-row-name">Follow-up due</span><span class="rv-row-meta">{{ follow.outlet_name or 'Campaign follow-up' }}</span></span></div>{% endfor %}{% else %}<div class="rv-empty">Activity appears here as campaigns discover, contact and hear back from outlets.</div>{% endif %}
-          </section>
-        </div>
-      </main>
-    </div>
+      </div>
+    </section>
   </div>
 
-  <nav class="rv-bottom-nav" aria-label="Reach mobile navigation">
+  <nav class="reach-v4-bottomnav" aria-label="Reach mobile navigation">
     <a class="active" href="{{ url_for('reach.index') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11.5L12 4l9 7.5V21H6V11.5"/></svg>Today</a>
     <a href="{{ url_for('reach.all_opportunities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>Radar</a>
     <a href="{{ url_for('reach.campaigns_list') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l8-4 8 4v10l-8 3-8-3z"/></svg>Campaigns</a>
