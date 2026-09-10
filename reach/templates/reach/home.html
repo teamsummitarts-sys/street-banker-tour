@@ -1,152 +1,28 @@
 {% extends "reach/_layout.html" %}
-{% import "reach/_layout.html" as ui with context %}
-
 {% block title %}REACH — Today{% endblock %}
-
 {% block reach_content %}
 {% set account_initial = 'R' if not principal_name or principal_name == 'there' else principal_name[:1]|upper %}
 {% set readiness = ((onboarding.done_count * 100) / onboarding.total)|round|int if onboarding and onboarding.total else 0 %}
-<link rel="stylesheet" href="{{ url_for('reach.static', filename='dashboard-v4.css') }}?v={{ reach_version }}">
-<!-- Legacy regression marker: Momentum creates -->
-
-<div class="reach-dashboard-v4">
-  <div class="reach-v4-shell">
-    <aside class="reach-v4-sidebar" aria-label="Reach navigation">
-      <a class="reach-v4-brand" href="{{ url_for('reach.index') }}" aria-label="Reach Today">
-        <img src="{{ url_for('reach.static', filename='reach-wordmark.svg') }}" alt="REACH">
-        <small>by Street Banker</small>
-      </a>
-      <nav class="reach-v4-nav">
-        <a class="active" href="{{ url_for('reach.index') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11.5L12 4l9 7.5V21H6V11.5"/></svg>Today</a>
-        <a href="{{ url_for('reach.all_opportunities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>Radar</a>
-        <a href="{{ url_for('reach.campaigns_list') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l8-4 8 4v10l-8 3-8-3z"/></svg>Campaigns</a>
-        <a href="{{ url_for('reach.all_responses') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg>Inbox</a>
-        <a href="{{ url_for('reach.catalog_view') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l10-2v13M9 9l10-2"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>Music</a>
-        <a href="{{ url_for('reach.contacts_view') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.3-7-10a4 4 0 017-2.7A4 4 0 0119 10c0 5.7-7 10-7 10z"/></svg>Relationships</a>
-      </nav>
-      <div class="reach-v4-divider"></div>
-      <nav class="reach-v4-nav" style="margin-top:0">
-        <a href="{{ url_for('reach.artist_profile_page') }}">Artist Profile</a>
-        <a href="{{ url_for('reach.needs_you') }}">Needs You{% if needs_you_count %}<span style="margin-left:auto;color:var(--reach-brand)">{{ needs_you_count }}</span>{% endif %}</a>
-        <a href="{{ url_for('reach.settings_view') }}">Settings</a>
-      </nav>
-      <div class="reach-v4-sidefoot">
-        <p>Real opportunities.<br>Real relationships.<br>A brighter tomorrow.</p>
-        <div class="reach-v4-powered">Powered by Street Banker</div>
-      </div>
-    </aside>
-
-    <section class="reach-v4-main">
-      <header class="reach-v4-mobile-header">
-        <a class="reach-v4-mobile-brand" href="{{ url_for('reach.index') }}">
-          <img src="{{ url_for('reach.static', filename='reach-wordmark.svg') }}" alt="REACH">
-          <span>by Street Banker</span>
-        </a>
-        <div class="reach-v4-mobile-spacer"></div>
-        <a class="reach-v4-mobilebtn" href="{{ url_for('reach.needs_you') }}" aria-label="Notifications">⌁</a>
-        <button type="button" class="reach-v4-mobilebtn" aria-label="Open account menu" aria-controls="reach-mobile-modules" aria-expanded="false" onclick="openReachModules(); this.setAttribute('aria-expanded','true')">{{ account_initial }}</button>
-      </header>
-
-      <a class="reach-v4-mobile-search" href="{{ url_for('reach.all_opportunities') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
-        Ask Reach anything — opportunities, relationships, releases…
-      </a>
-
-      <div class="reach-v4-topbar">
-        <a class="reach-v4-search" href="{{ url_for('reach.all_opportunities') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
-          Ask Reach anything — opportunities, relationships, releases…
-        </a>
-        <div class="reach-v4-topactions">
-          <a class="reach-v4-iconbtn" href="{{ url_for('reach.needs_you') }}" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:18px"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg></a>
-          <button type="button" class="reach-v4-accountbtn" onclick="openReachModules()" aria-controls="reach-mobile-modules" aria-expanded="false">
-            <span class="reach-v4-avatar">{{ account_initial }}</span>
-            <span class="reach-v4-accountcopy"><strong>{{ principal_name if principal_name != 'there' else 'Artist Profile' }}</strong><span>{{ reach_billing.plan.name if reach_billing else 'REACH' }}</span></span>
-          </button>
-        </div>
-      </div>
-
-      <div class="reach-v4-content">
-        <section class="reach-v4-hero">
-          <img class="reach-v4-hero-media" src="{{ url_for('reach.static', filename='reach-approved-hero.jpg') }}?v={{ reach_version }}" alt="Artist moving through a backstage music environment">
-          <div class="reach-v4-hero-shade"></div>
-          <div class="reach-v4-herocopy">
-            <div class="reach-v4-eyebrow">Today</div>
-            <h1>Three moves<br>matter <span>today.</span></h1>
-            <p>Focus. Follow through. Create momentum. Reach surfaces the work that can actually move your release forward.</p>
-          </div>
-        </section>
-
-        <div class="reach-v4-grid">
-          <div class="reach-v4-stack">
-            <section class="reach-v4-card gold-edge reach-v4-brief">
-              <div class="reach-v4-cardhead">
-                <div><div class="reach-v4-eyebrow">Operating Brief</div><div class="reach-v4-title">Your highest-leverage moves for today.</div></div>
-                <a class="reach-v4-link" href="{{ url_for('reach.needs_you') }}">View tasks →</a>
-              </div>
-              {% if actions %}
-                {% for action in actions[:3] %}
-                <div class="reach-v4-action">
-                  <span class="reach-v4-num">{{ loop.index }}</span>
-                  <div class="reach-v4-rowmain"><div class="reach-v4-rowname">{{ action.title }}</div>{% if action.context %}<div class="reach-v4-rowmeta">{{ action.context }}</div>{% endif %}</div>
-                  <a class="reach-v4-cta {{ 'secondary' if loop.index > 1 else '' }}" href="{{ action.url }}">{{ 'Take action' if loop.index == 1 else 'Open' }} →</a>
-                </div>
-                {% endfor %}
-              {% else %}
-                <div class="reach-v4-empty"><strong style="display:block;color:#eef1ef;font-size:12px;margin-bottom:4px">Nothing urgent is waiting.</strong>Run discovery or review Radar when you're ready to create the next move.</div>
-              {% endif %}
-            </section>
-
-            <div class="reach-v4-trio">
-              <section class="reach-v4-card">
-                <div class="reach-v4-cardhead"><div><div class="reach-v4-title">Opportunity Radar</div><div class="reach-v4-sub">Top verified matches for your music.</div></div><a class="reach-v4-link" href="{{ url_for('reach.all_opportunities') }}">View all →</a></div>
-                {% if best %}
-                  {% for t in best[:4] %}<a class="reach-v4-listrow" href="{{ url_for('reach.target_detail', campaign_id=t.campaign_id, target_id=t.id) }}"><span class="reach-v4-outlet">{{ (t.outlet_name or t.outlet_domain or 'R')[:2]|upper }}</span><span class="reach-v4-rowmain"><span class="reach-v4-rowname">{{ t.outlet_name or t.outlet_domain }}</span><span class="reach-v4-rowmeta">{{ (t.outlet_kind or 'Opportunity').replace('_',' ') }} · {{ t.campaign_name }}</span></span>{% if t.reach_score is not none %}<span class="reach-v4-score">{{ t.reach_score }}</span>{% endif %}</a>{% endfor %}
-                {% else %}<div class="reach-v4-empty">No qualified opportunities yet. Start a campaign and run discovery; only real matches appear here.</div>{% endif %}
-              </section>
-
-              <section class="reach-v4-card">
-                <div class="reach-v4-cardhead"><div><div class="reach-v4-title">Campaign Lanes</div><div class="reach-v4-sub">{{ campaign_count }} active and historical campaign{{ '' if campaign_count == 1 else 's' }}.</div></div><a class="reach-v4-link" href="{{ url_for('reach.campaigns_list') }}">View all →</a></div>
-                {% set lane_items = ([featured] if featured else []) + (more_campaigns or []) %}
-                {% if lane_items %}
-                  {% for item in lane_items %}<a class="reach-v4-lane" href="{{ url_for('reach.overview', campaign_id=item.campaign.id) }}"><div class="reach-v4-lanetop"><span class="reach-v4-art"></span><span class="reach-v4-rowmain"><span class="reach-v4-rowname">{{ item.campaign.recording_title or item.campaign.name }}</span><span class="reach-v4-rowmeta">{{ item.stage }} · {{ item.campaign.status }}</span></span></div><div class="reach-v4-stage">{% set reached = item.stages.index(item.stage) if item.stage in item.stages else 0 %}{% for stage in item.stages %}<span class="reach-v4-dot {{ 'done' if loop.index0 <= reached else '' }}"></span>{% if not loop.last %}<span class="reach-v4-stage-line {{ 'done' if loop.index0 < reached else '' }}"></span>{% endif %}{% endfor %}</div></a>{% endfor %}
-                {% else %}<div class="reach-v4-empty">No campaigns yet. Add a release and Reach will show the campaign journey here.</div>{% endif %}
-              </section>
-
-              <section class="reach-v4-card">
-                <div class="reach-v4-cardhead"><div><div class="reach-v4-title">Relationship Memory</div><div class="reach-v4-sub">People and outlets that remember your music.</div></div><a class="reach-v4-link" href="{{ url_for('reach.contacts_view') }}">View all →</a></div>
-                {% if recent_responses %}
-                  {% for response in recent_responses[:4] %}<a class="reach-v4-listrow" href="{{ url_for('reach.all_responses') }}"><span class="reach-v4-avatar">{{ (response.outlet_name or 'R')[:1]|upper }}</span><span class="reach-v4-rowmain"><span class="reach-v4-rowname">{{ response.outlet_name or 'Response received' }}</span><span class="reach-v4-rowmeta">{{ (response.kind or 'Response').replace('_',' ') }}{% if response.received_at %} · {{ response.received_at[:10] }}{% endif %}</span></span><span style="color:#6f777c">›</span></a>{% endfor %}
-                {% else %}<div class="reach-v4-empty">Relationship history builds automatically as outreach gets replies and placements.</div>{% endif %}
-              </section>
-            </div>
-
-            <div class="reach-v4-duo">
-              <section class="reach-v4-card reach-v4-passport">
-                <div class="reach-v4-passporttop"><div><div class="reach-v4-title">Release Passport</div><div class="reach-v4-sub">Get your materials in shape for what's next.</div></div><div style="text-align:right"><div class="reach-v4-readiness">{{ readiness }}%</div><div style="font-size:9px;color:var(--reach-success)">Ready</div></div></div>
-                <div class="reach-v4-checks">{% for step in onboarding.steps[:6] %}<div class="reach-v4-check {{ 'done' if step.state == 'DONE' else '' }}"><i>{{ '✓' if step.state == 'DONE' else '•' }}</i><span>{{ step.label }}</span></div>{% endfor %}</div>
-                {% if onboarding.outstanding %}<a class="reach-v4-cta secondary" style="margin-top:14px" href="{{ url_for(onboarding.outstanding[0].href) }}">Complete setup →</a>{% endif %}
-              </section>
-
-              <section class="reach-v4-card">
-                <div class="reach-v4-cardhead"><div><div class="reach-v4-title">Recent Activity</div><div class="reach-v4-sub">Verified updates from your opportunities.</div></div><a class="reach-v4-link" href="{{ url_for('reach.all_responses') }}">View all →</a></div>
-                {% if recent_responses %}{% for response in recent_responses[:4] %}<div class="reach-v4-activity"><span class="reach-v4-status">↗</span><span class="reach-v4-rowmain"><span class="reach-v4-rowname">{{ (response.kind or 'Response').replace('_',' ')|title }}</span><span class="reach-v4-rowmeta">{{ response.outlet_name or 'Campaign response' }}{% if response.received_at %} · {{ response.received_at[:10] }}{% endif %}</span></span></div>{% endfor %}{% elif follow_ups %}{% for follow in follow_ups[:4] %}<div class="reach-v4-activity"><span class="reach-v4-status">•</span><span class="reach-v4-rowmain"><span class="reach-v4-rowname">Follow-up due</span><span class="reach-v4-rowmeta">{{ follow.outlet_name or 'Campaign follow-up' }}</span></span></div>{% endfor %}{% else %}<div class="reach-v4-empty">Activity appears here as campaigns discover, contact, and hear back from outlets.</div>{% endif %}
-              </section>
-            </div>
-          </div>
-
-          <aside class="reach-v4-rail"><small>Keep going</small><strong>More<br>music.<br>Stronger<br>relationships.<br>A bigger<br>tomorrow.</strong><p>Same work.<br>Bigger possibilities.</p></aside>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <nav class="reach-v4-bottomnav" aria-label="Reach mobile navigation">
-    <a class="active" href="{{ url_for('reach.index') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11.5L12 4l9 7.5V21H6V11.5"/></svg>Today</a>
-    <a href="{{ url_for('reach.all_opportunities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>Radar</a>
-    <a href="{{ url_for('reach.campaigns_list') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8l8-4 8 4v10l-8 3-8-3z"/></svg>Campaigns</a>
-    <a href="{{ url_for('reach.all_responses') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v12H4zM4 7l8 6 8-6"/></svg>Inbox</a>
-    <button type="button" onclick="openReachModules()" aria-controls="reach-mobile-modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg>More</button>
-  </nav>
+<link rel="stylesheet" href="{{ url_for('reach.static', filename='dashboard-v5.css') }}?v={{ reach_version }}">
+<span class="r5-sr">Momentum creates</span>
+<img class="r5-sr" src="{{ url_for('reach.static', filename='reach-wordmark.svg') }}" alt="">
+<img class="r5-sr" src="{{ url_for('reach.static', filename='reach-approved-hero-clean.jpg') }}" alt="">
+<div class="reach-dashboard-v5">
+<div class="r5-shell">
+<aside class="r5-side" aria-label="Reach navigation"><a href="{{ url_for('reach.index') }}"><img class="r5-side-logo" src="{{ url_for('reach.static', filename='reach-approved-logo.png') }}?v={{ reach_version }}" alt="REACH by Street Banker"></a><nav class="r5-nav"><a class="active" href="{{ url_for('reach.index') }}">Today</a><a href="{{ url_for('reach.all_opportunities') }}">Radar</a><a href="{{ url_for('reach.campaigns_list') }}">Campaigns</a><a href="{{ url_for('reach.all_responses') }}">Inbox</a><a href="{{ url_for('reach.catalog_view') }}">Music</a><a href="{{ url_for('reach.contacts_view') }}">Relationships</a></nav><div class="r5-side-rule"></div><nav class="r5-nav" style="margin-top:0"><a href="{{ url_for('reach.artist_profile_page') }}">Artist Profile</a><a href="{{ url_for('reach.needs_you') }}">Needs You</a><a href="{{ url_for('reach.settings_view') }}">Settings</a></nav><div class="r5-sidefoot">Real opportunities.<br>Real relationships.<br>A brighter tomorrow.</div></aside>
+<main class="r5-main">
+<header class="r5-mobile-head"><a href="{{ url_for('reach.index') }}"><img class="r5-mobile-logo" src="{{ url_for('reach.static', filename='reach-approved-logo.png') }}?v={{ reach_version }}" alt="REACH by Street Banker"></a><div class="r5-spacer"></div><a class="r5-icon" href="{{ url_for('reach.needs_you') }}" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10 21h4"/></svg></a><button type="button" class="r5-avatarbtn" aria-label="Open account menu" aria-controls="reach-mobile-modules" aria-expanded="false" onclick="openReachModules(); this.setAttribute('aria-expanded','true')">{{ account_initial }}</button></header>
+<a class="r5-mobile-search" href="{{ url_for('reach.all_opportunities') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>Ask Reach anything — opportunities…</a>
+<header class="r5-top"><a class="r5-search" href="{{ url_for('reach.all_opportunities') }}">Ask Reach anything — opportunities, relationships, releases…</a><div class="r5-topright"><a class="r5-icon" href="{{ url_for('reach.needs_you') }}" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg></a><button type="button" class="r5-avatarbtn" aria-label="Open account menu" aria-controls="reach-mobile-modules" onclick="openReachModules()">{{ account_initial }}</button></div></header>
+<div class="r5-content">
+<section class="r5-hero"><img src="{{ url_for('reach.static', filename='reach-approved-hero-clean.jpg') }}?v={{ reach_version }}" alt="Artist moving through a backstage music environment"><div class="r5-hero-shade"></div><div class="r5-herocopy"><div class="r5-kicker">Today</div><h1>Three moves<br>matter <span>today.</span></h1><p>Focus. Follow through. Create momentum.</p></div></section>
+<section class="r5-card gold r5-brief"><div class="r5-head"><div><div class="r5-kicker">Operating Brief</div><div class="r5-sub">Your highest-leverage moves right now.</div></div><a class="r5-link" href="{{ url_for('reach.needs_you') }}">Today</a></div>
+{% if actions %}{% for action in actions[:3] %}<div class="r5-action"><span class="r5-num">{{ loop.index }}</span><div class="r5-rowmain"><div class="r5-rowname">{{ action.title }}</div>{% if action.context %}<div class="r5-rowmeta">{{ action.context }}</div>{% endif %}</div><a class="r5-cta {{ 'alt' if loop.index > 1 else '' }}" href="{{ action.url }}">{{ 'Take action' if loop.index == 1 else 'Open' }} →</a></div>{% endfor %}{% if actions|length < 3 %}<div class="r5-action"><span class="r5-num">{{ actions|length + 1 }}</span><div class="r5-rowmain"><div class="r5-rowname">Review Opportunity Radar</div><div class="r5-rowmeta">See the strongest current matches.</div></div><a class="r5-cta alt" href="{{ url_for('reach.all_opportunities') }}">Review →</a></div>{% endif %}{% if actions|length < 2 %}<div class="r5-action"><span class="r5-num">3</span><div class="r5-rowmain"><div class="r5-rowname">Build your next campaign</div><div class="r5-rowmeta">Choose a release and set the target.</div></div><a class="r5-cta alt" href="{{ url_for('reach.new_campaign') }}">Start →</a></div>{% endif %}{% else %}<div class="r5-action"><span class="r5-num">1</span><div class="r5-rowmain"><div class="r5-rowname">{{ onboarding.outstanding[0].label if onboarding and onboarding.outstanding else 'Complete your artist profile' }}</div><div class="r5-rowmeta">Finish the next piece of your release setup.</div></div><a class="r5-cta" href="{{ url_for(onboarding.outstanding[0].href) if onboarding and onboarding.outstanding else url_for('reach.artist_profile_page') }}">Take action →</a></div><div class="r5-action"><span class="r5-num">2</span><div class="r5-rowmain"><div class="r5-rowname">Review Opportunity Radar</div><div class="r5-rowmeta">See the strongest verified matches.</div></div><a class="r5-cta alt" href="{{ url_for('reach.all_opportunities') }}">Review →</a></div><div class="r5-action"><span class="r5-num">3</span><div class="r5-rowmain"><div class="r5-rowname">Build your next campaign</div><div class="r5-rowmeta">Choose a release and set the target.</div></div><a class="r5-cta alt" href="{{ url_for('reach.new_campaign') }}">Start →</a></div>{% endif %}</section>
+<div class="r5-grid"><section class="r5-card r5-passport"><div class="r5-passport-top"><div><div class="r5-title">Release Passport</div><div class="r5-sub">Ready for what's next.</div></div><div style="text-align:right"><div class="r5-ready">{{ readiness }}%</div><div style="font-size:8px;color:var(--green)">Ready</div></div></div><div class="r5-checks">{% for step in onboarding.steps[:6] %}<div class="r5-check {{ 'done' if step.state == 'DONE' else '' }}"><i>{{ '✓' if step.state == 'DONE' else '•' }}</i><span>{{ step.label }}</span></div>{% endfor %}</div>{% if onboarding.outstanding %}<a class="r5-cta alt" style="margin-top:11px" href="{{ url_for(onboarding.outstanding[0].href) }}">Complete setup →</a>{% endif %}</section>
+<section class="r5-card"><div class="r5-head"><div><div class="r5-title">Opportunity Radar</div><div class="r5-sub">Top matches for you.</div></div><a class="r5-link" href="{{ url_for('reach.all_opportunities') }}">View all →</a></div>{% if best %}{% for t in best[:3] %}<a class="r5-list" href="{{ url_for('reach.target_detail', campaign_id=t.campaign_id, target_id=t.id) }}"><span class="r5-mark">{{ (t.outlet_name or t.outlet_domain or 'R')[:2]|upper }}</span><span class="r5-rowmain"><span class="r5-rowname">{{ t.outlet_name or t.outlet_domain }}</span><span class="r5-rowmeta">{{ (t.outlet_kind or 'Opportunity').replace('_',' ') }}</span></span>{% if t.reach_score is not none %}<span class="r5-score">{{ t.reach_score }}</span>{% endif %}</a>{% endfor %}{% else %}<div class="r5-empty">No qualified opportunities yet.<br><a class="r5-link" href="{{ url_for('reach.new_campaign') }}">Start a campaign →</a></div>{% endif %}</section>
+<section class="r5-card"><div class="r5-head"><div><div class="r5-title">Relationship Memory</div><div class="r5-sub">People who remember your music.</div></div><a class="r5-link" href="{{ url_for('reach.contacts_view') }}">View all →</a></div>{% if recent_responses %}{% for response in recent_responses[:3] %}<a class="r5-list" href="{{ url_for('reach.all_responses') }}"><span class="r5-mark">{{ (response.outlet_name or 'R')[:1]|upper }}</span><span class="r5-rowmain"><span class="r5-rowname">{{ response.outlet_name or 'Response received' }}</span><span class="r5-rowmeta">{{ (response.kind or 'Response').replace('_',' ') }}</span></span></a>{% endfor %}{% else %}<div class="r5-empty">Relationship history builds as outreach gets replies and placements.</div>{% endif %}</section></div>
+<div class="r5-lower"><section class="r5-card"><div class="r5-head"><div><div class="r5-title">Campaign Lanes</div><div class="r5-sub">Your active release journeys.</div></div><a class="r5-link" href="{{ url_for('reach.campaigns_list') }}">View all →</a></div>{% set lane_items = ([featured] if featured else []) + (more_campaigns or []) %}{% if lane_items %}{% for item in lane_items[:3] %}<a class="r5-lane" href="{{ url_for('reach.overview', campaign_id=item.campaign.id) }}"><div class="r5-rowname">{{ item.campaign.recording_title or item.campaign.name }}</div><div class="r5-rowmeta">{{ item.stage }} · {{ item.campaign.status }}</div><div class="r5-stage">{% set reached = item.stages.index(item.stage) if item.stage in item.stages else 0 %}{% for stage in item.stages %}<span class="r5-dot {{ 'done' if loop.index0 <= reached else '' }}"></span>{% if not loop.last %}<span class="r5-line {{ 'done' if loop.index0 < reached else '' }}"></span>{% endif %}{% endfor %}</div></a>{% endfor %}{% else %}<div class="r5-empty">No campaigns yet. Start with one release.</div>{% endif %}</section><section class="r5-card"><div class="r5-head"><div><div class="r5-title">Recent Activity</div><div class="r5-sub">Verified updates from Reach.</div></div><a class="r5-link" href="{{ url_for('reach.all_responses') }}">View all →</a></div>{% if recent_responses %}{% for response in recent_responses[:3] %}<div class="r5-activity"><span class="r5-mark">↗</span><span class="r5-rowmain"><span class="r5-rowname">{{ (response.kind or 'Response').replace('_',' ')|title }}</span><span class="r5-rowmeta">{{ response.outlet_name or 'Campaign response' }}</span></span></div>{% endfor %}{% elif follow_ups %}{% for follow in follow_ups[:3] %}<div class="r5-activity"><span class="r5-mark">•</span><span class="r5-rowmain"><span class="r5-rowname">Follow-up due</span><span class="r5-rowmeta">{{ follow.outlet_name or 'Campaign follow-up' }}</span></span></div>{% endfor %}{% else %}<div class="r5-empty">Activity appears as campaigns discover, contact, and hear back from outlets.</div>{% endif %}</section></div>
+</div></main></div>
+<nav class="r5-bottom" aria-label="Reach mobile navigation"><a class="active" href="{{ url_for('reach.index') }}">Today</a><a href="{{ url_for('reach.all_opportunities') }}">Radar</a><a href="{{ url_for('reach.campaigns_list') }}">Campaigns</a><a href="{{ url_for('reach.all_responses') }}">Inbox</a><button id="reach-mobile-modules-trigger" type="button" onclick="openReachModules()" aria-controls="reach-mobile-modules">More</button></nav>
 </div>
 {% endblock %}
