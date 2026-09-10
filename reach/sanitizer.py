@@ -47,6 +47,9 @@ _INJECTION_PATTERNS = [
 ]
 
 _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
+_SUBMISSION_FORM_HINTS = (
+    "submit", "submission", "demo", "promo", "music", "pitch", "send", "upload", "intake",
+)
 
 
 class _Sanitizer(HTMLParser):
@@ -95,10 +98,23 @@ class _Sanitizer(HTMLParser):
 
         if tag in DROP_TREE_TAGS:
             if tag == "form":
+                raw_action = attributes.get("action", "")
+                action = urljoin(self.base_url, raw_action)
                 self.forms.append({
-                    "action": urljoin(self.base_url, attributes.get("action", "")),
+                    "action": action,
                     "method": attributes.get("method", "get").lower(),
                 })
+                # A form action is itself a route when its destination clearly
+                # reads like music intake. Surface it through the same sanitized
+                # link channel used by submission-route extraction; generic login,
+                # newsletter and search forms remain ordinary form metadata only.
+                action_hint = f"{raw_action} {action}".lower()
+                if action and any(token in action_hint for token in _SUBMISSION_FORM_HINTS):
+                    self.links.append({
+                        "href": action,
+                        "raw_href": raw_action,
+                        "text": "submission form",
+                    })
             self._drop_depth = 1
             return
 
