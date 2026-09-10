@@ -1,6 +1,7 @@
 {% extends "reach/_layout.html" %}
 {% import "reach/_layout.html" as ui with context %}
 {% from "reach/comparable_watch.html" import comparable_watch_panel with context %}
+{% from "reach/intake_monitor.html" import intake_monitor_panel with context %}
 
 {% block title %}REACH — Radar{% endblock %}
 
@@ -12,6 +13,7 @@
 </section>
 
 {{ comparable_watch_panel(comparable_watch_state, comparable_watch_artists, comparable_watch_artist_id, comparable_watch_campaigns) }}
+{{ intake_monitor_panel(intake_monitor_state) }}
 
 <section class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
   <div>
