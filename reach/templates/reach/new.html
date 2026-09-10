@@ -4,15 +4,96 @@
 {% block title %}REACH — New campaign{% endblock %}
 
 {% block reach_content %}
+{% set explicit_recording_id = request.args.get('recording_id') %}
 
+{% if not explicit_recording_id %}
 <section>
-  <h1 class="text-2xl font-semibold tracking-tight">New campaign</h1>
-  <p class="mt-1 text-sm text-gray-400">{{ recording.title }} · {{ recording.artist_name }}</p>
+  <div class="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">Campaign setup / Step 1</div>
+  <h1 class="mt-2 text-3xl font-bold tracking-tight text-white">Start with the real release.</h1>
+  <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-400">REACH will not choose a demo track or guess an artist. Enter the artist name and song title you are actually campaigning, or explicitly choose an existing track from your catalog.</p>
+</section>
+
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5 lg:col-span-2">
+    {{ ui.section('Release identity', 'These two fields become the campaign’s source of truth.') }}
+    <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <label class="block">
+        <span class="text-xs font-semibold text-gray-300">Artist name <span class="text-amber-400">*</span></span>
+        <input id="artist_name" autocomplete="off" placeholder="Enter artist name"
+               class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-3 text-base text-gray-100 placeholder:text-gray-600 focus:border-amber-500/50 focus:outline-none">
+      </label>
+      <label class="block">
+        <span class="text-xs font-semibold text-gray-300">Song title <span class="text-amber-400">*</span></span>
+        <input id="track_title" autocomplete="off" placeholder="Enter song title"
+               class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#090909] px-3 py-3 text-base text-gray-100 placeholder:text-gray-600 focus:border-amber-500/50 focus:outline-none">
+      </label>
+    </div>
+    <button type="button" id="continue-release"
+            class="mt-5 w-full rounded-lg bg-amber-500 px-4 py-3 text-sm font-bold text-black hover:bg-amber-400 sm:w-auto">
+      Continue with this release →
+    </button>
+    <p id="release-error" class="mt-3 hidden text-xs text-red-400"></p>
+  </section>
+
+  <aside class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
+    {{ ui.section('Existing music', 'Choose deliberately. Samples are never selected automatically.') }}
+    <div class="mt-4 space-y-2">
+      {% set ns = namespace(real_count=0) %}
+      {% for item in recordings %}
+        {% if not item.is_sample %}
+          {% set ns.real_count = ns.real_count + 1 %}
+          <a href="{{ url_for('reach.new_campaign', recording_id=item.id) }}"
+             class="block rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-3 hover:border-amber-500/35 hover:bg-amber-500/[0.05]">
+            <span class="block text-sm font-semibold text-gray-100">{{ item.title }}</span>
+            <span class="mt-0.5 block text-xs text-gray-400">{{ item.artist_name }}</span>
+          </a>
+        {% endif %}
+      {% endfor %}
+      {% if ns.real_count == 0 %}
+        <p class="text-xs leading-5 text-gray-500">No real tracks have been added yet. Enter the artist and title to create the first one.</p>
+      {% endif %}
+    </div>
+  </aside>
+</div>
+
+<script>
+  document.getElementById('continue-release').addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const artist = document.getElementById('artist_name').value.trim();
+    const title = document.getElementById('track_title').value.trim();
+    const error = document.getElementById('release-error');
+    error.classList.add('hidden');
+
+    if (!artist || !title) {
+      error.textContent = 'Artist name and song title are required.';
+      error.classList.remove('hidden');
+      return;
+    }
+
+    button.disabled = true;
+    const data = await reachPost('/reach/catalog', { artist_name: artist, title: title });
+    button.disabled = false;
+    if (data.ok) {
+      window.location = `/reach/new?recording_id=${encodeURIComponent(data.recording_id)}`;
+    } else {
+      error.textContent = data.error || 'Could not create this release.';
+      error.classList.remove('hidden');
+    }
+  });
+</script>
+
+{% else %}
+<section>
+  <div class="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">Campaign setup / Step 2</div>
+  <h1 class="mt-2 text-2xl font-semibold tracking-tight">New campaign</h1>
+  <p class="mt-1 text-sm text-gray-400">{{ recording.artist_name }} · {{ recording.title }}</p>
+  {% if recording.is_sample %}
+  <div class="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300">This is a demo/sample recording. Go back and choose or enter a real release before creating a live campaign.</div>
+  {% endif %}
 </section>
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
   <div class="space-y-6 lg:col-span-2">
-
     <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
       {{ ui.section('Track intelligence profile', 'Fields REACH cannot derive stay UNKNOWN. Discovery queries are built only from values you supply — nothing is guessed.') }}
 
@@ -22,9 +103,7 @@
         </div>
         <span class="shrink-0 text-xs tabular-nums text-gray-400"><span id="profile-pct">{{ completeness.score }}</span>% complete</span>
       </div>
-      <p class="mt-2 text-xs text-faint">
-        Local audio analysis: {{ audio_state.state.replace('_', ' ') }} — {{ audio_state.detail }}
-      </p>
+      <p class="mt-2 text-xs text-faint">Local audio analysis: {{ audio_state.state.replace('_', ' ') }} — {{ audio_state.detail }}</p>
 
       <div class="mt-4 space-y-2">
         {% for field in profile_fields %}
@@ -33,13 +112,9 @@
             {{ field.label }}{% if field.required %}<span class="ml-1 text-amber-400">*</span>{% endif %}
             {% if field.help %}<span class="mt-0.5 block font-normal text-[11px] text-faint">{{ field.help }}</span>{% endif %}
           </label>
-          <input id="pf-{{ field.field }}" data-field="{{ field.field }}"
-                 value="{{ field.display if field.known else '' }}"
-                 placeholder="UNKNOWN"
+          <input id="pf-{{ field.field }}" data-field="{{ field.field }}" value="{{ field.display if field.known else '' }}" placeholder="UNKNOWN"
                  class="profile-input w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm text-gray-100 placeholder:text-faint focus:border-amber-500/50 focus:outline-none">
-          <span class="text-[10px] uppercase tracking-wide text-faint">
-            {% if field.known %}{{ field.source }} · {{ (field.confidence * 100) | round | int }}%{% else %}UNKNOWN{% endif %}
-          </span>
+          <span class="text-[10px] uppercase tracking-wide text-faint">{% if field.known %}{{ field.source }} · {{ (field.confidence * 100) | round | int }}%{% else %}UNKNOWN{% endif %}</span>
         </div>
         {% endfor %}
       </div>
@@ -60,14 +135,8 @@
           <input id="territories" value="DE,GB,US" class="mt-1 w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm">
           <span class="mt-1 block text-[11px] text-faint">Two-letter codes. Drives local-language query families.</span>
         </label>
-        <label class="block">
-          <span class="text-xs font-semibold text-gray-300">Search budget</span>
-          <input id="search_budget" type="number" value="24" class="mt-1 w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm">
-        </label>
-        <label class="block">
-          <span class="text-xs font-semibold text-gray-300">Per-domain crawl budget</span>
-          <input id="domain_budget" type="number" value="8" class="mt-1 w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm">
-        </label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Search budget</span><input id="search_budget" type="number" value="24" class="mt-1 w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm"></label>
+        <label class="block"><span class="text-xs font-semibold text-gray-300">Per-domain crawl budget</span><input id="domain_budget" type="number" value="8" class="mt-1 w-full rounded-md border border-white/10 bg-[#090909] px-2.5 py-1.5 text-sm"></label>
       </div>
       <div class="mt-4">
         <span class="text-xs font-semibold text-gray-300">Channels</span>
@@ -84,13 +153,15 @@
 
   <div class="space-y-6">
     <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
-      {{ ui.section('Identity') }}
-      <dl class="mt-3 space-y-1.5 text-xs">
+      {{ ui.section('Release identity') }}
+      <div class="mt-3 rounded-lg border border-white/[0.08] bg-white/[0.03] p-3">
+        <div class="text-sm font-semibold text-gray-100">{{ recording.title }}</div>
+        <div class="mt-0.5 text-xs text-gray-400">{{ recording.artist_name }}</div>
+      </div>
+      <a href="{{ url_for('reach.new_campaign') }}" class="mt-3 inline-flex text-xs font-semibold text-amber-400 hover:underline">Change release</a>
+      <dl class="mt-4 space-y-1.5 text-xs">
         {% for key, value in identifiers.items() if key != 'platform_assets' %}
-        <div class="flex justify-between gap-3">
-          <dt class="text-gray-400">{{ key.replace('_',' ') }}</dt>
-          <dd class="truncate text-right {{ 'text-faint' if value is none else 'text-gray-200' }}">{% if value is not none %}{{ value }}{% else %}{{ ui.unknown() }}{% endif %}</dd>
-        </div>
+        <div class="flex justify-between gap-3"><dt class="text-gray-400">{{ key.replace('_',' ') }}</dt><dd class="truncate text-right {{ 'text-faint' if value is none else 'text-gray-200' }}">{% if value is not none %}{{ value }}{% else %}{{ ui.unknown() }}{% endif %}</dd></div>
         {% endfor %}
       </dl>
     </section>
@@ -99,35 +170,21 @@
       {{ ui.section('Release readiness', 'Each item states what it gates.') }}
       <div class="mt-3 space-y-2">
         {% for check in readiness.checks %}
-        <div class="flex items-start gap-2">
-          <span class="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border text-[9px] font-bold {{ 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' if check.ok else 'border-amber-500/40 bg-amber-500/10 text-amber-400' }}">{{ '✓' if check.ok else '!' }}</span>
-          <span class="min-w-0">
-            <span class="block text-xs font-semibold {{ 'text-gray-300' if check.ok else 'text-amber-300' }}">{{ check.label }}</span>
-            {% if not check.ok %}<span class="block text-[11px] text-faint">{{ check.consequence }}</span>{% endif %}
-          </span>
-        </div>
+        <div class="flex items-start gap-2"><span class="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border text-[9px] font-bold {{ 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' if check.ok else 'border-amber-500/40 bg-amber-500/10 text-amber-400' }}">{{ '✓' if check.ok else '!' }}</span><span class="min-w-0"><span class="block text-xs font-semibold {{ 'text-gray-300' if check.ok else 'text-amber-300' }}">{{ check.label }}</span>{% if not check.ok %}<span class="block text-[11px] text-faint">{{ check.consequence }}</span>{% endif %}</span></div>
         {% endfor %}
       </div>
     </section>
 
     <section class="rounded-xl border {{ 'border-emerald-500/20' if attestation else 'border-amber-500/25' }} bg-[#111113] p-5">
       {{ ui.section('Rights attestation') }}
-      {% if attestation %}
-      <p class="mt-2 text-xs text-emerald-400">Recorded {{ attestation.attested_at[:10] }} by {{ attestation.attested_by }}.</p>
-      {% else %}
+      {% if attestation %}<p class="mt-2 text-xs text-emerald-400">Recorded {{ attestation.attested_at[:10] }} by {{ attestation.attested_by }}.</p>{% else %}
       <p class="mt-2 text-[11px] leading-relaxed text-gray-400">{{ attestation_statement }}</p>
-      <button type="button" data-post="{{ url_for('reach.attest', recording_id=recording.id) }}"
-              data-success="Rights attestation recorded"
-              class="mt-3 w-full rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-400 transition-colors hover:bg-amber-500/20">
-        I confirm these rights
-      </button>
+      <button type="button" data-post="{{ url_for('reach.attest', recording_id=recording.id) }}" data-success="Rights attestation recorded" class="mt-3 w-full rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-400 transition-colors hover:bg-amber-500/20">I confirm these rights</button>
       {% endif %}
     </section>
 
-    <button type="button" id="create-campaign"
-            class="w-full rounded-md border border-amber-500/40 bg-amber-500/15 px-3 py-2.5 text-sm font-semibold text-amber-300 transition-colors hover:bg-amber-500/25">
-      Create REACH campaign
-    </button>
+    <button type="button" id="create-campaign" {% if recording.is_sample %}disabled{% endif %}
+            class="w-full rounded-md border border-amber-500/40 bg-amber-500/15 px-3 py-2.5 text-sm font-semibold text-amber-300 transition-colors hover:bg-amber-500/25 disabled:cursor-not-allowed disabled:opacity-40">Create REACH campaign</button>
     <p id="create-error" class="hidden text-xs text-red-400"></p>
   </div>
 </div>
@@ -138,9 +195,7 @@
 
   document.querySelectorAll('.profile-input').forEach((input) => {
     input.addEventListener('change', async () => {
-      const data = await reachPost(`/reach/profile/${profileId}/field`, {
-        field: input.dataset.field, value: input.value,
-      });
+      const data = await reachPost(`/reach/profile/${profileId}/field`, { field: input.dataset.field, value: input.value });
       if (data.ok) {
         document.getElementById('profile-bar').style.width = data.completeness.score + '%';
         document.getElementById('profile-pct').textContent = data.completeness.score;
@@ -148,7 +203,8 @@
     });
   });
 
-  document.getElementById('create-campaign').addEventListener('click', async (event) => {
+  const createButton = document.getElementById('create-campaign');
+  if (createButton) createButton.addEventListener('click', async (event) => {
     const button = event.currentTarget;
     button.disabled = true;
     const channels = Array.from(document.querySelectorAll('.channel-box:checked')).map((box) => box.value);
@@ -169,4 +225,5 @@
     }
   });
 </script>
+{% endif %}
 {% endblock %}
