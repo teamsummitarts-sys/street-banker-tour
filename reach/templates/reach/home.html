@@ -5,294 +5,145 @@
 
 {% block reach_content %}
 <style>
-  .reach-command-surface {
-    background:
-      radial-gradient(circle at 14% 0%, rgba(245,158,11,.11), transparent 34%),
-      linear-gradient(145deg, rgba(29,29,31,.98), rgba(13,13,15,.98));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 22px 50px rgba(0,0,0,.28);
-  }
-  .reach-action-row { transition: transform .18s ease, border-color .18s ease, background .18s ease; }
-  .reach-action-row:hover { transform: translateY(-1px); }
-  .reach-instrument-panel {
-    background: linear-gradient(180deg, rgba(24,24,26,.96), rgba(13,13,15,.98));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), inset 0 -1px 0 rgba(0,0,0,.65);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .reach-action-row { transition: none; }
-    .reach-action-row:hover { transform: none; }
-  }
+  :root{--r-gold:#d8ad62;--r-gold2:#f2cf89;--r-ink:#07090a;--r-panel:#0d1113;--r-panel2:#11171a;--r-line:rgba(255,255,255,.09);--r-muted:#8e989d;--r-green:#62e6a5}
+  #main{max-width:1440px!important;padding-top:18px!important}
+  .r-shell{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.012em}
+  .r-hero{position:relative;overflow:hidden;border:1px solid var(--r-line);border-radius:24px;min-height:290px;background:radial-gradient(circle at 77% 35%,rgba(216,173,98,.17),transparent 34%),linear-gradient(120deg,#0d1113 0%,#090c0e 55%,#11100e 100%);box-shadow:0 30px 80px rgba(0,0,0,.26)}
+  .r-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.16),transparent 55%,rgba(0,0,0,.1));pointer-events:none}
+  .r-gridline{position:absolute;inset:0;opacity:.2;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:40px 40px}
+  .r-kicker{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--r-gold2);font-weight:800}
+  .r-display{font-size:clamp(40px,6vw,76px);line-height:.91;font-weight:780;letter-spacing:-.055em;color:#f4f1ea;max-width:820px}
+  .r-display em{font-style:normal;color:var(--r-gold2)}
+  .r-search{height:50px;border:1px solid rgba(255,255,255,.12);background:rgba(7,9,10,.74);border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 15px;color:#aab2b6;backdrop-filter:blur(16px)}
+  .r-panel{border:1px solid var(--r-line);background:linear-gradient(180deg,rgba(17,23,26,.98),rgba(10,14,16,.98));border-radius:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+  .r-panel-title{font-size:21px;font-weight:750;letter-spacing:-.035em;color:#f4f1ea}
+  .r-panel-sub{font-size:12px;color:var(--r-muted);margin-top:2px}
+  .r-brief{overflow:hidden}
+  .r-brief-head{padding:18px 20px;border-left:4px solid var(--r-gold);display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .r-move{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;padding:15px 18px;border-top:1px solid rgba(255,255,255,.07);transition:.18s ease}
+  .r-move:hover{background:rgba(255,255,255,.025)}
+  .r-num{width:32px;height:32px;display:grid;place-items:center;border-radius:999px;background:var(--r-gold2);color:#17120b;font-weight:850;font-size:13px}
+  .r-move-title{font-size:14px;color:#f2f2ee;font-weight:690;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .r-move-meta{font-size:11px;color:var(--r-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .r-button{display:inline-flex;min-height:38px;align-items:center;justify-content:center;gap:8px;border-radius:10px;padding:0 14px;font-size:12px;font-weight:800;border:1px solid rgba(216,173,98,.55);color:#efd69e;background:rgba(216,173,98,.07)}
+  .r-button.primary{background:linear-gradient(180deg,#f1d391,#d7aa5e);color:#18130b;border:none;box-shadow:0 8px 24px rgba(216,173,98,.14)}
+  .r-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .r-card{padding:17px;min-height:220px}
+  .r-row{display:flex;align-items:center;gap:11px;padding:10px 0;border-top:1px solid rgba(255,255,255,.065)}
+  .r-row:first-of-type{border-top:0}
+  .r-score{margin-left:auto;width:38px;height:38px;border-radius:999px;border:2px solid rgba(98,230,165,.7);display:grid;place-items:center;color:var(--r-green);font-weight:800;font-size:12px}
+  .r-name{font-size:12px;font-weight:700;color:#f2f2ef}.r-meta{font-size:10px;color:var(--r-muted);margin-top:2px}
+  .r-stage{height:5px;border-radius:999px;background:rgba(255,255,255,.09);overflow:hidden;margin-top:7px}.r-stage>span{display:block;height:100%;background:linear-gradient(90deg,var(--r-gold),var(--r-green));border-radius:999px}
+  .r-passport{display:grid;grid-template-columns:1.25fr .75fr;gap:12px}.r-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;margin-top:14px}.r-check{font-size:11px;color:#d6dcde;display:flex;gap:8px;align-items:center}.r-check i{width:17px;height:17px;border-radius:4px;background:rgba(98,230,165,.18);border:1px solid rgba(98,230,165,.45);display:grid;place-items:center;color:var(--r-green);font-style:normal;font-size:10px}
+  .r-activity{padding:17px}.r-activity-line{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:9px;padding:10px 0;border-top:1px solid rgba(255,255,255,.065)}
+  .r-dot{width:26px;height:26px;border-radius:9px;background:rgba(216,173,98,.11);display:grid;place-items:center;color:var(--r-gold2);font-size:11px}
+  .r-footerline{margin-top:16px;padding:13px 2px 2px;border-top:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;gap:20px;color:#707b80;font-size:10px;letter-spacing:.16em;text-transform:uppercase}
+  @media(max-width:900px){.r-cards{grid-template-columns:1fr}.r-passport{grid-template-columns:1fr}.r-hero{min-height:245px}.r-move{grid-template-columns:38px minmax(0,1fr)}.r-move .r-button{grid-column:2;width:100%;margin-top:3px}.r-display{font-size:48px}.r-brief-head{align-items:flex-start}.r-search{margin-top:18px}.r-card{min-height:0}}
+  @media(max-width:560px){#main{padding-left:14px!important;padding-right:14px!important}.r-hero{border-radius:18px}.r-display{font-size:43px}.r-hero-content{padding:25px 20px!important}.r-cards{gap:10px}.r-panel{border-radius:15px}.r-checks{grid-template-columns:1fr}.r-footerline{flex-direction:column;gap:6px}.r-move-title{white-space:normal}.r-move-meta{white-space:normal}}
 </style>
 
-<section class="reach-command-surface overflow-hidden rounded-xl border border-white/[0.08] p-5 sm:p-7">
-  <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-    <div class="max-w-2xl">
-      <div class="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">
-        <span class="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,.75)]"></span>
-        Today / Operations
-      </div>
-      <h1 class="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">Your next move.<br class="hidden sm:block"> Not another dashboard.</h1>
-      <p class="mt-3 max-w-xl text-sm leading-6 text-gray-400">
-        REACH reads the state of your campaigns and surfaces the one action that moves the release forward.
-      </p>
-    </div>
-
-    {% if actions %}
-    {% set lead = actions[0] %}
-    <a href="{{ lead.url }}" class="reach-action-row group flex min-w-0 items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500 px-4 py-3 text-black shadow-[0_14px_28px_rgba(245,158,11,.15)] hover:bg-amber-400 lg:w-[360px]">
-      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-black/10" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-          <path d="M5 12h14M13 6l6 6-6 6"/>
-        </svg>
-      </span>
-      <span class="min-w-0 flex-1">
-        <span class="block text-[10px] font-bold uppercase tracking-[0.18em] opacity-70">Do this next</span>
-        <span class="mt-0.5 block truncate text-sm font-bold">{{ lead.title }}</span>
-        {% if lead.context %}<span class="mt-0.5 block truncate text-xs opacity-70">{{ lead.context }}</span>{% endif %}
-      </span>
-    </a>
-    {% elif featured %}
-    <a href="{{ featured.next_url }}" class="reach-action-row inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-black hover:bg-amber-400">
-      Continue {{ featured.campaign.recording_title }}
-      <span aria-hidden="true">→</span>
-    </a>
-    {% else %}
-    <a href="{{ url_for('reach.catalog_view') }}" class="reach-action-row inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-bold text-black hover:bg-amber-400">
-      Add your first track <span aria-hidden="true">→</span>
-    </a>
-    {% endif %}
-  </div>
-
-  <div class="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-white/[0.08] bg-white/[0.08] sm:grid-cols-3">
-    <div class="bg-[#111113] px-4 py-3">
-      <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">Recommendations</div>
-      <div class="mt-1 flex items-center gap-2 text-xs font-semibold text-gray-100"><span class="text-emerald-400">●</span> Evidence stays attached</div>
-    </div>
-    <div class="bg-[#111113] px-4 py-3">
-      <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">Outreach</div>
-      <div class="mt-1 flex items-center gap-2 text-xs font-semibold text-gray-100"><span class="text-amber-400">●</span> Human approval required</div>
-    </div>
-    <div class="bg-[#111113] px-4 py-3">
-      <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">Unknown data</div>
-      <div class="mt-1 flex items-center gap-2 text-xs font-semibold text-gray-100"><span class="font-mono text-gray-400">—</span> Never converted to a claim</div>
-    </div>
-  </div>
-</section>
-
-<section aria-labelledby="reach-platform-heading">
-  <div class="flex items-end justify-between gap-4">
-    <div>
-      <div class="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">{{ 'Demo workspace' if fixture_mode else 'Your workspace' }}</div>
-      <h2 id="reach-platform-heading" class="mt-1 text-xl font-bold tracking-tight text-white">Open the platform</h2>
-      <p class="mt-1 text-xs leading-5 text-gray-400">Every REACH workspace stays available, even before your first campaign.</p>
-    </div>
-    <a href="{{ url_for('reach.advanced') }}" class="hidden shrink-0 text-xs font-semibold text-gray-400 hover:text-amber-400 sm:block">All modules →</a>
-  </div>
-
-  <div class="mt-4 flex flex-col gap-2 sm:flex-row">
-    <a href="{{ url_for('reach.new_campaign') }}" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-black shadow-[0_12px_26px_rgba(245,158,11,.14)] hover:bg-amber-400">
-      <span class="text-lg leading-none" aria-hidden="true">+</span> Create Campaign
-    </a>
-    <a href="{{ url_for('reach.catalog_view') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-gray-200 hover:border-white/20 hover:bg-white/[0.06]">
-      Add or manage music
-    </a>
-  </div>
-
-  <nav class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6" aria-label="REACH workspace modules">
-    {% set workspace_modules = [
-      ('reach.all_opportunities', 'Radar', 'Find and qualify', 'M12 3l2.4 6.1L21 12l-6.6 2.9L12 21l-2.4-6.1L3 12l6.6-2.9z'),
-      ('reach.campaigns_list', 'Campaign Hub', 'Run every release', 'M3 11l14-5v12L3 13v-2zm14 1h4M7 14v5h3v-4'),
-      ('reach.catalog_view', 'My Music', 'Tracks and rights', 'M5 4h14v16H5zM8 8h8M8 12h8M8 16h5'),
-      ('reach.contacts_view', 'Contacts', 'Relationship history', 'M8 11a4 4 0 108 0 4 4 0 00-8 0M4 21a8 8 0 0116 0'),
-      ('reach.needs_you', 'Needs You', 'Approvals and tasks', 'M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0'),
-      ('reach.all_responses', 'Inbox', 'Replies and follow-up', 'M4 6h16v12H4zM4 7l8 6 8-6'),
-    ] %}
-    {% for endpoint, label, description, icon in workspace_modules %}
-    <a href="{{ url_for(endpoint) }}" class="reach-action-row group relative min-h-28 overflow-hidden rounded-xl border border-white/[0.08] bg-[#111113] p-3.5 hover:border-amber-500/35">
-      <div class="flex items-start justify-between gap-2">
-        <span class="grid h-9 w-9 place-items-center rounded-lg border border-white/[0.08] bg-[#171719] text-gray-400 group-hover:border-amber-500/30 group-hover:text-amber-400">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="{{ icon }}"/></svg>
-        </span>
-        {% if endpoint == 'reach.needs_you' and needs_you_count %}<span class="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold tabular-nums text-black">{{ needs_you_count }}</span>{% else %}<span class="text-gray-400 group-hover:text-amber-400" aria-hidden="true">↗</span>{% endif %}
-      </div>
-      <span class="mt-3 block text-sm font-bold text-white">{{ label }}</span>
-      <span class="mt-0.5 block text-[11px] leading-4 text-gray-400">{{ description }}</span>
-    </a>
-    {% endfor %}
-  </nav>
-</section>
-
-{% if onboarding and onboarding.show %}
-<details class="group rounded-xl border border-white/[0.08] bg-[#111113]">
-  <summary class="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
-    <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-amber-500/25 bg-amber-500/10 text-sm font-bold tabular-nums text-amber-400">{{ onboarding.done_count }}/{{ onboarding.total }}</span>
-    <span class="min-w-0 flex-1">
-      <span class="block text-sm font-semibold text-gray-100">Finish setting up REACH</span>
-      <span class="block truncate text-xs text-gray-400">Setup stays available without taking over the workspace.</span>
-    </span>
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4 text-gray-400 transition-transform group-open:rotate-90" aria-hidden="true"><path d="M7 4l6 6-6 6"/></svg>
-  </summary>
-  <ol class="border-t border-white/[0.06] px-4 py-3">
-    {% for step in onboarding.steps %}
-    <li class="flex items-start gap-3 py-2">
-      <span class="mt-0.5 text-sm {{ 'text-emerald-400' if step.state == 'DONE' else 'text-gray-400' }}" aria-hidden="true">{{ '✓' if step.state == 'DONE' else '○' }}</span>
-      <span class="min-w-0 flex-1">
-        <span class="block text-sm font-semibold {{ 'text-gray-400' if step.state == 'DONE' else 'text-gray-100' }}">{{ step.label }}</span>
-        <span class="mt-0.5 block text-xs text-gray-400">{{ step.detail }}</span>
-      </span>
-      {% if step.state == 'TODO' %}<a href="{{ url_for(step.href) }}" class="shrink-0 rounded-lg border border-white/10 px-3 py-1 text-xs font-semibold text-gray-300 hover:border-amber-500/40 hover:text-amber-400">Open</a>{% endif %}
-    </li>
-    {% endfor %}
-  </ol>
-</details>
-{% endif %}
-
-{% if campaign_count %}
-<section aria-label="Live campaign signals" class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-  <a href="{{ url_for('reach.all_opportunities') }}" class="reach-instrument-panel rounded-xl border border-white/[0.08] p-4 hover:border-amber-500/30">
-    <div class="flex items-start justify-between gap-2"><span class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">Qualified</span><span class="text-amber-400">↗</span></div>
-    <div class="mt-3 text-3xl font-bold tabular-nums {{ 'text-amber-400' if qualified else 'text-gray-100' }}">{{ qualified|length }}</div>
-    <div class="mt-1 text-xs text-gray-400">Opportunities to inspect</div>
-  </a>
-  <a href="{{ url_for('reach.all_opportunities', view='review') }}" class="reach-instrument-panel rounded-xl border border-white/[0.08] p-4 hover:border-amber-500/30">
-    <div class="flex items-start justify-between gap-2"><span class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">Approval</span><span class="text-amber-400">↗</span></div>
-    <div class="mt-3 text-3xl font-bold tabular-nums {{ 'text-amber-400' if drafted else 'text-gray-100' }}">{{ drafted|length }}</div>
-    <div class="mt-1 text-xs text-gray-400">Pitches waiting on you</div>
-  </a>
-  <a href="{{ url_for('reach.all_responses') }}" class="reach-instrument-panel rounded-xl border border-white/[0.08] p-4 hover:border-white/20">
-    <div class="flex items-start justify-between gap-2"><span class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">Follow-up</span><span class="text-gray-400">↗</span></div>
-    <div class="mt-3 text-3xl font-bold tabular-nums text-gray-100">{{ follow_ups|length }}</div>
-    <div class="mt-1 text-xs text-gray-400">Relationships due now</div>
-  </a>
-  <a href="{{ url_for('reach.all_responses') }}" class="reach-instrument-panel rounded-xl border border-white/[0.08] p-4 hover:border-emerald-500/25">
-    <div class="flex items-start justify-between gap-2"><span class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">Responses</span><span class="text-emerald-400">↗</span></div>
-    <div class="mt-3 text-3xl font-bold tabular-nums {{ 'text-emerald-400' if recent_responses else 'text-gray-100' }}">{{ recent_responses|length }}</div>
-    <div class="mt-1 text-xs text-gray-400">Recent verified replies</div>
-  </a>
-</section>
-
-<section class="grid grid-cols-1 gap-4 lg:grid-cols-5">
-  <div class="rounded-xl border border-white/[0.08] bg-[#111113] p-5 lg:col-span-3">
-    <div class="flex items-end justify-between gap-3">
-      <div>{{ ui.section('Priority queue', 'Only actions supported by the current campaign state.') }}</div>
-      <a href="{{ url_for('reach.needs_you') }}" class="text-xs font-semibold text-amber-400 hover:underline">Human tasks</a>
-    </div>
-    {% if actions %}
-    <ol class="mt-4 space-y-2">
-      {% for action in actions %}
-      <li>
-        <a href="{{ action.url }}" class="reach-action-row group flex items-center gap-3 rounded-xl border {{ 'border-amber-500/30 bg-amber-500/[0.08]' if loop.first else 'border-white/[0.07] bg-[#171719]' }} px-3 py-3 hover:border-white/20">
-          <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border {{ 'border-amber-500/30 text-amber-400' if loop.first else 'border-white/10 text-gray-400' }}" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span>
-          <span class="min-w-0 flex-1">
-            <span class="block truncate text-sm font-semibold text-gray-100">{{ action.title }}</span>
-            {% if action.context %}<span class="mt-0.5 block truncate text-xs text-gray-400">{{ action.context }}</span>{% endif %}
-          </span>
-          <span class="shrink-0 text-gray-400 group-hover:text-amber-400" aria-hidden="true">→</span>
-        </a>
-      </li>
-      {% endfor %}
-    </ol>
-    {% else %}
-    <div class="mt-4">{{ ui.empty('No action is waiting. REACH will surface the next verified move here.') }}</div>
-    {% endif %}
-  </div>
-
-  <div class="reach-instrument-panel rounded-xl border border-white/[0.08] p-5 lg:col-span-2">
-    {% if featured %}
-    <div class="flex items-start justify-between gap-3">
-      <div>
-        <div class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400">Live campaign</div>
-        <a href="{{ url_for('reach.overview', campaign_id=featured.campaign.id) }}" class="mt-2 block text-xl font-bold tracking-tight text-white hover:text-amber-400">{{ featured.campaign.recording_title }}</a>
-        <div class="mt-1 text-xs text-gray-400">{{ featured.campaign.artist_name }} · {{ featured.campaign.mode }}</div>
-      </div>
-      {{ ui.status_badge(featured.campaign.status) }}
-    </div>
-    <div class="mt-5">{{ ui.stage_bar(featured.stages, featured.stage) }}</div>
-    <div class="mt-5 grid grid-cols-3 gap-3 border-t border-white/[0.07] pt-4">
-      {{ ui.metric(featured.metrics.qualified, 'Qualified', 'text-amber-400') }}
-      {{ ui.metric(featured.metrics.responses, 'Replies') }}
-      {{ ui.metric(featured.metrics.placed, 'Placed', 'text-emerald-400') }}
-    </div>
-    <a href="{{ featured.next_url }}" class="mt-5 flex w-full items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-black hover:bg-amber-400">Continue at {{ featured.stage }} →</a>
-    {% else %}
-    {{ ui.empty('No live campaign yet.', url_for('reach.new_campaign'), 'Start a campaign') }}
-    {% endif %}
-  </div>
-</section>
-
-{% if best %}
-<section>
-  <div class="flex items-end justify-between gap-3">
-    <div>{{ ui.section('Opportunity radar', 'Ranked from persisted evidence. Open a card to inspect why it fits.') }}</div>
-    <a href="{{ url_for('reach.all_opportunities') }}" class="text-xs font-semibold text-amber-400 hover:underline">Open radar →</a>
-  </div>
-  <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-    {% for t in best %}
-    <a href="{{ url_for('reach.target_detail', campaign_id=t.campaign_id, target_id=t.id) }}" class="reach-action-row rounded-xl border border-white/[0.08] bg-[#111113] p-4 hover:border-amber-500/30">
-      <div class="flex items-start justify-between gap-3">
-        <div class="min-w-0">
-          <div class="truncate text-sm font-bold text-gray-100">{{ t.outlet_name or t.outlet_domain }}</div>
-          <div class="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-400">{{ (t.outlet_kind or 'UNKNOWN').replace('_',' ') }} · {{ t.campaign_name }}</div>
-        </div>
-        {{ ui.match_pill(t.reach_score) }}
-      </div>
-      {% if t.status_reason %}<p class="mt-3 line-clamp-2 text-xs leading-5 text-gray-400">{{ t.status_reason }}</p>{% endif %}
-      <div class="mt-3 border-t border-white/[0.06] pt-3 text-[11px] font-semibold text-amber-400">Inspect evidence →</div>
-    </a>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
-
-{% if drafted or recent_responses %}
-<section class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-  <div class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
-    {{ ui.section('Approval desk', 'Nothing leaves REACH without a human decision.') }}
-    <div class="mt-3 space-y-2">
-      {% for t in drafted[:3] %}
-      <a href="{{ url_for('reach.review', campaign_id=t.campaign_id) }}" class="flex items-center justify-between gap-3 rounded-lg border border-white/[0.07] bg-[#171719] px-3 py-3 hover:border-amber-500/30">
-        <span class="min-w-0"><span class="block truncate text-sm font-semibold">{{ t.outlet_name or t.outlet_domain }}</span><span class="block truncate text-xs text-gray-400">{{ t.campaign_name }}</span></span>
-        <span class="shrink-0 text-xs font-semibold text-amber-400">Review →</span>
+<div class="r-shell space-y-3">
+  <section class="r-hero">
+    <div class="r-gridline"></div>
+    <div class="r-hero-content relative z-10 p-7 sm:p-9 lg:p-10">
+      <div class="r-kicker">REACH / TODAY</div>
+      <h1 class="r-display mt-5">Momentum creates <em>opportunity.</em></h1>
+      <p class="mt-5 max-w-xl text-sm leading-6 text-gray-300">Focus today. Build what’s next. REACH turns live opportunity data, campaign state and relationship history into the next move worth making.</p>
+      <a href="{{ url_for('reach.all_opportunities') }}" class="r-search mt-6 max-w-2xl" aria-label="Ask Reach or open opportunity radar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" class="h-5 w-5"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <span class="min-w-0 flex-1 truncate text-sm">Ask Reach anything — opportunities, relationships, releases…</span>
+        <span class="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-gray-400">RADAR</span>
       </a>
-      {% else %}
-      <p class="text-xs text-gray-400">No pitch is waiting for approval.</p>
-      {% endfor %}
     </div>
-  </div>
+  </section>
 
-  <div class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
-    <div class="flex items-end justify-between gap-3">{{ ui.section('Response inbox', 'Replies become concrete next actions.') }}<a href="{{ url_for('reach.all_responses') }}" class="text-xs font-semibold text-amber-400">Open inbox</a></div>
-    <ol class="mt-3 divide-y divide-white/[0.06]">
-      {% for response in recent_responses[:4] %}
-      <li class="flex items-center gap-3 py-2.5">
-        {{ ui.status_badge(response.kind) }}
-        <span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold">{{ response.outlet_name }}</span>{% if response.body_excerpt %}<span class="block truncate text-xs text-gray-400">&ldquo;{{ response.body_excerpt }}&rdquo;</span>{% endif %}</span>
-      </li>
-      {% else %}
-      <li class="py-3 text-xs text-gray-400">No verified response has arrived yet.</li>
+  <section class="r-panel r-brief">
+    <div class="r-brief-head">
+      <div><div class="r-kicker">Today</div><h2 class="r-panel-title mt-1">Operating Brief</h2><p class="r-panel-sub">Your highest-leverage moves for today.</p></div>
+      <a href="{{ url_for('reach.needs_you') }}" class="text-xs font-semibold text-gray-400 hover:text-amber-300">Needs You{% if needs_you_count %} · {{ needs_you_count }}{% endif %}</a>
+    </div>
+    {% if actions %}
+      {% for action in actions[:3] %}
+      <div class="r-move">
+        <span class="r-num">{{ loop.index }}</span>
+        <div class="min-w-0"><div class="r-move-title">{{ action.title }}</div><div class="r-move-meta">{{ action.context or 'Verified from current campaign state' }}</div></div>
+        <a href="{{ action.url }}" class="r-button {{ 'primary' if loop.first else '' }}">{{ 'Take action' if loop.first else 'Open' }} <span>→</span></a>
+      </div>
       {% endfor %}
-    </ol>
-  </div>
-</section>
-{% endif %}
+    {% else %}
+      <div class="px-5 py-8 text-sm text-gray-400">Nothing is waiting on you. REACH will surface the next verified move here.</div>
+    {% endif %}
+  </section>
 
-{% else %}
-<section class="reach-instrument-panel rounded-xl border border-white/[0.08] p-6 sm:p-8">
-  <div class="grid grid-cols-1 gap-7 lg:grid-cols-5 lg:items-center">
-    <div class="lg:col-span-3">
-      <div class="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-400">Start with the release</div>
-      <h2 class="mt-3 text-2xl font-bold tracking-tight text-white">Add one track. Build one evidence-backed campaign.</h2>
-      <p class="mt-3 max-w-xl text-sm leading-6 text-gray-400">REACH qualifies open playlists, magazines, vlogs, blogs and radio without inventing fit, placement or performance claims.</p>
-      <div class="mt-5 flex flex-wrap gap-2">
-        <a href="{{ url_for('reach.catalog_view') }}" class="rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-bold text-black hover:bg-amber-400">Add a track</a>
-        <a href="{{ url_for('reach.new_campaign') }}" class="rounded-lg border border-white/10 px-4 py-2.5 text-sm font-semibold text-gray-200 hover:border-white/20">Create campaign</a>
+  <section class="r-cards">
+    <div class="r-panel r-card">
+      <div class="flex items-start justify-between gap-4"><div><h2 class="r-panel-title">Opportunity Radar</h2><p class="r-panel-sub">Curated from evidence, not guesses.</p></div><a href="{{ url_for('reach.all_opportunities') }}" class="text-[11px] text-gray-400 hover:text-amber-300">View all →</a></div>
+      <div class="mt-3">
+      {% for t in best[:4] %}
+        <a href="{{ url_for('reach.target_detail', campaign_id=t.campaign_id, target_id=t.id) }}" class="r-row group">
+          <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.035] text-[10px] font-extrabold text-amber-300">{{ (t.outlet_name or t.outlet_domain or 'OP')[:2]|upper }}</span>
+          <span class="min-w-0"><span class="r-name block truncate">{{ t.outlet_name or t.outlet_domain }}</span><span class="r-meta block truncate">{{ (t.outlet_kind or 'Opportunity').replace('_',' ') }} · {{ t.campaign_name }}</span></span>
+          {% if t.reach_score is not none %}<span class="r-score">{{ t.reach_score }}</span>{% else %}<span class="ml-auto text-[10px] text-gray-500">UNKNOWN</span>{% endif %}
+        </a>
+      {% else %}
+        <div class="py-5 text-xs text-gray-500">No qualified opportunities yet.</div>
+      {% endfor %}
       </div>
     </div>
-    <ol class="space-y-2 lg:col-span-2" aria-label="REACH workflow">
-      {% for step in ['Add the release', 'Qualify live opportunities', 'Approve the pitch', 'Track the response'] %}
-      <li class="flex items-center gap-3 rounded-lg border border-white/[0.07] bg-[#171719] px-3 py-2.5"><span class="font-mono text-xs text-amber-400">{{ '%02d'|format(loop.index) }}</span><span class="text-sm font-semibold text-gray-200">{{ step }}</span></li>
+
+    <div class="r-panel r-card">
+      <div class="flex items-start justify-between gap-4"><div><h2 class="r-panel-title">Campaign Lanes</h2><p class="r-panel-sub">One view of what is moving.</p></div><a href="{{ url_for('reach.campaigns_list') }}" class="text-[11px] text-gray-400 hover:text-amber-300">View all →</a></div>
+      <div class="mt-3">
+        {% if featured %}
+        <a href="{{ url_for('reach.overview', campaign_id=featured.campaign.id) }}" class="r-row block">
+          <div class="flex items-center gap-10"><div class="min-w-0 flex-1"><div class="r-name truncate">{{ featured.campaign.recording_title }}</div><div class="r-meta">{{ featured.stage }} · {{ featured.campaign.artist_name }}</div><div class="r-stage"><span style="width:{{ ((featured.stages.index(featured.stage)+1) / (featured.stages|length) * 100)|round|int }}%"></span></div></div><span class="text-xs font-bold text-emerald-400">{{ featured.stage }}</span></div>
+        </a>
+        {% endif %}
+        {% for c in more_campaigns %}
+        <a href="{{ url_for('reach.overview', campaign_id=c.campaign.id) }}" class="r-row block">
+          <div class="flex items-center gap-10"><div class="min-w-0 flex-1"><div class="r-name truncate">{{ c.campaign.recording_title }}</div><div class="r-meta">{{ c.stage }} · {{ c.campaign.artist_name }}</div><div class="r-stage"><span style="width:{{ ((c.stages.index(c.stage)+1) / (c.stages|length) * 100)|round|int }}%"></span></div></div><span class="text-xs font-bold text-gray-300">{{ c.stage }}</span></div>
+        </a>
+        {% else %}{% if not featured %}<div class="py-5 text-xs text-gray-500">No active campaigns yet.</div>{% endif %}{% endfor %}
+      </div>
+      <a href="{{ url_for('reach.new_campaign') }}" class="r-button mt-3 w-full">+ Create campaign</a>
+    </div>
+
+    <div class="r-panel r-card">
+      <div class="flex items-start justify-between gap-4"><div><h2 class="r-panel-title">Relationship Memory</h2><p class="r-panel-sub">People and outlets worth remembering.</p></div><a href="{{ url_for('reach.contacts_view') }}" class="text-[11px] text-gray-400 hover:text-amber-300">Open →</a></div>
+      <div class="mt-3">
+      {% for response in recent_responses[:4] %}
+        <a href="{{ url_for('reach.all_responses') }}" class="r-row">
+          <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-amber-500/10 text-[10px] font-extrabold text-amber-300">{{ (response.outlet_name or 'R')[:2]|upper }}</span>
+          <span class="min-w-0 flex-1"><span class="r-name block truncate">{{ response.outlet_name or 'Response' }}</span><span class="r-meta block truncate">{{ response.kind.replace('_',' ') if response.kind else 'Relationship activity' }}</span></span><span class="text-gray-500">→</span>
+        </a>
+      {% else %}
+        <div class="py-5 text-xs text-gray-500">Relationship history will build as replies arrive.</div>
       {% endfor %}
-    </ol>
-  </div>
-</section>
-{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="r-passport">
+    <div class="r-panel p-5">
+      <div class="flex items-start justify-between gap-4"><div><h2 class="r-panel-title">Release Passport</h2><p class="r-panel-sub">Get the release ready before an opportunity asks.</p></div>{% if onboarding %}<div class="text-right"><div class="text-3xl font-extrabold text-emerald-400">{{ ((onboarding.done_count / onboarding.total * 100) if onboarding.total else 0)|round|int }}%</div><div class="text-[10px] uppercase tracking-widest text-gray-500">Ready</div></div>{% endif %}</div>
+      {% if onboarding and onboarding.steps %}
+      <div class="r-checks">
+        {% for step in onboarding.steps[:6] %}<a href="{{ url_for(step.href) }}" class="r-check"><i>{{ '✓' if step.state == 'DONE' else '+' }}</i><span class="truncate">{{ step.label }}</span></a>{% endfor %}
+      </div>
+      {% else %}<div class="mt-4 text-xs text-gray-500">Release readiness appears here as your profile is completed.</div>{% endif %}
+      <a href="{{ url_for('reach.catalog_view') }}" class="r-button mt-5">Complete setup →</a>
+    </div>
+
+    <div class="r-panel r-activity">
+      <div class="flex items-start justify-between gap-4"><div><h2 class="r-panel-title">Recent Activity</h2><p class="r-panel-sub">Verified movement across your opportunities.</p></div><a href="{{ url_for('reach.all_responses') }}" class="text-[11px] text-gray-400 hover:text-amber-300">View all →</a></div>
+      {% for response in recent_responses[:3] %}
+      <div class="r-activity-line"><span class="r-dot">↗</span><span class="min-w-0"><span class="r-name block truncate">{{ response.kind.replace('_',' ')|title if response.kind else 'Response received' }}</span><span class="r-meta block truncate">{{ response.outlet_name }}</span></span><span class="text-[10px] text-gray-500">OPEN</span></div>
+      {% else %}
+      <div class="r-activity-line"><span class="r-dot">●</span><span><span class="r-name block">REACH is watching the campaign state</span><span class="r-meta">New verified activity will appear here.</span></span><span></span></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="r-footerline"><span>Real opportunities · real relationships · measurable progress</span><span>REACH · BY STREET BANKER</span></div>
+</div>
 {% endblock %}
