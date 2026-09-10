@@ -1,13 +1,13 @@
-"""Artist-facing profile routes for REACH.
+"""Artist-facing identity and release-credit routes for REACH.
 
 This module attaches routes to the existing REACH blueprint. It is imported
 before that blueprint is registered with Flask, so the public profile screen
 lives at /reach/artist-profile without creating a second application surface.
 """
 
-from flask import jsonify, redirect, render_template, request, url_for
+from flask import abort, jsonify, redirect, render_template, request, url_for
 
-from . import artist_profile, rbac
+from . import artist_profile, catalog, rbac, release_credits
 from .errors import ValidationError
 from .web import bp, bootstrap, _shell
 
@@ -42,6 +42,7 @@ def artist_profile_page():
             return jsonify({
                 "ok": True,
                 "artist_id": artist_id,
+                "artist_name": saved["artist_name"],
                 "known_fields": saved["known_fields"],
                 "total_fields": saved["total_fields"],
             })
@@ -56,6 +57,16 @@ def artist_profile_page():
         selected_id = artists[0]["id"]
 
     selected = artist_profile.display(selected_id, principal.tenant_id) if selected_id else None
+    if selected:
+        release_rows = []
+        for row in selected.get("releases", []):
+            item = dict(row)
+            item["featured_artists"] = release_credits.featured_artists(
+                row["id"], principal.tenant_id
+            )
+            release_rows.append(item)
+        selected["releases"] = release_rows
+
     return render_template(
         "reach/artist_profile.html",
         artists=artists,
@@ -64,3 +75,38 @@ def artist_profile_page():
         saved=request.args.get("saved") == "1",
         **_shell(active="artist_profile"),
     )
+
+
+@bp.route("/recordings/<recording_id>/credits", methods=["GET", "POST"])
+def recording_credits(recording_id):
+    """Read or replace guest artist billing for one release.
+
+    Primary artist identity is edited in Artist Profile. Featured artists are
+    deliberately release-scoped so a guest credit never becomes a default on
+    unrelated songs.
+    """
+    bootstrap()
+    principal = rbac.current_principal()
+    recording = catalog.get_recording(recording_id)
+    if recording is None or recording["tenant_id"] != principal.tenant_id:
+        abort(404)
+    if recording["is_sample"]:
+        return jsonify({"ok": False, "error": "Sample releases cannot be edited"}), 400
+
+    if request.method == "POST":
+        values = _payload()
+        featured = release_credits.set_featured_artists(
+            recording_id, values.get("featured_artists"), principal.tenant_id
+        )
+    else:
+        featured = release_credits.featured_artists(recording_id, principal.tenant_id)
+
+    return jsonify({
+        "ok": True,
+        "recording_id": recording_id,
+        "primary_artist": recording["artist_name"],
+        "artist_id": recording["artist_id"],
+        "featured_artists": featured,
+        "credit_line": release_credits.credit_line(recording["artist_name"], featured),
+        "artist_profile_url": url_for("reach.artist_profile_page", artist_id=recording["artist_id"]),
+    })
