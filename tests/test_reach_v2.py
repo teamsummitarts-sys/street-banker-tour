@@ -49,8 +49,7 @@ def test_reach_workspace_keeps_its_access_gate(monkeypatch):
     assert b"Campaign" in unlocked.data
 
 
-
-def test_reach_today_and_campaign_hub_present_clear_workflow(monkeypatch):
+def test_reach_today_and_campaign_hub_present_clear_public_workflow(monkeypatch):
     client = _client(monkeypatch)
     client.post("/reach/unlock", data={"key": "test-reach-key"})
 
@@ -61,27 +60,56 @@ def test_reach_today_and_campaign_hub_present_clear_workflow(monkeypatch):
     assert b"Evidence stays attached" in today.data
     assert b"Human approval required" in today.data
     assert b"reach-wordmark.svg" in today.data
-    assert b"Open the platform" in today.data
-    assert b"Every REACH workspace stays available" in today.data
-    assert b"Campaign Hub" in today.data
-    assert b"My Music" in today.data
-    assert b"Contacts" in today.data
-    assert b"Needs You" in today.data
     assert b'id="reach-mobile-modules-trigger"' in today.data
     assert b'id="reach-mobile-modules"' in today.data
-    assert b"Sender Setup" in today.data
-    assert b"Connections" in today.data
-    assert b"Settings &amp; Safety" in today.data
-    assert b"Create Campaign" in today.data
-    assert b"Add or manage music" in today.data
+    assert b"Artist Profile" in today.data
+    assert b"Music" in today.data
+    assert b"Relationships" in today.data
+    assert b"Tasks" in today.data
+    assert b"Plan &amp; Billing" in today.data
     assert b'aria-label="Create campaign"' in today.data
-    assert today.data.count(b"Create Campaign") >= 2
+
+    # Technical/operator surfaces still exist by direct route, but do not read
+    # like primary modules in the public artist menu.
+    assert b"Advanced &amp; system" not in today.data
+    assert b"REACH 1.0.0-phase-one" not in today.data
+    assert b"Demo data âDemo data \xe2Demo data \xe2\x80Demo data \xe2\x80\x94 fixture corpus" not in today.data
+    assert b"owner@streetbanker.local" not in today.data
 
     hub = client.get("/reach/campaigns")
     assert hub.status_code == 200
     assert b"Campaign Hub" in hub.data
     assert b"No campaigns yet. Start with one release." in hub.data
     assert b"Start a campaign" in hub.data
+
+
+def test_reach_artist_profile_is_a_real_standalone_workspace(monkeypatch):
+    client = _client(monkeypatch)
+    client.post("/reach/unlock", data={"key": "test-reach-key"})
+
+    empty = client.get("/reach/artist-profile")
+    assert empty.status_code == 200
+    assert b"Build your artist once." in empty.data
+    assert b"You do not need an EPK" in empty.data
+    assert b"Create artist profile" in empty.data
+
+    created = client.post(
+        "/reach/artist-profile",
+        data={"artist_name": "Real Test Artist", "bio": "A real artist biography."},
+        follow_redirects=True,
+    )
+    assert created.status_code == 200
+    assert b"Real Test Artist" in created.data
+    assert b"Artist profile saved" in created.data
+    assert b"A real artist biography." in created.data
+    assert b"Optional Street Banker tools" in created.data
+
+    # Creating another artist must show an intentionally blank profile rather
+    # than silently selecting the first one.
+    blank_second = client.get("/reach/artist-profile?new=1")
+    assert blank_second.status_code == 200
+    assert b"Build your artist once." in blank_second.data
+    assert b"Create artist profile" in blank_second.data
 
 
 def test_reach_database_is_separate_from_v2_database(monkeypatch):
