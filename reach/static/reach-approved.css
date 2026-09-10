@@ -1,0 +1,14 @@
+.reach-approved-home .reach-hero {
+  background-color: #0a0d0f !important;
+  background-image: url('/reach/static/reach-approved-hero.jpg') !important;
+  background-position: right center !important;
+  background-repeat: no-repeat !important;
+  background-size: auto 100% !important;
+}
+
+@media (max-width: 900px) {
+  .reach-approved-home .reach-hero {
+    background-position: 68% center !important;
+    background-size: auto 100% !important;
+  }
+}

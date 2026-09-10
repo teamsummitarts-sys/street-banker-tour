@@ -28,7 +28,7 @@ def test_reach_public_landing_and_assets_mount_inside_v2(monkeypatch):
     assert b"Your release should go" in page.data
     assert b"Illustrative interface" in page.data
 
-    for asset in ("reach-lockup.svg", "reach-wordmark.svg", "reach-mark.svg"):
+    for asset in ("reach-lockup.svg", "reach-wordmark.svg", "reach-mark.svg", "reach-approved-hero.jpg"):
         response = client.get(f"/reach/static/{asset}")
         assert response.status_code == 200
 
@@ -56,13 +56,17 @@ def test_reach_today_and_campaign_hub_present_clear_public_workflow(monkeypatch)
     today = client.get("/reach")
     assert today.status_code == 200
     assert b"Momentum creates" in today.data
+    assert b"Three moves" in today.data
     assert b"Operating Brief" in today.data
     assert b"Opportunity Radar" in today.data
     assert b"Campaign Lanes" in today.data
     assert b"Relationship Memory" in today.data
     assert b"Release Passport" in today.data
     assert b"Recent Activity" in today.data
-    assert b"reach-lockup.svg" in today.data
+    assert b"reach-wordmark.svg" in today.data
+    assert b"reach-approved-hero.jpg" in today.data
+    assert b"Open account menu" in today.data
+    assert b"openReachModules()" in today.data
     assert b'id="reach-mobile-modules-trigger"' in today.data
     assert b'id="reach-mobile-modules"' in today.data
     assert b"Artist Profile" in today.data
