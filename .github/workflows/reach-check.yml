@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "reach/**"
-      - "tests/test_reach_v2.py"
+      - "tests/test_reach_*.py"
       - "app.py"
       - "requirements.txt"
       - ".github/workflows/reach-check.yml"
@@ -13,7 +13,7 @@ on:
       - main
     paths:
       - "reach/**"
-      - "tests/test_reach_v2.py"
+      - "tests/test_reach_*.py"
       - "app.py"
       - "requirements.txt"
 
@@ -37,4 +37,4 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements.txt
       - run: python -m compileall -q reach
-      - run: python -m pytest -q tests/test_reach_v2.py
+      - run: python -m pytest -q tests/test_reach_*.py
