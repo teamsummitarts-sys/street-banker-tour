@@ -113,6 +113,8 @@ def ensure_artist(name, tenant_id=None):
     name = _clean_text(name)
     if not name:
         raise ValidationError("Artist name is required")
+    if len(name) > 180:
+        raise ValidationError("Artist name must be 180 characters or fewer")
     row = db.query_one(
         "SELECT id FROM artist WHERE tenant_id = ? AND lower(name) = lower(?)",
         (tenant_id, name),
@@ -123,15 +125,58 @@ def ensure_artist(name, tenant_id=None):
     db.insert("artist", {
         "id": artist_id,
         "tenant_id": tenant_id,
-        "name": name[:180],
+        "name": name,
         "musicbrainz_artist_id": None,
         "created_at": clock.now_iso(),
     })
     audit.record(
         "artist_profile.artist_created", entity_type="artist", entity_id=artist_id,
-        payload={"name": name[:180]},
+        payload={"name": name},
     )
     return artist_id
+
+
+def rename(artist_id, new_name, tenant_id=None):
+    """Rename a reusable artist identity without rewriting historical messages.
+
+    Recordings point at the artist row, so their current public credit updates
+    automatically. Sent drafts/submission evidence remain immutable historical
+    snapshots, which is intentional.
+    """
+    tenant_id = tenant_id or rbac.current_principal().tenant_id
+    artist = _artist_row(artist_id, tenant_id)
+    if artist is None:
+        raise ValidationError("Unknown artist profile")
+
+    new_name = _clean_text(new_name)
+    if not new_name:
+        raise ValidationError("Artist name is required")
+    if len(new_name) > 180:
+        raise ValidationError("Artist name must be 180 characters or fewer")
+    if new_name == artist["name"]:
+        return new_name
+
+    duplicate = db.query_one(
+        "SELECT id FROM artist WHERE tenant_id = ? AND lower(name) = lower(?) AND id != ?",
+        (tenant_id, new_name, artist_id),
+    )
+    if duplicate:
+        raise ValidationError("Another artist profile already uses that name")
+
+    old_name = artist["name"]
+    db.execute(
+        "UPDATE artist SET name = ? WHERE id = ? AND tenant_id = ?",
+        (new_name, artist_id, tenant_id),
+    )
+    audit.record(
+        "artist_profile.renamed",
+        entity_type="artist",
+        entity_id=artist_id,
+        payload={"before": old_name, "after": new_name},
+        actor_kind=audit.ACTOR_USER,
+        actor_id=rbac.current_principal().id,
+    )
+    return new_name
 
 
 def list_artists(tenant_id=None):
@@ -229,6 +274,9 @@ def save(artist_id, values, tenant_id=None):
     artist = _artist_row(artist_id, tenant_id)
     if artist is None:
         raise ValidationError("Unknown artist profile")
+
+    if "artist_name" in values:
+        rename(artist_id, values.get("artist_name"), tenant_id)
 
     current = get(artist_id, tenant_id)
     profile_values = dict(current["profile"])
