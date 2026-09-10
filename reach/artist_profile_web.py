@@ -18,6 +18,12 @@ def _payload():
     return request.form.to_dict(flat=True)
 
 
+@bp.app_context_processor
+def _release_credit_template_globals():
+    """Expose the release-scoped credit helper without coupling web.py to it."""
+    return {"reach_featured_artists": release_credits.featured_artists}
+
+
 @bp.route("/artist-profile", methods=["GET", "POST"])
 def artist_profile_page():
     bootstrap()
