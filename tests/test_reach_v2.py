@@ -101,6 +101,8 @@ def test_reach_artist_profile_is_a_real_standalone_workspace(monkeypatch):
     assert b"Artist profile saved" in created.data
     assert b"A real artist biography." in created.data
     assert b"Optional Street Banker tools" in created.data
+    assert b'id="artist_name"' in created.data
+    assert b"Editable at any time" in created.data
 
     # Creating another artist must show an intentionally blank profile rather
     # than silently selecting the first one.
@@ -130,6 +132,71 @@ def test_reach_music_library_hides_fixture_tracks_and_shows_real_releases(monkey
     assert b"Real Artist" in real_library.data
     assert b"Synthwave Surfer" not in real_library.data
     assert b"Digital Paradise" not in real_library.data
+
+
+def test_artist_name_and_featured_release_credits_are_editable(monkeypatch):
+    client = _client(monkeypatch)
+    client.post("/reach/unlock", data={"key": "test-reach-key"})
+
+    created = client.post(
+        "/reach/artist-profile",
+        json={"artist_name": "Original Artist", "bio": "Original bio"},
+    )
+    assert created.status_code == 200
+    artist_id = created.get_json()["artist_id"]
+
+    release = client.post(
+        "/reach/catalog",
+        json={
+            "title": "Collaboration Song",
+            "artist_name": "Original Artist",
+            "featured_artists": ["Guest One", "Guest Two"],
+            "primary_genre": "alternative",
+        },
+    )
+    assert release.status_code == 200
+    recording_id = release.get_json()["recording_id"]
+
+    credits = client.get(f"/reach/recordings/{recording_id}/credits")
+    assert credits.status_code == 200
+    assert credits.get_json()["featured_artists"] == ["Guest One", "Guest Two"]
+    assert credits.get_json()["credit_line"] == "Original Artist feat. Guest One, Guest Two"
+
+    renamed = client.post(
+        "/reach/artist-profile",
+        json={"artist_id": artist_id, "artist_name": "Renamed Artist", "bio": "Updated bio"},
+    )
+    assert renamed.status_code == 200
+    assert renamed.get_json()["artist_name"] == "Renamed Artist"
+
+    campaign_profile = client.get(f"/reach/new?recording_id={recording_id}")
+    assert campaign_profile.status_code == 200
+    assert b"Renamed Artist" in campaign_profile.data
+    assert b"Guest One, Guest Two" in campaign_profile.data
+    assert b"Edit artist profile" in campaign_profile.data
+    assert b"Save release credits" in campaign_profile.data
+
+    updated = client.post(
+        f"/reach/recordings/{recording_id}/credits",
+        json={"featured_artists": ["New Guest"]},
+    )
+    assert updated.status_code == 200
+    assert updated.get_json()["credit_line"] == "Renamed Artist feat. New Guest"
+
+    second_release = client.post(
+        "/reach/catalog",
+        json={"title": "Solo Song", "artist_name": "Renamed Artist"},
+    )
+    assert second_release.status_code == 200
+    second_id = second_release.get_json()["recording_id"]
+    second_credits = client.get(f"/reach/recordings/{second_id}/credits")
+    assert second_credits.get_json()["featured_artists"] == []
+    assert second_credits.get_json()["credit_line"] == "Renamed Artist"
+
+    profile_page = client.get(f"/reach/artist-profile?artist_id={artist_id}")
+    assert profile_page.status_code == 200
+    assert b"Renamed Artist" in profile_page.data
+    assert b"feat. New Guest" in profile_page.data
 
 
 def test_reach_database_is_separate_from_v2_database(monkeypatch):
