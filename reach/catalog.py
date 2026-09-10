@@ -32,7 +32,8 @@ RIGHTS_SCOPE = [
 
 def _artist_id(tenant_id, name):
     row = db.query_one(
-        "SELECT id FROM artist WHERE tenant_id = ? AND name = ?", (tenant_id, name)
+        "SELECT id FROM artist WHERE tenant_id = ? AND lower(name) = lower(?)",
+        (tenant_id, name),
     )
     if row:
         return row["id"]
@@ -136,7 +137,7 @@ def add_track(values, tenant_id=None, artist_name=None, is_sample=False, slug=No
     db.insert("recording", row)
 
     if not is_sample:
-        from . import artist_profile, profile as track_profile
+        from . import artist_profile, profile as track_profile, release_credits
 
         # Save reusable artist defaults before building the recording profile,
         # so this release immediately sees those values in its editable fields.
@@ -146,6 +147,13 @@ def add_track(values, tenant_id=None, artist_name=None, is_sample=False, slug=No
             if field not in values or values.get(field) in (None, "", []):
                 continue
             track_profile.set_field(profile_id, field, values.get(field))
+
+        # Guest artist billing is release-specific. It must never leak into the
+        # reusable primary Artist Profile.
+        if "featured_artists" in values:
+            release_credits.set_featured_artists(
+                recording_id, values.get("featured_artists"), tenant_id
+            )
 
         # Files themselves already live in V2 Vault/blob storage. REACH stores
         # only associations, so one upload can be reused without duplicating bytes.
@@ -184,6 +192,8 @@ def delete_track(recording_id):
     used = db.query_one("SELECT id FROM campaign WHERE recording_id = ? LIMIT 1", (recording_id,))
     if used:
         raise ValidationError("This track has campaign history and cannot be deleted")
+    from . import release_credits
+    release_credits.delete_for_recording(recording_id)
     db.execute("DELETE FROM platform_asset WHERE recording_id = ?", (recording_id,))
     db.execute("DELETE FROM rights_attestation WHERE recording_id = ?", (recording_id,))
     db.execute("DELETE FROM recording WHERE id = ?", (recording_id,))
@@ -300,6 +310,14 @@ def add_version(source_recording_id, version_type, mix_name=None, edit_name=None
         "release_date": source["release_date"],
         "created_at": clock.now_iso(),
     })
+    from . import release_credits
+    source_featured = release_credits.featured_artists(
+        source_recording_id, source["tenant_id"]
+    )
+    if source_featured:
+        release_credits.set_featured_artists(
+            recording_id, source_featured, source["tenant_id"]
+        )
     audit.record("catalog.version_added", entity_type="recording", entity_id=recording_id,
                  payload={"version_type": version_type, "source": source_recording_id})
     return recording_id
