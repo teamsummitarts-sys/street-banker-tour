@@ -65,6 +65,63 @@ def comparable_artist_signal(outlet, profile_values):
     }
 
 
+def radar_stack(artist_id, limit=6):
+    """Aggregate watched sources by outlet/domain for the Radar decision layer.
+
+    Repeated appearance across multiple comparable artists rises to the top.
+    This remains explanatory context; it does not mutate the REACH score.
+    """
+    if not artist_id:
+        return []
+    comparable_watch._ensure_schema()
+    tenant_id = rbac.current_principal().tenant_id
+    refs = {name.casefold() for name in comparable_watch.comparables(artist_id)}
+    if not refs:
+        return []
+    rows = db.query(
+        "SELECT source_domain, comparable_artist, signal_kind, source_url, title, last_seen_at "
+        "FROM comparable_watch_signal WHERE tenant_id = ? AND artist_id = ? "
+        "AND state != ? AND source_domain IS NOT NULL "
+        "ORDER BY last_seen_at DESC LIMIT 200",
+        (tenant_id, artist_id, comparable_watch.DISMISSED),
+    )
+    grouped = {}
+    for row in rows:
+        artist = (row["comparable_artist"] or "").strip()
+        if artist.casefold() not in refs:
+            continue
+        domain = row["source_domain"]
+        item = grouped.setdefault(domain, {
+            "domain": domain,
+            "artists": [],
+            "artist_keys": set(),
+            "pickup_signals": 0,
+            "sources": 0,
+            "latest_at": row["last_seen_at"],
+            "latest_url": row["source_url"],
+            "latest_title": row["title"],
+        })
+        key = artist.casefold()
+        if key not in item["artist_keys"]:
+            item["artists"].append(artist)
+            item["artist_keys"].add(key)
+        item["sources"] += 1
+        if row["signal_kind"] == "PICKUP_SIGNAL":
+            item["pickup_signals"] += 1
+        if (row["last_seen_at"] or "") > (item["latest_at"] or ""):
+            item["latest_at"] = row["last_seen_at"]
+            item["latest_url"] = row["source_url"]
+            item["latest_title"] = row["title"]
+    output = []
+    for item in grouped.values():
+        item["artist_count"] = len(item.pop("artist_keys"))
+        output.append(item)
+    output.sort(key=lambda item: (
+        -item["artist_count"], -item["pickup_signals"], item["domain"]
+    ))
+    return output[:limit]
+
+
 def reason_for(signal):
     if not signal:
         return None
