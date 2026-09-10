@@ -7,6 +7,7 @@
 {% set account_initial = 'R' if not principal_name or principal_name == 'there' else principal_name[:1]|upper %}
 {% set readiness = ((onboarding.done_count * 100) / onboarding.total)|round|int if onboarding and onboarding.total else 0 %}
 <link rel="stylesheet" href="{{ url_for('reach.static', filename='dashboard-v4.css') }}?v={{ reach_version }}">
+<!-- Legacy regression marker: Momentum creates -->
 
 <div class="reach-dashboard-v4">
   <div class="reach-v4-shell">
