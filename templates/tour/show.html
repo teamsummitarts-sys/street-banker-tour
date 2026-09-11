@@ -3,6 +3,28 @@
 {% block tour_body %}
 {% import "tour/_macros.html" as m %}
 
+<style>
+  .to-show-core { margin: 4px 0 14px; }
+  .to-show-core__label { margin: 0 0 7px; font-size: 11px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--to-soft); }
+  .to-show-core .to-tabs { margin-bottom: 0; }
+  .to-tool-rack { margin: 0 0 16px; border: 1px solid var(--to-rule); border-radius: var(--sb-r-panel); background: var(--to-panel); overflow: hidden; }
+  .to-tool-rack summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 50px; padding: 0 15px; cursor: pointer; list-style: none; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--to-copy); }
+  .to-tool-rack summary::-webkit-details-marker { display: none; }
+  .to-tool-rack summary::after { content: '+'; flex: none; color: var(--to-amber); font-size: 22px; line-height: 1; font-weight: 500; }
+  .to-tool-rack[open] summary::after { content: '−'; }
+  .to-tool-rack__hint { display: block; margin-top: 3px; font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--to-soft); }
+  .to-tool-rack__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; padding: 0 12px 12px; border-top: 1px solid var(--to-rule); }
+  .to-tool-link { display: flex; align-items: center; gap: 9px; min-height: 48px; margin-top: 10px; padding: 9px 11px; border: 1px solid var(--to-rule); border-radius: var(--sb-r-control); text-decoration: none; font-size: 12px; font-weight: 750; letter-spacing: .04em; color: var(--to-copy); background: var(--sb-ground); }
+  .to-tool-link:hover { border-color: var(--to-line); }
+  .to-tool-link.is-on { border-color: var(--to-gold); background: rgb(201 162 74 / .10); color: var(--to-amber); }
+  .to-tool-link__plus { color: var(--to-amber); font-size: 18px; font-weight: 500; line-height: 1; }
+  @media (max-width: 540px) {
+    .to-tool-rack__grid { grid-template-columns: 1fr 1fr; }
+    .to-tool-link { min-height: 54px; }
+  }
+  @media (max-width: 390px) { .to-tool-rack__grid { grid-template-columns: 1fr; } }
+</style>
+
 <div class="to-head">
   <div>
     <p class="to-eyebrow">Show Command · #{{ show['show_number'] }} of {{ shows|length }}</p>
@@ -17,14 +39,41 @@
   </div>
 </div>
 
-<nav class="to-tabs" aria-label="Show sections" style="margin-top:-4px">
-  {% for key, label in show_tabs %}
-    {% set need = {'money':'financials','merch':'merch','guests':'guests','vip':'vip','marketing':'marketing','content':'content','inbox':'advance','files':'files'}[key] if key in ('money','merch','guests','vip','marketing','content','inbox','files') else None %}
-    {% if not need or can(need) %}
-    <a class="to-tab {{ 'is-on' if tab == key }}" href="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}?tab={{ key }}">{{ label }}</a>
-    {% endif %}
-  {% endfor %}
-</nav>
+{% set core_tabs = ('overview', 'schedule', 'advance', 'tasks') %}
+{% set advanced_tabs = ('inbox', 'travel', 'hotel', 'venue', 'people', 'guests', 'vip', 'production', 'money', 'merch', 'marketing', 'content', 'setlist', 'files', 'notes', 'activity') %}
+
+<div class="to-show-core">
+  <p class="to-show-core__label">Run the show</p>
+  <nav class="to-tabs" aria-label="Essential show sections">
+    {% for key, label in show_tabs %}
+      {% if key in core_tabs %}
+        {% set need = {'money':'financials','merch':'merch','guests':'guests','vip':'vip','marketing':'marketing','content':'content','inbox':'advance','files':'files'}[key] if key in ('money','merch','guests','vip','marketing','content','inbox','files') else None %}
+        {% if not need or can(need) %}
+        <a class="to-tab {{ 'is-on' if tab == key }}" href="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}?tab={{ key }}">{{ label }}</a>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+  </nav>
+</div>
+
+<details class="to-tool-rack" {% if tab in advanced_tabs %}open{% endif %}>
+  <summary>
+    <span>Additional show tools<span class="to-tool-rack__hint">Open only what this show needs. Leave the rest alone.</span></span>
+  </summary>
+  <div class="to-tool-rack__grid">
+    {% for key, label in show_tabs %}
+      {% if key in advanced_tabs %}
+        {% set need = {'money':'financials','merch':'merch','guests':'guests','vip':'vip','marketing':'marketing','content':'content','inbox':'advance','files':'files'}[key] if key in ('money','merch','guests','vip','marketing','content','inbox','files') else None %}
+        {% if not need or can(need) %}
+        <a class="to-tool-link {{ 'is-on' if tab == key }}" href="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}?tab={{ key }}">
+          <span class="to-tool-link__plus" aria-hidden="true">+</span>
+          <span>{{ label }}</span>
+        </a>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+  </div>
+</details>
 
 {% include "tour/show/_" ~ tab ~ ".html" %}
 {% endblock %}
