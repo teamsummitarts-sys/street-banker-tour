@@ -1,0 +1,230 @@
+/* Standalone TOUR product chrome. TOUR keeps Street Banker's tokens and
+   account/session infrastructure, but no longer inherits the parent OS rail. */
+
+:root {
+  --tour-shell-bg: #0A0A0C;
+  --tour-shell-panel: #111114;
+  --tour-shell-panel-2: #17171A;
+  --tour-shell-copy: #F5F5E9;
+  --tour-shell-soft: #AAA9A2;
+  --tour-shell-gold: #D4AF37;
+  --tour-shell-line: rgb(212 175 55 / 0.28);
+  --tour-shell-rule: rgb(245 245 233 / 0.10);
+}
+
+* { box-sizing: border-box; }
+html { background: var(--tour-shell-bg); }
+body.tour-app-body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 50% -18%, rgb(212 175 55 / 0.08), transparent 34rem),
+    var(--tour-shell-bg);
+  color: var(--tour-shell-copy);
+  font-family: var(--sb-body, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+}
+
+.tour-appbar {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  border-bottom: 1px solid var(--tour-shell-rule);
+  background: rgb(10 10 12 / 0.94);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.tour-appbar__inner {
+  width: min(1540px, 100%);
+  min-height: 68px;
+  margin: 0 auto;
+  padding: 10px 24px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+}
+.tour-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: max-content;
+  color: var(--tour-shell-copy);
+  text-decoration: none;
+}
+.tour-brand__mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--tour-shell-gold);
+  border-radius: 9px;
+  color: var(--tour-shell-gold);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+.tour-brand__copy { display: grid; line-height: 1; }
+.tour-brand__copy strong {
+  font-size: 17px;
+  letter-spacing: 0.20em;
+  font-weight: 900;
+}
+.tour-brand__copy small {
+  margin-top: 5px;
+  color: var(--tour-shell-soft);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.tour-worlds {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.tour-worlds a,
+.tour-appbar__back,
+.tour-appbar__account {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 11px;
+  border-radius: 8px;
+  color: var(--tour-shell-soft);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  white-space: nowrap;
+}
+.tour-worlds a:hover,
+.tour-appbar__back:hover,
+.tour-appbar__account:hover { color: var(--tour-shell-copy); background: rgb(245 245 233 / 0.05); }
+.tour-worlds a.is-active {
+  color: var(--tour-shell-gold);
+  border: 1px solid var(--tour-shell-line);
+  background: rgb(212 175 55 / 0.08);
+}
+.tour-appbar__actions { display: flex; align-items: center; gap: 2px; }
+.tour-appbar__back { color: var(--tour-shell-copy); }
+.tour-appbar__account { padding-left: 8px; padding-right: 8px; }
+
+.tour-app-main {
+  width: min(1540px, 100%);
+  margin: 0 auto;
+  padding: 26px 28px 56px;
+}
+.tour-app-main .to { max-width: none; }
+
+.tour-app-footer {
+  width: min(1540px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 18px 0 26px;
+  border-top: 1px solid var(--tour-shell-rule);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  color: var(--tour-shell-soft);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* Product-level information architecture. This groups the existing TOUR
+   routes without changing their URLs, authorization or underlying records. */
+.to-product-nav {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 22px;
+  padding: 9px;
+  border: 1px solid var(--tour-shell-rule);
+  border-radius: 13px;
+  background: rgb(17 17 20 / 0.72);
+}
+.to-nav-group { min-width: 0; }
+.to-nav-label {
+  display: block;
+  margin: 0 0 5px;
+  padding: 0 5px;
+  color: var(--tour-shell-soft);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.to-nav-links { display: grid; gap: 3px; }
+.to-nav-link {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 5px 7px;
+  border-radius: 7px;
+  color: var(--tour-shell-soft);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.to-nav-link:hover { color: var(--tour-shell-copy); background: rgb(245 245 233 / 0.05); }
+.to-nav-link.is-on {
+  color: var(--tour-shell-gold);
+  background: rgb(212 175 55 / 0.10);
+}
+.to-ask-shortcut {
+  border: 1px solid var(--tour-shell-line);
+  color: var(--tour-shell-gold);
+}
+
+.to-product-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.to-product-context__title {
+  margin: 0;
+  color: var(--tour-shell-soft);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.to-product-context__links { display: flex; flex-wrap: wrap; gap: 7px; }
+.to-product-context__links a {
+  color: var(--tour-shell-soft);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 700;
+}
+.to-product-context__links a:hover { color: var(--tour-shell-copy); }
+
+@media (max-width: 1180px) {
+  .tour-appbar__inner { grid-template-columns: auto 1fr; }
+  .tour-worlds { order: 3; grid-column: 1 / -1; justify-content: flex-start; overflow-x: auto; padding-bottom: 2px; }
+  .tour-appbar__actions { justify-self: end; }
+  .to-product-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .tour-appbar__inner { padding: 9px 14px; gap: 10px; }
+  .tour-brand__copy small { display: none; }
+  .tour-appbar__back { display: none; }
+  .tour-worlds { gap: 2px; }
+  .tour-worlds a { padding: 0 8px; font-size: 9px; }
+  .tour-app-main { padding: 18px 14px 42px; }
+  .tour-app-footer { width: calc(100% - 28px); align-items: flex-start; flex-direction: column; gap: 7px; }
+  .to-product-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .to-product-context { align-items: flex-start; flex-direction: column; }
+}
+@media (max-width: 420px) {
+  .tour-brand__mark { width: 32px; height: 32px; }
+  .tour-brand__copy strong { font-size: 14px; }
+  .tour-appbar__account { font-size: 9px; }
+  .to-product-nav { grid-template-columns: 1fr 1fr; padding: 7px; }
+}
