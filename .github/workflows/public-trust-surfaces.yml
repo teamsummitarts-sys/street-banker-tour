@@ -1,0 +1,37 @@
+name: Public trust surfaces
+
+on:
+  pull_request:
+    paths:
+      - "app.py"
+      - "landing_config.py"
+      - "templates/legal.html"
+      - "templates/login.html"
+      - "templates/support.html"
+      - "tests/test_public_trust.py"
+      - "requirements.txt"
+      - ".github/workflows/public-trust-surfaces.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "app.py"
+      - "landing_config.py"
+      - "templates/legal.html"
+      - "templates/login.html"
+      - "templates/support.html"
+      - "tests/test_public_trust.py"
+      - "requirements.txt"
+      - ".github/workflows/public-trust-surfaces.yml"
+
+jobs:
+  public-trust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pytest -q tests/test_public_trust.py

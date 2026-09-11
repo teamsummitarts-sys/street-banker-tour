@@ -1198,15 +1198,16 @@ def create_app():
     @app.route("/terms")
     def terms():
         return render_template("legal.html", title="Terms of Service",
-                               updated="July 9, 2026", sections=[
-            ("The service", "Street Banker provides software tools for independent artists: royalty statement analysis, smart links, press kits, fan capture, and related workflows. We provide software, not professional services — nothing in the app is legal, financial, or tax advice."),
+                               updated="September 11, 2026", sections=[
+            ("The service", "Street Banker provides software tools for independent artists and music teams. The Street Banker product family includes Street Banker, Royalty Sweep, Reach, The Room, and Noise Lab. Features and availability may vary by product, account, plan, and release state. We provide software, not legal, financial, tax, accounting, or collection services."),
             ("Your account", "You're responsible for your account credentials and for the accuracy of the data you upload. You must be 13 or older (16 in the EU) to create an account."),
             ("Your content", "You keep all rights to the music, artwork, statements, and other material you upload. You grant us only the license needed to store, process, and display it back to you and to the people you share it with (public press kits, smart links, sync packs)."),
             ("Fan data", "Fan emails and pre-save data captured through your campaigns belong to your account. You agree to use them lawfully — including honoring the consent language shown at capture and applicable anti-spam law."),
             ("Acceptable use", "No unlawful content, no infringing uploads, no abusing the platform to send spam, and no attempts to breach or overload the service."),
             ("Paid plans", "Paid tiers unlock additional features. Fees, billing cadence, and cancellation terms are shown at checkout. You can cancel anytime; access continues through the paid period."),
             ("Estimates and simulations", "Catalog valuations, recovery estimates, deal simulations, and scores are informational estimates computed from your data. They are not offers, appraisals, or professional advice."),
-            ("Termination", "You can delete your account at any time. We may suspend accounts that violate these terms."),
+            ("Termination", "You can request account deletion at any time through Support. We may suspend accounts that violate these terms."),
+            ("Support and account requests", "For account access, billing, cancellation, privacy, data-rights, or content requests, contact support@streetbankermusic.com. We may need to verify your account before acting on a request."),
             ("Warranty & liability", "The service is provided as-is. To the maximum extent permitted by law, our liability is limited to the amount you paid us in the 12 months before a claim."),
             ("Changes", "We'll post updates to these terms here and note the date above. Continued use after changes means acceptance."),
         ])
@@ -1214,8 +1215,8 @@ def create_app():
     @app.route("/privacy")
     def privacy():
         return render_template("legal.html", title="Privacy Policy",
-                               updated="July 9, 2026", sections=[
-            ("What we collect", "Account data (name, email, hashed password), the content you upload (statements, artwork, documents), campaign analytics (link clicks, referrers), and — when you connect them — data from services you authorize, like Spotify artist stats."),
+                               updated="September 11, 2026", sections=[
+            ("What we collect", "Account data (name, email, hashed password), the content you upload (including audio projects, statements, artwork, documents, links, and metadata), campaign analytics (link clicks, referrers), and — when you connect them — data from services you authorize, like Spotify artist stats."),
             # The pre-save sentence is resolved against the running
             # deployment rather than asserted. With Spotify credentials
             # unset the flow falls back to notify-me and no token is ever
@@ -1225,13 +1226,17 @@ def create_app():
                 if capability_status.is_live("spotify_presave")
                 else "Spotify pre-save is not connected on this deployment: pre-save buttons collect a notify-me address instead, and no Spotify token is requested, stored or processed.")),
             ("What we don't do", "We don't sell personal data. We don't use your uploads to train AI models. We don't read fan tokens for anything beyond the save and the consented email."),
-            ("Service providers", "We use Render (hosting), Resend (email delivery), and public music APIs (Spotify, Deezer, iTunes, Odesli, MusicBrainz, Bandsintown) to provide features you invoke. Each receives only what's needed for that feature."),
+            ("Service providers", "We use Render (hosting), Stripe (payments), Resend (email delivery), and public music APIs (Spotify, Deezer, iTunes, Odesli, MusicBrainz, Bandsintown) to provide features you invoke. Each receives only what's needed for that feature."),
             ("Cookies", "We use a single session cookie to keep you signed in. No advertising trackers."),
-            ("Retention & deletion", "Your data stays while your account is active. Ask us to delete your account and we remove your data within 30 days, except records we must keep by law."),
-            ("Your rights", "Depending on where you live (GDPR, CCPA), you can request access, correction, export, or deletion of your personal data — email us and we'll handle it."),
+            ("Retention & deletion", "Your data stays while your account is active. Request account deletion through Support and we remove your data within 30 days, except records we must keep by law."),
+            ("Your rights", "Depending on where you live (GDPR, CCPA), you can request access, correction, export, or deletion of your personal data through Support."),
             ("Security", "Passwords are hashed, fan tokens are encrypted, and data lives on access-controlled infrastructure. No system is perfect; we'll notify affected users of any breach as required by law."),
-            ("Contact", "Privacy questions and requests: team.summitarts@gmail.com."),
+            ("Contact", "Privacy questions and requests: support@streetbankermusic.com."),
         ])
+
+    @app.route("/support")
+    def support():
+        return render_template("support.html", title="Support")
 
     @app.route("/logout", methods=["POST"])
     def logout():
@@ -3132,7 +3137,7 @@ def create_app():
                         "/board-renew/")
     _PUBLIC_EXACT = {"/", "/healthz", "/reach", "/login", "/signup", "/logout", "/submit", "/forgot",
                      "/catalog-sweep", "/demo-open", "/plan",
-                     "/terms", "/privacy", "/sw.js", "/demo-access",
+                     "/terms", "/privacy", "/support", "/sw.js", "/demo-access",
                      "/api/artist-signal-profile",
                      # A stranger asking what the Artist Twin does, and how
                      # their music would be treated, must not meet a password

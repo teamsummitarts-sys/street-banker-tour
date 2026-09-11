@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} - Street Banker</title>
+  <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
+  {% include "_fonts.html" %}
+</head>
+<body class="min-h-screen bg-sb-ground text-gray-200 antialiased">
+  <main class="mx-auto max-w-3xl px-5 py-12 sm:py-16">
+    <a href="/" class="sb-label text-amber-500/80 hover:text-amber-400">← Street Banker</a>
+
+    <section class="mt-5 border-b border-white/10 pb-8">
+      <p class="sb-label text-amber-400/90">Support</p>
+      <h1 class="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">Support and account requests</h1>
+      <p class="mt-4 max-w-2xl text-sm leading-relaxed text-gray-200">
+        For help with Street Banker, email our support team. Please do not send passwords,
+        card details, or unreleased audio by email.
+      </p>
+      <a href="mailto:support@streetbankermusic.com"
+         class="mt-5 inline-flex items-center rounded border border-amber-400/60 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-300 hover:bg-amber-400/20">
+        support@streetbankermusic.com
+      </a>
+    </section>
+
+    <section class="mt-8 grid gap-4 sm:grid-cols-2">
+      <article class="border border-white/10 bg-white/[0.03] p-5">
+        <h2 class="text-base font-bold text-amber-400/90">Account and access</h2>
+        <p class="mt-2 text-sm leading-relaxed text-gray-200">
+          Use <a href="/forgot" class="text-amber-300 hover:underline">password recovery</a> if you cannot sign in.
+          Include the email on the account and a short description of the issue.
+        </p>
+      </article>
+
+      <article class="border border-white/10 bg-white/[0.03] p-5">
+        <h2 class="text-base font-bold text-amber-400/90">Billing and subscriptions</h2>
+        <p class="mt-2 text-sm leading-relaxed text-gray-200">
+          If you can sign in, review your billing settings there. If access is blocked or a charge needs review,
+          email Support with the account email and the relevant date or invoice reference.
+        </p>
+      </article>
+
+      <article class="border border-white/10 bg-white/[0.03] p-5">
+        <h2 class="text-base font-bold text-amber-400/90">Projects, links, and metadata</h2>
+        <p class="mt-2 text-sm leading-relaxed text-gray-200">
+          For help with audio projects, smart links, metadata, or a product workflow, tell us what you were trying
+          to do, the page you were on, and any error message you saw.
+        </p>
+      </article>
+
+      <article class="border border-white/10 bg-white/[0.03] p-5">
+        <h2 class="text-base font-bold text-amber-400/90">Privacy and data requests</h2>
+        <p class="mt-2 text-sm leading-relaxed text-gray-200">
+          You can request access, correction, export, or deletion of personal data. We may need to verify your
+          account before we act on a request.
+        </p>
+      </article>
+    </section>
+
+    <section class="mt-8 border-l-2 border-amber-400/60 pl-4">
+      <h2 class="text-sm font-bold text-white">Helpful information to include</h2>
+      <p class="mt-2 text-sm leading-relaxed text-gray-300">
+        Your account email, the product or page involved, what happened, and the best way to reach you.
+        Please do not include passwords, payment card numbers, or private credentials.
+      </p>
+    </section>
+
+    <footer class="mt-12 border-t border-white/10 pt-6 text-xs text-gray-300">
+      <p>Street Banker, Inc. · North Carolina, USA</p>
+      <nav class="mt-3 flex flex-wrap gap-x-3 gap-y-2" aria-label="Legal">
+        <a href="/terms" class="hover:text-white">Terms</a>
+        <a href="/privacy" class="hover:text-white">Privacy</a>
+        <a href="mailto:support@streetbankermusic.com" class="hover:text-white">Email support</a>
+      </nav>
+    </footer>
+  </main>
+</body>
+</html>

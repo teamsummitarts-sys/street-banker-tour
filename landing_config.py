@@ -143,6 +143,7 @@ def get_landing_config():
                     {"label": "How we use AI", "href": "/ai"},
                     {"label": "Privacy", "href": "/privacy"},
                     {"label": "Terms", "href": "/terms"},
+                    {"label": "Support", "href": "/support"},
                 ]},
                 {"title": "Company", "links": [
                     {"label": "About", "href": "/services"},
@@ -162,6 +163,6 @@ def get_landing_config():
                 {"label": "Instagram",
                  "href": "https://instagram.com/summitartsgroup"},
             ],
-            "copyright": "© 2026 Street Banker LLC. All rights reserved.",
+            "copyright": "© 2026 Street Banker, Inc. All rights reserved.",
         },
     }
