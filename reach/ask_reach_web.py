@@ -49,3 +49,28 @@ def ask_reach_page():
 def ask_reach_json():
     query=request.args.get("q") or ""
     return jsonify({"ok":True,**_decorate(ask_reach.ask(query))})
+
+
+@bp.after_app_request
+def _wire_dashboard_ask_reach(response):
+    """Make the two Today-page Ask Reach controls open the command surface.
+
+    The current v6 home template intentionally keeps Radar as a separate
+    navigation destination. This scoped render rewrite changes only anchors with
+    the Ask Reach classes, so Radar continues to point at /reach/opportunities.
+    It avoids broad template churn while the dashboard shell is otherwise parked.
+    """
+    if request.endpoint != "reach.index" or response.mimetype != "text/html":
+        return response
+    html=response.get_data(as_text=True)
+    radar=url_for("reach.all_opportunities")
+    ask=url_for("reach.ask_reach_page")
+    html=html.replace(
+        f'class="r6-mobile-search" href="{radar}"',
+        f'class="r6-mobile-search" href="{ask}"',
+    ).replace(
+        f'class="r6-search" href="{radar}"',
+        f'class="r6-search" href="{ask}"',
+    )
+    response.set_data(html)
+    return response
