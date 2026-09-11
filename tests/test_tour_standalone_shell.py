@@ -25,7 +25,8 @@ def test_tour_uses_its_own_product_shell():
 def test_tour_switcher_shows_suite_without_linking_development_room_route():
     app_base = read("templates/tour/_app_base.html")
 
-    assert 'href="/overview"' in app_base
+    assert 'href="/command-center"' in app_base
+    assert 'href="/overview"' not in app_base
     assert 'href="/reach/"' in app_base
     assert 'href="/noise-lab/"' in app_base
     assert 'href="/tours"' in app_base
