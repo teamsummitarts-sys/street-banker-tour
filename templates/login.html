@@ -14,14 +14,21 @@
 
   <main class="lsr-page">
 
+    {% set return_to = request.args.get('next') or '' %}
+
     <!-- 1. wordmark + intro -->
     <header class="lsr-intro">
       <a href="/" class="lsr-brand">
         <img src="/static/img/streetbanker-logo.svg" alt="Street Banker">
         <span>ARTIST INFRASTRUCTURE</span>
       </a>
+      {% if return_to.startswith('/tours') %}
+      <h1 class="lsr-title">RETURN TO TOUR.</h1>
+      <p class="lsr-support">Sign in once, then continue directly to your TOUR workspace.</p>
+      {% else %}
       <h1 class="lsr-title">RETURN TO YOUR DESK.</h1>
       <p class="lsr-support">Sign in to manage your releases, royalties, fans, and catalog.</p>
+      {% endif %}
     </header>
 
     <!-- 2. A. SESSION RECALL -->
@@ -40,11 +47,6 @@
     {% endif %}
 
     <!-- 5. one row, because there is one question: which account -->
-    {# These were two rows of identical weight, and both buttons went to
-       the same /signup with the artist type already selected - so
-       "GO TO FAN EXPERIENCE" promised a different destination and
-       delivered the artist form. One row, two named choices, and the fan
-       link now actually arrives on the fan side. #}
     {% if registration_closed %}
       <div class="lsr-rows">
         <section class="lsr-row" aria-labelledby="lsr-private-h">
@@ -60,11 +62,15 @@
           <div>
             <h2 class="lsr-row-title" id="lsr-new-h">NO ACCOUNT YET?</h2>
             <p class="lsr-row-sub">
-              Artists get the back office — royalties, releases, catalog.
+              {% if return_to.startswith('/tours') %}
+                Create one shared Street Banker identity and continue directly into TOUR.
+              {% else %}
+                Artists get the back office — royalties, releases, catalog.
+              {% endif %}
               Or <a class="lsr-row-alt" href="/signup?as=fan">Create a free fan account →</a>
             </p>
           </div>
-          <a class="lsr-row-btn" href="/signup">CREATE ARTIST ACCOUNT</a>
+          <a class="lsr-row-btn" href="{{ url_for('signup', next=return_to) if return_to else url_for('signup') }}">CREATE ARTIST ACCOUNT</a>
         </section>
       </div>
     {% endif %}
