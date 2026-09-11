@@ -85,6 +85,7 @@ body.tour-app-body {
   min-width: 0;
 }
 .tour-worlds a,
+.tour-worlds .is-unavailable,
 .tour-appbar__back,
 .tour-appbar__account {
   min-height: 36px;
@@ -107,6 +108,11 @@ body.tour-app-body {
   color: var(--tour-shell-gold);
   border: 1px solid var(--tour-shell-line);
   background: rgb(212 175 55 / 0.08);
+}
+.tour-worlds .is-unavailable {
+  color: rgb(170 169 162 / 0.58);
+  border: 1px solid rgb(245 245 233 / 0.06);
+  cursor: not-allowed;
 }
 .tour-appbar__actions { display: flex; align-items: center; gap: 2px; }
 .tour-appbar__back { color: var(--tour-shell-copy); }
@@ -216,7 +222,8 @@ body.tour-app-body {
   .tour-brand__copy small { display: none; }
   .tour-appbar__back { display: none; }
   .tour-worlds { gap: 2px; }
-  .tour-worlds a { padding: 0 8px; font-size: 9px; }
+  .tour-worlds a,
+  .tour-worlds .is-unavailable { padding: 0 8px; font-size: 9px; }
   .tour-app-main { padding: 18px 14px 42px; }
   .tour-app-footer { width: calc(100% - 28px); align-items: flex-start; flex-direction: column; gap: 7px; }
   .to-product-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
