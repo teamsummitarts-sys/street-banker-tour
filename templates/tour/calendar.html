@@ -17,6 +17,13 @@
   </div>
 </div>
 
+{% if can('edit') or can('schedule') %}
+<div class="to-quick-actions">
+  <a class="to-quick-action" href="#add-date" onclick="var d=document.getElementById('add-date');if(d)d.open=true"><b>+</b> Add date / show</a>
+  {% if can('edit') %}<a class="to-quick-action" href="/tours/{{ tour['id'] }}/import"><b>+</b> Import many</a>{% endif %}
+</div>
+{% endif %}
+
 {% if view == 'month' %}
 <div class="to-cal" role="grid" aria-label="{{ month_label }}">
   {% for d in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}<div class="to-cal-dow">{{ d }}</div>{% endfor %}
@@ -58,23 +65,33 @@
     </tbody>
   </table></div>
   {% else %}
-    {{ m.empty("No dates on the calendar", "Add one below or import a run of dates.", "/tours/" ~ tour['id'] ~ "/import", "Import") }}
+    {{ m.empty("No dates on the calendar", "Add the first show below or import a full run.", "/tours/" ~ tour['id'] ~ "/import", "Import dates") }}
   {% endif %}
 {% endif %}
 
 {% if can('edit') or can('schedule') %}
-<h2 class="to-h2">Add a day</h2>
-<form method="post" action="/tours/{{ tour['id'] }}/days/add" class="to-form">
-  <div class="to-grid">
-    {{ m.field('date', 'Date', type='date', required=True) }}
-    {{ m.select('kind', 'Type', vocab['day_kinds'], value='show') }}
-    {{ m.field('city', 'City', placeholder='Nashville, TN') }}
-    {{ m.field('venue', 'Venue (show days)', placeholder='The Basement East') }}
-    {{ m.field('title', 'Title (non-show days)', placeholder='Drive to Atlanta') }}
-    {{ m.field('tz', 'Timezone', placeholder=tour['home_tz']) }}
-    {{ m.textarea('notes', 'Notes', rows=2) }}
+<details class="to-add-day" id="add-date" {% if not days %}open{% endif %}>
+  <summary>Add date / show</summary>
+  <div class="to-add-day__body">
+    <form method="post" action="/tours/{{ tour['id'] }}/days/add" class="to-form" style="margin-top:12px">
+      <p class="to-form-step">Essentials</p>
+      <div class="to-grid">
+        {{ m.field('date', 'Date', type='date', required=True) }}
+        {{ m.select('kind', 'Type', vocab['day_kinds'], value='show') }}
+        {{ m.field('city', 'City', placeholder='Nashville, TN') }}
+        {{ m.field('venue', 'Venue (show days)', placeholder='The Basement East') }}
+      </div>
+      <details class="to-form-optional">
+        <summary>Optional details · title, timezone, notes</summary>
+        <div class="to-grid" style="margin-top:10px">
+          {{ m.field('title', 'Title (non-show days)', placeholder='Drive to Atlanta') }}
+          {{ m.field('tz', 'Timezone', placeholder=tour['home_tz']) }}
+          {{ m.textarea('notes', 'Notes', rows=2) }}
+        </div>
+      </details>
+      <div class="to-bar"><button class="to-btn" type="submit">Add date</button>{% if can('edit') %}<a class="to-btn to-btn--ghost" href="/tours/{{ tour['id'] }}/import">Import many</a>{% endif %}</div>
+    </form>
   </div>
-  <div class="to-bar"><button class="to-btn" type="submit">Add</button> <a class="to-btn to-btn--ghost" href="/tours/{{ tour['id'] }}/import">Import many</a></div>
-</form>
+</details>
 {% endif %}
 {% endblock %}
