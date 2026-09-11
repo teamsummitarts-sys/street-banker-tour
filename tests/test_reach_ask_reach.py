@@ -38,6 +38,17 @@ def test_ask_reach_empty_state_is_grounded(monkeypatch):
     assert b"What should I do today?" in page.data
 
 
+def test_dashboard_ask_controls_open_ask_reach_but_radar_stays_radar(monkeypatch):
+    client=_client(monkeypatch)
+    page=client.get("/reach/")
+    assert page.status_code==200
+    html=page.get_data(as_text=True)
+    assert 'class="r6-mobile-search" href="/reach/ask"' in html
+    assert 'class="r6-search" href="/reach/ask"' in html
+    assert 'href="/reach/opportunities"' in html
+    assert '>Radar<' in html
+
+
 def test_ask_reach_returns_real_opportunity(monkeypatch):
     client=_client(monkeypatch)
     with client.application.app_context():
