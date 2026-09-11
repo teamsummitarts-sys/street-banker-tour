@@ -26,47 +26,67 @@
     </div>
     <div class="to-inline">
       <span class="to-status">{{ status_line }}</span>
-      {% if can('edit') %}
-      <form method="post" action="/tours/{{ tour['id'] }}/mode" class="to-inline">
-        <input type="hidden" name="mode" value="{{ 'planning' if mode == 'live' else 'live' }}">
-        <button class="to-btn to-btn--ghost to-btn--small" type="submit" title="Switch between planning and live">{{ 'Planning view' if mode == 'live' else 'Live view' }}</button>
-      </form>
-      {% endif %}
+      <div class="to-mode-control" aria-label="TOUR mode">
+        <span class="to-mode-pill {{ 'is-live' if mode == 'live' else 'is-planning' }}">{{ mode }}</span>
+        {% if can('edit') %}
+        <form method="post" action="/tours/{{ tour['id'] }}/mode" class="to-inline">
+          <input type="hidden" name="mode" value="{{ 'planning' if mode == 'live' else 'live' }}">
+          <button class="to-btn to-btn--ghost to-btn--small" type="submit" title="Switch between planning and live">Switch to {{ 'planning' if mode == 'live' else 'live' }}</button>
+        </form>
+        {% endif %}
+      </div>
       <form method="get" action="/tours/{{ tour['id'] }}/search" role="search" class="to-inline">
         <input class="to-input" type="search" name="q" placeholder="Search this tour" aria-label="Search this tour" style="width:170px;min-height:36px;padding:6px 10px">
       </form>
     </div>
   </div>
 
+  {% set core_keys = ('home', 'calendar', 'shows', 'my-day', 'ask') %}
+  <nav class="to-tour-core-nav" aria-label="Essential TOUR sections">
+    {% for key, label, path in tour_tabs %}
+      {% if key in core_keys %}
+      <a class="to-nav-link {{ 'is-on' if nav == key }} {{ 'is-primary' if key == 'ask' }}"
+         href="/tours/{{ tour['id'] }}{% if path %}/{{ path }}{% endif %}"
+         {% if nav == key %}aria-current="page"{% endif %}>{{ label }}</a>
+      {% endif %}
+    {% endfor %}
+  </nav>
+
+  {# Keep the full production tool set available without forcing it into the
+     first view. The labels also preserve the canonical TOUR information
+     architecture: TODAY / TOUR / SHOW / TRAVEL / OPERATIONS / MONEY / TEAM. #}
   {% set groups = [
-    ('TODAY', ('home', 'my-day', 'changes', 'ask')),
-    ('TOUR', ('calendar', 'shows', 'map')),
+    ('TODAY', ('changes',)),
+    ('TOUR', ('map',)),
     ('SHOW', ('schedule', 'venues')),
     ('TRAVEL', ('travel', 'hotels', 'people')),
     ('OPERATIONS', ('tasks', 'files', 'guests', 'marketing', 'content', 'import', 'exports')),
     ('MONEY', ('money', 'merch')),
     ('TEAM', ('share', 'team', 'settings'))
   ] %}
-  <nav class="to-product-nav" aria-label="TOUR sections">
-    {% for group_label, group_keys in groups %}
-      {% set ns = namespace(has_items=false) %}
-      {% for key, label, path in tour_tabs %}{% if key in group_keys %}{% set ns.has_items = true %}{% endif %}{% endfor %}
-      {% if ns.has_items %}
-      <section class="to-nav-group" aria-label="{{ group_label }}">
-        <span class="to-nav-label">{{ group_label }}</span>
-        <div class="to-nav-links">
-          {% for key, label, path in tour_tabs %}
-            {% if key in group_keys %}
-            <a class="to-nav-link {{ 'is-on' if nav == key }} {{ 'to-ask-shortcut' if key == 'ask' }}"
-               href="/tours/{{ tour['id'] }}{% if path %}/{{ path }}{% endif %}"
-               {% if nav == key %}aria-current="page"{% endif %}>{{ label }}</a>
-            {% endif %}
-          {% endfor %}
-        </div>
-      </section>
-      {% endif %}
-    {% endfor %}
-  </nav>
+  <details class="to-tour-tool-rack" {% if nav not in core_keys %}open{% endif %}>
+    <summary>Tour tools <span class="to-tour-tool-rack__hint">Open only the parts this tour needs.</span></summary>
+    <div class="to-tour-tool-groups">
+      {% for group_label, group_keys in groups %}
+        {% set ns = namespace(has_items=false) %}
+        {% for key, label, path in tour_tabs %}{% if key in group_keys %}{% set ns.has_items = true %}{% endif %}{% endfor %}
+        {% if ns.has_items %}
+        <section class="to-nav-group" aria-label="{{ group_label }}">
+          <span class="to-nav-label">{{ group_label }}</span>
+          <div class="to-nav-links">
+            {% for key, label, path in tour_tabs %}
+              {% if key in group_keys %}
+              <a class="to-nav-link {{ 'is-on' if nav == key }} {{ 'to-ask-shortcut' if key == 'ask' }}"
+                 href="/tours/{{ tour['id'] }}{% if path %}/{{ path }}{% endif %}"
+                 {% if nav == key %}aria-current="page"{% endif %}>{{ label }}</a>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </details>
 
   {% block tour_body %}{% endblock %}
 </div>
