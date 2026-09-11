@@ -1,0 +1,68 @@
+{% extends "reach/_layout.html" %}
+{% import "reach/_layout.html" as ui with context %}
+
+{% block title %}REACH — Campaign Debrief{% endblock %}
+
+{% block reach_content %}
+<div class="mx-auto max-w-6xl space-y-5">
+  <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5 sm:p-6">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <a href="{{ url_for('reach.overview', campaign_id=debrief.campaign.id) }}" class="text-xs font-semibold text-gray-500 hover:text-amber-300">← Back to campaign</a>
+        <div class="mt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">Measured learning</div>
+        <h1 class="mt-1 text-2xl font-semibold tracking-tight text-white">Campaign Debrief</h1>
+        <p class="mt-1 text-sm text-gray-400">{{ debrief.recording.artist_name }} · {{ debrief.recording.title }}</p>
+      </div>
+      {{ ui.status_badge(debrief.campaign.status) }}
+    </div>
+    <p class="mt-4 max-w-3xl text-xs leading-relaxed text-gray-500">{{ debrief.disclaimer }}</p>
+  </section>
+
+  {% if not debrief.has_activity %}
+    {{ ui.empty('There is not enough campaign activity to debrief yet.', url_for('reach.overview', campaign_id=debrief.campaign.id), 'Return to campaign') }}
+  {% else %}
+  <section class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+    {{ ui.metric(debrief.metrics.discovered, 'Discovered') }}
+    {{ ui.metric(debrief.metrics.submitted, 'Sent') }}
+    {{ ui.metric(debrief.metrics.responses, 'Responses') }}
+    {{ ui.metric(debrief.response_kinds.get('ACCEPT', 0), 'Accepted', 'text-emerald-400') }}
+    {{ ui.metric(debrief.metrics.placed, 'Placed', 'text-emerald-400') }}
+    <div class="rounded-xl border border-white/[0.08] bg-[#111113] p-4"><div class="text-xl font-bold text-white">{{ debrief.metrics.response_rate if debrief.metrics.response_rate is not none else '—' }}{% if debrief.metrics.response_rate is not none %}%{% endif %}</div><div class="mt-1 text-[10px] uppercase tracking-wide text-gray-500">Response rate</div></div>
+  </section>
+
+  <div class="grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
+    <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
+      <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-400">Carry forward</div>
+      <h2 class="mt-1 text-lg font-semibold text-white">What the records suggest reviewing next</h2>
+      {% if debrief.carry_forward %}<div class="mt-4 divide-y divide-white/[0.06]">{% for item in debrief.carry_forward %}<div class="py-3 first:pt-0 last:pb-0"><div class="text-sm font-semibold text-gray-100">{{ item.title }}</div><div class="mt-1 text-xs leading-relaxed text-gray-500">{{ item.detail }}</div></div>{% endfor %}</div>{% else %}<div class="mt-4 text-xs text-gray-500">No strong repeatable pattern is established yet. More measured outreach is needed before Reach should recommend a direction.</div>{% endif %}
+    </section>
+
+    <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5">
+      <h2 class="text-lg font-semibold text-white">Relationship wins</h2>
+      <p class="mt-1 text-xs text-gray-500">Outlets with a recorded acceptance or verified placement.</p>
+      {% if debrief.relationship_wins %}<div class="mt-3 divide-y divide-white/[0.06]">{% for row in debrief.relationship_wins %}<a href="{{ url_for('reach.target_detail', campaign_id=debrief.campaign.id, target_id=row.target_id) }}" class="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"><div><div class="text-sm font-semibold text-gray-200">{{ row.outlet_name }}</div><div class="mt-0.5 text-[10px] text-gray-500">{{ (row.outlet_kind or 'Outlet').replace('_',' ')|title }}{% if row.territory %} · {{ row.territory }}{% endif %}</div></div><div class="text-right text-[10px] text-gray-500">{% if row.placements %}<span class="text-emerald-300">{{ row.placements }} placement{{ '' if row.placements == 1 else 's' }}</span>{% elif row.accepts %}<span class="text-emerald-300">Accepted</span>{% endif %}</div></a>{% endfor %}</div>{% else %}<div class="mt-4 text-xs text-gray-500">No acceptance or placement is recorded yet.</div>{% endif %}
+    </section>
+  </div>
+
+  <div class="grid gap-5 lg:grid-cols-2">
+    <section class="overflow-hidden rounded-xl border border-white/[0.08] bg-[#111113]">
+      <div class="p-5"><h2 class="text-lg font-semibold text-white">Observed by outlet type</h2><p class="mt-1 text-xs text-gray-500">Response and placement rates use only actual sends as the denominator.</p></div>
+      {% if debrief.channels %}<div class="overflow-x-auto"><table class="w-full min-w-[520px] text-left text-xs"><thead class="border-y border-white/[0.06] text-[9px] uppercase tracking-wide text-gray-500"><tr><th class="px-5 py-2">Type</th><th class="px-3 py-2">Sent</th><th class="px-3 py-2">Replies</th><th class="px-3 py-2">Response</th><th class="px-3 py-2">Placed</th></tr></thead><tbody>{% for row in debrief.channels %}<tr class="border-b border-white/[0.05] last:border-0"><td class="px-5 py-3 font-semibold text-gray-200">{{ row.label.replace('_',' ')|title }}</td><td class="px-3 py-3 text-gray-400">{{ row.sent }}</td><td class="px-3 py-3 text-gray-400">{{ row.responses }}</td><td class="px-3 py-3 text-gray-400">{{ row.response_rate ~ '%' if row.response_rate is not none else '—' }}</td><td class="px-3 py-3 text-gray-400">{{ row.placements }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="px-5 pb-5 text-xs text-gray-500">No outlet-type data yet.</div>{% endif %}
+    </section>
+
+    <section class="overflow-hidden rounded-xl border border-white/[0.08] bg-[#111113]">
+      <div class="p-5"><h2 class="text-lg font-semibold text-white">Observed by territory</h2><p class="mt-1 text-xs text-gray-500">UNKNOWN stays unknown when an outlet has no territory on file.</p></div>
+      {% if debrief.territories %}<div class="overflow-x-auto"><table class="w-full min-w-[500px] text-left text-xs"><thead class="border-y border-white/[0.06] text-[9px] uppercase tracking-wide text-gray-500"><tr><th class="px-5 py-2">Territory</th><th class="px-3 py-2">Sent</th><th class="px-3 py-2">Replies</th><th class="px-3 py-2">Response</th><th class="px-3 py-2">Placed</th></tr></thead><tbody>{% for row in debrief.territories %}<tr class="border-b border-white/[0.05] last:border-0"><td class="px-5 py-3 font-semibold text-gray-200">{{ row.label }}</td><td class="px-3 py-3 text-gray-400">{{ row.sent }}</td><td class="px-3 py-3 text-gray-400">{{ row.responses }}</td><td class="px-3 py-3 text-gray-400">{{ row.response_rate ~ '%' if row.response_rate is not none else '—' }}</td><td class="px-3 py-3 text-gray-400">{{ row.placements }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="px-5 pb-5 text-xs text-gray-500">No territory data yet.</div>{% endif %}
+    </section>
+  </div>
+
+  <div class="grid gap-5 lg:grid-cols-2">
+    <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5"><h2 class="text-lg font-semibold text-white">Rejection patterns</h2><p class="mt-1 text-xs text-gray-500">Only reasons explicitly recorded in Reach.</p>{% if debrief.rejections %}<div class="mt-3 space-y-2">{% for row in debrief.rejections %}<div class="flex items-center justify-between gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2"><span class="text-xs text-gray-300">{{ row.reason }}</span><span class="text-xs font-bold text-gray-400">{{ row.n }}</span></div>{% endfor %}</div>{% else %}<div class="mt-4 text-xs text-gray-500">No rejection reasons are recorded.</div>{% endif %}</section>
+
+    <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5"><h2 class="text-lg font-semibold text-white">Pitch history by observed outcome</h2><p class="mt-1 text-xs text-gray-500">This does not claim the wording caused the outcome.</p>{% if debrief.pitch_outcomes %}<div class="mt-3 divide-y divide-white/[0.06]">{% for row in debrief.pitch_outcomes[:8] %}<div class="py-3 first:pt-0 last:pb-0"><div class="text-xs font-semibold text-gray-200">{{ row.subject }}</div><div class="mt-1 text-[10px] text-gray-500">{{ row.outlet_name }}{% if row.sent_at %} · {{ row.sent_at[:10] }}{% endif %}{% if row.placements %} · <span class="text-emerald-300">placement</span>{% elif row.accepted %} · <span class="text-emerald-300">accepted</span>{% elif row.declined %} · declined{% endif %}</div></div>{% endfor %}</div>{% else %}<div class="mt-4 text-xs text-gray-500">No sent pitch history is recorded for this campaign yet.</div>{% endif %}</section>
+  </div>
+
+  <section class="rounded-xl border border-white/[0.08] bg-[#111113] p-5"><h2 class="text-lg font-semibold text-white">Downstream measurement</h2><div class="mt-3 grid gap-2 sm:grid-cols-2">{% for row in debrief.attribution %}<div class="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"><div class="text-xs font-semibold text-gray-200">{{ row.metric.replace('_',' ')|title }}</div><div class="mt-1 text-[11px] leading-relaxed text-gray-500">{{ row.note }}</div></div>{% endfor %}</div></section>
+  {% endif %}
+</div>
+{% endblock %}
