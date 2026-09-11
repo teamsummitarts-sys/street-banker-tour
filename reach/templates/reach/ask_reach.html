@@ -1,0 +1,35 @@
+{% extends "reach/_layout.html" %}
+
+{% block title %}REACH — Ask Reach{% endblock %}
+
+{% block reach_content %}
+<div class="mx-auto max-w-4xl space-y-4">
+  <section class="rounded-2xl border border-amber-500/20 bg-[#0c1417] p-4 sm:p-5">
+    <div class="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-400">Grounded command bar</div>
+    <h1 class="mt-1 text-2xl font-semibold tracking-tight text-white">Ask Reach</h1>
+    <p class="mt-1 text-sm text-gray-400">Ask about your opportunities, campaigns, deadlines, replies, relationships, release readiness or comparable-artist signals. Answers come from Reach records.</p>
+    <form method="get" action="{{ url_for('reach.ask_reach_page') }}" class="mt-4 flex gap-2">
+      <label class="sr-only" for="ask-reach-query">Ask Reach</label>
+      <input id="ask-reach-query" name="q" value="{{ query }}" autofocus autocomplete="off" placeholder="What should I do today?" class="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#111b1f] px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-amber-500/40">
+      <button type="submit" class="rounded-xl bg-amber-400 px-4 py-3 text-sm font-bold text-black">Ask →</button>
+    </form>
+  </section>
+
+  <div class="flex flex-wrap gap-2">{% for suggestion in result.suggestions %}<a href="{{ url_for('reach.ask_reach_page', q=suggestion) }}" class="rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-[11px] font-semibold text-gray-400 hover:border-amber-500/30 hover:text-amber-300">{{ suggestion }}</a>{% endfor %}</div>
+
+  <section class="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#101719]">
+    <div class="border-b border-white/[0.06] p-4 sm:p-5">
+      <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">{{ result.intent.replace('_',' ')|title }}</div>
+      <h2 class="mt-1 text-xl font-semibold text-white">{{ result.title }}</h2>
+      <p class="mt-1 text-sm leading-relaxed text-gray-400">{{ result.answer }}</p>
+    </div>
+    {% if result.items %}
+      <div class="divide-y divide-white/[0.06]">{% for item in result.items %}<a href="{{ item.url }}" class="flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.025] sm:px-5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-white/[0.07] bg-[#0a1012] text-[9px] font-black uppercase text-amber-300">{{ item.type[:2] }}</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold text-gray-100">{{ item.label }}</span>{% if item.meta %}<span class="mt-0.5 block truncate text-[11px] text-gray-500">{{ item.meta }}</span>{% endif %}</span><span class="text-amber-300">→</span></a>{% endfor %}</div>
+    {% elif result.intent != 'empty' %}
+      <div class="p-5 text-sm text-gray-500">No supported Reach records match this question yet.</div>
+    {% endif %}
+  </section>
+
+  <p class="px-1 text-[11px] leading-relaxed text-gray-600">Ask Reach does not fill gaps with invented facts. If a question depends on information Reach has not recorded or verified, it returns an empty/unknown result instead.</p>
+</div>
+{% endblock %}
