@@ -7,13 +7,13 @@
   <div class="to-head">
     <div>
       <p class="to-eyebrow">TOUR · ROAD OPERATIONS</p>
-      <h1 class="to-h1">Run the road from one source of truth.</h1>
-      <p class="to-sub">Shows, off days, schedules, advancing, travel, rooms, people, guests, money, merch and changes live together. Crew members see only the information and controls their role needs.</p>
+      <h1 class="to-h1">Every date. Every room. One place.</h1>
+      <p class="to-sub">Start with one show or build the full road operation. Schedule, travel, hotels, people, guests, money, merch, files and deeper tools stay available only when you need them.</p>
     </div>
   </div>
 
-  {% if mine %}
   <h2 class="to-h2">Your tours</h2>
+  {% if mine %}
   <div class="to-table-wrap"><table class="to-table is-stack">
     <thead><tr><th>Tour</th><th>Dates</th><th>Shows</th><th>Status</th><th></th></tr></thead>
     <tbody>
@@ -23,11 +23,13 @@
         <td data-k="Dates">{{ t['start_date'] or '—' }} → {{ t['end_date'] or '—' }}</td>
         <td data-k="Shows">{{ t['show_count'] }}</td>
         <td data-k="Status"><span class="to-chip to-chip--gold">{{ t['status_line'] }}</span></td>
-        <td><a class="to-btn to-btn--small" href="/tours/{{ t['id'] }}">Open TOUR</a></td>
+        <td><a class="to-btn to-btn--small" href="/tours/{{ t['id'] }}">Open</a></td>
       </tr>
     {% endfor %}
     </tbody>
   </table></div>
+  {% else %}
+    {{ m.empty("No tours yet", "Start a tour or add a one-off show below. You can keep it simple or open deeper tools later.") }}
   {% endif %}
 
   {% if shared %}
@@ -47,31 +49,46 @@
   </table></div>
   {% endif %}
 
-  {% if not mine and not shared %}
-    {{ m.empty("No tours yet", "Create one below. If you have already been invited to someone else's tour, open the link in the invitation — it lands here.") }}
-  {% endif %}
-
   {% if can_own %}
-  <h2 class="to-h2">Start a tour</h2>
-  <form method="post" action="/tours/new" class="to-form">
-    <div class="to-grid">
-      {{ m.field('name', 'Tour name', placeholder='Fall 2026', required=True) }}
-      {{ m.field('artist_name', 'Artist', placeholder='As billed') }}
-      {{ m.field('start_date', 'First date', type='date') }}
-      {{ m.field('end_date', 'Last date', type='date') }}
-      {{ m.field('home_tz', 'Home timezone', value=tz_guess, placeholder='America/New_York') }}
-      {{ m.field('currency', 'Currency', value='USD') }}
-    </div>
-    {% if unattached %}
-    <div class="to-checks" style="margin-top:10px">
-      {{ m.check('adopt', 'Bring my ' ~ unattached|length ~ ' existing Tour Hub show(s) onto this tour', on=True) }}
-    </div>
+  <div style="display:grid;gap:12px;margin-top:22px">
+    <details class="to-panel" open>
+      <summary style="cursor:pointer;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--to-amber);font-size:13px">＋ Start a tour</summary>
+      <form method="post" action="/tours/new" class="to-form" style="margin-top:14px">
+        <div class="to-grid">
+          {{ m.field('name', 'Tour name', placeholder='Fall 2026', required=True) }}
+          {{ m.field('artist_name', 'Artist', placeholder='As billed') }}
+          {{ m.field('start_date', 'First date', type='date') }}
+          {{ m.field('end_date', 'Last date', type='date') }}
+          {{ m.field('home_tz', 'Home timezone', value=tz_guess, placeholder='America/New_York') }}
+          {{ m.field('currency', 'Currency', value='USD') }}
+        </div>
+        {% if unattached %}
+        <div class="to-checks" style="margin-top:10px">
+          {{ m.check('adopt', 'Bring my ' ~ unattached|length ~ ' existing Tour Hub show(s) onto this tour', on=True) }}
+        </div>
+        {% endif %}
+        <div class="to-bar"><button class="to-btn" type="submit">Create tour</button></div>
+      </form>
+    </details>
+
+    {% if tour_public_preview %}
+    <details class="to-panel" id="one-off">
+      <summary style="cursor:pointer;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--to-amber);font-size:13px">＋ Add a one-off show</summary>
+      <form method="post" action="/tour-share/preview/one-off" class="to-form" style="margin-top:14px">
+        <div class="to-grid">
+          {{ m.field('venue', 'Venue', placeholder='The Basement East', required=True) }}
+          {{ m.field('city', 'City', placeholder='Nashville, TN') }}
+          {{ m.field('date', 'Date', type='date', required=True) }}
+          {{ m.field('artist_name', 'Artist', placeholder='As billed') }}
+          {{ m.field('home_tz', 'Timezone', value=tz_guess, placeholder='America/New_York') }}
+          {{ m.field('currency', 'Currency', value='USD') }}
+        </div>
+        <div class="to-field" style="margin-top:10px"><span>Notes</span><textarea name="notes" placeholder="Optional show notes"></textarea></div>
+        <div class="to-bar"><button class="to-btn" type="submit">Add the show</button></div>
+      </form>
+    </details>
     {% endif %}
-    <div class="to-bar"><button class="to-btn" type="submit">Create TOUR</button></div>
-  </form>
-  {% if is_demo and not mine %}
-  <form method="post" action="/tours/seed-demo" class="to-bar"><button class="to-btn to-btn--ghost" type="submit">Load the example tour (demo account only)</button></form>
-  {% endif %}
+  </div>
   {% else %}
   <div class="to-note"><strong>Owning a tour needs the Artist tier.</strong> You can still open any tour you were invited to. <a href="/plan">See plans</a>.</div>
   {% endif %}
