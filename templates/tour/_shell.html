@@ -1,14 +1,23 @@
-{# TOUR shell: the signed-in frame, the module stylesheet, the tour header
-   (name, status line, mode), the tour-level tabs the viewer is allowed to
-   see, and the offline strip. Pages extend this and fill `tour_body`. #}
-{% extends "base.html" %}
+{# TOUR shell: standalone V2 product frame over the existing TOUR routes,
+   permissions and data. It intentionally does not inherit the Street Banker
+   OS sidebar; TOUR is a sibling product that shares identity and records. #}
+{% extends "tour/_app_base.html" %}
 {% block head_scripts %}
-  <link rel="stylesheet" href="/static/css/tour-os.css?v=3">
+  <link rel="stylesheet" href="/static/css/tour-os.css?v=4">
 {% endblock %}
 {% block content %}
 {% import "tour/_macros.html" as m %}
 <div class="to">
   <div class="to-offline" id="to-offline" role="status">Offline — showing the last copy of this page</div>
+
+  <div class="to-product-context">
+    <p class="to-product-context__title">Road operations · one source of truth</p>
+    <div class="to-product-context__links">
+      <a href="/tours">All tours</a>
+      <a href="/tours/{{ tour['id'] }}/my-day">My Day</a>
+      <a href="/tours/{{ tour['id'] }}/ask">Ask TOUR</a>
+    </div>
+  </div>
 
   <div class="to-head">
     <div>
@@ -29,9 +38,33 @@
     </div>
   </div>
 
-  <nav class="to-tabs" aria-label="Tour sections">
-    {% for key, label, path in tour_tabs %}
-      <a class="to-tab {{ 'is-on' if nav == key }}" href="/tours/{{ tour['id'] }}{% if path %}/{{ path }}{% endif %}">{{ label }}</a>
+  {% set groups = [
+    ('TODAY', ('home', 'my-day', 'changes', 'ask')),
+    ('TOUR', ('calendar', 'shows', 'map')),
+    ('SHOW', ('schedule', 'venues')),
+    ('TRAVEL', ('travel', 'hotels', 'people')),
+    ('OPERATIONS', ('tasks', 'files', 'guests', 'marketing', 'content', 'import', 'exports')),
+    ('MONEY', ('money', 'merch')),
+    ('TEAM', ('share', 'team', 'settings'))
+  ] %}
+  <nav class="to-product-nav" aria-label="TOUR sections">
+    {% for group_label, group_keys in groups %}
+      {% set ns = namespace(has_items=false) %}
+      {% for key, label, path in tour_tabs %}{% if key in group_keys %}{% set ns.has_items = true %}{% endif %}{% endfor %}
+      {% if ns.has_items %}
+      <section class="to-nav-group" aria-label="{{ group_label }}">
+        <span class="to-nav-label">{{ group_label }}</span>
+        <div class="to-nav-links">
+          {% for key, label, path in tour_tabs %}
+            {% if key in group_keys %}
+            <a class="to-nav-link {{ 'is-on' if nav == key }} {{ 'to-ask-shortcut' if key == 'ask' }}"
+               href="/tours/{{ tour['id'] }}{% if path %}/{{ path }}{% endif %}"
+               {% if nav == key %}aria-current="page"{% endif %}>{{ label }}</a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
     {% endfor %}
   </nav>
 
