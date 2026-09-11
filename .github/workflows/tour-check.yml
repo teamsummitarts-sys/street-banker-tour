@@ -1,0 +1,44 @@
+name: TOUR checks
+
+on:
+  pull_request:
+    paths:
+      - "tour_*.py"
+      - "touring.py"
+      - "templates/tour/**"
+      - "static/css/tour*.css"
+      - "tests/test_tour_*.py"
+      - "app.py"
+      - "requirements.txt"
+      - ".github/workflows/tour-check.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "tour_*.py"
+      - "touring.py"
+      - "templates/tour/**"
+      - "static/css/tour*.css"
+      - "tests/test_tour_*.py"
+      - "app.py"
+      - "requirements.txt"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      APP_ENV: development
+      DATABASE_PATH: /tmp/streetbanker-v2-tour-ci.db
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m compileall -q tour_config.py tour_engine.py tour_os.py tour_seed.py tour_store.py touring.py
+      - run: python -m pytest -q tests/test_tour_*.py
