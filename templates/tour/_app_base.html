@@ -50,8 +50,23 @@
     <span>StreetBankerMusic.com</span>
   </footer>
 
+  {% if tour_public_preview %}
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (reg) { reg.unregister(); });
+      });
+    }
+    if ("caches" in window) {
+      caches.keys().then(function (keys) {
+        keys.forEach(function (key) { caches.delete(key); });
+      });
+    }
+  </script>
+  {% else %}
   <script>
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
   </script>
+  {% endif %}
 </body>
 </html>
