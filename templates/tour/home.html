@@ -34,6 +34,13 @@
   {% endif %}
 {% endif %}
 
+<div class="to-quick-actions" aria-label="Fast TOUR actions">
+  {% if can('edit') or can('schedule') %}<a class="to-quick-action" href="/tours/{{ tour['id'] }}/calendar#add-date"><b>+</b> Add date / show</a>{% endif %}
+  {% if can('edit') %}<a class="to-quick-action" href="/tours/{{ tour['id'] }}/import"><b>+</b> Import dates</a>{% endif %}
+  <a class="to-quick-action" href="/tours/{{ tour['id'] }}/shows"><b>→</b> Show list</a>
+  <a class="to-quick-action" href="/tours/{{ tour['id'] }}/people"><b>→</b> Crew directory</a>
+</div>
+
 <div class="to-cards">
   <a class="to-card is-warm" href="/tours/{{ tour['id'] }}/shows"><b>{{ tour_ready['pct'] }}%</b><span>Tour readiness</span><small>{{ tour_ready['shows'] }} show{{ '' if tour_ready['shows'] == 1 else 's' }} scored</small></a>
   <a class="to-card" href="/tours/{{ tour['id'] }}/calendar"><b>{{ shows|length }}</b><span>Shows</span><small>{{ upcoming|length }} upcoming</small></a>
@@ -63,7 +70,15 @@
     {% elif shows %}
       {{ m.empty("No upcoming shows", "Every date on this tour is in the past. Mark the tour wrapped in Settings, or add the next run.", "/tours/" ~ tour['id'] ~ "/calendar", "Calendar") }}
     {% else %}
-      {{ m.empty("No shows yet", "Add dates one at a time from the calendar, or import a CSV, an .ics export, or a pasted list.", "/tours/" ~ tour['id'] ~ "/import", "Import dates") }}
+      <div class="to-panel is-warm">
+        <p class="to-eyebrow">Build the run</p>
+        <h2 style="margin:0;font-size:18px">No shows on this tour yet.</h2>
+        <p class="to-sub">Add the first date manually, or import a full run from CSV, a sheet, .ics, or pasted dates.</p>
+        <div class="to-bar">
+          <a class="to-btn" href="/tours/{{ tour['id'] }}/calendar#add-date">Add first date</a>
+          <a class="to-btn to-btn--ghost" href="/tours/{{ tour['id'] }}/import">Import dates</a>
+        </div>
+      </div>
     {% endif %}
 
     <h2 class="to-h2">Needs attention</h2>
