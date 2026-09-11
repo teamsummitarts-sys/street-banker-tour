@@ -15,17 +15,17 @@
     </form>
   </section>
 
-  <div class="flex flex-wrap gap-2">{% for suggestion in result.suggestions %}<a href="{{ url_for('reach.ask_reach_page', q=suggestion) }}" class="rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-[11px] font-semibold text-gray-400 hover:border-amber-500/30 hover:text-amber-300">{{ suggestion }}</a>{% endfor %}</div>
+  <div class="flex flex-wrap gap-2">{% for suggestion in result["suggestions"] %}<a href="{{ url_for('reach.ask_reach_page', q=suggestion) }}" class="rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-[11px] font-semibold text-gray-400 hover:border-amber-500/30 hover:text-amber-300">{{ suggestion }}</a>{% endfor %}</div>
 
   <section class="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#101719]">
     <div class="border-b border-white/[0.06] p-4 sm:p-5">
-      <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">{{ result.intent.replace('_',' ')|title }}</div>
-      <h2 class="mt-1 text-xl font-semibold text-white">{{ result.title }}</h2>
-      <p class="mt-1 text-sm leading-relaxed text-gray-400">{{ result.answer }}</p>
+      <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">{{ result["intent"].replace('_',' ')|title }}</div>
+      <h2 class="mt-1 text-xl font-semibold text-white">{{ result["title"] }}</h2>
+      <p class="mt-1 text-sm leading-relaxed text-gray-400">{{ result["answer"] }}</p>
     </div>
-    {% if result.items %}
-      <div class="divide-y divide-white/[0.06]">{% for item in result.items %}<a href="{{ item.url }}" class="flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.025] sm:px-5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-white/[0.07] bg-[#0a1012] text-[9px] font-black uppercase text-amber-300">{{ item.type[:2] }}</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold text-gray-100">{{ item.label }}</span>{% if item.meta %}<span class="mt-0.5 block truncate text-[11px] text-gray-500">{{ item.meta }}</span>{% endif %}</span><span class="text-amber-300">→</span></a>{% endfor %}</div>
-    {% elif result.intent != 'empty' %}
+    {% if result["items"] %}
+      <div class="divide-y divide-white/[0.06]">{% for item in result["items"] %}<a href="{{ item.url }}" class="flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.025] sm:px-5"><span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-white/[0.07] bg-[#0a1012] text-[9px] font-black uppercase text-amber-300">{{ item.type[:2] }}</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold text-gray-100">{{ item.label }}</span>{% if item.meta %}<span class="mt-0.5 block truncate text-[11px] text-gray-500">{{ item.meta }}</span>{% endif %}</span><span class="text-amber-300">→</span></a>{% endfor %}</div>
+    {% elif result["intent"] != 'empty' %}
       <div class="p-5 text-sm text-gray-500">No supported Reach records match this question yet.</div>
     {% endif %}
   </section>
