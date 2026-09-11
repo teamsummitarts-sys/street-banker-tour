@@ -39,22 +39,24 @@ def test_open_preview_renders_launcher_without_a_render_disk_or_login(tmp_path):
         response = first.get('/', base_url=origin, follow_redirects=True)
         html = response.get_data(as_text=True)
         assert response.status_code == 200
-        assert response.request.path == '/tour-share/preview'
         assert 'tour-app-body' in html
         assert 'Start a tour' in html
         assert 'Add a one-off show' in html
         assert 'Sign out' not in html
-        assert '/login' not in response.request.path
         assert response.headers['X-TOUR-Preview-Revision'] == preview.PREVIEW_REVISION
         assert response.headers['Cache-Control'].startswith('private, no-store')
 
-        # Every launcher URL renders directly instead of bouncing through login
-        # or an example tour. This is the mobile/service-worker regression.
+        # Every launcher URL renders the same launcher instead of bouncing
+        # through login or forcing an example tour. Flask's response.request
+        # retains the browser's original URL when the preview WSGI shim rewrites
+        # PATH_INFO internally, so content/status are the stable contract.
         for path in ('/', '/tours', '/tours/'):
             response = first.get(path, base_url=origin, follow_redirects=True)
             assert response.status_code == 200, path
-            assert response.request.path == '/tour-share/preview', path
-            assert 'Start a tour' in response.get_data(as_text=True)
+            launcher = response.get_data(as_text=True)
+            assert 'Start a tour' in launcher
+            assert 'Add a one-off show' in launcher
+            assert 'Sign out' not in launcher
 
         # Full-tour creation still uses the real TOUR route and then every
         # major workspace renders from that stored tour.
@@ -98,7 +100,6 @@ def test_open_preview_renders_launcher_without_a_render_disk_or_login(tmp_path):
                          domain='tour-preview.test')
         response = stale.get('/', base_url=origin, follow_redirects=True)
         assert response.status_code == 200
-        assert response.request.path == '/tour-share/preview'
         assert 'Start a tour' in response.get_data(as_text=True)
 
         # The preview-specific worker is a self-removing worker, never the
