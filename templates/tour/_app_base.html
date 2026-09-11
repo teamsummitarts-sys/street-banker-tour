@@ -32,10 +32,12 @@
         <a href="/tours" class="is-active" aria-current="page">TOUR</a>
       </nav>
 
+      {% if not tour_public_preview %}
       <div class="tour-appbar__actions">
         <a href="/command-center" class="tour-appbar__back">Command Center</a>
         <a href="/logout" class="tour-appbar__account">Sign out</a>
       </div>
+      {% endif %}
     </div>
   </header>
 
