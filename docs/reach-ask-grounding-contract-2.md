@@ -1,1 +1,0 @@
-Ask Reach is grounded in persisted Reach records only and returns empty/unknown results when the account lacks supporting data.
