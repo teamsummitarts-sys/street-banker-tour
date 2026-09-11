@@ -22,15 +22,17 @@ def test_tour_uses_its_own_product_shell():
     assert "BY STREET BANKER" in app_base
 
 
-def test_tour_switcher_only_links_confirmed_live_product_routes():
+def test_tour_switcher_shows_suite_without_linking_development_room_route():
     app_base = read("templates/tour/_app_base.html")
 
     assert 'href="/overview"' in app_base
     assert 'href="/reach/"' in app_base
     assert 'href="/noise-lab/"' in app_base
     assert 'href="/tours"' in app_base
+    assert "THE ROOM" in app_base
+    assert 'aria-disabled="true"' in app_base
     # The Room currently lives behind the default-off Portable Song Builder.
-    # Do not advertise that development route as a production product.
+    # Keep the product visible, but do not advertise that development route.
     assert 'href="/song-builder' not in app_base
 
 
@@ -52,5 +54,6 @@ def test_tour_standalone_css_keeps_mobile_layouts_first_class():
 
     assert ".tour-appbar" in css
     assert ".to-product-nav" in css
+    assert ".is-unavailable" in css
     assert "@media (max-width: 760px)" in css
     assert "@media (max-width: 420px)" in css
