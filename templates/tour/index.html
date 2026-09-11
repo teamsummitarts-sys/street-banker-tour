@@ -4,88 +4,133 @@
 {% block content %}
 {% import "tour/_macros.html" as m %}
 <div class="to">
-  <div class="to-head">
-    <div>
+  <section class="to-launch-hero">
+    <div class="to-launch-hero__copy">
       <p class="to-eyebrow">TOUR · ROAD OPERATIONS</p>
-      <h1 class="to-h1">Every date. Every room. One place.</h1>
-      <p class="to-sub">Start with one show or build the full road operation. Schedule, travel, hotels, people, guests, money, merch, files and deeper tools stay available only when you need them.</p>
+      <h1 class="to-h1">Run the road. Only as deep as you need.</h1>
+      <p class="to-sub">Start with one show or build the full tour. Dates, schedules, advancing, travel, hotels, people, guests, money, merch and files stay ready without forcing every tool into the way.</p>
     </div>
-  </div>
+    <div class="to-launch-hero__aside">
+      <b>ONE SHOW → FULL TOUR</b><br>
+      Simple first. Deeper when needed.
+    </div>
+  </section>
 
   <h2 class="to-h2">Your tours</h2>
   {% if mine %}
-  <div class="to-table-wrap"><table class="to-table is-stack">
-    <thead><tr><th>Tour</th><th>Dates</th><th>Shows</th><th>Status</th><th></th></tr></thead>
-    <tbody>
+  <div class="to-tour-grid">
     {% for t in mine %}
-      <tr>
-        <td data-k="Tour"><a href="/tours/{{ t['id'] }}"><b>{{ t['name'] }}</b></a>{% if t['artist_name'] %}<div class="to-muted">{{ t['artist_name'] }}</div>{% endif %}</td>
-        <td data-k="Dates">{{ t['start_date'] or '—' }} → {{ t['end_date'] or '—' }}</td>
-        <td data-k="Shows">{{ t['show_count'] }}</td>
-        <td data-k="Status"><span class="to-chip to-chip--gold">{{ t['status_line'] }}</span></td>
-        <td><a class="to-btn to-btn--small" href="/tours/{{ t['id'] }}">Open</a></td>
-      </tr>
+      {% set one_off = t['name'].startswith('One-off ·') %}
+      <a class="to-tour-card" href="/tours/{{ t['id'] }}">
+        <div class="to-tour-card__top">
+          <div>
+            <span class="to-tour-card__kind">{{ 'One-off show' if one_off else 'Full tour' }} · {{ t['status_line'] }}</span>
+            <h3 class="to-tour-card__name">{{ t['name']|replace('One-off · ','') if one_off else t['name'] }}</h3>
+            {% if t['artist_name'] %}<div class="to-tour-card__artist">{{ t['artist_name'] }}</div>{% endif %}
+          </div>
+          <span class="to-tour-card__count">{{ t['show_count'] }} {{ 'date' if t['show_count'] == 1 else 'dates' }}</span>
+        </div>
+        <div class="to-tour-card__meta">
+          <div class="to-tour-card__dates">
+            {% if t['start_date'] or t['end_date'] %}{{ t['start_date'] or '—' }} → {{ t['end_date'] or '—' }}{% else %}Dates not set yet{% endif %}
+          </div>
+          <span class="to-tour-card__open">Open</span>
+        </div>
+      </a>
     {% endfor %}
-    </tbody>
-  </table></div>
+  </div>
   {% else %}
-    {{ m.empty("No tours yet", "Start a tour or add a one-off show below. You can keep it simple or open deeper tools later.") }}
+    {{ m.empty("No tours yet", "Start a full tour or add a one-off show. You can stay basic or open deeper tools later.") }}
   {% endif %}
 
   {% if shared %}
   <h2 class="to-h2">Tours you're on</h2>
-  <div class="to-table-wrap"><table class="to-table is-stack">
-    <thead><tr><th>Tour</th><th>Your role</th><th>Status</th><th></th></tr></thead>
-    <tbody>
+  <div class="to-tour-grid">
     {% for t in shared %}
-      <tr>
-        <td data-k="Tour"><a href="/tours/{{ t['id'] }}"><b>{{ t['name'] }}</b></a>{% if t['artist_name'] %}<div class="to-muted">{{ t['artist_name'] }}</div>{% endif %}</td>
-        <td data-k="Role">{{ t['my_role']|replace('_',' ')|capitalize }}</td>
-        <td data-k="Status"><span class="to-chip to-chip--gold">{{ t['status_line'] }}</span></td>
-        <td><a class="to-btn to-btn--small" href="/tours/{{ t['id'] }}/my-day">My Day</a></td>
-      </tr>
+      <a class="to-tour-card" href="/tours/{{ t['id'] }}/my-day">
+        <div class="to-tour-card__top">
+          <div>
+            <span class="to-tour-card__kind">Crew access · {{ t['my_role']|replace('_',' ')|capitalize }}</span>
+            <h3 class="to-tour-card__name">{{ t['name'] }}</h3>
+            {% if t['artist_name'] %}<div class="to-tour-card__artist">{{ t['artist_name'] }}</div>{% endif %}
+          </div>
+          <span class="to-tour-card__count">{{ t['status_line'] }}</span>
+        </div>
+        <div class="to-tour-card__meta">
+          <div class="to-tour-card__dates">Your role-scoped road view</div>
+          <span class="to-tour-card__open">My Day</span>
+        </div>
+      </a>
     {% endfor %}
-    </tbody>
-  </table></div>
+  </div>
   {% endif %}
 
   {% if can_own %}
-  <div style="display:grid;gap:12px;margin-top:22px">
-    <details class="to-panel" open>
-      <summary style="cursor:pointer;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--to-amber);font-size:13px">＋ Start a tour</summary>
-      <form method="post" action="/tours/new" class="to-form" style="margin-top:14px">
-        <div class="to-grid">
-          {{ m.field('name', 'Tour name', placeholder='Fall 2026', required=True) }}
-          {{ m.field('artist_name', 'Artist', placeholder='As billed') }}
-          {{ m.field('start_date', 'First date', type='date') }}
-          {{ m.field('end_date', 'Last date', type='date') }}
-          {{ m.field('home_tz', 'Home timezone', value=tz_guess, placeholder='America/New_York') }}
-          {{ m.field('currency', 'Currency', value='USD') }}
-        </div>
-        {% if unattached %}
-        <div class="to-checks" style="margin-top:10px">
-          {{ m.check('adopt', 'Bring my ' ~ unattached|length ~ ' existing Tour Hub show(s) onto this tour', on=True) }}
-        </div>
-        {% endif %}
-        <div class="to-bar"><button class="to-btn" type="submit">Create tour</button></div>
-      </form>
+  <div class="to-launch-actions" aria-label="Create TOUR work">
+    <details class="to-launch-action" id="start-tour">
+      <summary>
+        <span>
+          <span class="to-launch-action__title">Start a tour</span>
+          <span class="to-launch-action__hint">Create the tour container now. Add dates manually or import a run immediately after.</span>
+        </span>
+      </summary>
+      <div class="to-launch-action__body">
+        <form method="post" action="/tours/new" class="to-form">
+          <p class="to-form-step">01 · Identity</p>
+          <div class="to-grid">
+            {{ m.field('name', 'Tour name', placeholder='Fall 2026', required=True) }}
+            {{ m.field('artist_name', 'Artist', placeholder='As billed') }}
+          </div>
+          <p class="to-form-step">02 · Window</p>
+          <div class="to-grid">
+            {{ m.field('start_date', 'First date', type='date') }}
+            {{ m.field('end_date', 'Last date', type='date') }}
+          </div>
+          <details class="to-form-optional">
+            <summary>Optional setup · timezone, currency{% if unattached %}, existing shows{% endif %}</summary>
+            <div class="to-grid" style="margin-top:10px">
+              {{ m.field('home_tz', 'Home timezone', value=tz_guess, placeholder='America/New_York') }}
+              {{ m.field('currency', 'Currency', value='USD') }}
+            </div>
+            {% if unattached %}
+            <div class="to-checks" style="margin-top:10px">
+              {{ m.check('adopt', 'Bring my ' ~ unattached|length ~ ' existing Tour Hub show(s) onto this tour', on=True) }}
+            </div>
+            {% endif %}
+          </details>
+          <div class="to-bar"><button class="to-btn" type="submit">Create tour</button></div>
+        </form>
+      </div>
     </details>
 
     {% if tour_public_preview %}
-    <details class="to-panel" id="one-off">
-      <summary style="cursor:pointer;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--to-amber);font-size:13px">＋ Add a one-off show</summary>
-      <form method="post" action="/tour-share/preview/one-off" class="to-form" style="margin-top:14px">
-        <div class="to-grid">
-          {{ m.field('venue', 'Venue', placeholder='The Basement East', required=True) }}
-          {{ m.field('city', 'City', placeholder='Nashville, TN') }}
-          {{ m.field('date', 'Date', type='date', required=True) }}
-          {{ m.field('artist_name', 'Artist', placeholder='As billed') }}
-          {{ m.field('home_tz', 'Timezone', value=tz_guess, placeholder='America/New_York') }}
-          {{ m.field('currency', 'Currency', value='USD') }}
-        </div>
-        <div class="to-field" style="margin-top:10px"><span>Notes</span><textarea name="notes" placeholder="Optional show notes"></textarea></div>
-        <div class="to-bar"><button class="to-btn" type="submit">Add the show</button></div>
-      </form>
+    <details class="to-launch-action" id="one-off">
+      <summary>
+        <span>
+          <span class="to-launch-action__title">Add a one-off show</span>
+          <span class="to-launch-action__hint">Just the date and venue. The full Show Command tools remain available if you need them.</span>
+        </span>
+      </summary>
+      <div class="to-launch-action__body">
+        <form method="post" action="/tour-share/preview/one-off" class="to-form">
+          <p class="to-form-step">Show essentials</p>
+          <div class="to-grid">
+            {{ m.field('date', 'Date', type='date', required=True) }}
+            {{ m.field('venue', 'Venue', placeholder='The Basement East', required=True) }}
+            {{ m.field('city', 'City', placeholder='Nashville, TN') }}
+            {{ m.field('artist_name', 'Artist', placeholder='As billed') }}
+          </div>
+          <details class="to-form-optional">
+            <summary>Optional setup · notes, timezone, currency</summary>
+            <div class="to-grid" style="margin-top:10px">
+              {{ m.field('home_tz', 'Timezone', value=tz_guess, placeholder='America/New_York') }}
+              {{ m.field('currency', 'Currency', value='USD') }}
+            </div>
+            <div class="to-field" style="margin-top:10px"><span>Notes</span><textarea name="notes" placeholder="Optional show notes"></textarea></div>
+          </details>
+          <div class="to-bar"><button class="to-btn" type="submit">Add the show</button></div>
+        </form>
+      </div>
     </details>
     {% endif %}
   </div>
