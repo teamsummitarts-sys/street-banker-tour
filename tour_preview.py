@@ -2,12 +2,13 @@
 
 Only the isolated Render preview service starts this module. Production starts
 app:app and keeps its existing authentication and durable-storage settings.
-Each preview browser receives its own disposable account and example tour.
+Each preview browser receives its own disposable account and can create tours
+or one-off shows without seeing the Street Banker login wall.
 """
 import os
 import uuid
 
-from flask import redirect, request, session
+from flask import Response, redirect, request, session
 from werkzeug.security import generate_password_hash
 
 import db as store
@@ -22,13 +23,12 @@ if not (os.environ.get("REACH_DB_PATH") or "").strip():
         os.path.dirname(os.path.abspath(store.db_path())), "reach-preview.db"
     )
 
-import tour_seed
 import tour_store as ts
 from app import app
 
 
 _PREVIEW_DOMAIN = "tour-preview.local"
-PREVIEW_REVISION = "storage-and-entry-v2"
+PREVIEW_REVISION = "launcher-direct-v3"
 
 
 def _preview_user():
@@ -60,30 +60,81 @@ def _tour_preview_context():
 @app.after_request
 def _preview_cache_policy(response):
     if not request.path.startswith("/static/"):
-        response.headers["Cache-Control"] = "private, no-store"
+        response.headers["Cache-Control"] = "private, no-store, max-age=0"
+        response.headers["Pragma"] = "no-cache"
         response.headers["X-TOUR-Preview-Revision"] = PREVIEW_REVISION
     return response
 
 
+def _kill_preview_service_worker():
+    """The isolated preview must never strand a reviewer on cached offline UI."""
+    js = r'''self.addEventListener("install",function(e){self.skipWaiting();});
+self.addEventListener("activate",function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.map(function(n){return caches.delete(n);}));}).then(function(){return self.registration.unregister();}));});
+self.addEventListener("fetch",function(){});'''
+    return Response(js, mimetype="application/javascript", headers={
+        "Cache-Control": "no-store, max-age=0",
+        "Service-Worker-Allowed": "/",
+    })
+
+# Replace only the preview process's /sw.js view. Production app:app keeps the
+# full offline-capable TOUR service worker.
+if "service_worker" in app.view_functions:
+    app.view_functions["service_worker"] = _kill_preview_service_worker
+
+
 @app.route("/tour-share/preview")
 def open_tour_preview():
-    """Open the browser's own tour, recovering expired/disposable sessions."""
+    """Render the TOUR launcher directly: no external redirect, no login."""
     user = _preview_user()
     if user is None:
         return "TOUR preview could not initialize.", 500
-    tours = ts.list_tours(user["id"])
-    tour_id = tours[0]["id"] if tours else tour_seed.seed(user["id"])
-    return redirect("/tours/%s" % tour_id)
+    # Call the registered TOUR index inside this request so the browser receives
+    # a 200 HTML document at the root URL instead of a redirect that an older
+    # mobile service worker can mistake for a failed navigation.
+    return app.view_functions["tours.index"]()
+
+
+@app.route("/tour-share/preview/one-off", methods=["POST"])
+def create_preview_one_off():
+    """Create one show with a minimal internal TOUR container.
+
+    The user experiences a one-off show; the small container lets the existing
+    Show Command tools work unchanged instead of building a second show model.
+    """
+    user = _preview_user()
+    if user is None:
+        return "TOUR preview could not initialize.", 500
+
+    venue = (request.form.get("venue") or "").strip()
+    city = (request.form.get("city") or "").strip()
+    show_date = (request.form.get("date") or "").strip()
+    artist = (request.form.get("artist_name") or user.get("name") or "").strip()
+    tz = (request.form.get("home_tz") or "America/New_York").strip()
+    currency = (request.form.get("currency") or "USD").strip().upper()[:3]
+    notes = (request.form.get("notes") or "").strip()
+    if not venue or not show_date:
+        return redirect("/tours#one-off")
+
+    tour_id = ts.create_tour(user["id"], {
+        "name": "One-off · %s" % venue,
+        "artist_name": artist,
+        "start_date": show_date,
+        "end_date": show_date,
+        "home_tz": tz,
+        "currency": currency,
+        "notes": "One-off show workspace",
+    })
+    show_id = store.add_tour_show(user["id"], show_date, venue, city, notes)
+    ts.attach_show(tour_id, show_id, tz)
+    try:
+        ts.update_show_ext(tour_id, show_id, {"currency": currency})
+    except Exception:
+        pass
+    return redirect("/tours/%s/shows/%s" % (tour_id, show_id))
 
 
 class TourPreviewEntry:
-    """Keep the preview root inside TOUR on both first and repeat visits.
-
-    The public bootstrap verifies the signed session and persisted account.
-    Looking for 'session=' in a Cookie header is insufficient: a session can
-    expire, be malformed, or reference a disposable account lost on a restart.
-    Other routes keep the parent's authentication and TOUR ownership checks.
-    """
+    """Keep the preview root inside TOUR on both first and repeat visits."""
     def __init__(self, wrapped):
         self.wrapped = wrapped
 
