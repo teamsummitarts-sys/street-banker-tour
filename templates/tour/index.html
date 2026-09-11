@@ -1,14 +1,14 @@
-{% extends "base.html" %}
-{% block title %}TOUR - Street Banker{% endblock %}
-{% block head_scripts %}<link rel="stylesheet" href="/static/css/tour-os.css?v=3">{% endblock %}
+{% extends "tour/_app_base.html" %}
+{% block title %}TOUR by Street Banker{% endblock %}
+{% block head_scripts %}<link rel="stylesheet" href="/static/css/tour-os.css?v=4">{% endblock %}
 {% block content %}
 {% import "tour/_macros.html" as m %}
 <div class="to">
   <div class="to-head">
     <div>
-      <p class="to-eyebrow">TOUR</p>
-      <h1 class="to-h1">Every date, every hotel, every call time — one place.</h1>
-      <p class="to-sub">A tour is the container: shows and off days, the schedule, travel and rooms, the people, the guest list, the money. Invite the crew with the permissions each one needs; everyone sees their own day.</p>
+      <p class="to-eyebrow">TOUR · ROAD OPERATIONS</p>
+      <h1 class="to-h1">Run the road from one source of truth.</h1>
+      <p class="to-sub">Shows, off days, schedules, advancing, travel, rooms, people, guests, money, merch and changes live together. Crew members see only the information and controls their role needs.</p>
     </div>
   </div>
 
@@ -23,7 +23,7 @@
         <td data-k="Dates">{{ t['start_date'] or '—' }} → {{ t['end_date'] or '—' }}</td>
         <td data-k="Shows">{{ t['show_count'] }}</td>
         <td data-k="Status"><span class="to-chip to-chip--gold">{{ t['status_line'] }}</span></td>
-        <td><a class="to-btn to-btn--small" href="/tours/{{ t['id'] }}">Open</a></td>
+        <td><a class="to-btn to-btn--small" href="/tours/{{ t['id'] }}">Open TOUR</a></td>
       </tr>
     {% endfor %}
     </tbody>
@@ -67,7 +67,7 @@
       {{ m.check('adopt', 'Bring my ' ~ unattached|length ~ ' existing Tour Hub show(s) onto this tour', on=True) }}
     </div>
     {% endif %}
-    <div class="to-bar"><button class="to-btn" type="submit">Create tour</button></div>
+    <div class="to-bar"><button class="to-btn" type="submit">Create TOUR</button></div>
   </form>
   {% if is_demo and not mine %}
   <form method="post" action="/tours/seed-demo" class="to-bar"><button class="to-btn to-btn--ghost" type="submit">Load the example tour (demo account only)</button></form>
