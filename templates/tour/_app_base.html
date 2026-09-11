@@ -10,7 +10,7 @@
   <title>{% block title %}TOUR by Street Banker{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
   {% include "_fonts.html" %}
-  <link rel="stylesheet" href="/static/css/tour-app.css?v=1">
+  <link rel="stylesheet" href="/static/css/tour-app.css?v=2">
   {% block head_scripts %}{% endblock %}
 </head>
 <body class="tour-app-body">
@@ -27,6 +27,7 @@
       <nav class="tour-worlds" aria-label="Street Banker products">
         <a href="/overview">STREET BANKER</a>
         <a href="/reach/">REACH</a>
+        <span class="is-unavailable" aria-disabled="true" title="The Room production route is not published yet">THE ROOM</span>
         <a href="/noise-lab/">NOISE LAB</a>
         <a href="/tours" class="is-active" aria-current="page">TOUR</a>
       </nav>
