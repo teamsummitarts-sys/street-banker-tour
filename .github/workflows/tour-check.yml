@@ -14,6 +14,7 @@ on:
   push:
     branches:
       - main
+      - tour-standalone-v2
     paths:
       - "tour_*.py"
       - "touring.py"
@@ -22,6 +23,7 @@ on:
       - "tests/test_tour_*.py"
       - "app.py"
       - "requirements.txt"
+      - ".github/workflows/tour-check.yml"
 
 permissions:
   contents: read
@@ -40,5 +42,49 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: python -m pip install -r requirements.txt
-      - run: python -m compileall -q tour_config.py tour_engine.py tour_os.py tour_seed.py tour_store.py touring.py
+      - run: python -m compileall -q tour_config.py tour_engine.py tour_os.py tour_seed.py tour_store.py touring.py tour_preview.py
       - run: python -m pytest -q tests/test_tour_*.py
+      - name: Verify the deployed no-login preview
+        if: ${{ always() && github.ref == 'refs/heads/tour-standalone-v2' }}
+        timeout-minutes: 5
+        run: |
+          python - <<'PY'
+          import http.cookiejar
+          import time
+          import urllib.request
+
+          base = 'https://street-banker-tour-open-preview.onrender.com'
+          opener = urllib.request.build_opener(
+              urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+          last_error = None
+          for attempt in range(12):
+              try:
+                  with opener.open(base + '/', timeout=20) as response:
+                      html = response.read().decode('utf-8')
+                      assert response.status == 200
+                      assert response.headers.get('X-TOUR-Preview-Revision') == 'storage-and-entry-v2'
+                      assert 'tour-app-body' in html
+                      assert '/login' not in response.url
+                      assert 'Sign out' not in html
+                      home = response.url
+                  break
+              except Exception as exc:
+                  last_error = exc
+                  time.sleep(5)
+          else:
+              raise RuntimeError('Live TOUR preview failed: ' + str(last_error))
+
+          for path in ('/', '/tours', '/tours/'):
+              with opener.open(base + path, timeout=20) as response:
+                  assert response.status == 200
+                  assert response.url == home
+                  print('PASS entry', path, 'HTTP', response.status)
+
+          for tab in ('calendar', 'shows', 'schedule', 'travel', 'hotels',
+                      'people', 'tasks', 'money', 'merch'):
+              with opener.open(home + '/' + tab, timeout=20) as response:
+                  assert response.status == 200
+                  assert 'tour-app-body' in response.read().decode('utf-8')
+                  print('PASS workspace', tab, 'HTTP', response.status)
+          print('LIVE TOUR VERIFIED: no login, repeat visits, nine workspace pages')
+          PY
