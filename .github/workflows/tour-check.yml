@@ -51,40 +51,64 @@ jobs:
           python - <<'PY'
           import http.cookiejar
           import time
+          import urllib.parse
           import urllib.request
 
           base = 'https://street-banker-tour-open-preview.onrender.com'
           opener = urllib.request.build_opener(
               urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+
           last_error = None
           for attempt in range(12):
               try:
                   with opener.open(base + '/', timeout=20) as response:
                       html = response.read().decode('utf-8')
                       assert response.status == 200
-                      assert response.headers.get('X-TOUR-Preview-Revision') == 'storage-and-entry-v2'
+                      assert response.headers.get('X-TOUR-Preview-Revision') == 'launcher-direct-v3'
                       assert 'tour-app-body' in html
+                      assert 'Start a tour' in html
+                      assert 'Add a one-off show' in html
                       assert '/login' not in response.url
                       assert 'Sign out' not in html
-                      home = response.url
                   break
               except Exception as exc:
                   last_error = exc
                   time.sleep(5)
           else:
-              raise RuntimeError('Live TOUR preview failed: ' + str(last_error))
+              raise RuntimeError('Live TOUR launcher failed: ' + str(last_error))
 
           for path in ('/', '/tours', '/tours/'):
               with opener.open(base + path, timeout=20) as response:
+                  html = response.read().decode('utf-8')
                   assert response.status == 200
-                  assert response.url == home
-                  print('PASS entry', path, 'HTTP', response.status)
+                  assert 'Start a tour' in html
+                  assert 'Add a one-off show' in html
+                  print('PASS launcher', path, 'HTTP', response.status)
 
-          for tab in ('calendar', 'shows', 'schedule', 'travel', 'hotels',
-                      'people', 'tasks', 'money', 'merch'):
-              with opener.open(home + '/' + tab, timeout=20) as response:
+          payload = urllib.parse.urlencode({
+              'date': '2026-10-15',
+              'venue': 'Preview Hall',
+              'city': 'Nashville, TN',
+              'artist_name': 'Preview Artist',
+              'home_tz': 'America/New_York',
+              'currency': 'USD',
+          }).encode()
+          req = urllib.request.Request(base + '/tour-share/preview/one-off', data=payload, method='POST')
+          with opener.open(req, timeout=20) as response:
+              html = response.read().decode('utf-8')
+              assert response.status == 200
+              assert '/shows/' in response.url
+              assert 'Show Command' in html
+              assert 'Additional show tools' in html
+              show_url = response.url
+              print('PASS one-off show HTTP', response.status)
+
+          tour_home = show_url.split('/shows/', 1)[0]
+          for suffix in ('', '/calendar', '/shows', '/people', '/money'):
+              with opener.open(tour_home + suffix, timeout=20) as response:
                   assert response.status == 200
                   assert 'tour-app-body' in response.read().decode('utf-8')
-                  print('PASS workspace', tab, 'HTTP', response.status)
-          print('LIVE TOUR VERIFIED: no login, repeat visits, nine workspace pages')
+                  print('PASS workspace', suffix or '/home', 'HTTP', response.status)
+
+          print('LIVE TOUR VERIFIED: launcher, one-off creation, show command and progressive workspaces')
           PY
