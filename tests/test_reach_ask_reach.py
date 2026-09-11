@@ -13,7 +13,7 @@ def _client(monkeypatch):
 
 
 def _campaign_with_opportunity():
-    from reach import campaigns,catalog,entities,profile,scoring
+    from reach import campaigns,catalog,entities,profile
     recording_id=catalog.add_track({"title":"Ask Track","artist_name":"Ask Artist"})
     catalog.attest_rights(recording_id)
     profile_id=profile.get_or_create(recording_id)
@@ -25,7 +25,6 @@ def _campaign_with_opportunity():
     campaign_id=campaigns.create(recording_id,name="Ask Campaign")
     outlet_id=entities.ensure_outlet("Ask Music Blog","https://askblog.example/submit","askblog.example","BLOG",territory="US")
     target_id=campaigns.add_target(campaign_id,outlet_id,status=campaigns.QUALIFIED)
-    scoring.score_target(target_id)
     return campaign_id,target_id
 
 
