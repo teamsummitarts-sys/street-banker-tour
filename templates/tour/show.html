@@ -18,18 +18,27 @@
   .to-tool-link:hover { border-color: var(--to-line); }
   .to-tool-link.is-on { border-color: var(--to-gold); background: rgb(201 162 74 / .10); color: var(--to-amber); }
   .to-tool-link__plus { color: var(--to-amber); font-size: 18px; font-weight: 500; line-height: 1; }
+  .to-show-identity { display:flex; align-items:center; gap:14px; min-width:0; }
+  .to-venue-thumb { width:84px; height:64px; flex:none; border-radius:12px; border:1px solid var(--to-rule); background:linear-gradient(135deg,#17171A,#0A0A0C); overflow:hidden; display:grid; place-items:center; color:var(--to-gold); font-size:11px; font-weight:800; letter-spacing:.12em; }
+  .to-venue-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
   @media (max-width: 540px) {
     .to-tool-rack__grid { grid-template-columns: 1fr 1fr; }
     .to-tool-link { min-height: 54px; }
+    .to-venue-thumb { width:72px; height:56px; }
   }
   @media (max-width: 390px) { .to-tool-rack__grid { grid-template-columns: 1fr; } }
 </style>
 
 <div class="to-head">
-  <div>
-    <p class="to-eyebrow">Show Command · #{{ show['show_number'] }} of {{ shows|length }}</p>
-    <h1 class="to-h1" style="font-size:22px">{{ show['venue'] }}</h1>
-    <p class="to-sub">{{ fmt_day(show['date']) }}{% if show['city'] %} · {{ show['city'] }}{% endif %}{% if show['tz'] %} · <span class="to-muted">{{ show['tz'] }}</span>{% endif %} · {{ m.chip(show['status']) }}</p>
+  <div class="to-show-identity">
+    <div class="to-venue-thumb" aria-hidden="true">
+      {% if tour_places_ready %}<img src="/tour-tools/venue-photo?venue={{ show['venue']|urlencode }}&city={{ (show['city'] or '')|urlencode }}" alt="" loading="lazy" onerror="this.style.display='none'">{% else %}VENUE{% endif %}
+    </div>
+    <div>
+      <p class="to-eyebrow">Show Command · #{{ show['show_number'] }} of {{ shows|length }}</p>
+      <h1 class="to-h1" style="font-size:22px">{{ show['venue'] }}</h1>
+      <p class="to-sub">{{ fmt_day(show['date']) }}{% if show['city'] %} · {{ show['city'] }}{% endif %}{% if show['tz'] %} · <span class="to-muted">{{ show['tz'] }}</span>{% endif %} · {{ m.chip(show['status']) }}</p>
+    </div>
   </div>
   <div class="to-inline">
     {{ m.ready(readiness['pct']) }}
