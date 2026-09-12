@@ -42,6 +42,9 @@ def test_open_preview_renders_launcher_without_a_render_disk_or_login(tmp_path):
         assert 'tour-app-body' in html
         assert 'Start a tour' in html
         assert 'Add a one-off show' in html
+        assert 'Show calendar' in html
+        assert 'launcher-calendar' in html
+        assert html.index('Your tours') < html.index('Show calendar') < html.index('Start a tour')
         assert 'Sign out' not in html
         assert response.headers['X-TOUR-Preview-Revision'] == preview.PREVIEW_REVISION
         assert response.headers['Cache-Control'].startswith('private, no-store')
@@ -56,6 +59,7 @@ def test_open_preview_renders_launcher_without_a_render_disk_or_login(tmp_path):
             launcher = response.get_data(as_text=True)
             assert 'Start a tour' in launcher
             assert 'Add a one-off show' in launcher
+            assert 'Show calendar' in launcher
             assert 'Sign out' not in launcher
 
         # Full-tour creation still uses the real TOUR route and then every
@@ -87,6 +91,25 @@ def test_open_preview_renders_launcher_without_a_render_disk_or_login(tmp_path):
         assert '/shows/' in one_off
         assert 'Additional show tools' in response.get_data(as_text=True)
 
+        # Returning home keeps existing work above creation controls. The
+        # launcher calendar advertises every accessible tour as a calendar
+        # source, while the source calendar links a booked date directly to
+        # Show Command. Browser JS combines those existing calendars.
+        one_off_tour = one_off.split('/shows/', 1)[0]
+        one_off_tour_id = one_off_tour.rsplit('/', 1)[1]
+        launcher = first.get('/?month=2026-11', base_url=origin, follow_redirects=True)
+        launcher_html = launcher.get_data(as_text=True)
+        assert launcher.status_code == 200
+        assert 'The Basement East' in launcher_html
+        assert 'Show calendar' in launcher_html
+        assert one_off_tour_id in launcher_html
+        assert launcher_html.index('Your tours') < launcher_html.index('Show calendar') < launcher_html.index('Start a tour')
+        source_calendar = first.get(one_off_tour + '/calendar?month=2026-11&ready=0', base_url=origin)
+        source_html = source_calendar.get_data(as_text=True)
+        assert source_calendar.status_code == 200
+        assert one_off in source_html
+        assert 'Nashville, TN' in source_html or 'The Basement East' in source_html
+
         # A different browser cannot open the first browser's stored tour.
         second = app.test_client()
         response = second.get('/', base_url=origin, follow_redirects=True)
@@ -109,7 +132,7 @@ def test_open_preview_renders_launcher_without_a_render_disk_or_login(tmp_path):
         assert response.status_code == 200
         assert 'unregister' in sw
         assert 'offline.html' not in sw
-        print('TOUR preview: launcher, full tour, one-off, stale session and no-offline-worker passed')
+        print('TOUR preview: launcher, global calendar, full tour, one-off, stale session and no-offline-worker passed')
     ''')
     result = subprocess.run(
         [sys.executable, "-c", script], cwd=ROOT, env=env,
