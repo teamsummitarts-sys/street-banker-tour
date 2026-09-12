@@ -1,4 +1,5 @@
 {% import "tour/_macros.html" as m %}
+{% set resend_ready = tour_resend_ready if tour_resend_ready is defined else false %}
 
 <section class="to-panel is-warm" style="margin-bottom:14px">
   <div class="to-eyebrow">Advance this show</div>
@@ -23,11 +24,25 @@
       <label class="to-field"><span>To</span><input type="email" name="to" placeholder="venue@club.com" required autocomplete="email"></label>
       <label class="to-field"><span>Subject</span><input type="text" name="subject" value="{{ (tour['artist_name'] or 'Artist') ~ ' · ' ~ show['venue'] ~ ' · ' ~ show['date'] ~ ' advance' }}" required></label>
     </div>
-    <label class="to-field" style="margin-top:10px"><span>Advance message</span><textarea name="body" rows="13">{{ tour_advance_default_body(tour, show) }}</textarea></label>
+    <label class="to-field" style="margin-top:10px"><span>Advance message</span><textarea name="body" rows="13">{% if tour_advance_default_body is defined %}{{ tour_advance_default_body(tour, show) }}{% else %}Hi,
+
+We're advancing {{ tour['artist_name'] or 'the artist' }} at {{ show['venue'] }}{% if show['city'] %} in {{ show['city'] }}{% endif %} on {{ show['date'] }}.
+
+Could you please confirm the show-day details below and send back anything still outstanding?
+
+• Load-in / parking / bus parking
+• Production contact and stage / sound / lighting information
+• Soundcheck, doors, set time and curfew
+• Dressing rooms / hospitality / catering
+• Guest-list allotment / merch terms
+• Settlement contact / payment method
+
+Thank you,
+TOUR by Street Banker{% endif %}</textarea></label>
     <div class="to-bar" style="margin-bottom:0">
-      <button class="to-btn" type="submit" {% if not tour_resend_ready %}title="Resend needs deployment credentials before a real send can occur"{% endif %}>Send advance</button>
+      <button class="to-btn" type="submit" {% if not resend_ready %}title="Resend needs deployment credentials before a real send can occur"{% endif %}>Send advance</button>
       <a class="to-btn to-btn--ghost" href="?tab=inbox">Paste / review reply</a>
-      <span class="to-muted">{% if tour_resend_ready %}Resend connected{% else %}Resend setup required on this deployment{% endif %}</span>
+      <span class="to-muted">{% if resend_ready %}Resend connected{% else %}Resend setup required on this deployment{% endif %}</span>
     </div>
   </form>
   {% endif %}
