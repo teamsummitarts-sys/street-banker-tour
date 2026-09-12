@@ -65,6 +65,25 @@
   </div>
   {% endif %}
 
+  <section class="to-launch-calendar" id="show-calendar" aria-labelledby="show-calendar-title">
+    <div class="to-head" style="margin-top:28px">
+      <div>
+        <p class="to-eyebrow">Show calendar</p>
+        <h2 class="to-h1" id="show-calendar-title" style="font-size:20px">Your dates</h2>
+        <p class="to-sub">Tap a booked show date to open that show directly.</p>
+      </div>
+      <div class="to-inline" aria-label="Calendar month controls">
+        <a class="to-btn to-btn--ghost to-btn--small" id="launcher-cal-prev" href="#show-calendar" aria-label="Previous month">‹</a>
+        <a class="to-btn to-btn--ghost to-btn--small" id="launcher-cal-today" href="#show-calendar">This month</a>
+        <a class="to-btn to-btn--ghost to-btn--small" id="launcher-cal-next" href="#show-calendar" aria-label="Next month">›</a>
+      </div>
+    </div>
+    <div class="to-panel" style="padding:12px">
+      <div class="to-muted" id="launcher-cal-status" style="margin-bottom:9px">Loading show dates…</div>
+      <div class="to-cal" id="launcher-calendar" role="grid" aria-live="polite"></div>
+    </div>
+  </section>
+
   {% if can_own %}
   <div class="to-launch-actions" aria-label="Create TOUR work">
     <details class="to-launch-action" id="start-tour">
@@ -138,4 +157,120 @@
   <div class="to-note"><strong>Owning a tour needs the Artist tier.</strong> You can still open any tour you were invited to. <a href="/plan">See plans</a>.</div>
   {% endif %}
 </div>
+
+<script>
+(function () {
+  var sources = [
+    {% for t in mine %}{ id: {{ t['id']|tojson }}, name: {{ t['name']|tojson }} },{% endfor %}
+    {% for t in shared %}{ id: {{ t['id']|tojson }}, name: {{ t['name']|tojson }} },{% endfor %}
+  ];
+  var root = document.getElementById('launcher-calendar');
+  var status = document.getElementById('launcher-cal-status');
+  if (!root) return;
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function monthKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
+  function validMonth(v) { return /^\d{4}-\d{2}$/.test(v || ''); }
+  function monthDate(v) {
+    var p = v.split('-');
+    return new Date(Number(p[0]), Number(p[1]) - 1, 1);
+  }
+  function hrefForMonth(v) {
+    var u = new URL(window.location.href);
+    u.searchParams.set('month', v);
+    u.hash = 'show-calendar';
+    return u.pathname + u.search + u.hash;
+  }
+
+  var requested = new URLSearchParams(window.location.search).get('month');
+  var month = validMonth(requested) ? requested : monthKey(new Date());
+  var first = monthDate(month);
+  var prev = new Date(first.getFullYear(), first.getMonth() - 1, 1);
+  var next = new Date(first.getFullYear(), first.getMonth() + 1, 1);
+  var now = new Date();
+  document.getElementById('launcher-cal-prev').href = hrefForMonth(monthKey(prev));
+  document.getElementById('launcher-cal-next').href = hrefForMonth(monthKey(next));
+  document.getElementById('launcher-cal-today').href = hrefForMonth(monthKey(now));
+
+  var title = document.getElementById('show-calendar-title');
+  try { title.textContent = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }); }
+  catch (_) { title.textContent = month; }
+
+  var eventsByDate = {};
+  Promise.all(sources.map(function (source) {
+    return fetch('/tours/' + encodeURIComponent(source.id) + '/calendar?month=' + encodeURIComponent(month) + '&ready=0', {
+      credentials: 'same-origin', headers: { 'X-Requested-With': 'TOUR-launcher-calendar' }
+    }).then(function (response) {
+      if (!response.ok) return '';
+      return response.text();
+    }).then(function (html) {
+      if (!html) return;
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      doc.querySelectorAll('.to-cal-day').forEach(function (cell) {
+        var showEvents = cell.querySelectorAll('.ev.show');
+        if (!showEvents.length) return;
+        var date = cell.getAttribute('aria-label');
+        if (!date) return;
+        var href = cell.getAttribute('href') || '';
+        showEvents.forEach(function (node, index) {
+          if (!eventsByDate[date]) eventsByDate[date] = [];
+          eventsByDate[date].push({
+            label: (node.textContent || '').trim() || source.name,
+            tour: source.name,
+            href: href,
+            first: index === 0
+          });
+        });
+      });
+    }).catch(function () { /* One inaccessible tour must not break the launcher. */ });
+  })).then(renderCalendar);
+
+  function renderCalendar() {
+    root.innerHTML = '';
+    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(function (name) {
+      var dow = document.createElement('div');
+      dow.className = 'to-cal-dow';
+      dow.textContent = name;
+      root.appendChild(dow);
+    });
+
+    var start = new Date(first.getFullYear(), first.getMonth(), 1 - first.getDay());
+    var todayIso = iso(now);
+    var showCount = 0;
+    for (var i = 0; i < 42; i++) {
+      var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      var dateIso = iso(d);
+      var items = eventsByDate[dateIso] || [];
+      var cell = document.createElement(items.length ? 'a' : 'div');
+      cell.className = 'to-cal-day' + (d.getMonth() !== first.getMonth() ? ' is-out' : '') + (dateIso === todayIso ? ' is-today' : '');
+      cell.setAttribute('aria-label', dateIso + (items.length ? ' · open show' : ''));
+      if (items.length) {
+        cell.href = items[0].href;
+        cell.className += ' has-show';
+        showCount += items.length;
+      }
+      var day = document.createElement('span');
+      day.className = 'd';
+      day.textContent = d.getDate();
+      cell.appendChild(day);
+      items.slice(0, 2).forEach(function (event) {
+        var ev = document.createElement('div');
+        ev.className = 'ev show';
+        ev.textContent = event.label;
+        cell.appendChild(ev);
+      });
+      if (items.length) {
+        var dot = document.createElement('span');
+        dot.className = 'dot';
+        cell.appendChild(dot);
+      }
+      root.appendChild(cell);
+    }
+    status.textContent = showCount
+      ? showCount + ' booked show' + (showCount === 1 ? '' : 's') + ' this month · tap a date to open Show Command'
+      : 'No booked shows this month.';
+  }
+})();
+</script>
 {% endblock %}
