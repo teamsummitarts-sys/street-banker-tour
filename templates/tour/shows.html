@@ -2,6 +2,12 @@
 {% block title %}Shows - {{ tour['name'] }} - Street Banker{% endblock %}
 {% block tour_body %}
 {% import "tour/_macros.html" as m %}
+<style>
+  .to-show-list-venue { display:flex; align-items:center; gap:10px; min-width:0; }
+  .to-show-list-thumb { width:58px; height:44px; flex:none; overflow:hidden; border-radius:9px; border:1px solid var(--to-rule); background:linear-gradient(135deg,#17171A,#0A0A0C); display:grid; place-items:center; color:var(--to-gold); font-size:9px; font-weight:800; letter-spacing:.1em; }
+  .to-show-list-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  @media (max-width:640px) { .to-show-list-thumb { width:72px; height:54px; } }
+</style>
 <div class="to-head"><div><p class="to-eyebrow">Shows</p><h1 class="to-h1" style="font-size:20px">{{ shows|length }} date{{ '' if shows|length == 1 else 's' }}</h1></div></div>
 
 {% if shows %}
@@ -13,7 +19,7 @@
     <td data-k="#">{{ s['show_number'] }}</td>
     <td data-k="Date"><a href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}">{{ fmt_day(s['date']) }}</a></td>
     <td data-k="City">{{ s['city'] or '—' }}</td>
-    <td data-k="Venue"><a href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}"><b>{{ s['venue'] }}</b></a></td>
+    <td data-k="Venue"><div class="to-show-list-venue"><span class="to-show-list-thumb" aria-hidden="true">{% if tour_places_ready %}<img src="/tour-tools/venue-photo?venue={{ s['venue']|urlencode }}&city={{ (s['city'] or '')|urlencode }}" alt="" loading="lazy" onerror="this.style.display='none'">{% else %}VENUE{% endif %}</span><a href="/tours/{{ tour['id'] }}/shows/{{ s['id'] }}"><b>{{ s['venue'] }}</b></a></div></td>
     <td data-k="Status">{{ m.chip(s['status']) }}</td>
     <td data-k="Ready">{{ m.ready(readiness[s['id']]['pct']) }}</td>
     <td data-k="Missing" class="to-muted">{% for i in readiness[s['id']]['missing'][:4] %}{{ i['label']|lower }}{{ ', ' if not loop.last }}{% endfor %}{% if readiness[s['id']]['missing']|length > 4 %} +{{ readiness[s['id']]['missing']|length - 4 }}{% endif %}</td>
