@@ -25,10 +25,15 @@ if not (os.environ.get("REACH_DB_PATH") or "").strip():
 
 import tour_store as ts
 from app import app
+import tour_preview_integrations
 
+# Register preview-facing integrations after the parent application exists.
+# They still use V2's real provider modules (Resend, TOUR store) rather than
+# duplicating those providers inside the preview.
+tour_preview_integrations.register(app)
 
 _PREVIEW_DOMAIN = "tour-preview.local"
-PREVIEW_REVISION = "launcher-direct-v3"
+PREVIEW_REVISION = "launcher-direct-v4"
 
 
 def _preview_user():
