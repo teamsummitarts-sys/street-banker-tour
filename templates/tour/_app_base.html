@@ -5,24 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0A0A0C">
   <meta name="color-scheme" content="dark">
-  <link rel="manifest" href="/static/manifest.json">
-  <link rel="apple-touch-icon" href="/static/img/icon-192.png">
+  <meta name="apple-mobile-web-app-title" content="TOUR">
+  <link rel="manifest" href="/static/tour-manifest.webmanifest?v=1">
+  <link rel="icon" type="image/svg+xml" href="/static/img/tour-favicon.svg?v=1">
+  <link rel="shortcut icon" href="/static/img/tour-favicon.svg?v=1">
+  <link rel="apple-touch-icon" href="/static/img/tour-favicon.svg?v=1">
+  <link rel="mask-icon" href="/static/img/tour-favicon.svg?v=1" color="#D4AF37">
   <title>{% block title %}TOUR by Street Banker{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/tailwind.css?v=27">
   {% include "_fonts.html" %}
-  <link rel="stylesheet" href="/static/css/tour-app.css?v=2">
+  <link rel="stylesheet" href="/static/css/tour-app.css?v=3">
   <link rel="stylesheet" href="/static/css/tour-refine.css?v=1">
   {% block head_scripts %}{% endblock %}
 </head>
 <body class="tour-app-body">
   <header class="tour-appbar">
     <div class="tour-appbar__inner">
-      <a class="tour-brand" href="/tours" aria-label="TOUR home">
-        <span class="tour-brand__mark" aria-hidden="true">T</span>
-        <span class="tour-brand__copy">
-          <strong>TOUR</strong>
-          <small>BY STREET BANKER</small>
-        </span>
+      <a class="tour-brand" href="/tours" aria-label="TOUR by Street Banker home">
+        <img class="tour-brand__logo" src="/static/img/tour-logo.svg?v=1" alt="TOUR by Street Banker">
       </a>
 
       <nav class="tour-worlds" aria-label="Street Banker products">
