@@ -19,7 +19,8 @@ def test_tour_uses_its_own_product_shell():
     assert '{% extends "base.html" %}' not in index
     assert "ROYALTY SWEEP" not in app_base
     assert "TOUR" in app_base
-    assert "BY STREET BANKER" in app_base
+    assert '/static/img/tour-logo.svg' in app_base
+    assert 'alt="TOUR by Street Banker"' in app_base
 
 
 def test_tour_switcher_shows_suite_without_linking_development_room_route():
