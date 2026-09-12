@@ -1,8 +1,41 @@
 {% import "tour/_macros.html" as m %}
+
+<section class="to-panel is-warm" style="margin-bottom:14px">
+  <div class="to-eyebrow">Advance this show</div>
+  <h2 style="margin:0;font-size:18px">Email the venue / promoter</h2>
+  <p class="to-sub" style="margin-top:5px">Advance is the show communication workflow. Confirm the recipient, edit the message, then send it through Street Banker.</p>
+
+  {% if request.args.get('advance_sent') %}
+  <div class="to-note" style="margin-top:12px"><strong>Advance sent.</strong> The send is recorded in this show's activity.</div>
+  {% elif request.args.get('advance_error') == 'recipient' %}
+  <div class="to-note to-note--warn" style="margin-top:12px"><strong>Add a valid recipient email.</strong></div>
+  {% elif request.args.get('advance_error') == 'resend' %}
+  <div class="to-note to-note--warn" style="margin-top:12px"><strong>Resend is not connected to this deployment yet.</strong> The composer is ready, but TOUR will not claim a send until the real provider is configured.</div>
+  {% elif request.args.get('advance_error') == 'send' %}
+  <div class="to-note to-note--warn" style="margin-top:12px"><strong>Resend did not accept the message.</strong> Nothing was marked sent.</div>
+  {% endif %}
+
+  {% if can('advance') or can('edit') %}
+  <form method="post" action="/tour-tools/advance/send" class="to-form" style="margin-top:12px">
+    <input type="hidden" name="tour_id" value="{{ tour['id'] }}">
+    <input type="hidden" name="show_id" value="{{ show['id'] }}">
+    <div class="to-grid">
+      <label class="to-field"><span>To</span><input type="email" name="to" placeholder="venue@club.com" required autocomplete="email"></label>
+      <label class="to-field"><span>Subject</span><input type="text" name="subject" value="{{ (tour['artist_name'] or 'Artist') ~ ' · ' ~ show['venue'] ~ ' · ' ~ show['date'] ~ ' advance' }}" required></label>
+    </div>
+    <label class="to-field" style="margin-top:10px"><span>Advance message</span><textarea name="body" rows="13">{{ tour_advance_default_body(tour, show) }}</textarea></label>
+    <div class="to-bar" style="margin-bottom:0">
+      <button class="to-btn" type="submit" {% if not tour_resend_ready %}title="Resend needs deployment credentials before a real send can occur"{% endif %}>Send advance</button>
+      <a class="to-btn to-btn--ghost" href="?tab=inbox">Paste / review reply</a>
+      <span class="to-muted">{% if tour_resend_ready %}Resend connected{% else %}Resend setup required on this deployment{% endif %}</span>
+    </div>
+  </form>
+  {% endif %}
+</section>
+
 <div class="to-bar" style="margin-top:0">
   <div class="to-meter" style="flex:1;min-width:160px"><i style="width:{{ advance_progress['pct'] }}%"></i></div>
   <span class="to-muted">{{ advance_progress['done'] }} of {{ advance_progress['total'] }} complete · {{ advance_progress['waiting'] }} waiting</span>
-  {% if can('advance') %}<a class="to-btn to-btn--ghost to-btn--small" href="?tab=inbox">Paste an advance email</a>{% endif %}
 </div>
 
 {% if can('advance') or can('edit') %}<form method="post" action="/tours/{{ tour['id'] }}/shows/{{ show['id'] }}/advance-bulk">{% endif %}
@@ -24,6 +57,6 @@
 </table></div>
 {% endfor %}
 {% if can('advance') or can('edit') %}
-<div class="to-bar"><button class="to-btn" type="submit">Save advance</button></div>
+<div class="to-bar"><button class="to-btn" type="submit">Save advance details</button></div>
 </form>
 {% endif %}
