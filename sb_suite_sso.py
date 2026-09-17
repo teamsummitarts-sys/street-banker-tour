@@ -38,6 +38,7 @@ SUITES = {
     "reach": ("SUITE_URL_REACH", "https://street-banker-v2-workflows.onrender.com", "/reach/"),
     "noise-lab": ("SUITE_URL_NOISE_LAB", "https://street-banker-v2-workflows.onrender.com", "/noise-lab/"),
     "tour": ("SUITE_URL_TOUR", "https://street-banker-tour-open-preview-3.onrender.com", "/"),
+    "motion": ("SUITE_URL_MOTION", "https://masterclip.onrender.com", "/"),
 }
 
 # The path on every suite that receives the hand-off.
