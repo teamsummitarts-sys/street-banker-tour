@@ -35,6 +35,15 @@ def test_without_the_shared_secret_the_door_says_so(monkeypatch):
     assert r.status_code == 503 and b"not connected" in r.data
 
 
+def test_a_bare_visit_is_refused_plainly_even_when_unconnected(monkeypatch):
+    """The fresh-account walker visits every GET route with no parameters;
+    a 5xx there reads as a broken page. No token is a plain refusal on
+    every build, whether or not the shared secret is set."""
+    monkeypatch.delenv("SUITE_SSO_SECRET", raising=False)
+    r = app.test_client().get("/auth/street-banker")
+    assert r.status_code == 401 and b"needs a link from Street Banker" in r.data
+
+
 def test_a_missing_or_tampered_token_is_refused_with_a_way_back(client):
     r = client.get("/auth/street-banker")
     assert r.status_code == 401 and b"Street Banker" in r.data and b"/login" in r.data

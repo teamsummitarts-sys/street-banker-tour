@@ -823,6 +823,11 @@ def create_app():
             return render_template("suite_handoff.html", reason=reason,
                                    street_banker=street_banker), status
 
+        if not request.args.get("token"):
+            # Nobody arrives here without a link from Street Banker. Asked
+            # before the configuration check, so a bare visit is the same
+            # plain refusal on every build, connected or not, never a 5xx.
+            return refused("This address needs a link from Street Banker.", 401)
         if not suite_sso.configured():
             return refused("This suite is not connected to Street Banker sign-in yet.", 503)
         try:
