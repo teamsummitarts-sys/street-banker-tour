@@ -102,3 +102,20 @@ def test_the_login_wall_is_street_bankers_once_connected(client, monkeypatch):
     monkeypatch.delenv("SUITE_SSO_SECRET", raising=False)
     r = app.test_client().get("/tours")
     assert r.status_code == 302 and "/login" in r.headers["Location"]
+
+
+def test_a_new_arrival_opens_onto_the_mock_up_tour(client):
+    import tour_store as ts
+    who = _sb_user()
+    client.get("/auth/street-banker?token=" + sso.issue(who, SUITE))
+    user = store.get_user_by_email(who["email"])
+    tours = ts.list_tours(user["id"])
+    assert [t["name"] for t in tours] == ["Mock Up Tour"]
+    shows = ts.list_shows(tours[0]["id"])
+    assert len(shows) == 36 and len(ts.list_days(tours[0]["id"])) == 45
+    assert any(s.get("status") == "confirmed" for s in shows)
+    page = client.get("/tours/%s/calendar" % tours[0]["id"]).get_data(as_text=True).lower()
+    assert "bottom lounge" in page and "prayers" not in page and "devora" not in page
+    # a second arrival never builds a second copy
+    client.get("/auth/street-banker?token=" + sso.issue(who, SUITE))
+    assert len(ts.list_tours(user["id"])) == 1

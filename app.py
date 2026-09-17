@@ -849,6 +849,14 @@ def create_app():
         if who.get("plan") in plans.PLAN_NAMES and (user.get("plan") or "") != who["plan"]:
             store.set_user_plan(user["id"], who["plan"])
         _grant_owner_plan(user)
+        # An account that arrives with no tours opens onto the Mock Up Tour
+        # (tour_mockup): this service has no disk yet, so the demo is rebuilt
+        # per account rather than saved once.
+        try:
+            import tour_mockup
+            tour_mockup.ensure_for(user)
+        except Exception:
+            app.logger.exception("mock up tour could not be built")
         session.permanent = True
         session["user_id"] = user["id"]
         session["sb_suite_sso"] = True
