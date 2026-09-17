@@ -129,3 +129,15 @@ def test_nobody_registers_here_once_street_banker_is_connected(client):
     r = client.post("/signup", data={"name": "Stranger", "email": email, "password": "stranger-pass-1"})
     assert r.status_code == 302 and r.headers["Location"] == "https://app.streetbankermusic.com/signup"
     assert store.get_user_by_email(email) is None
+
+
+def test_the_front_door_is_the_tours_list_not_a_copy_of_street_banker(client):
+    """Owner, 2026-09-17: "Tour is going to ... the home screen of the app and
+    I can't log into it." The hand-off landed on "/", which here was a copy of
+    the Street Banker homepage with a login that cannot work on this service."""
+    r = client.get("/")
+    assert r.status_code == 302 and r.headers["Location"] == "https://app.streetbankermusic.com/suites/go/tour"
+    token = sso.issue(_sb_user(), "tour")
+    client.get("/auth/street-banker?token=%s&next=/" % token)
+    r = client.get("/")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/tours")

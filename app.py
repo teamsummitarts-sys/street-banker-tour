@@ -1873,6 +1873,14 @@ def create_app():
 
     @app.route("/")
     def index():
+        # This service is the Tour suite, not Street Banker. Its front door is
+        # the tours list for whoever is signed in, and Street Banker's sign-in
+        # for everybody else (owner, 2026-09-17: the hand-off landed on a copy
+        # of the Street Banker homepage whose login does not work here).
+        if suite_sso.configured():
+            if current_user() is not None:
+                return redirect("/tours")
+            return redirect((os.environ.get("STREET_BANKER_URL") or "https://app.streetbankermusic.com").rstrip("/") + "/suites/go/tour")
         # Homepage content is fully config-driven (landing_config); the
         # command-desk figures are editable there, not injected live.
         config = get_landing_config()
