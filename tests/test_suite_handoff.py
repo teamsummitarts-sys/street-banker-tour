@@ -120,3 +120,12 @@ def test_a_new_arrival_opens_onto_the_mock_up_tour(client):
     # a second arrival never builds a second copy
     client.get("/auth/street-banker?token=" + sso.issue(who, SUITE))
     assert len(ts.list_tours(user["id"])) == 1
+
+
+def test_nobody_registers_here_once_street_banker_is_connected(client):
+    """Accounts are Street Banker's to give. This suite's own sign-up sends
+    people to Street Banker and creates nothing."""
+    email = "stranger-%s@example.com" % uuid.uuid4().hex[:8]
+    r = client.post("/signup", data={"name": "Stranger", "email": email, "password": "stranger-pass-1"})
+    assert r.status_code == 302 and r.headers["Location"] == "https://app.streetbankermusic.com/signup"
+    assert store.get_user_by_email(email) is None

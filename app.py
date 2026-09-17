@@ -877,6 +877,12 @@ def create_app():
 
     @app.route("/signup", methods=["GET", "POST"])
     def signup():
+        # Accounts are Street Banker's to give (owner, 2026-09-17: "make sure
+        # no one can make an account unless i give them one"). Once this suite
+        # is connected to Street Banker sign-in nobody registers here at all:
+        # they arrive through the hand-off, already vouched for.
+        if suite_sso.configured():
+            return redirect((os.environ.get("STREET_BANKER_URL") or "https://app.streetbankermusic.com").rstrip("/") + "/signup")
         error = None
         signup_mode = _signup_mode()
         if signup_mode == "closed" and request.method == "GET":
