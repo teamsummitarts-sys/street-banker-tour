@@ -1,0 +1,87 @@
+"""This suite receives Street Banker's sign-in hand-off (sb_suite_sso).
+
+One account for every suite (owner, 2026-09-17): /auth/street-banker verifies
+the short-lived token Street Banker minted, finds or creates the matching
+account here by email, and starts the session. No second password, ever.
+"""
+import uuid
+
+import pytest
+
+import db as store
+import sb_suite_sso as sso
+from app import app
+
+SECRET = "test-shared-secret-street-banker-suites"
+SUITE = "tour"
+HOME = sso.suite_home(SUITE)
+
+
+def _sb_user(plan="pro"):
+    tag = uuid.uuid4().hex[:8]
+    return {"id": "sb-" + tag, "email": "artist-" + tag + "@example.com", "name": "Handed Artist", "plan": plan}
+
+
+@pytest.fixture
+def client(monkeypatch):
+    monkeypatch.setenv("SUITE_SSO_SECRET", SECRET)
+    monkeypatch.delenv("SUITE_KEYS", raising=False)
+    return app.test_client()
+
+
+def test_without_the_shared_secret_the_door_says_so(monkeypatch):
+    monkeypatch.delenv("SUITE_SSO_SECRET", raising=False)
+    r = app.test_client().get("/auth/street-banker?token=x")
+    assert r.status_code == 503 and b"not connected" in r.data
+
+
+def test_a_missing_or_tampered_token_is_refused_with_a_way_back(client):
+    r = client.get("/auth/street-banker")
+    assert r.status_code == 401 and b"Street Banker" in r.data and b"/login" in r.data
+    token = sso.issue(_sb_user(), SUITE)
+    assert client.get("/auth/street-banker?token=" + token[:-4] + "zzzz").status_code == 401
+
+
+def test_a_token_for_another_suite_is_refused(client):
+    other = "tour" if SUITE != "tour" else "reach"
+    r = client.get("/auth/street-banker?token=" + sso.issue(_sb_user(), other))
+    assert r.status_code == 401 and b"different suite" in r.data
+
+
+def test_a_good_token_creates_the_account_and_signs_them_in(client):
+    who = _sb_user(plan="pro")
+    assert store.get_user_by_email(who["email"]) is None
+    r = client.get("/auth/street-banker?token=" + sso.issue(who, SUITE))
+    assert r.status_code == 302 and r.headers["Location"].endswith(HOME)
+    user = store.get_user_by_email(who["email"])
+    assert user and user["name"] == "Handed Artist" and user["plan"] == "pro"
+    with client.session_transaction() as s:
+        assert s["user_id"] == user["id"] and s["sb_suite_sso"] is True and s["sb_suite"] == SUITE
+
+
+def test_the_second_visit_reuses_the_same_account(client):
+    who = _sb_user()
+    client.get("/auth/street-banker?token=" + sso.issue(who, SUITE))
+    first = store.get_user_by_email(who["email"])["id"]
+    client.get("/auth/street-banker?token=" + sso.issue(who, SUITE))
+    assert store.get_user_by_email(who["email"])["id"] == first
+
+
+def test_next_stays_on_this_service(client):
+    who = _sb_user()
+    r = client.get("/auth/street-banker?next=//evil.example&token=" + sso.issue(who, SUITE))
+    assert r.headers["Location"].endswith(HOME)
+    r = client.get("/auth/street-banker?next=%2Fsomewhere%2Flocal&token=" + sso.issue(who, SUITE))
+    assert r.headers["Location"].endswith("/somewhere/local")
+
+
+def test_a_handed_session_survives_closed_mode(client, monkeypatch):
+    """Closed mode keeps strangers out of a private build. Somebody Street
+    Banker vouched for is not a stranger."""
+    monkeypatch.setenv("APP_ENV", "staging")
+    monkeypatch.setenv("SIGNUP_MODE", "closed")
+    monkeypatch.setenv("OWNER_EMAILS", "owner@example.com")
+    who = _sb_user()
+    client.get("/auth/street-banker?token=" + sso.issue(who, SUITE))
+    r = client.get("/overview")
+    assert r.status_code == 200 or (r.status_code == 302 and "/login" not in r.headers.get("Location", ""))

@@ -332,6 +332,7 @@ import email_provider as emailer
 import spotify_provider as spotify
 import artist_twin as twin
 import plans
+import sb_suite_sso as suite_sso   # Street Banker hands the artist across; this side verifies
 from network_config import (
     get_network_data,
     get_profile,
@@ -787,6 +788,12 @@ def create_app():
     def current_user():
         user_id = session.get("user_id")
         user = store.get_user(user_id) if user_id else None
+        if user is not None and session.get("sb_suite_sso"):
+            # Street Banker opened this session (sb_suite_sso): the account
+            # of record has already vouched for this person, so the
+            # closed-mode owner allowlist, which exists to keep strangers
+            # out of a private comparison build, does not apply.
+            return user
         if (user is not None and _signup_mode() == "closed"
                 and user.get("email", "").strip().lower()
                 not in _private_owner_emails()):
@@ -797,6 +804,52 @@ def create_app():
             session.pop("user_id", None)
             return None
         return user
+
+    @app.route("/auth/street-banker")
+    def street_banker_handoff():
+        """Arrive from Street Banker already signed in (sb_suite_sso).
+
+        Street Banker is the account of record. It sends a short-lived
+        signed token naming the person and the suite they chose; this
+        verifies it, finds or creates the matching account here by email,
+        and starts the session. Nobody signs in twice and no password ever
+        crosses between the services. A token that fails is refused with
+        the reason and a way back, never a silent loop.
+        """
+        accepted = {k.strip() for k in (os.environ.get("SUITE_KEYS") or "tour").split(",") if k.strip()}
+        street_banker = (os.environ.get("STREET_BANKER_URL") or "https://app.streetbankermusic.com").rstrip("/")
+
+        def refused(reason, status):
+            return render_template("suite_handoff.html", reason=reason,
+                                   street_banker=street_banker), status
+
+        if not suite_sso.configured():
+            return refused("This suite is not connected to Street Banker sign-in yet.", 503)
+        try:
+            who = suite_sso.verify(request.args.get("token"), accepted)
+        except suite_sso.HandoffRejected as e:
+            words = {"expired": "The sign-in link has expired. Open the suite from Street Banker again.",
+                     "wrong suite": "That link was for a different suite.",
+                     "no token": "This address needs a link from Street Banker."}
+            return refused(words.get(e.reason, "The sign-in link could not be verified."), 401)
+        user = store.get_user_by_email(who["email"])
+        if user is None:
+            name = who.get("name") or who["email"].split("@")[0]
+            # A local row so this suite's data has an owner. The password is
+            # unusable on purpose: sign-in happens at Street Banker.
+            user_id = store.create_user(who["email"], name, generate_password_hash(os.urandom(32).hex()))
+            user = store.get_user(user_id) if user_id else store.get_user_by_email(who["email"])
+        if user is None:
+            return refused("The account could not be created here.", 500)
+        if who.get("plan") in plans.PLAN_NAMES and (user.get("plan") or "") != who["plan"]:
+            store.set_user_plan(user["id"], who["plan"])
+        _grant_owner_plan(user)
+        session.permanent = True
+        session["user_id"] = user["id"]
+        session["sb_suite_sso"] = True
+        session["sb_suite"] = who["suite"]
+        session.pop("seen_rolled", None)
+        return redirect(suite_sso.safe_next(request.args.get("next"), suite_sso.suite_home(who["suite"])))
 
     def login_required_redirect():
         return redirect(url_for("login", next=request.path))
@@ -3135,7 +3188,7 @@ def create_app():
                         # The Team-Up Board's one-click renew link from the
                         # expiry email; single-use token, renews one listing.
                         "/board-renew/")
-    _PUBLIC_EXACT = {"/", "/healthz", "/reach", "/login", "/signup", "/logout", "/submit", "/forgot",
+    _PUBLIC_EXACT = {"/", "/healthz", "/auth/street-banker", "/reach", "/login", "/signup", "/logout", "/submit", "/forgot",
                      "/catalog-sweep", "/demo-open", "/plan",
                      "/terms", "/privacy", "/support", "/sw.js", "/demo-access",
                      "/api/artist-signal-profile",
