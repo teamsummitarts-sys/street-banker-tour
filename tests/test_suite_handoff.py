@@ -94,3 +94,11 @@ def test_a_handed_session_survives_closed_mode(client, monkeypatch):
     client.get("/auth/street-banker?token=" + sso.issue(who, SUITE))
     r = client.get("/overview")
     assert r.status_code == 200 or (r.status_code == 302 and "/login" not in r.headers.get("Location", ""))
+
+
+def test_the_login_wall_is_street_bankers_once_connected(client, monkeypatch):
+    r = client.get("/tours")
+    assert r.status_code == 302 and r.headers["Location"] == "https://app.streetbankermusic.com/suites/go/tour"
+    monkeypatch.delenv("SUITE_SSO_SECRET", raising=False)
+    r = app.test_client().get("/tours")
+    assert r.status_code == 302 and "/login" in r.headers["Location"]

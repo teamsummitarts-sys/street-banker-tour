@@ -857,6 +857,14 @@ def create_app():
         return redirect(suite_sso.safe_next(request.args.get("next"), suite_sso.suite_home(who["suite"])))
 
     def login_required_redirect():
+        # Once this suite is connected to Street Banker sign-in, the wall is
+        # Street Banker's: one account, one password, and the hand-off brings
+        # the person straight back (owner, 2026-09-17: "make tour a signed in
+        # app"). /login itself stays reachable for the owner's own account.
+        if suite_sso.configured():
+            key = ((os.environ.get("SUITE_KEYS") or "tour").split(",")[0] or "tour").strip()
+            base = (os.environ.get("STREET_BANKER_URL") or "https://app.streetbankermusic.com").rstrip("/")
+            return redirect(base + "/suites/go/" + key)
         return redirect(url_for("login", next=request.path))
 
     @app.route("/signup", methods=["GET", "POST"])
@@ -3295,7 +3303,7 @@ def create_app():
                     return None
             if _is_public_path(request.path) or _valid_backup_token():
                 return None
-            return redirect(url_for("login", next=request.path))
+            return login_required_redirect()
         tier = plans.required_tier(request.path)
         if tier and not plans.allowed(user.get("plan") or "artist", tier):
             return render_template("upgrade.html", required=tier,
